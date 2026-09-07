@@ -147,6 +147,7 @@ logs/
 *.c
 *.so
 .idea
+.local_pydeps/
 
 opv2v_data_dumping
 checkpoints

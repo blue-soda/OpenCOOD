@@ -40,6 +40,10 @@ def train_parser():
                         help='The path of the model need to be fine tuned.')
     parser.add_argument('--device', '-d', default="cuda", help='cuda or cpu')
     parser.add_argument('--two_stage', help='whether to use two stage training', default=0, type=int)
+    parser.add_argument('--num_workers', default=16, type=int,
+                        help='number of dataloader workers')
+    parser.add_argument('--skip_test', action='store_true',
+                        help='skip automatic inference after training')
     opt = parser.parse_args()
     return opt
 
@@ -66,14 +70,14 @@ def main():
 
     train_loader = DataLoader(opencood_train_dataset,
                             batch_size=hypes['train_params']['batch_size'],
-                            num_workers=16,
+                            num_workers=opt.num_workers,
                             collate_fn=opencood_train_dataset.collate_batch_train,
                             shuffle=True,
                             pin_memory=True,
                             drop_last=True)
     val_loader = DataLoader(opencood_validate_dataset,
                             batch_size=hypes['train_params']['batch_size'],
-                            num_workers=16,
+                            num_workers=opt.num_workers,
                             collate_fn=opencood_train_dataset.collate_batch_train,
                             shuffle=True,
                             pin_memory=True,
@@ -317,7 +321,7 @@ def main():
     print('Training Finished, checkpoints saved to %s' % saved_path)
     torch.cuda.empty_cache()
     
-    if run_test:
+    if run_test and not opt.skip_test:
         fusion_method = opt.fusion_method
         cmd = f"python opencood/tools/inference_multi_sweep.py --model_dir {saved_path} --fusion_method {fusion_method}"
         print(f"Running command: {cmd}")

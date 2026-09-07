@@ -30,7 +30,10 @@ from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_irregular_si
 from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_irregular_flow_new import IntermediateFusionDatasetIrregularFlowNew
 from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_irregular_flow_variance import IntermediateFusionDatasetIrregularFlowVariance
 from opencood.data_utils.datasets.intermediate_fusion_dataset_dair_irregular_multi import IntermediateFusionDatasetDAIRIrregularMulti
-from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_outage import IntermediateFusionDataset_outage
+try:
+    from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_outage import IntermediateFusionDataset_outage
+except ModuleNotFoundError:
+    IntermediateFusionDataset_outage = None
 from opencood.data_utils.datasets.intermediate_fusion_dataset_v2xset_irregular_flow_new import IntermediateFusionDatasetV2XSETFlowNew
 from opencood.data_utils.datasets.intermediate_fusion_dataset_v2xset_compensation import IntermediateFusionDatasetV2XSETCompensation
 from opencood.data_utils.datasets.intermediate_fusion_dataset_v2xset import IntermediateFusionDatasetV2XSET
@@ -64,12 +67,14 @@ __all__ = {
     'IntermediateFusionDatasetDAIRIrregular': IntermediateFusionDatasetDAIRIrregular,
     'IntermediateFusionDatasetDAIRIrregularMulti': IntermediateFusionDatasetDAIRIrregularMulti,
     'IntermediateFusionDatasetIrregularFlowVariance': IntermediateFusionDatasetIrregularFlowVariance,
-    'IntermediateFusionDataset_outage': IntermediateFusionDataset_outage,
     'IntermediateFusionDatasetV2XSETFlowNew': IntermediateFusionDatasetV2XSETFlowNew,
     'IntermediateFusionDatasetV2XSETCompensation': IntermediateFusionDatasetV2XSETCompensation,
     'IntermediateFusionDatasetV2XSET': IntermediateFusionDatasetV2XSET,
     'IntermediateFusionDatasetV2XSETSingleframe': IntermediateFusionDatasetV2XSETSingleframe
 }
+
+if IntermediateFusionDataset_outage is not None:
+    __all__['IntermediateFusionDataset_outage'] = IntermediateFusionDataset_outage
 
 # the final range for evaluation
 GT_RANGE_OPV2V = [-140, -40, -3, 140, 40, 1] #[-140, -40, -3, 140, 40, 1], [-153.6, -51.2, -3, 153.6, 51.2, 1] [-140.8, -38.4, -3, 140.8, 38.4, 1]

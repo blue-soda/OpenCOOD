@@ -163,11 +163,16 @@ def load_saved_model_diff(saved_path, model, finetune_flag=False):
             initial_epoch_ = 0
         return initial_epoch_
 
+    def epoch_from_checkpoint(path, prefix):
+        filename = os.path.basename(path)
+        return int(filename[:-4].replace(prefix, ""))
+
     file_list = glob.glob(os.path.join(saved_path, 'net_epoch_bestval_at*.pth'))
     if file_list:
         assert len(file_list) == 1
+        bestval_epoch = epoch_from_checkpoint(file_list[0], 'net_epoch_bestval_at')
         print("resuming best validation model at epoch %d" % \
-                eval(file_list[0].split("/")[-1].rstrip(".pth").lstrip("net_epoch_bestval_at")))
+                bestval_epoch)
         trained_model_dict = torch.load(file_list[0] , map_location='cpu')
 
         # TODO: uncomment lines below to introduce v2xvit v2-based pretrained model
@@ -207,7 +212,7 @@ def load_saved_model_diff(saved_path, model, finetune_flag=False):
             print(f"!!! Created model has keys: {diff_keys.keys()}, \
                 which are not in the model you have trained!!!")
         model.load_state_dict(trained_model_dict, strict=False)
-        return eval(file_list[0].split("/")[-1].rstrip(".pth").lstrip("net_epoch_bestval_at")), model
+        return bestval_epoch, model
 
     initial_epoch = findLastCheckpoint(saved_path)
     if initial_epoch > 0:
@@ -464,6 +469,8 @@ def setup_lr_schedular(hypes, optimizer, init_epoch=None):
 
 
 def to_device(inputs, device):
+    if inputs is None:
+        return None
     if isinstance(inputs, list):
         return [to_device(x, device) for x in inputs]
     elif isinstance(inputs, dict):        

@@ -155,7 +155,7 @@ class BaseDataset(Dataset):
                             # when init the dataset, it read over all pcd files.
                             # it maybe slow, but no need to perform keypoint sampling for each time.\
                             kp_file_path = f"{self.params['select_kp']['kp_path']}_{self.params['select_kp']['n_samples']}/{scenario_folders_name[i]}/{cav_id}/{timestamp}.npy"
-                            kp_dir = kp_file_path.rsplit('/',1)[0]
+                            kp_dir = os.path.dirname(kp_file_path)
 
                             if not os.path.exists(kp_dir):
                                 os.makedirs(kp_dir)
@@ -280,7 +280,7 @@ class BaseDataset(Dataset):
         timestamps = []
 
         for file in yaml_files:
-            res = file.split('/')[-1]
+            res = os.path.basename(file)
 
             timestamp = res.replace('.yaml', '')
             timestamp = timestamp.replace('.json', '')

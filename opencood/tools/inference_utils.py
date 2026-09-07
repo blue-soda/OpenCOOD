@@ -11,7 +11,11 @@ import torch
 
 from opencood.utils.common_utils import torch_tensor_to_numpy
 from opencood.visualization import vis_utils, my_vis, simple_vis
-from opencood.tools.debug_tools import viz_compensation_latefusion_flow
+try:
+    from opencood.tools.debug_tools import viz_compensation_latefusion_flow
+except ModuleNotFoundError:
+    def viz_compensation_latefusion_flow(*args, **kwargs):
+        return None
 def inference_late_fusion(batch_data, model, dataset):
     """
     Model inference for late fusion.

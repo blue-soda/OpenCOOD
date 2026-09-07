@@ -9,20 +9,81 @@ import sys
 
 import numpy as np
 import torch
-from icecream import ic
 
 from opencood.data_utils.pre_processor.base_preprocessor import \
     BasePreprocessor
+
+
+class NumpyVoxelGenerator(object):
+    def __init__(self, voxel_size, point_cloud_range, max_num_points, max_voxels):
+        self.voxel_size = np.asarray(voxel_size, dtype=np.float32)
+        self.point_cloud_range = np.asarray(point_cloud_range, dtype=np.float32)
+        self.max_num_points = int(max_num_points)
+        self.max_voxels = int(max_voxels)
+        grid = (self.point_cloud_range[3:6] - self.point_cloud_range[0:3]) / self.voxel_size
+        self.grid_size = np.round(grid).astype(np.int64)
+
+    def generate(self, points):
+        points = np.asarray(points, dtype=np.float32)
+        xyz = points[:, :3]
+        mask = np.all((xyz >= self.point_cloud_range[:3]) & (xyz < self.point_cloud_range[3:6]), axis=1)
+        points = points[mask]
+        if points.shape[0] == 0:
+            return (
+                np.zeros((0, self.max_num_points, points.shape[1] if points.ndim == 2 else 4), dtype=np.float32),
+                np.zeros((0, 3), dtype=np.int32),
+                np.zeros((0,), dtype=np.int32),
+            )
+
+        voxel_xyz = np.floor((points[:, :3] - self.point_cloud_range[:3]) / self.voxel_size).astype(np.int32)
+        voxel_xyz = np.minimum(voxel_xyz, self.grid_size.astype(np.int32) - 1)
+
+        voxel_map = {}
+        voxel_features = []
+        voxel_coords = []
+        voxel_num_points = []
+        feature_dim = points.shape[1]
+
+        for point, coord_xyz in zip(points, voxel_xyz):
+            coord_zyx = (int(coord_xyz[2]), int(coord_xyz[1]), int(coord_xyz[0]))
+            voxel_idx = voxel_map.get(coord_zyx)
+            if voxel_idx is None:
+                if len(voxel_features) >= self.max_voxels:
+                    continue
+                voxel_idx = len(voxel_features)
+                voxel_map[coord_zyx] = voxel_idx
+                voxel_features.append(np.zeros((self.max_num_points, feature_dim), dtype=np.float32))
+                voxel_coords.append(coord_zyx)
+                voxel_num_points.append(0)
+
+            num = voxel_num_points[voxel_idx]
+            if num < self.max_num_points:
+                voxel_features[voxel_idx][num] = point
+                voxel_num_points[voxel_idx] = num + 1
+
+        return (
+            np.asarray(voxel_features, dtype=np.float32),
+            np.asarray(voxel_coords, dtype=np.int32),
+            np.asarray(voxel_num_points, dtype=np.int32),
+        )
 
 
 class SpVoxelPreprocessor(BasePreprocessor):
     def __init__(self, preprocess_params, train):
         super(SpVoxelPreprocessor, self).__init__(preprocess_params,
                                                   train)
+        voxel_generator_cls = None
+        self.spconv_version = 1
         try:
             from spconv.utils import VoxelGeneratorV2 as VoxelGenerator
-        except:
-            from spconv.utils import VoxelGenerator   
+            voxel_generator_cls = VoxelGenerator
+        except Exception:
+            try:
+                from spconv.utils import VoxelGenerator
+                voxel_generator_cls = VoxelGenerator
+            except Exception:
+                voxel_generator_cls = NumpyVoxelGenerator
+                self.spconv_version = 0
 
         self.lidar_range = self.params['cav_lidar_range']
         self.voxel_size = self.params['args']['voxel_size']
@@ -44,7 +105,7 @@ class SpVoxelPreprocessor(BasePreprocessor):
         self.grid_size = np.round(grid_size).astype(np.int64)
 
         # use sparse conv library to generate voxel
-        self.voxel_generator = VoxelGenerator(
+        self.voxel_generator = voxel_generator_cls(
             voxel_size=self.voxel_size,
             point_cloud_range=self.lidar_range,
             max_num_points=self.max_points_per_voxel,

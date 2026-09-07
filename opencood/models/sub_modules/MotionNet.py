@@ -172,7 +172,7 @@ class STPN(nn.Module):
         x_4 = F.relu(self.bn4_2(self.conv4_2(x_4)))
 
         # -------------------------------- Decoder Path --------------------------------
-        x_5 = F.relu(self.bn5_1(self.conv5_1(torch.cat((F.interpolate(x_4, scale_factor=(2, 2)), x_3), dim=1))))
+        x_5 = F.relu(self.bn5_1(self.conv5_1(torch.cat((F.interpolate(x_4, size=x_3.shape[-2:]), x_3), dim=1))))
         x_5 = F.relu(self.bn5_2(self.conv5_2(x_5)))
 
         x_2 = x_2.view(batch, -1, x_2.size(1), x_2.size(2), x_2.size(3))
@@ -181,7 +181,7 @@ class STPN(nn.Module):
         x_2 = x_2.permute(0, 2, 1, 3, 4).contiguous()
         x_2 = x_2.view(-1, x_2.size(2), x_2.size(3), x_2.size(4)).contiguous()
 
-        x_6 = F.relu(self.bn6_1(self.conv6_1(torch.cat((F.interpolate(x_5, scale_factor=(2, 2)), x_2), dim=1))))
+        x_6 = F.relu(self.bn6_1(self.conv6_1(torch.cat((F.interpolate(x_5, size=x_2.shape[-2:]), x_2), dim=1))))
         x_6 = F.relu(self.bn6_2(self.conv6_2(x_6)))
 
         x_1 = x_1.view(batch, -1, x_1.size(1), x_1.size(2), x_1.size(3))
@@ -190,7 +190,7 @@ class STPN(nn.Module):
         x_1 = x_1.permute(0, 2, 1, 3, 4).contiguous()
         x_1 = x_1.view(-1, x_1.size(2), x_1.size(3), x_1.size(4)).contiguous()
 
-        x_7 = F.relu(self.bn7_1(self.conv7_1(torch.cat((F.interpolate(x_6, scale_factor=(2, 2)), x_1), dim=1))))
+        x_7 = F.relu(self.bn7_1(self.conv7_1(torch.cat((F.interpolate(x_6, size=x_1.shape[-2:]), x_1), dim=1))))
         x_7 = F.relu(self.bn7_2(self.conv7_2(x_7)))
 
         x = x.view(batch, -1, x.size(1), x.size(2), x.size(3))

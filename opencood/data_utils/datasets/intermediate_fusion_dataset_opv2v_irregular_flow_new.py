@@ -160,9 +160,17 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
         for (i, scenario_folder) in enumerate(scenario_folders):
             self.scenario_database.update({i: OrderedDict()})
 
-            # copy timestamps npy file, store all irregular timestamps of each non-ego vehicle in this scenario
+            # store all irregular timestamps of each non-ego vehicle in this scenario
             timestamps_file = os.path.join(scenario_folder, 'timestamps.npy')
-            time_annotations = np.load(timestamps_file)
+            if os.path.exists(timestamps_file):
+                time_annotations = np.load(timestamps_file)
+            elif not self.is_ab_regular:
+                raise FileNotFoundError(
+                    'timestamps.npy is required for non-regular irregular sampling: %s'
+                    % timestamps_file
+                )
+            else:
+                time_annotations = None
 
             # at least 1 cav should show up
             cav_list = sorted([x 
@@ -174,29 +182,13 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
             yaml_files = sorted([x
                         for x in os.listdir(os.path.join(scenario_folder, cav_list[0])) if
                         x.endswith(".json")], 
-                        key=lambda y:float((y.split('/')[-1]).split('.json')[0]))
+                        key=lambda y:float(os.path.splitext(os.path.basename(y))[0]))
             if len(yaml_files)==0:
                 yaml_files = sorted([x 
                             for x in os.listdir(os.path.join(scenario_folder, cav_list[0])) if
-                            x.endswith('.yaml')], key=lambda y:float((y.split('/')[-1]).split('.yaml')[0]))
+                            x.endswith('.yaml')], key=lambda y:float(os.path.splitext(os.path.basename(y))[0]))
 
-            start_timestamp = int(float(self.extract_timestamps(yaml_files)[0]))
-            while(1):
-                time_id_json = ("%.3f" % float(start_timestamp)) + ".json"
-                time_id_yaml = ("%.3f" % float(start_timestamp)) + ".yaml"
-                if not (time_id_json in yaml_files or time_id_yaml in yaml_files):
-                    start_timestamp += 1
-                else:
-                    break
-
-            end_timestamp = int(float(self.extract_timestamps(yaml_files)[-1]))
-            if start_timestamp%2 == 0:
-                # even
-                end_timestamp = end_timestamp-1 if end_timestamp%2==1 else end_timestamp
-            else:
-                end_timestamp = end_timestamp-1 if end_timestamp%2==0 else end_timestamp
-            num_timestamps = int((end_timestamp - start_timestamp)/2 + 1)
-            regular_timestamps = [start_timestamp+2*i for i in range(num_timestamps)]
+            regular_timestamps = self.extract_timestamps(yaml_files)
 
             # loop over all CAV data
             for (j, cav_id) in enumerate(cav_list):
@@ -216,19 +208,19 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
                         timestamps = list(time_annotations[j-1, :])
 
                 for timestamp in timestamps:
-                    timestamp = "%.3f" % float(timestamp)
-                    self.scenario_database[i][cav_id][timestamp] = \
+                    timestamp_key = self.format_timestamp_key(timestamp)
+                    self.scenario_database[i][cav_id][timestamp_key] = \
                         OrderedDict()
 
                     yaml_file = os.path.join(cav_path,
-                                             timestamp + '.yaml')
+                                             timestamp_key + '.yaml')
                     lidar_file = os.path.join(cav_path,
-                                              timestamp + '.pcd')
+                                               timestamp_key + '.pcd')
                     # camera_files = self.load_camera_files(cav_path, timestamp)
 
-                    self.scenario_database[i][cav_id][timestamp]['yaml'] = \
+                    self.scenario_database[i][cav_id][timestamp_key]['yaml'] = \
                         yaml_file
-                    self.scenario_database[i][cav_id][timestamp]['lidar'] = \
+                    self.scenario_database[i][cav_id][timestamp_key]['lidar'] = \
                         lidar_file
                     # self.scenario_database[i][cav_id][timestamp]['camera0'] = \
                         # camera_files
@@ -236,19 +228,19 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
                 # regular的timestamps 用于做 curr 真实时刻的ground truth
                 self.scenario_database[i][cav_id]['regular'] = OrderedDict()
                 for timestamp in regular_timestamps:
-                    timestamp = "%.3f" % float(timestamp)
-                    self.scenario_database[i][cav_id]['regular'][timestamp] = \
+                    timestamp_key = self.format_timestamp_key(timestamp)
+                    self.scenario_database[i][cav_id]['regular'][timestamp_key] = \
                         OrderedDict()
 
                     yaml_file = os.path.join(cav_path,
-                                             timestamp + '.yaml')
+                                             timestamp_key + '.yaml')
                     lidar_file = os.path.join(cav_path,
-                                              timestamp + '.pcd')
+                                               timestamp_key + '.pcd')
                     # camera_files = self.load_camera_files(cav_path, timestamp)
 
-                    self.scenario_database[i][cav_id]['regular'][timestamp]['yaml'] = \
+                    self.scenario_database[i][cav_id]['regular'][timestamp_key]['yaml'] = \
                         yaml_file
-                    self.scenario_database[i][cav_id]['regular'][timestamp]['lidar'] = \
+                    self.scenario_database[i][cav_id]['regular'][timestamp_key]['lidar'] = \
                         lidar_file
 
                 # Assume all cavs will have the same timestamps length. Thus
@@ -298,7 +290,7 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
         timestamps = []
 
         for file in yaml_files:
-            res = file.split('/')[-1]
+            res = os.path.basename(file)
             if res.endswith('.yaml'):
                 timestamp = res.replace('.yaml', '')
             elif res.endswith('.json'):
@@ -309,6 +301,12 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
             timestamps.append(timestamp)
 
         return timestamps
+
+    @staticmethod
+    def format_timestamp_key(timestamp):
+        if isinstance(timestamp, str):
+            return timestamp
+        return "%.3f" % float(timestamp)
 
     def retrieve_base_data(self, idx):
         """
@@ -444,7 +442,7 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
 
             # print(json_file)
             # store the scene name, which is convinient for debug
-            scene_name = json_file.split('/')[-3]
+            scene_name = os.path.basename(os.path.dirname(os.path.dirname(json_file)))
             if os.path.exists(json_file):
                 with open(json_file, "r") as f:
                     data[cav_id]['curr']['params'] = json.load(f)
