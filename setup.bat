@@ -8,9 +8,9 @@ rem   CONDA_ENV_NAME=opencood
 rem   PYTHON_VERSION=3.7.11
 rem   TORCH_VARIANT=cu113
 rem   FORCE_RECREATE=1
-rem   INSTALL_SPCONV121=1 to try building spconv 1.2.1
+rem   INSTALL_SPCONV121=0 to skip the default spconv 1.2.1 build
 rem   COMPILE_CUDA_EXTENSIONS=0 to skip the default bbox CUDA extension build
-rem   COMPILE_PCDET_EXTENSIONS=1 to build optional pcdet extensions
+rem   COMPILE_PCDET_EXTENSIONS=0 to skip the default pcdet extension build
 rem   SKIP_PYPCD=1
 
 set "ROOT_DIR=%~dp0"
@@ -20,9 +20,9 @@ if "%CONDA_ENV_NAME%"=="" set "CONDA_ENV_NAME=opencood"
 if "%PYTHON_VERSION%"=="" set "PYTHON_VERSION=3.7.11"
 if "%TORCH_VARIANT%"=="" set "TORCH_VARIANT=cu113"
 if "%FORCE_RECREATE%"=="" set "FORCE_RECREATE=0"
-if "%INSTALL_SPCONV121%"=="" set "INSTALL_SPCONV121=0"
+if "%INSTALL_SPCONV121%"=="" set "INSTALL_SPCONV121=1"
 if "%COMPILE_CUDA_EXTENSIONS%"=="" set "COMPILE_CUDA_EXTENSIONS=1"
-if "%COMPILE_PCDET_EXTENSIONS%"=="" set "COMPILE_PCDET_EXTENSIONS=0"
+if "%COMPILE_PCDET_EXTENSIONS%"=="" set "COMPILE_PCDET_EXTENSIONS=1"
 if "%SKIP_PYPCD%"=="" set "SKIP_PYPCD=0"
 
 where conda >nul 2>&1
