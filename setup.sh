@@ -11,9 +11,11 @@ set -euo pipefail
 #   PYTHON_VERSION=3.7.11
 #   TORCH_VARIANT=cu113
 #   FORCE_RECREATE=1
-#   INSTALL_SPCONV121=0 to skip the default spconv 1.2.1 build
+#   INSTALL_SPCONV2=0 to skip the default spconv 2.x wheel installation
+#   SPCONV2_PACKAGE=spconv-cu113
+#   INSTALL_SPCONV121=1 to build legacy spconv 1.2.1 from source
 #   COMPILE_CUDA_EXTENSIONS=0 to skip the default bbox CUDA extension build
-#   COMPILE_PCDET_EXTENSIONS=0 to skip the default pcdet extension build
+#   COMPILE_PCDET_EXTENSIONS=1 to build optional FPV-RCNN pcdet CUDA extensions
 #   SKIP_PYPCD=1
 #   PIP_DEFAULT_TIMEOUT=1000
 #   PIP_RETRIES=10
@@ -27,9 +29,11 @@ CLONE_FROM_ENV="${CLONE_FROM_ENV:-}"
 PYTHON_VERSION="${PYTHON_VERSION:-3.7.11}"
 TORCH_VARIANT="${TORCH_VARIANT:-cu113}"
 FORCE_RECREATE="${FORCE_RECREATE:-0}"
-INSTALL_SPCONV121="${INSTALL_SPCONV121:-1}"
+INSTALL_SPCONV2="${INSTALL_SPCONV2:-1}"
+SPCONV2_PACKAGE="${SPCONV2_PACKAGE:-spconv-cu113}"
+INSTALL_SPCONV121="${INSTALL_SPCONV121:-0}"
 COMPILE_CUDA_EXTENSIONS="${COMPILE_CUDA_EXTENSIONS:-1}"
-COMPILE_PCDET_EXTENSIONS="${COMPILE_PCDET_EXTENSIONS:-1}"
+COMPILE_PCDET_EXTENSIONS="${COMPILE_PCDET_EXTENSIONS:-0}"
 SKIP_PYPCD="${SKIP_PYPCD:-0}"
 PIP_DEFAULT_TIMEOUT="${PIP_DEFAULT_TIMEOUT:-1000}"
 PIP_RETRIES="${PIP_RETRIES:-10}"
@@ -106,6 +110,7 @@ PY
       -f "https://download.pytorch.org/whl/${TORCH_VARIANT}/torch_stable.html" \
       --no-deps
   fi
+  prepend_torch_dll_dir
   if [[ "$INSTALL_CONDA_CUDNN_BOOST" == "1" ]]; then
     log "Installing optional conda cudnn/boost packages"
     conda install -y -n "$CONDA_ENV_NAME" cudnn boost -c conda-forge
@@ -138,6 +143,18 @@ PY
     pyquaternion \
     ipdb \
     python-lzf
+
+  if [[ "$INSTALL_SPCONV2" == "1" ]]; then
+    log "Installing spconv 2.x wheel package: $SPCONV2_PACKAGE"
+    python -m pip install --default-timeout "$PIP_DEFAULT_TIMEOUT" --retries "$PIP_RETRIES" "$SPCONV2_PACKAGE"
+    python - <<'PY'
+import spconv
+import spconv.pytorch as spconv_pt
+print("spconv", spconv.__version__, spconv.__file__)
+PY
+  else
+    warn "Skipping spconv 2.x wheel installation. Set INSTALL_SPCONV2=1 to install it."
+  fi
 }
 
 install_pypcd() {
@@ -190,7 +207,7 @@ install_opencood() {
 
 install_spconv121() {
   if [[ "$INSTALL_SPCONV121" != "1" ]]; then
-    warn "Skipping spconv 1.2.1 build. Set INSTALL_SPCONV121=1 to try it."
+    warn "Skipping legacy spconv 1.2.1 source build. Set INSTALL_SPCONV121=1 to try it."
     return
   fi
 
@@ -214,6 +231,27 @@ install_spconv121() {
   [[ -n "$wheel" ]] || fail "spconv wheel was not generated."
   python -m pip install --default-timeout "$PIP_DEFAULT_TIMEOUT" --retries "$PIP_RETRIES" "$wheel"
   popd >/dev/null
+}
+
+prepend_torch_dll_dir() {
+  if [[ "$(python - <<'PY'
+import os
+print(os.name)
+PY
+)" != "nt" ]]; then
+    return
+  fi
+  local torch_lib
+  torch_lib="$(python - <<'PY'
+import pathlib
+import torch
+print(pathlib.Path(torch.__file__).resolve().parent / "lib")
+PY
+)"
+  if [[ -d "$torch_lib" ]]; then
+    export PATH="$torch_lib:$PATH"
+    log "Added PyTorch DLL directory to PATH: $torch_lib"
+  fi
 }
 
 ensure_cuda_home() {
@@ -257,7 +295,8 @@ except Exception as exc:
     print("pypcd failed", repr(exc))
 try:
     import spconv
-    print("spconv ok", pathlib.Path(spconv.__file__).resolve())
+    import spconv.pytorch as spconv_pt
+    print("spconv ok", spconv.__version__, pathlib.Path(spconv.__file__).resolve())
 except Exception as exc:
     print("spconv unavailable; patched OpenCOOD will use NumPy voxelization fallback:", repr(exc))
 PY

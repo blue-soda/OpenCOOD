@@ -9,9 +9,11 @@ rem   CLONE_FROM_ENV=opencda to clone a known-good CUDA environment first
 rem   PYTHON_VERSION=3.7.11
 rem   TORCH_VARIANT=cu113
 rem   FORCE_RECREATE=1
-rem   INSTALL_SPCONV121=0 to skip the default spconv 1.2.1 build
+rem   INSTALL_SPCONV2=0 to skip the default spconv 2.x wheel installation
+rem   SPCONV2_PACKAGE=spconv-cu113
+rem   INSTALL_SPCONV121=1 to build legacy spconv 1.2.1 from source
 rem   COMPILE_CUDA_EXTENSIONS=0 to skip the default bbox CUDA extension build
-rem   COMPILE_PCDET_EXTENSIONS=0 to skip the default pcdet extension build
+rem   COMPILE_PCDET_EXTENSIONS=1 to build optional FPV-RCNN pcdet CUDA extensions
 rem   SKIP_PYPCD=1
 rem   PIP_DEFAULT_TIMEOUT=1000
 rem   PIP_RETRIES=10
@@ -27,9 +29,11 @@ if "%CLONE_FROM_ENV%"=="" set "CLONE_FROM_ENV=opencda"
 if "%PYTHON_VERSION%"=="" set "PYTHON_VERSION=3.7.11"
 if "%TORCH_VARIANT%"=="" set "TORCH_VARIANT=cu113"
 if "%FORCE_RECREATE%"=="" set "FORCE_RECREATE=0"
-if "%INSTALL_SPCONV121%"=="" set "INSTALL_SPCONV121=1"
+if "%INSTALL_SPCONV2%"=="" set "INSTALL_SPCONV2=1"
+if "%SPCONV2_PACKAGE%"=="" set "SPCONV2_PACKAGE=spconv-cu113"
+if "%INSTALL_SPCONV121%"=="" set "INSTALL_SPCONV121=0"
 if "%COMPILE_CUDA_EXTENSIONS%"=="" set "COMPILE_CUDA_EXTENSIONS=1"
-if "%COMPILE_PCDET_EXTENSIONS%"=="" set "COMPILE_PCDET_EXTENSIONS=1"
+if "%COMPILE_PCDET_EXTENSIONS%"=="" set "COMPILE_PCDET_EXTENSIONS=0"
 if "%SKIP_PYPCD%"=="" set "SKIP_PYPCD=0"
 if "%PIP_DEFAULT_TIMEOUT%"=="" set "PIP_DEFAULT_TIMEOUT=1000"
 if "%PIP_RETRIES%"=="" set "PIP_RETRIES=10"
@@ -86,6 +90,7 @@ if errorlevel 1 (
 ) else (
     echo [setup] PyTorch CUDA wheel already satisfies torch==1.10.0+%TORCH_VARIANT%; skipping download.
 )
+call :prepend_torch_dll_dir || goto setup_failed
 if "%INSTALL_CONDA_CUDNN_BOOST%"=="1" (
     echo [setup] Installing optional conda cudnn/boost packages
     call conda install -y -n "%CONDA_ENV_NAME%" cudnn boost -c conda-forge || goto setup_failed
@@ -121,6 +126,14 @@ set "REQ_FILE=%TEMP%\opencood_requirements_%RANDOM%.txt"
 echo [setup] Installing Python dependencies
 python -m pip install --default-timeout %PIP_DEFAULT_TIMEOUT% --retries %PIP_RETRIES% --upgrade -r "%REQ_FILE%" || goto setup_failed
 del "%REQ_FILE%" >nul 2>&1
+
+if "%INSTALL_SPCONV2%"=="1" (
+    echo [setup] Installing spconv 2.x wheel package: %SPCONV2_PACKAGE%
+    python -m pip install --default-timeout %PIP_DEFAULT_TIMEOUT% --retries %PIP_RETRIES% "%SPCONV2_PACKAGE%" || goto setup_failed
+    python -c "import spconv; import spconv.pytorch as spconv_pt; print('spconv', spconv.__version__, spconv.__file__)" || goto setup_failed
+) else (
+    echo [setup] Skipping spconv 2.x wheel installation. Set INSTALL_SPCONV2=1 to install it.
+)
 
 if "%SKIP_PYPCD%"=="1" (
     echo [setup] Skipping pypcd installation because SKIP_PYPCD=1
@@ -171,13 +184,13 @@ if "%INSTALL_SPCONV121%"=="1" (
     python -m pip install --default-timeout %PIP_DEFAULT_TIMEOUT% --retries %PIP_RETRIES% "dist\!SPCONV_WHEEL!" || goto setup_failed
     popd
 ) else (
-    echo [setup] Skipping spconv 1.2.1 build. Set INSTALL_SPCONV121=1 to try it.
+    echo [setup] Skipping legacy spconv 1.2.1 source build. Set INSTALL_SPCONV121=1 to try it.
 )
 
 echo [setup] Running import diagnostics
 python -c "import pathlib, sys, torch, opencood; from opencood.version import __version__; print('python', sys.version); print('torch', torch.__version__, 'cuda_available', torch.cuda.is_available()); print('opencood', __version__, pathlib.Path(opencood.__file__).resolve())" || goto setup_failed
 python -c "import pypcd, pathlib; print('pypcd ok', pathlib.Path(pypcd.__file__).resolve())" || echo [setup][warn] pypcd is not importable.
-python -c "import spconv, pathlib; print('spconv ok', pathlib.Path(spconv.__file__).resolve())" || echo [setup][warn] spconv is not importable; patched OpenCOOD will use NumPy voxelization fallback.
+python -c "import spconv, pathlib; import spconv.pytorch as spconv_pt; print('spconv ok', spconv.__version__, pathlib.Path(spconv.__file__).resolve())" || echo [setup][warn] spconv is not importable; patched OpenCOOD will use NumPy voxelization fallback.
 
 echo.
 echo [setup] Setup completed.
@@ -188,6 +201,17 @@ echo   set PYTHONPATH=%ROOT_DIR%
 echo   set PYTHONUTF8=1
 echo.
 goto setup_success
+
+:prepend_torch_dll_dir
+set "TORCH_LIB_DIR="
+for /f "delims=" %%P in ('python -c "import pathlib, torch; print(pathlib.Path(torch.__file__).resolve().parent / 'lib')" 2^>nul') do (
+    if not defined TORCH_LIB_DIR set "TORCH_LIB_DIR=%%P"
+)
+if defined TORCH_LIB_DIR if exist "!TORCH_LIB_DIR!" (
+    set "PATH=!TORCH_LIB_DIR!;!PATH!"
+    echo [setup] Added PyTorch DLL directory to PATH: !TORCH_LIB_DIR!
+)
+exit /b 0
 
 :ensure_cuda_home
 if not "%CUDA_HOME%"=="" (

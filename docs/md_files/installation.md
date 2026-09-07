@@ -42,9 +42,13 @@ pip install -r requirements.txt
 ### 2. Pytorch Installation (>=1.8)
 Go to https://pytorch.org/ to install pytorch cuda version.
 
-### 3. Spconv (1.2.1 requred)
-OpenCOOD currently uses the old spconv version to generate voxel features. We will 
-upgrade to spconv 2.0 in the short future. To install spconv 1.2.1, please follow the guide in https://github.com/traveller59/spconv/tree/v1.2.1.
+### 3. Spconv
+This fork supports the `spconv 2.x` PyPI wheels, such as `spconv-cu113` for the
+default PyTorch CUDA 11.3 runtime. The local setup scripts install this wheel
+path by default.
+
+The legacy OpenCOOD path used `spconv 1.2.1`. To reproduce that exact stack,
+please follow the guide in https://github.com/traveller59/spconv/tree/v1.2.1.
 
 #### Tips for installing spconv 1.2.1:
 1. make sure your cmake version >= 3.13.2

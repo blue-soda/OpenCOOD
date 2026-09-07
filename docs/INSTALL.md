@@ -34,7 +34,13 @@ source ~/.bashrc
 conda activate cobevflow
 ```
 
-## 2. Install Spconv==1.2.1
+## 2. Install Spconv
+The setup scripts in this fork install `spconv 2.x` wheels by default, for
+example `spconv-cu113` when using the default PyTorch CUDA 11.3 runtime. This
+avoids building the legacy `spconv 1.2.1` source package on Windows.
+
+The old CoBEVFlow/OpenCOOD installation path is still useful on Linux systems
+that need exact legacy reproduction:
 ```bash
 # STEP 2.1
 # clone spcon==1.2.1 
