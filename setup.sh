@@ -7,6 +7,7 @@ set -euo pipefail
 #
 # Optional environment variables:
 #   CONDA_ENV_NAME=opencood
+#   CLONE_FROM_ENV= to clone a known-good conda environment first
 #   PYTHON_VERSION=3.7.11
 #   TORCH_VARIANT=cu113
 #   FORCE_RECREATE=1
@@ -14,11 +15,15 @@ set -euo pipefail
 #   COMPILE_CUDA_EXTENSIONS=0 to skip the default bbox CUDA extension build
 #   COMPILE_PCDET_EXTENSIONS=0 to skip the default pcdet extension build
 #   SKIP_PYPCD=1
+#   PIP_DEFAULT_TIMEOUT=1000
+#   PIP_RETRIES=10
+#   INSTALL_CONDA_CUDNN_BOOST=1 to install README's optional conda cudnn/boost packages
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-opencood}"
+CLONE_FROM_ENV="${CLONE_FROM_ENV:-}"
 PYTHON_VERSION="${PYTHON_VERSION:-3.7.11}"
 TORCH_VARIANT="${TORCH_VARIANT:-cu113}"
 FORCE_RECREATE="${FORCE_RECREATE:-0}"
@@ -26,6 +31,9 @@ INSTALL_SPCONV121="${INSTALL_SPCONV121:-1}"
 COMPILE_CUDA_EXTENSIONS="${COMPILE_CUDA_EXTENSIONS:-1}"
 COMPILE_PCDET_EXTENSIONS="${COMPILE_PCDET_EXTENSIONS:-1}"
 SKIP_PYPCD="${SKIP_PYPCD:-0}"
+PIP_DEFAULT_TIMEOUT="${PIP_DEFAULT_TIMEOUT:-1000}"
+PIP_RETRIES="${PIP_RETRIES:-10}"
+INSTALL_CONDA_CUDNN_BOOST="${INSTALL_CONDA_CUDNN_BOOST:-0}"
 
 log() {
   echo "[setup] $*"
@@ -70,37 +78,61 @@ ensure_env() {
   fi
 
   log "Creating conda environment: $CONDA_ENV_NAME"
+  if [[ -n "$CLONE_FROM_ENV" ]] && conda env list | awk '{print $1}' | grep -qx "$CLONE_FROM_ENV"; then
+    log "Cloning known-good environment: $CLONE_FROM_ENV -> $CONDA_ENV_NAME"
+    conda create -y -n "$CONDA_ENV_NAME" --clone "$CLONE_FROM_ENV"
+    return
+  elif [[ -n "$CLONE_FROM_ENV" ]]; then
+    warn "Clone source env '$CLONE_FROM_ENV' not found. Creating a fresh environment."
+  fi
   conda create -y -n "$CONDA_ENV_NAME" "python=$PYTHON_VERSION" pip=21.1.2 cmake=3.22.1
 }
 
 install_dependencies() {
-  log "Installing PyTorch wheels using the OpenCDA convention: $TORCH_VARIANT"
-  python -m pip install \
-    "torch==1.10.0+${TORCH_VARIANT}" \
-    "torchvision==0.11.1+${TORCH_VARIANT}" \
-    "torchaudio==0.10.0+${TORCH_VARIANT}" \
-    -f "https://download.pytorch.org/whl/${TORCH_VARIANT}/torch_stable.html" \
-    --no-deps
-  conda install -y -n "$CONDA_ENV_NAME" cudnn boost -c conda-forge
+  if python - <<PY >/dev/null 2>&1
+import torch
+raise SystemExit(0 if torch.__version__ == "1.10.0+${TORCH_VARIANT}" and torch.cuda.is_available() else 1)
+PY
+  then
+    log "PyTorch CUDA wheel already satisfies torch==1.10.0+${TORCH_VARIANT}; skipping download."
+  else
+    log "Installing PyTorch wheels using the OpenCDA convention: $TORCH_VARIANT"
+    python -m pip install \
+      --default-timeout "$PIP_DEFAULT_TIMEOUT" \
+      --retries "$PIP_RETRIES" \
+      "torch==1.10.0+${TORCH_VARIANT}" \
+      "torchvision==0.11.1+${TORCH_VARIANT}" \
+      "torchaudio==0.10.0+${TORCH_VARIANT}" \
+      -f "https://download.pytorch.org/whl/${TORCH_VARIANT}/torch_stable.html" \
+      --no-deps
+  fi
+  if [[ "$INSTALL_CONDA_CUDNN_BOOST" == "1" ]]; then
+    log "Installing optional conda cudnn/boost packages"
+    conda install -y -n "$CONDA_ENV_NAME" cudnn boost -c conda-forge
+  else
+    warn "Skipping optional conda cudnn/boost packages. Set INSTALL_CONDA_CUDNN_BOOST=1 to install them."
+  fi
 
   log "Installing Python dependencies"
   python -m pip install --upgrade \
+    --default-timeout "$PIP_DEFAULT_TIMEOUT" \
+    --retries "$PIP_RETRIES" \
     wheel \
     'setuptools<60' \
     'easydict~=1.9' \
-    numpy==1.19.5 \
+    'numpy>=1.20,<1.22' \
     numba==0.49.0 \
-    opencv-python==4.5.5.62 \
-    matplotlib==3.3.4 \
-    scipy==1.5.4 \
-    scikit-image==0.18.3 \
+    opencv-python==4.5.2.52 \
+    matplotlib==3.4.2 \
+    scipy==1.6.3 \
+    scikit-image \
     icecream \
     tqdm \
     PyYAML \
-    open3d==0.13.0 \
+    open3d==0.10.0.0 \
     cython \
     tensorboardX \
-    shapely==1.8.5.post1 \
+    shapely==1.8.4 \
     einops \
     h5py==3.8.0 \
     pyquaternion \
@@ -115,7 +147,7 @@ install_pypcd() {
   fi
 
   log "Installing and patching pypcd for Python 3"
-  python -m pip install git+https://github.com/klintan/pypcd.git
+  python -m pip install --default-timeout "$PIP_DEFAULT_TIMEOUT" --retries "$PIP_RETRIES" git+https://github.com/klintan/pypcd.git
   python - <<'PY'
 import pathlib
 import pypcd
@@ -138,7 +170,7 @@ PY
 
 install_opencood() {
   log "Installing OpenCOOD in editable mode"
-  python -m pip install -e "$ROOT_DIR"
+  python -m pip install --default-timeout "$PIP_DEFAULT_TIMEOUT" --retries "$PIP_RETRIES" -e "$ROOT_DIR" --no-deps
 
   if [[ "$COMPILE_CUDA_EXTENSIONS" == "1" ]]; then
     log "Building OpenCOOD CUDA/Cython bbox extensions"
@@ -148,6 +180,7 @@ install_opencood() {
   fi
 
   if [[ "$COMPILE_PCDET_EXTENSIONS" == "1" ]]; then
+    ensure_cuda_home
     log "Building optional OpenCOOD pcdet extensions"
     python "$ROOT_DIR/opencood/pcdet_utils/setup.py" build_ext --inplace
   else
@@ -162,7 +195,7 @@ install_spconv121() {
   fi
 
   need_cmd git
-  need_cmd nvcc
+  ensure_cuda_home
 
   local deps_dir="$ROOT_DIR/.deps"
   local spconv_dir="$deps_dir/spconv-v1.2.1"
@@ -179,8 +212,30 @@ install_spconv121() {
   local wheel
   wheel="$(find "$spconv_dir/dist" -maxdepth 1 -name 'spconv-1.2.1-*.whl' -print | sort | tail -n 1)"
   [[ -n "$wheel" ]] || fail "spconv wheel was not generated."
-  python -m pip install "$wheel"
+  python -m pip install --default-timeout "$PIP_DEFAULT_TIMEOUT" --retries "$PIP_RETRIES" "$wheel"
   popd >/dev/null
+}
+
+ensure_cuda_home() {
+  if [[ -n "${CUDA_HOME:-}" ]]; then
+    export CUDA_PATH="$CUDA_HOME"
+    export PATH="$CUDA_HOME/bin:$PATH"
+    return
+  fi
+  if [[ -n "${CUDA_PATH:-}" ]]; then
+    export CUDA_HOME="$CUDA_PATH"
+    export PATH="$CUDA_HOME/bin:$PATH"
+    return
+  fi
+  if command -v nvcc >/dev/null 2>&1; then
+    local nvcc_bin
+    nvcc_bin="$(dirname "$(command -v nvcc)")"
+    CUDA_HOME="$(cd "$nvcc_bin/.." && pwd)"
+    export CUDA_HOME CUDA_PATH="$CUDA_HOME" PATH="$CUDA_HOME/bin:$PATH"
+    log "Detected CUDA_HOME: $CUDA_HOME"
+    return
+  fi
+  fail "CUDA_HOME is required for pcdet_utils/spconv compilation, but nvcc was not found. PyTorch CUDA runtime can still work without nvcc; compiling CUDA extensions requires the full CUDA Toolkit."
 }
 
 run_diagnostics() {
