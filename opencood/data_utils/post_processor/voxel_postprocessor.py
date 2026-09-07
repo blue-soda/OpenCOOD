@@ -326,6 +326,7 @@ class VoxelPostprocessor(BasePostprocessor):
         
         psm_single = m_single['psm_single']
         rm_single = m_single['rm_single']
+        has_uncertainty = 'predict_unc_cls' in m_single and 'predict_unc_reg' in m_single
 
         use_dir_flag = False
         if 'dm_single' in m_single.keys():
@@ -357,6 +358,18 @@ class VoxelPostprocessor(BasePostprocessor):
         mask = mask.view(self.k, -1) # (k, HxWx2)
         mask_reg = mask.unsqueeze(2).repeat(1, 1, 7) # (k, HxWx2, 7)
 
+        if has_uncertainty:
+            predict_unc_cls = m_single['predict_unc_cls']
+            predict_unc_reg = m_single['predict_unc_reg']
+            cls_data_unc = predict_unc_cls[:, :self.anchor_num].permute(
+                0, 2, 3, 1).reshape(self.k, -1)
+            cls_model_unc = predict_unc_cls[:, self.anchor_num:].permute(
+                0, 2, 3, 1).reshape(self.k, -1)
+            reg_data_unc = predict_unc_reg[:, :self.anchor_num].permute(
+                0, 2, 3, 1).reshape(self.k, -1)
+            reg_model_unc = predict_unc_reg[:, self.anchor_num:].permute(
+                0, 2, 3, 1).reshape(self.k, -1)
+
         # during validation/testing, the batch size should be 1
         # assert batch_box3d.shape[0] == 1
 
@@ -371,6 +384,11 @@ class VoxelPostprocessor(BasePostprocessor):
             boxes3d = torch.masked_select(batch_box3d[i],
                                         mask_reg[i]).view(-1, 7)
             scores = torch.masked_select(prob[i], mask[i])
+            if has_uncertainty:
+                u_cls_data = torch.masked_select(cls_data_unc[i], mask[i])
+                u_cls_model = torch.masked_select(cls_model_unc[i], mask[i])
+                u_reg_data = torch.masked_select(reg_data_unc[i], mask[i])
+                u_reg_model = torch.masked_select(reg_model_unc[i], mask[i])
 
             ########### adding dir classifier
             if use_dir_flag and len(boxes3d)!=0:
@@ -421,6 +439,11 @@ class VoxelPostprocessor(BasePostprocessor):
 
                 projected_boxes3d = projected_boxes3d[keep_index]
                 scores = scores[keep_index]
+                if has_uncertainty:
+                    u_cls_data = u_cls_data[keep_index]
+                    u_cls_model = u_cls_model[keep_index]
+                    u_reg_data = u_reg_data[keep_index]
+                    u_reg_model = u_reg_model[keep_index]
 
                 # STEP3
                 # nms
@@ -431,6 +454,11 @@ class VoxelPostprocessor(BasePostprocessor):
                 pred_box3d_tensor = projected_boxes3d[keep_index]
                 # select cooresponding score
                 scores = scores[keep_index]
+                if has_uncertainty:
+                    u_cls_data = u_cls_data[keep_index]
+                    u_cls_model = u_cls_model[keep_index]
+                    u_reg_data = u_reg_data[keep_index]
+                    u_reg_model = u_reg_model[keep_index]
 
                 # filter out the prediction out of the range.
                 range_mask = \
@@ -438,6 +466,11 @@ class VoxelPostprocessor(BasePostprocessor):
                 pred_box_3dcorner_tensor = pred_box3d_tensor[range_mask, :, :]
                 scores = scores[range_mask]
                 pred_box_center_tensor = box_utils.corner_to_center_torch(pred_box_3dcorner_tensor, self.params['order'])
+                if has_uncertainty:
+                    u_cls_data = u_cls_data[range_mask]
+                    u_cls_model = u_cls_model[range_mask]
+                    u_reg_data = u_reg_data[range_mask]
+                    u_reg_model = u_reg_model[range_mask]
 
                 assert scores.shape[0] == pred_box_3dcorner_tensor.shape[0]
 
@@ -469,6 +502,13 @@ class VoxelPostprocessor(BasePostprocessor):
                         'pred_box_center_tensor': pred_box_center_tensor,
                         'scores': scores
                     })
+                if has_uncertainty:
+                    box_results[i].update({
+                        'u_cls_data': u_cls_data,
+                        'u_cls_model': u_cls_model,
+                        'u_reg_data': u_reg_data,
+                        'u_reg_model': u_reg_model
+                    })
 
             else:
                 box_results[i].update({
@@ -476,6 +516,13 @@ class VoxelPostprocessor(BasePostprocessor):
                     'pred_box_center_tensor': torch.Tensor(0, 7).to(scores.device),
                     'scores': torch.Tensor(0).to(scores.device)
                 })
+                if has_uncertainty:
+                    box_results[i].update({
+                        'u_cls_data': torch.Tensor(0).to(scores.device),
+                        'u_cls_model': torch.Tensor(0).to(scores.device),
+                        'u_reg_data': torch.Tensor(0).to(scores.device),
+                        'u_reg_model': torch.Tensor(0).to(scores.device)
+                    })
 
         return box_results
 

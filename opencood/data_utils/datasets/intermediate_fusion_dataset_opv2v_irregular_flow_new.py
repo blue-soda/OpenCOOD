@@ -98,6 +98,10 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
         self.is_generate_gt_flow = False
         if 'is_generate_gt_flow' in params and params['is_generate_gt_flow']:
             self.is_generate_gt_flow = True
+
+        self.generate_uncertainty = False
+        if params.get('model', {}).get('args', {}).get('use_uncertainty_guide', False):
+            self.generate_uncertainty = True
         
         # 只有在绘制每个sample的匹配框时用到 sizhewei
         self.viz_bbx_flag = False
@@ -1675,6 +1679,18 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
         }
         '''
         box_results = self.post_processor.single_post_process(m_single, trans_mat_pastk_2_past0, past_time_diff, anchor_box, self.k, self.num_roi_thres)
+        return box_results
+
+    def generate_pred_bbx_frames_w_uncertainty(self, m_single,
+                                               trans_mat_pastk_2_past0,
+                                               past_time_diff,
+                                               anchor_box,
+                                               pairwise_t_matrix_past0_2_cur):
+        box_results = self.post_processor.single_post_process(
+            m_single, trans_mat_pastk_2_past0, past_time_diff, anchor_box,
+            self.k, self.num_roi_thres)
+        box_results['matrix_past0_2_cur'] = \
+            pairwise_t_matrix_past0_2_cur.to(torch.float32)
         return box_results
 
 # if __name__ == '__main__':   
