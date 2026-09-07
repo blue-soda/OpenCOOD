@@ -43,6 +43,8 @@ def test_parser():
     parser.add_argument('--two_stage', help='whether to use two stage training', default=0, type=int)
     parser.add_argument('--config_suffix', default='', type=str, help='config suffix')
     parser.add_argument('--dataset', default='o', type=str, choices=['o', 'd'], help='which dataset will be used, o is for OPV2V/IRV2V, d is for DAIR-V2X.')
+    parser.add_argument('--debug_max_samples', default=0, type=int,
+                        help='maximum inference samples for smoke tests')
     opt = parser.parse_args()
     return opt
 
@@ -161,7 +163,10 @@ def main():
     avg_time_var = 0.0
     if opt.dataset == 'd':
         avg_cp_rate = 0.0
+    processed_samples = 0
     for i, batch_data in tenumerate(data_loader):
+        if opt.debug_max_samples > 0 and processed_samples >= opt.debug_max_samples:
+            break
         if batch_data is None:
             continue
         with torch.no_grad():
@@ -371,18 +376,21 @@ def main():
                     # box_save_path = os.path.join(box_save_folder, 'bbx_%05d_%s.pt' % (i, debug_path))
                     # torch.save(box_dict, box_save_path)
         torch.cuda.empty_cache()
+        processed_samples += 1
     end_time = time.time()
     print("Time Consumed: %.2f minutes" % ((end_time - start_time)/60))
         
     if opt.dataset == 'o':
-        avg_time_delay = (avg_time_delay/i) * 50 # unit is ms
-        avg_sample_interval /= i
-        avg_time_var /= i
+        denom = max(processed_samples, 1)
+        avg_time_delay = (avg_time_delay / denom) * 50 # unit is ms
+        avg_sample_interval /= denom
+        avg_time_var /= denom
         ap30, ap50, ap70 = eval_utils.eval_final_results(result_stat,
                                     opt.model_dir, noise_level, avg_time_delay, avg_sample_interval, avg_time_var, opt.note+'_'+str("%.2f"%hypes['binomial_p'])+f'_{noise_note}_roi_{num_roi_thres}')
     elif opt.dataset == 'd':
-        avg_sample_interval /= i
-        avg_cp_rate /= i
+        denom = max(processed_samples, 1)
+        avg_sample_interval /= denom
+        avg_cp_rate /= denom
         ap30, ap50, ap70 = eval_utils.eval_final_results(result_stat,
                                     opt.model_dir, noise_level=noise_level, avg_time_delay=avg_cp_rate, avg_sample_interval=avg_sample_interval, note=opt.note+'_'+str("%.2f"%hypes['binomial_p'])+f'_{noise_note}_roi_{num_roi_thres}', dataset=opt.dataset)
     print("Module with sample interval expection: {}".format(hypes['binomial_n']*hypes['binomial_p']))

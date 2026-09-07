@@ -349,7 +349,23 @@ class PointPillarWhere2commFlowTwoStage(nn.Module):
                 pastk_trans_mat_pastk_2_past0 = torch.from_numpy(np.stack(pastk_trans_mat_pastk_2_past0, axis=0)).to(device) # (k, 4, 4)
                 
                 # 1. generate one cav's box results
-                box_results[cav_idx] = dataset.generate_pred_bbx_frames(psm_single[cav_idx], rm_single[cav_idx], pastk_trans_mat_pastk_2_past0, cav_past_k_time_diff[cav_idx*self.k:cav_idx*self.k+self.k], anchor_box)
+                try:
+                    box_results[cav_idx] = dataset.generate_pred_bbx_frames(
+                        psm_single[cav_idx],
+                        rm_single[cav_idx],
+                        pastk_trans_mat_pastk_2_past0,
+                        cav_past_k_time_diff[cav_idx*self.k:cav_idx*self.k+self.k],
+                        anchor_box)
+                except TypeError:
+                    m_single = {
+                        'psm': psm_single[cav_idx],
+                        'rm': rm_single[cav_idx]
+                    }
+                    box_results[cav_idx] = dataset.generate_pred_bbx_frames(
+                        m_single,
+                        pastk_trans_mat_pastk_2_past0,
+                        cav_past_k_time_diff[cav_idx*self.k:cav_idx*self.k+self.k],
+                        anchor_box)
 
             cav_trans_mat_pastk_2_past0.append(pastk_trans_mat_pastk_2_past0)
             

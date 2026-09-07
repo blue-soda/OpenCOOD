@@ -44,15 +44,57 @@ def train_parser():
                         help='number of dataloader workers')
     parser.add_argument('--skip_test', action='store_true',
                         help='skip automatic inference after training')
+    parser.add_argument('--debug_max_iters', default=0, type=int,
+                        help='maximum training iterations per epoch for smoke tests')
+    parser.add_argument('--debug_max_val_iters', default=0, type=int,
+                        help='maximum validation iterations per epoch for smoke tests')
+    parser.add_argument('--debug_epoches', default=0, type=int,
+                        help='override train_params.epoches for smoke tests')
+    parser.add_argument('--debug_batch_size', default=0, type=int,
+                        help='override train_params.batch_size for smoke tests')
+    parser.add_argument('--debug_max_cav', default=0, type=int,
+                        help='override train_params.max_cav for smoke tests')
+    parser.add_argument('--root_dir', default='',
+                        help='override dataset root_dir')
+    parser.add_argument('--validate_dir', default='',
+                        help='override dataset validate_dir')
+    parser.add_argument('--test_dir', default='',
+                        help='override dataset test_dir')
+    parser.add_argument('--debug_regular_time', action='store_true',
+                        help='use regular OPV2V timestamps for irregular dataset smoke tests')
     opt = parser.parse_args()
     return opt
 
 
+def apply_debug_overrides(hypes, opt):
+    if opt.root_dir:
+        hypes['root_dir'] = opt.root_dir
+    if opt.validate_dir:
+        hypes['validate_dir'] = opt.validate_dir
+    if opt.test_dir:
+        hypes['test_dir'] = opt.test_dir
+    if opt.debug_epoches > 0:
+        hypes['train_params']['epoches'] = opt.debug_epoches
+    if opt.debug_batch_size > 0:
+        hypes['train_params']['batch_size'] = opt.debug_batch_size
+    if opt.debug_max_cav > 0:
+        hypes['train_params']['max_cav'] = opt.debug_max_cav
+        if 'model' in hypes and 'args' in hypes['model']:
+            hypes['model']['args']['max_cav'] = opt.debug_max_cav
+    if opt.debug_regular_time:
+        hypes['is_ab_regular'] = True
+    return hypes
+
+
 def main():
     opt = train_parser()
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(opt.device)
+    if str(opt.device).lower() == "cpu":
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+    elif str(opt.device).isdigit():
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(opt.device)
 
     hypes = yaml_utils.load_yaml(opt.hypes_yaml, opt)
+    hypes = apply_debug_overrides(hypes, opt)
 
     finetune_flag = False
     if 'is_finetune' in hypes:
@@ -88,7 +130,7 @@ def main():
     
     print('### Creating Model ... ###')
     model = train_utils.create_model(hypes)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() and str(opt.device).lower() != "cpu" else 'cpu')
     print("device: ", device)
 
     # record lowest validation loss checkpoint.
@@ -206,7 +248,10 @@ def main():
         
         sample_interval = 0
         i = 0
-        for i, batch_data in enumerate(train_loader): 
+        train_steps = 0
+        for i, batch_data in enumerate(train_loader):
+            if opt.debug_max_iters > 0 and train_steps >= opt.debug_max_iters:
+                break
             if batch_data is None:
                 continue
             model.train()
@@ -256,8 +301,9 @@ def main():
             # back-propagation
             final_loss.backward()
             optimizer.step()
+            train_steps += 1
         
-        sample_interval /= i
+        sample_interval /= max(train_steps, 1)
         sample_interval_all_epoch += sample_interval
 
         if epoch % hypes['train_params']['eval_freq'] == 0:
@@ -265,7 +311,10 @@ def main():
             end_time = time.time()
             print('### %d th epoch trained, start validation! Time consumed %.2f ###' % (epoch, (end_time - start_time)/60))
             with torch.no_grad():
+                val_steps = 0
                 for i, batch_data in tenumerate(val_loader):
+                    if opt.debug_max_val_iters > 0 and val_steps >= opt.debug_max_val_iters:
+                        break
                     if batch_data is None:
                         continue
                     model.zero_grad()
@@ -287,8 +336,9 @@ def main():
                     final_loss = criterion(ouput_dict,
                                            batch_data['ego']['label_dict'])
                     valid_ave_loss.append(final_loss.item())
+                    val_steps += 1
 
-            valid_ave_loss = statistics.mean(valid_ave_loss)
+            valid_ave_loss = statistics.mean(valid_ave_loss) if valid_ave_loss else float('inf')
             print('At epoch %d, the validation loss is %f' % (epoch,
                                                               valid_ave_loss))
             writer.add_scalar('Validate_Loss', valid_ave_loss, epoch)
