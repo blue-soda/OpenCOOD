@@ -8,9 +8,11 @@ set -euo pipefail
 # Optional environment variables:
 #   CONDA_ENV_NAME=opencood
 #   PYTHON_VERSION=3.7.11
+#   TORCH_VARIANT=cu113
 #   FORCE_RECREATE=1
-#   INSTALL_SPCONV121=1
-#   COMPILE_CUDA_EXTENSIONS=1
+#   INSTALL_SPCONV121=1 to try building spconv 1.2.1
+#   COMPILE_CUDA_EXTENSIONS=0 to skip the default bbox CUDA extension build
+#   COMPILE_PCDET_EXTENSIONS=1 to build optional pcdet extensions
 #   SKIP_PYPCD=1
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,9 +20,11 @@ cd "$ROOT_DIR"
 
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-opencood}"
 PYTHON_VERSION="${PYTHON_VERSION:-3.7.11}"
+TORCH_VARIANT="${TORCH_VARIANT:-cu113}"
 FORCE_RECREATE="${FORCE_RECREATE:-0}"
 INSTALL_SPCONV121="${INSTALL_SPCONV121:-0}"
-COMPILE_CUDA_EXTENSIONS="${COMPILE_CUDA_EXTENSIONS:-0}"
+COMPILE_CUDA_EXTENSIONS="${COMPILE_CUDA_EXTENSIONS:-1}"
+COMPILE_PCDET_EXTENSIONS="${COMPILE_PCDET_EXTENSIONS:-0}"
 SKIP_PYPCD="${SKIP_PYPCD:-0}"
 
 log() {
@@ -70,10 +74,13 @@ ensure_env() {
 }
 
 install_dependencies() {
-  log "Installing PyTorch 1.10.1 with CUDA 11.3 runtime"
-  conda install -y -n "$CONDA_ENV_NAME" \
-    pytorch==1.10.1 torchvision==0.11.2 torchaudio==0.10.1 cudatoolkit=11.3 \
-    -c pytorch -c conda-forge
+  log "Installing PyTorch wheels using the OpenCDA convention: $TORCH_VARIANT"
+  python -m pip install \
+    "torch==1.10.0+${TORCH_VARIANT}" \
+    "torchvision==0.11.1+${TORCH_VARIANT}" \
+    "torchaudio==0.10.0+${TORCH_VARIANT}" \
+    -f "https://download.pytorch.org/whl/${TORCH_VARIANT}/torch_stable.html" \
+    --no-deps
   conda install -y -n "$CONDA_ENV_NAME" cudnn boost -c conda-forge
 
   log "Installing Python dependencies"
@@ -134,11 +141,17 @@ install_opencood() {
   python -m pip install -e "$ROOT_DIR"
 
   if [[ "$COMPILE_CUDA_EXTENSIONS" == "1" ]]; then
-    log "Building OpenCOOD CUDA/Cython extensions"
+    log "Building OpenCOOD CUDA/Cython bbox extensions"
     python "$ROOT_DIR/opencood/utils/setup.py" build_ext --inplace
-    python "$ROOT_DIR/opencood/pcdet_utils/setup.py" build_ext --inplace
   else
     warn "Skipping OpenCOOD CUDA extension build. Set COMPILE_CUDA_EXTENSIONS=1 to try it."
+  fi
+
+  if [[ "$COMPILE_PCDET_EXTENSIONS" == "1" ]]; then
+    log "Building optional OpenCOOD pcdet extensions"
+    python "$ROOT_DIR/opencood/pcdet_utils/setup.py" build_ext --inplace
+  else
+    warn "Skipping optional pcdet extension build. Set COMPILE_PCDET_EXTENSIONS=1 to try it."
   fi
 }
 
