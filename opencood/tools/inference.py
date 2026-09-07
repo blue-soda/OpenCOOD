@@ -61,7 +61,7 @@ def main():
         assert "test" in hypes['validate_dir']
     
     # update binomial prob
-    if 'binomial_p' in hypes or opt.p is not None:
+    if opt.p is not None:
         hypes['binomial_p'] = opt.p
     if 'binomial_p' not in hypes and opt.p is None:
         hypes['binomial_p'] = 0.0

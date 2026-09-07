@@ -62,6 +62,10 @@ def train_parser():
                         help='override dataset test_dir')
     parser.add_argument('--debug_regular_time', action='store_true',
                         help='use regular OPV2V timestamps for irregular dataset smoke tests')
+    parser.add_argument('--debug_disable_single_supervise', action='store_true',
+                        help='disable single-view auxiliary supervision for smoke tests')
+    parser.add_argument('--debug_unfreeze_model', action='store_true',
+                        help='disable model backbone_fix/only_tune_header flags for smoke tests')
     opt = parser.parse_args()
     return opt
 
@@ -83,6 +87,11 @@ def apply_debug_overrides(hypes, opt):
             hypes['model']['args']['max_cav'] = opt.debug_max_cav
     if opt.debug_regular_time:
         hypes['is_ab_regular'] = True
+    if opt.debug_disable_single_supervise:
+        hypes['train_params']['supervise_single_flag'] = False
+    if opt.debug_unfreeze_model and 'model' in hypes and 'args' in hypes['model']:
+        hypes['model']['args']['backbone_fix'] = False
+        hypes['model']['args']['only_tune_header'] = False
     return hypes
 
 

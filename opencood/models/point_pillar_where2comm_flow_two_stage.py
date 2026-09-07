@@ -358,8 +358,8 @@ class PointPillarWhere2commFlowTwoStage(nn.Module):
                         anchor_box)
                 except TypeError:
                     m_single = {
-                        'psm': psm_single[cav_idx],
-                        'rm': rm_single[cav_idx]
+                        'psm_single': psm_single[cav_idx],
+                        'rm_single': rm_single[cav_idx]
                     }
                     box_results[cav_idx] = dataset.generate_pred_bbx_frames(
                         m_single,
