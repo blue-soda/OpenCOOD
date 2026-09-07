@@ -99,13 +99,23 @@ model:
     compression: 0 # compression rate
     backbone_fix: True
     num_sweep_frames: *past_k
+    design_mode: 0
+    num_roi_thres: -1
     ectra:
+      enabled: false
       feature_dim: 64
       hidden_dim: 16
       gate_dim: 16
       time_scale: 10.0
       motion_range: 8.0
       calib_range: 4.0
+    ectra_roi:
+      enabled: true
+      feature_dim: 64
+      hidden_dim: 32
+      time_scale: 10.0
+      residual_range: 2.0
+      min_trust: 0.05
 
     pillar_vfe:
       use_norm: true

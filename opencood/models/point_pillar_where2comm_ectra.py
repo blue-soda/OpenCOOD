@@ -15,10 +15,14 @@ from opencood.models.sub_modules.naive_compress import NaiveCompressor
 # from opencood.models.sub_modules.dcn_net import DCNNet
 # from opencood.models.fuse_modules.where2comm import Where2comm
 from opencood.models.fuse_modules.where2comm_attn import Where2comm
-from opencood.models.fuse_modules.raindrop_attn import raindrop_fuse
+from opencood.models.fuse_modules.raindrop_attn import raindrop_fuse as raindrop_attn_fuse
+from opencood.models.fuse_modules.raindrop_flow import raindrop_fuse as raindrop_flow_fuse
 from opencood.models.fuse_modules.raindrop_swin import raindrop_swin
 from opencood.models.fuse_modules.raindrop_swin_w_single import raindrop_swin_w_single
 from opencood.models.sub_modules.ectra_recurrent_alignment import EctraRecurrentAlignment
+from opencood.models.sub_modules.ectra_roi_flow_refiner import EctraRoiFlowRefiner
+from opencood.tools.matcher import Matcher
+from collections import OrderedDict
 import torch
 
 import numpy as np
@@ -155,6 +159,13 @@ class PointPillarWhere2commEctra(nn.Module):
         #     self.dcn = True
         #     self.dcn_net = DCNNet(args['dcn'])
 
+        self.design_mode = args.get('design_mode', 0)
+        self.num_roi_thres = args.get('num_roi_thres', -1)
+        self.viz_bbx_flag = args.get('viz_bbx_flag', False)
+        self.ectra_roi_flag = args.get('ectra_roi', {}).get('enabled', False)
+        self.ectra_dense_enabled = args.get('ectra', {}).get(
+            'enabled', not self.ectra_roi_flag)
+
         # 用于 single 部分的监督
         self.single_supervise = False
         if 'with_compensation' in args and args['with_compensation']:
@@ -166,10 +177,17 @@ class PointPillarWhere2commEctra(nn.Module):
                 self.rain_fusion = raindrop_swin(args['rain_model'])
         else: 
             self.compensation = False
-            self.rain_fusion = raindrop_fuse(args['rain_model'])
+            if self.ectra_roi_flag:
+                self.rain_fusion = raindrop_flow_fuse(
+                    args['rain_model'], self.design_mode)
+            else:
+                self.rain_fusion = raindrop_attn_fuse(args['rain_model'])
 
         self.multi_scale = args['rain_model']['multi_scale']
         self.ectra = EctraRecurrentAlignment(args.get('ectra', {}))
+        self.ectra_roi = EctraRoiFlowRefiner(args.get('ectra_roi', {})) \
+            if self.ectra_roi_flag else None
+        self.matcher = Matcher('flow') if self.ectra_roi_flag else None
         
         if self.shrink_flag:
             dim = args['shrink_header']['dim'][0]
@@ -257,7 +275,71 @@ class PointPillarWhere2commEctra(nn.Module):
             current_intervals.append(batch_t.view(cav_num, k)[:, 0])
         return torch.cat(current_intervals, dim=0)
 
-    def forward(self, data_dict):
+    def generate_box_flow(self, data_dict, pred_dict, dataset, device):
+        if dataset is None:
+            raise ValueError(
+                'ECTRA ROI mode needs dataset.generate_pred_bbx_frames; '
+                'run train.py/inference.py with --two_stage 1.')
+
+        lidar_pose_batch = self.regroup(
+            data_dict['past_lidar_pose'], data_dict['record_len'], k=1)
+        past_k_time_diff = self.regroup(
+            data_dict['past_k_time_interval'], data_dict['record_len'], k=self.k)
+        anchor_box = data_dict['anchor_box']
+        psm_single_list = pred_dict['psm_single_list']
+        rm_single_list = pred_dict['rm_single_list']
+
+        shape_list = torch.tensor([64, 200, 704], device=device)
+        box_flow_map_list = []
+        reserved_mask_list = []
+
+        for b, lidar_pose in enumerate(lidar_pose_batch):
+            cav_num = int(data_dict['record_len'][b].item())
+            box_results = OrderedDict()
+            psm_single = psm_single_list[b].reshape(
+                cav_num, self.k, psm_single_list[b].shape[1],
+                psm_single_list[b].shape[-2], psm_single_list[b].shape[-1])
+            rm_single = rm_single_list[b].reshape(
+                cav_num, self.k, rm_single_list[b].shape[1],
+                rm_single_list[b].shape[-2], rm_single_list[b].shape[-1])
+            cav_past_k_time_diff = past_k_time_diff[b].view(cav_num, self.k)
+
+            for cav_idx in range(cav_num):
+                pastk_trans_mat = []
+                for frame_idx in range(self.k):
+                    unit_mat = x1_to_x2(
+                        lidar_pose[cav_idx, frame_idx].cpu().numpy(),
+                        lidar_pose[cav_idx, 0].cpu().numpy())
+                    pastk_trans_mat.append(unit_mat)
+                pastk_trans_mat = torch.from_numpy(
+                    np.stack(pastk_trans_mat, axis=0)).to(device)
+
+                try:
+                    box_results[cav_idx] = dataset.generate_pred_bbx_frames(
+                        psm_single[cav_idx],
+                        rm_single[cav_idx],
+                        pastk_trans_mat,
+                        cav_past_k_time_diff[cav_idx],
+                        anchor_box)
+                except TypeError:
+                    single_pred = {
+                        'psm_single': psm_single[cav_idx],
+                        'rm_single': rm_single[cav_idx],
+                    }
+                    box_results[cav_idx] = dataset.generate_pred_bbx_frames(
+                        single_pred,
+                        pastk_trans_mat,
+                        cav_past_k_time_diff[cav_idx],
+                        anchor_box)
+
+            box_flow_map, reserved_mask = self.matcher(
+                box_results, shape_list=shape_list, viz_flag=self.viz_bbx_flag)
+            box_flow_map_list.append(box_flow_map)
+            reserved_mask_list.append(reserved_mask)
+
+        return torch.cat(box_flow_map_list, dim=0), torch.cat(reserved_mask_list, dim=0)
+
+    def forward(self, data_dict, dataset=None):
         voxel_features = data_dict['processed_lidar']['voxel_features']         #(M, 32, 4)
         voxel_coords = data_dict['processed_lidar']['voxel_coords']             #(M, 4)
         voxel_num_points = data_dict['processed_lidar']['voxel_num_points']     #(M, )
@@ -280,8 +362,10 @@ class PointPillarWhere2commEctra(nn.Module):
         # import ipdb; ipdb.set_trace()
         batch_dict = self.scatter(batch_dict)
         batch_dict = self.backbone(batch_dict) # 'spatial_features_2d': (batch_cav_size, 128*3, H/2, W/2)
-        batch_dict['spatial_features'], ectra_aux = self.ectra(
-            batch_dict['spatial_features'], record_len, record_frames)
+        ectra_aux = {}
+        if self.ectra_dense_enabled:
+            batch_dict['spatial_features'], ectra_aux = self.ectra(
+                batch_dict['spatial_features'], record_len, record_frames)
         fusion_spatial_features = self.select_current_frames(
             batch_dict['spatial_features'], record_len, k)
         fusion_pairwise_t_matrix = pairwise_t_matrix[:, :, 0:1]
@@ -322,10 +406,40 @@ class PointPillarWhere2commEctra(nn.Module):
         if self.use_dir:
             dm_single = self.dir_head(spatial_features_2d)
         psm_fusion = self.select_current_frames(psm_single, record_len, k)
+        roi_aux = {}
+        flow_gt = data_dict['label_dict'].get('flow_gt', None) \
+            if 'label_dict' in data_dict else None
+
+        if self.ectra_roi_flag:
+            psm_for_box = psm_single.detach()
+            rm_for_box = rm_single.detach()
+            single_output = {
+                'psm_single_list': self.regroup(psm_for_box, record_len, k),
+                'rm_single_list': self.regroup(rm_for_box, record_len, k),
+            }
+            box_flow_map, reserved_mask = self.generate_box_flow(
+                data_dict, single_output, dataset, psm_single.device)
+            box_flow_map, reserved_mask, roi_aux = self.ectra_roi(
+                box_flow_map, reserved_mask, fusion_spatial_features,
+                record_len, fusion_record_frames)
 
         # rain attention:
         if self.multi_scale:
-            if self.compensation:
+            if self.ectra_roi_flag:
+                fused_feature, communication_rates, result_dict = self.rain_fusion(
+                    batch_dict['spatial_features'],
+                    psm_single,
+                    record_len,
+                    pairwise_t_matrix,
+                    record_frames,
+                    self.backbone,
+                    [self.shrink_conv, self.cls_head, self.reg_head],
+                    box_flow=box_flow_map,
+                    reserved_mask=reserved_mask,
+                    flow_gt=flow_gt,
+                    noise_pairwise_t_matrix=noise_pairwise_t_matrix,
+                    num_roi_thres=self.num_roi_thres)
+            elif self.compensation:
                 if self.single_supervise:
                     fused_feature, single_feature, communication_rates, all_recon_loss, result_dict = self.rain_fusion(fusion_spatial_features,
                                                 psm_fusion,
@@ -427,5 +541,6 @@ class PointPillarWhere2commEctra(nn.Module):
         
         output_dict.update(result_dict) 
         output_dict.update(ectra_aux)
+        output_dict.update(roi_aux)
         
         return output_dict
