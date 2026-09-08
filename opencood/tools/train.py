@@ -16,6 +16,7 @@ from tensorboardX import SummaryWriter
 import importlib
 import opencood.hypes_yaml.yaml_utils as yaml_utils
 from opencood.tools import train_utils
+from opencood.tools.diagnostics_utils import DiagnosticsManager
 from opencood.data_utils.datasets import build_dataset
 
 from tqdm import tqdm
@@ -66,6 +67,16 @@ def train_parser():
                         help='disable single-view auxiliary supervision for smoke tests')
     parser.add_argument('--debug_unfreeze_model', action='store_true',
                         help='disable model backbone_fix/only_tune_header flags for smoke tests')
+    parser.add_argument('--diagnostics', action='store_true',
+                        help='enable reusable scalar/visual diagnostics')
+    parser.add_argument('--diagnostics_interval', default=0, type=int,
+                        help='override diagnostics scalar logging interval')
+    parser.add_argument('--diagnostics_grad_interval', default=0, type=int,
+                        help='override diagnostics gradient norm interval')
+    parser.add_argument('--diagnostics_val_vis_interval', default=0, type=int,
+                        help='save one validation BEV visualization every N batches')
+    parser.add_argument('--diagnostics_max_val_vis', default=0, type=int,
+                        help='maximum validation visualizations saved by diagnostics')
     opt = parser.parse_args()
     return opt
 
@@ -92,6 +103,24 @@ def apply_debug_overrides(hypes, opt):
     if opt.debug_unfreeze_model and 'model' in hypes and 'args' in hypes['model']:
         hypes['model']['args']['backbone_fix'] = False
         hypes['model']['args']['only_tune_header'] = False
+    if opt.diagnostics:
+        hypes.setdefault('diagnostics', {})
+        hypes['diagnostics']['enabled'] = True
+    if opt.diagnostics_interval > 0:
+        hypes.setdefault('diagnostics', {})
+        hypes['diagnostics']['scalar_interval'] = opt.diagnostics_interval
+    if opt.diagnostics_grad_interval > 0:
+        hypes.setdefault('diagnostics', {})
+        hypes['diagnostics']['grad_interval'] = opt.diagnostics_grad_interval
+    if opt.diagnostics_val_vis_interval > 0:
+        hypes.setdefault('diagnostics', {})
+        hypes['diagnostics'].setdefault('val_visualize', {})
+        hypes['diagnostics']['val_visualize']['enabled'] = True
+        hypes['diagnostics']['val_visualize']['interval'] = opt.diagnostics_val_vis_interval
+    if opt.diagnostics_max_val_vis > 0:
+        hypes.setdefault('diagnostics', {})
+        hypes['diagnostics'].setdefault('val_visualize', {})
+        hypes['diagnostics']['val_visualize']['max_images'] = opt.diagnostics_max_val_vis
     return hypes
 
 
@@ -210,6 +239,7 @@ def main():
 
     # record training
     writer = SummaryWriter(saved_path)
+    diagnostics = DiagnosticsManager(hypes, saved_path)
 
     start_time = time.time()
     print('### Training start! ###')
@@ -309,6 +339,11 @@ def main():
 
             # back-propagation
             final_loss.backward()
+            diagnostics.log_train_step(
+                writer, epoch, i, len(train_loader), final_loss,
+                ouput_dict, optimizer)
+            diagnostics.log_gradients(
+                writer, model, epoch, i, len(train_loader))
             optimizer.step()
             train_steps += 1
         
@@ -345,6 +380,12 @@ def main():
                     final_loss = criterion(ouput_dict,
                                            batch_data['ego']['label_dict'])
                     valid_ave_loss.append(final_loss.item())
+                    diagnostics.log_validation_step(
+                        writer, epoch, i, len(val_loader), final_loss,
+                        ouput_dict)
+                    diagnostics.maybe_save_validation_visual(
+                        batch_data, ouput_dict, opencood_validate_dataset,
+                        hypes, epoch, i)
                     val_steps += 1
 
             valid_ave_loss = statistics.mean(valid_ave_loss) if valid_ave_loss else float('inf')

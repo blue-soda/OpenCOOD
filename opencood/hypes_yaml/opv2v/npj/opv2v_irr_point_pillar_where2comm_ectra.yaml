@@ -38,6 +38,16 @@ train_params:
   max_cav: &max_cav 5
   supervise_single_flag: true
 
+diagnostics:
+  enabled: false
+  scalar_interval: 10
+  grad_interval: 0
+  val_visualize:
+    enabled: false
+    interval: 100
+    max_images: 4
+    method: bev
+
 fusion:
   core_method: IntermediateFusionDatasetIrregularFlowNew # 'IntermediateFusionDatasetIrregular' # LateFusionDataset, EarlyFusionDataset, IntermediateFusionDataset, IntermediateFusionDatasetMultisweep supported
   args:
