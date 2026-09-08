@@ -4,9 +4,20 @@ SizheWei 2023.4.23
 '''
 
 import os
+import argparse
 import torch
 from scipy import stats
 from collections import OrderedDict
+
+from opencood.hypes_yaml import yaml_utils
+from opencood.data_utils.datasets import build_dataset
+
+
+def prefer_json_path(yaml_path):
+    json_path = yaml_path.replace("yaml", "json")
+    json_path = json_path.replace(
+        "OPV2V_irregular_npy", "OPV2V_irregular_npy_updated")
+    return json_path if os.path.exists(json_path) else yaml_path
 
 def retrieve_base_data(scenario_database, len_record, idx, binomial_n=10, binomial_p=0.1, k=3, is_no_shift=False, is_same_sample_interval=False):
     """
@@ -103,8 +114,7 @@ def retrieve_base_data(scenario_database, len_record, idx, binomial_n=10, binomi
         
         # 2.1 load curr params
         # json is faster than yaml
-        json_file = cav_content['regular'][timestamp_key]['yaml'].replace("yaml", "json")
-        json_file = json_file.replace("OPV2V_irregular_npy", "OPV2V_irregular_npy_updated")
+        json_file = prefer_json_path(cav_content['regular'][timestamp_key]['yaml'])
         data[cav_id]['curr']['params'] = json_file
 
         # 2.3 store curr timestamp and time_diff
@@ -151,8 +161,7 @@ def retrieve_base_data(scenario_database, len_record, idx, binomial_n=10, binomi
             timestamp_key = list(cav_content.items())[latest_sample_stamp_idx][0]
             # load the corresponding data into the dictionary
             # load param file: json is faster than yaml
-            json_file = cav_content[timestamp_key]['yaml'].replace("yaml", "json")
-            json_file = json_file.replace("OPV2V_irregular_npy", "OPV2V_irregular_npy_updated")
+            json_file = prefer_json_path(cav_content[timestamp_key]['yaml'])
             data[cav_id]['past_k'][i]['params'] = json_file
 
             data[cav_id]['past_k'][i]['timestamp'] = timestamp_key
@@ -178,11 +187,111 @@ def dist_time(ts1, ts2, i = -1):
     else:
         return (float(ts1) - float(ts2))
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Generate CoBEVFlow Part-2 asynchronous sample specs.')
+    parser.add_argument('--hypes_yaml', '-y', default='',
+                        help='Yaml used to build IntermediateFusionDatasetIrregular.')
+    parser.add_argument('--scenario_database', default='',
+                        help='Optional prebuilt scenario_database.pt.')
+    parser.add_argument('--len_record', default='',
+                        help='Optional prebuilt len_record.pt.')
+    parser.add_argument('--root_dir', default='',
+                        help='Override root_dir when building from yaml.')
+    parser.add_argument('--validate_dir', default='',
+                        help='Override validate_dir when building from yaml.')
+    parser.add_argument('--split', choices=['train', 'val'], default='train',
+                        help='Dataset split to build when using --hypes_yaml.')
+    parser.add_argument('--output_dir', required=True,
+                        help='Directory to write scenario_database.pt, len_record.pt, and samples.')
+    parser.add_argument('--output_name', default='part2_async_samples.pt',
+                        help='Output filename for sampled specs.')
+    parser.add_argument('--max_samples', type=int, default=0,
+                        help='Maximum samples to export; 0 exports all samples.')
+    parser.add_argument('--binomial_n', type=int, default=None)
+    parser.add_argument('--binomial_p', type=float, default=None)
+    parser.add_argument('--k', type=int, default=None)
+    parser.add_argument('--is_no_shift', action='store_true')
+    parser.add_argument('--is_same_sample_interval', action='store_true')
+    parser.add_argument('--save_database', action='store_true',
+                        help='Also save scenario_database.pt and len_record.pt.')
+    return parser.parse_args()
 
-# debug_path = '/remote-home/share/OPV2V_irregular_npy'
-debug_path = '/dssg/home/acct-seecsh/seecsh/sizhewei/data_sftp'
-scenario_database = torch.load(os.path.join(debug_path, 'scenario_database.pt'))
-len_record = torch.load(os.path.join(debug_path, 'len_record.pt'))
+
+def apply_path_overrides(hypes, args):
+    if args.root_dir:
+        hypes['root_dir'] = args.root_dir
+    if args.validate_dir:
+        hypes['validate_dir'] = args.validate_dir
+    return hypes
 
 
-unit_data = retrieve_base_data(scenario_database, len_record, 1)
+def resolve_sampling_args(hypes, args):
+    return {
+        'binomial_n': args.binomial_n
+            if args.binomial_n is not None else hypes.get('binomial_n', 10),
+        'binomial_p': args.binomial_p
+            if args.binomial_p is not None else hypes.get('binomial_p', 0.1),
+        'k': args.k if args.k is not None else hypes.get('num_sweep_frames', 3),
+        'is_no_shift': args.is_no_shift or hypes.get('is_no_shift', False),
+        'is_same_sample_interval': args.is_same_sample_interval
+            or hypes.get('is_same_sample_interval', False),
+    }
+
+
+def load_database(args):
+    if args.scenario_database:
+        if not args.len_record:
+            raise ValueError('--len_record is required with --scenario_database.')
+        scenario_database = torch.load(args.scenario_database)
+        len_record = torch.load(args.len_record)
+        hypes = {}
+        return scenario_database, len_record, hypes
+
+    if not args.hypes_yaml:
+        raise ValueError('Either --hypes_yaml or --scenario_database is required.')
+
+    hypes = yaml_utils.load_yaml(args.hypes_yaml)
+    hypes = apply_path_overrides(hypes, args)
+    dataset = build_dataset(
+        hypes, visualize=False, train=(args.split == 'train'))
+    return dataset.scenario_database, dataset.len_record, hypes
+
+
+def main():
+    args = parse_args()
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    scenario_database, len_record, hypes = load_database(args)
+    sampling_args = resolve_sampling_args(hypes, args)
+
+    if args.save_database:
+        torch.save(scenario_database,
+                   os.path.join(args.output_dir, 'scenario_database.pt'))
+        torch.save(len_record, os.path.join(args.output_dir, 'len_record.pt'))
+
+    total_samples = int(len_record[-1])
+    export_samples = total_samples if args.max_samples <= 0 \
+        else min(total_samples, args.max_samples)
+
+    samples = []
+    for idx in range(export_samples):
+        samples.append(retrieve_base_data(
+            scenario_database,
+            len_record,
+            idx,
+            **sampling_args))
+
+    output_path = os.path.join(args.output_dir, args.output_name)
+    torch.save({
+        'samples': samples,
+        'sampling_args': sampling_args,
+        'num_samples': export_samples,
+        'total_samples': total_samples,
+    }, output_path)
+    print('Saved %d/%d async sample specs to %s' %
+          (export_samples, total_samples, output_path))
+
+
+if __name__ == '__main__':
+    main()
