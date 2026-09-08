@@ -54,7 +54,14 @@ class CoBEVFlowDAIRIrregularDataset(IntermediateFusionDatasetDAIRIrregularMulti)
             params.get("validate_dir"), data_dir, "val.json"
         )
         params["test_dir"] = self._resolve_split(params.get("test_dir"), data_dir, "val.json")
+        self.is_no_shift = bool(params.get("is_no_shift", False))
+        self.sample_interval_exp = int(
+            params.get("binomial_n", 10) * params.get("binomial_p", 0)
+        )
         super().__init__(params=params, visualize=visualize, train=train)
+
+    def _use_current_for_first_past(self, hist_idx):
+        return self.sample_interval_exp == 0 and self.is_no_shift and hist_idx == 0
 
     @staticmethod
     def _resolve_split(path, data_dir, default_name):
@@ -170,7 +177,12 @@ class CoBEVFlowDAIRIrregularDataset(IntermediateFusionDatasetDAIRIrregularMulti)
 
             latest_frame_id = curr_inf_frame_id
             for hist_idx in range(self.k):
+                if self._use_current_for_first_past(hist_idx):
+                    final_data[cav_idx]["past_k"][hist_idx] = final_data[cav_idx]["curr"]
+                    continue
                 sample_interval = int(sum(bernoulli_dist.rvs(self.binomial_n)))
+                if sample_interval == 0 and hist_idx > 0:
+                    sample_interval = 1
                 latest_frame_id = id_to_str(int(latest_frame_id) - sample_interval)
                 veh_frame_id_of_inf = self.inf_fid2veh_fid[latest_frame_id]
                 hist_frame_info = self.co_idx2info[veh_frame_id_of_inf]
@@ -284,7 +296,12 @@ class CoBEVFlowDAIRIrregularDataset(IntermediateFusionDatasetDAIRIrregularMulti)
 
             latest_frame_id = curr_inf_frame_id
             for hist_idx in range(self.k):
+                if self._use_current_for_first_past(hist_idx):
+                    final_data[cav_idx]["past_k"][hist_idx] = final_data[cav_idx]["curr"]
+                    continue
                 sample_interval = int(sum(bernoulli_dist.rvs(self.binomial_n)))
+                if sample_interval == 0 and hist_idx > 0:
+                    sample_interval = 1
                 latest_frame_id = id_to_str(int(latest_frame_id) - sample_interval)
                 veh_frame_id_of_inf = self.inf_fid2veh_fid[latest_frame_id]
                 hist_frame_info = self.co_idx2info[veh_frame_id_of_inf]
