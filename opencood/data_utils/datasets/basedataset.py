@@ -246,6 +246,7 @@ class BaseDataset(Dataset):
             else:
                 data[cav_id]['params'] = \
                         load_yaml(cav_content[timestamp_key]['yaml'])
+            self.normalize_pose_fields(data[cav_id]['params'])
 
             # data[cav_id]['lidar_np'] = \
             #     pcd_utils.pcd_to_np(cav_content[timestamp_key]['lidar'])
@@ -261,6 +262,24 @@ class BaseDataset(Dataset):
                 data[cav_id]['lidar_keypoints_np'] = cav_content[timestamp_key]['lidar_keypoints_np']
 
         return data
+
+    @staticmethod
+    def normalize_pose_fields(params):
+        """
+        Normalize matrix-format pose fields to OpenCOOD's 6DoF pose format.
+
+        OPV2V yaml files usually store [x, y, z, roll, yaw, pitch], while
+        V2V4Real releases may store the same pose as a 4x4 transform matrix.
+        """
+        for key in ('lidar_pose', 'true_ego_pos'):
+            if key not in params:
+                continue
+            pose = np.asarray(params[key])
+            if pose.shape == (4, 4):
+                params[key] = tfm_to_pose(pose)
+            elif pose.shape == (6,):
+                params[key] = pose.astype(float).tolist()
+        return params
 
     @staticmethod
     def extract_timestamps(yaml_files):

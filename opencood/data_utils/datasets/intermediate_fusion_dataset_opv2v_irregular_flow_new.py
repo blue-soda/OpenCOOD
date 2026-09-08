@@ -453,6 +453,7 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
             else:
                 data[cav_id]['curr']['params'] = \
                             load_yaml(cav_content['regular'][timestamp_key]['yaml'])
+            self.normalize_pose_fields(data[cav_id]['curr']['params'])
             # 没有 lidar pose
             if not ('lidar_pose' in data[cav_id]['curr']['params']):
                 tmp_ego_pose = np.array(data[cav_id]['curr']['params']['true_ego_pos'])
@@ -546,6 +547,7 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
                 else:
                     data[cav_id]['past_k'][i]['params'] = \
                         load_yaml(cav_content[timestamp_key]['yaml'])
+                self.normalize_pose_fields(data[cav_id]['past_k'][i]['params'])
                 # 没有 lidar pose
                 if not ('lidar_pose' in data[cav_id]['past_k'][i]['params']):
                     tmp_ego_pose = np.array(data[cav_id]['past_k'][i]['params']['true_ego_pos'])
