@@ -30,6 +30,7 @@ from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_irregular_si
 from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_irregular_flow_new import IntermediateFusionDatasetIrregularFlowNew
 from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_irregular_flow_variance import IntermediateFusionDatasetIrregularFlowVariance
 from opencood.data_utils.datasets.intermediate_fusion_dataset_dair_irregular_multi import IntermediateFusionDatasetDAIRIrregularMulti
+from opencood.data_utils.datasets.cobevflow_dair_irregular_dataset import CoBEVFlowDAIRIrregularDataset
 try:
     from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_outage import IntermediateFusionDataset_outage
 except ModuleNotFoundError:
@@ -66,6 +67,7 @@ __all__ = {
     'IntermediateFusionDatasetIrregularFlowNew': IntermediateFusionDatasetIrregularFlowNew,
     'IntermediateFusionDatasetDAIRIrregular': IntermediateFusionDatasetDAIRIrregular,
     'IntermediateFusionDatasetDAIRIrregularMulti': IntermediateFusionDatasetDAIRIrregularMulti,
+    'CoBEVFlowDAIRIrregularDataset': CoBEVFlowDAIRIrregularDataset,
     'IntermediateFusionDatasetIrregularFlowVariance': IntermediateFusionDatasetIrregularFlowVariance,
     'IntermediateFusionDatasetV2XSETFlowNew': IntermediateFusionDatasetV2XSETFlowNew,
     'IntermediateFusionDatasetV2XSETCompensation': IntermediateFusionDatasetV2XSETCompensation,

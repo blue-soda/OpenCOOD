@@ -757,7 +757,7 @@ class IntermediateFusionDatasetDAIRIrregularMulti(intermediate_fusion_dataset_op
             if selected_cav_processed['if_no_point']: # 把点的数量不合法的车排除
                 illegal_cav.append(cav_id)
                 # 把出现不合法sample的 场景、车辆、时刻 记录下来:
-                illegal_path = os.path.join(base_data_dict[cav_id]['debug']['scene'], cav_id, base_data_dict[cav_id]['past_k'][0]['timestamp']+'.npy')
+                illegal_path = os.path.join(base_data_dict[cav_id]['debug']['scene'], str(cav_id), base_data_dict[cav_id]['past_k'][0]['timestamp']+'.npy')
                 illegal_path_list.add(illegal_path)
                 # print(illegal_path)
                 continue

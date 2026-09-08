@@ -57,6 +57,8 @@ def train_parser():
                         help='override train_params.max_cav for smoke tests')
     parser.add_argument('--root_dir', default='',
                         help='override dataset root_dir')
+    parser.add_argument('--data_dir', default='',
+                        help='override dataset data_dir/dair_data_dir')
     parser.add_argument('--validate_dir', default='',
                         help='override dataset validate_dir')
     parser.add_argument('--test_dir', default='',
@@ -82,6 +84,9 @@ def train_parser():
 
 
 def apply_debug_overrides(hypes, opt):
+    if opt.data_dir:
+        hypes['data_dir'] = opt.data_dir
+        hypes['dair_data_dir'] = opt.data_dir
     if opt.root_dir:
         hypes['root_dir'] = opt.root_dir
     if opt.validate_dir:
