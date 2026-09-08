@@ -36,6 +36,8 @@ from opencood.utils.pose_utils import add_noise_data_dict
 from opencood.utils.flow_utils import generate_flow_map, generate_flow_map_szwei
 
 
+illegal_path_list = set()
+
 
 def load_json(path):
     with open(path, mode="r") as f:
