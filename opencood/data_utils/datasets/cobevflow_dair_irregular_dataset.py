@@ -115,6 +115,86 @@ class CoBEVFlowDAIRIrregularDataset(IntermediateFusionDatasetDAIRIrregularMulti)
 
         return candidate
 
+    def _current_sample_spec(self, cav_idx, frame_info, veh_frame_id, inf_frame_id):
+        if cav_idx == 0:
+            frame_id = veh_frame_id
+            lidar_path = frame_info["vehicle_pointcloud_path"]
+            single_label_path = "vehicle-side/label/lidar/{}.json".format(veh_frame_id)
+            lidar_pose = self.get_vehicle_trans(veh_frame_id)
+        else:
+            frame_id = inf_frame_id
+            lidar_path = frame_info["infrastructure_pointcloud_path"]
+            single_label_path = "infrastructure-side/label/virtuallidar/{}.json".format(
+                inf_frame_id
+            )
+            lidar_pose = self.get_inf_trans(inf_frame_id, frame_info["system_error_offset"])
+
+        return {
+            "frame_id": frame_id,
+            "timestamp": frame_id,
+            "time_diff": 0,
+            "sample_interval": 0,
+            "lidar_path": lidar_path,
+            "resolved_lidar_path": self._resolve_lidar_path(lidar_path),
+            "cooperative_label_path": frame_info.get("cooperative_label_path"),
+            "single_label_path": single_label_path,
+            "lidar_pose": lidar_pose,
+        }
+
+    def retrieve_async_sample_spec(self, idx):
+        """Return a lightweight DAIR async sample spec for Part-2 export.
+
+        Unlike ``retrieve_base_data``, this method does not read PCD files or
+        labels into memory. It keeps the CoBEVFlow Bernoulli delay sampling
+        semantics and records enough metadata for downstream ROI/flow-data
+        generation.
+        """
+        final_data = OrderedDict()
+        curr_veh_frame_id = self.data[idx]
+        frame_info = self.co_idx2info[curr_veh_frame_id]
+        curr_inf_frame_id = self._infrastructure_frame_id(frame_info)
+        bernoulli_dist = stats.bernoulli(self.binomial_p)
+
+        for cav_idx in range(2):
+            final_data[cav_idx] = OrderedDict()
+            final_data[cav_idx]["ego"] = cav_idx == 0
+            final_data[cav_idx]["curr"] = self._current_sample_spec(
+                cav_idx, frame_info, curr_veh_frame_id, curr_inf_frame_id
+            )
+
+            final_data[cav_idx]["past_k"] = OrderedDict()
+            if cav_idx == 0:
+                for hist_idx in range(self.k):
+                    final_data[cav_idx]["past_k"][hist_idx] = final_data[cav_idx]["curr"]
+                continue
+
+            latest_frame_id = curr_inf_frame_id
+            for hist_idx in range(self.k):
+                sample_interval = int(sum(bernoulli_dist.rvs(self.binomial_n)))
+                latest_frame_id = id_to_str(int(latest_frame_id) - sample_interval)
+                veh_frame_id_of_inf = self.inf_fid2veh_fid[latest_frame_id]
+                hist_frame_info = self.co_idx2info[veh_frame_id_of_inf]
+                hist_lidar_path = hist_frame_info["infrastructure_pointcloud_path"]
+                final_data[cav_idx]["past_k"][hist_idx] = {
+                    "frame_id": latest_frame_id,
+                    "timestamp": latest_frame_id,
+                    "time_diff": int(curr_inf_frame_id) - int(latest_frame_id),
+                    "sample_interval": -sample_interval,
+                    "lidar_path": hist_lidar_path,
+                    "resolved_lidar_path": self._resolve_lidar_path(hist_lidar_path),
+                    "cooperative_label_path": hist_frame_info.get("cooperative_label_path"),
+                    "single_label_path": (
+                        "infrastructure-side/label/virtuallidar/{}.json".format(
+                            latest_frame_id
+                        )
+                    ),
+                    "lidar_pose": self.get_inf_trans(
+                        latest_frame_id, hist_frame_info["system_error_offset"]
+                    ),
+                }
+
+        return final_data
+
     def is_valid_id(self, veh_frame_id):
         """Check whether the current DAIR pair has enough historical inf frames."""
         if veh_frame_id not in self.co_idx2info:

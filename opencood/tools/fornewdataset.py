@@ -198,6 +198,8 @@ def parse_args():
                         help='Optional prebuilt len_record.pt.')
     parser.add_argument('--root_dir', default='',
                         help='Override root_dir when building from yaml.')
+    parser.add_argument('--data_dir', default='',
+                        help='Override data_dir/dair_data_dir when building from yaml.')
     parser.add_argument('--validate_dir', default='',
                         help='Override validate_dir when building from yaml.')
     parser.add_argument('--split', choices=['train', 'val'], default='train',
@@ -219,6 +221,9 @@ def parse_args():
 
 
 def apply_path_overrides(hypes, args):
+    if args.data_dir:
+        hypes['data_dir'] = args.data_dir
+        hypes['dair_data_dir'] = args.data_dir
     if args.root_dir:
         hypes['root_dir'] = args.root_dir
     if args.validate_dir:
@@ -239,14 +244,19 @@ def resolve_sampling_args(hypes, args):
     }
 
 
-def load_database(args):
+def load_sample_source(args):
     if args.scenario_database:
         if not args.len_record:
             raise ValueError('--len_record is required with --scenario_database.')
         scenario_database = torch.load(args.scenario_database)
         len_record = torch.load(args.len_record)
         hypes = {}
-        return scenario_database, len_record, hypes
+        return {
+            'type': 'scenario_database',
+            'scenario_database': scenario_database,
+            'len_record': len_record,
+            'total_samples': int(len_record[-1]),
+        }, hypes
 
     if not args.hypes_yaml:
         raise ValueError('Either --hypes_yaml or --scenario_database is required.')
@@ -255,32 +265,52 @@ def load_database(args):
     hypes = apply_path_overrides(hypes, args)
     dataset = build_dataset(
         hypes, visualize=False, train=(args.split == 'train'))
-    return dataset.scenario_database, dataset.len_record, hypes
+    if hasattr(dataset, 'scenario_database') and hasattr(dataset, 'len_record'):
+        return {
+            'type': 'scenario_database',
+            'scenario_database': dataset.scenario_database,
+            'len_record': dataset.len_record,
+            'total_samples': int(dataset.len_record[-1]),
+        }, hypes
+    if hasattr(dataset, 'retrieve_async_sample_spec'):
+        return {
+            'type': 'dataset_exporter',
+            'dataset': dataset,
+            'total_samples': len(dataset),
+        }, hypes
+    raise AttributeError(
+        'Dataset does not expose scenario_database/len_record or '
+        'retrieve_async_sample_spec().')
 
 
 def main():
     args = parse_args()
     os.makedirs(args.output_dir, exist_ok=True)
 
-    scenario_database, len_record, hypes = load_database(args)
+    sample_source, hypes = load_sample_source(args)
     sampling_args = resolve_sampling_args(hypes, args)
 
-    if args.save_database:
+    if args.save_database and sample_source['type'] == 'scenario_database':
+        scenario_database = sample_source['scenario_database']
+        len_record = sample_source['len_record']
         torch.save(scenario_database,
                    os.path.join(args.output_dir, 'scenario_database.pt'))
         torch.save(len_record, os.path.join(args.output_dir, 'len_record.pt'))
 
-    total_samples = int(len_record[-1])
+    total_samples = sample_source['total_samples']
     export_samples = total_samples if args.max_samples <= 0 \
         else min(total_samples, args.max_samples)
 
     samples = []
     for idx in range(export_samples):
-        samples.append(retrieve_base_data(
-            scenario_database,
-            len_record,
-            idx,
-            **sampling_args))
+        if sample_source['type'] == 'scenario_database':
+            samples.append(retrieve_base_data(
+                sample_source['scenario_database'],
+                sample_source['len_record'],
+                idx,
+                **sampling_args))
+        else:
+            samples.append(sample_source['dataset'].retrieve_async_sample_spec(idx))
 
     output_path = os.path.join(args.output_dir, args.output_name)
     torch.save({
