@@ -169,8 +169,12 @@ def eval_final_results(result_stat, save_path, noise_level=None, avg_time_delay=
           'The Average Precision at IOU 0.5 is %.5f, '
           'The Average Precision at IOU 0.7 is %.5f' % (ap_30, ap_50, ap_70))
 
-    print('=== Avg Time Delay %.2f ==='
-          '=== Avg Sample Interval %.2f ==='
-          '=== Avg Time Var %.2f ==='% (avg_time_delay, avg_sample_interval, avg_time_var) )
+    if dataset == 'd':
+        print('=== Avg CP Rate %.2f ==='
+              '=== Avg Sample Interval %.2f ==='% (avg_time_delay, avg_sample_interval))
+    else:
+        print('=== Avg Time Delay %.2f ==='
+              '=== Avg Sample Interval %.2f ==='
+              '=== Avg Time Var %.2f ==='% (avg_time_delay, avg_sample_interval, avg_time_var) )
 
     return ap_30, ap_50, ap_70
