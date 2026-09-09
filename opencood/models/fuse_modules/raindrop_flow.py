@@ -206,6 +206,20 @@ class raindrop_fuse(nn.Module):
         split_x = torch.tensor_split(x, cum_sum_len[:-1].cpu())
         return split_x
 
+    @staticmethod
+    def flow_delta_to_grid(flow_delta, height, width, device):
+        if flow_delta.shape[-1] == 2:
+            flow_delta = flow_delta.permute(0, 3, 1, 2).contiguous()
+        x_coord = torch.arange(width, device=device).float()
+        y_coord = torch.arange(height, device=device).float()
+        y, x = torch.meshgrid(y_coord, x_coord)
+        grid = torch.cat([x.unsqueeze(0), y.unsqueeze(0)], dim=0)
+        grid = grid.unsqueeze(0).expand(flow_delta.shape[0], -1, -1, -1)
+        flow_grid = grid - flow_delta
+        flow_grid[:, 0, :, :] = flow_grid[:, 0, :, :] / (width / 2.0) - 1.0
+        flow_grid[:, 1, :, :] = flow_grid[:, 1, :, :] / (height / 2.0) - 1.0
+        return flow_grid.permute(0, 2, 3, 1).contiguous()
+
     def generateFlow(self, feats, pairwise_t_matrix, record_len, flow_gt=None):
         '''
         1. generate flow from feature sequence
@@ -399,8 +413,7 @@ class raindrop_fuse(nn.Module):
         batch_flow_map = self.regroup(flow_map, record_len, k=1)
         batch_reserved_mask = self.regroup(reserved_mask, record_len, k=1)
 
-        # debug use
-        batch_flow_gt = self.regroup(flow_gt, record_len, k=2)
+        batch_flow_gt = self.regroup(flow_gt, record_len, k=1)
 
         updated_features_list = []
         flow_list = []
@@ -427,17 +440,8 @@ class raindrop_fuse(nn.Module):
             updated_features = updated_features*batch_reserved_mask[b] # (N, C, H, W)
             updated_features_list.append(updated_features)
 
-            # normalizing GT flow: gt_flow_map [N, H, W, 2]
-            # Given disp shift feature
-            x_coord = torch.arange(W).float()   # [0, ..., W]
-            y_coord = torch.arange(H).float()   # [0, ..., H]
-            y, x = torch.meshgrid(y_coord, x_coord)  # [H, W], [H, W]
-            grid = torch.cat([x.unsqueeze(0), y.unsqueeze(0)], dim=0).unsqueeze(0).expand(N, -1, -1, -1).to(flow.device)
-            gt_flow_delta = batch_flow_gt[b].view(-1, 2, H, W)
-            gt_flow_map = grid - gt_flow_delta
-            gt_flow_map[:, 0, :, :] = gt_flow_map[:, 0, :, :] / (W / 2.0) - 1.0
-            gt_flow_map[:, 1, :, :] = gt_flow_map[:, 1, :, :] / (H / 2.0) - 1.0
-            gt_flow_map = gt_flow_map.permute(0, 2, 3, 1) 
+            gt_flow_map = self.flow_delta_to_grid(
+                batch_flow_gt[b], H, W, flow.device)
             gt_flow_map_list.append(gt_flow_map)
 
         flow_pred = torch.cat(flow_list, dim=0) # (sum(N_b), H, W, 2)
@@ -487,8 +491,7 @@ class raindrop_fuse(nn.Module):
         batch_flow_map = self.regroup(flow_map, record_len, k=1)
         batch_reserved_mask = self.regroup(reserved_mask, record_len, k=1)
 
-        # debug use
-        batch_flow_gt = self.regroup(flow_gt, record_len, k=2)
+        batch_flow_gt = self.regroup(flow_gt, record_len, k=1)
 
         updated_features_list = []
         flow_list = []
@@ -534,12 +537,8 @@ class raindrop_fuse(nn.Module):
             updated_features = updated_features*batch_reserved_mask[b] # (N, C, H, W)
             updated_features_list.append(updated_features)
 
-            # normalizing GT flow: gt_flow_map [N, H, W, 2]
-            gt_flow_delta = batch_flow_gt[b].view(-1, 2, H, W)
-            gt_flow_map = grid - gt_flow_delta
-            gt_flow_map[:, 0, :, :] = gt_flow_map[:, 0, :, :] / (W / 2.0) - 1.0
-            gt_flow_map[:, 1, :, :] = gt_flow_map[:, 1, :, :] / (H / 2.0) - 1.0
-            gt_flow_map = gt_flow_map.permute(0, 2, 3, 1) 
+            gt_flow_map = self.flow_delta_to_grid(
+                batch_flow_gt[b], H, W, flow_box.device)
             gt_flow_map_list.append(gt_flow_map)
 
         flow_all = torch.cat(flow_list, dim=0) # (sum(N_b), H, W, 2)
