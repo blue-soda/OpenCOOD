@@ -8,7 +8,7 @@ noise_setting:
   add_noise: False
 
 comm_range: 100000
-num_sweep_frames: &past_k 3
+num_sweep_frames: &past_k 5
 binomial_n: 10
 binomial_p: 0.3
 is_no_shift: true
