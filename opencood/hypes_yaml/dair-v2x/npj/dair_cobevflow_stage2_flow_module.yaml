@@ -116,6 +116,7 @@ model:
       voxel_size: *voxel_size
       downsample_rate: 1
       in_channels: 256
+      channel_size: 256
       n_head: 8
       dropout_rate: 0
       only_attention: true
