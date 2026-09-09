@@ -50,6 +50,33 @@ class DiagnosticsManager(object):
             return float(value.detach().float().cpu().item())
         return float(value)
 
+    @staticmethod
+    def _slice_first_sample(value, batch_size):
+        if torch.is_tensor(value):
+            if value.dim() > 0 and value.shape[0] == batch_size:
+                return value[0:1]
+            return value
+        if isinstance(value, dict):
+            return {
+                key: DiagnosticsManager._slice_first_sample(item, batch_size)
+                for key, item in value.items()
+            }
+        if isinstance(value, list):
+            if len(value) == batch_size:
+                return [value[0]]
+            return [
+                DiagnosticsManager._slice_first_sample(item, batch_size)
+                for item in value
+            ]
+        if isinstance(value, tuple):
+            if len(value) == batch_size:
+                return (value[0],)
+            return tuple(
+                DiagnosticsManager._slice_first_sample(item, batch_size)
+                for item in value
+            )
+        return value
+
     def _should_log(self, step, interval):
         return self.enabled and interval > 0 and step % interval == 0
 
@@ -100,7 +127,10 @@ class DiagnosticsManager(object):
             return
 
         try:
-            ego_content = dict(batch_data['ego'])
+            batch_size = int(batch_data['ego']['object_bbx_mask'].shape[0])
+            ego_content = self._slice_first_sample(dict(batch_data['ego']),
+                                                   batch_size)
+            visual_output = self._slice_first_sample(output_dict, batch_size)
             matrix_source = ego_content['anchor_box']
             if 'transformation_matrix' not in ego_content:
                 ego_content['transformation_matrix'] = torch.eye(
@@ -110,7 +140,7 @@ class DiagnosticsManager(object):
                     4, device=matrix_source.device, dtype=torch.float32)
             post_data = {'ego': ego_content}
             pred_box_tensor, _, gt_box_tensor = dataset.post_process(
-                post_data, {'ego': output_dict})
+                post_data, {'ego': visual_output})
             if pred_box_tensor is None:
                 return
             vis_dir = os.path.join(self.save_dir, 'val_visualizations')
@@ -121,7 +151,7 @@ class DiagnosticsManager(object):
             simple_vis.visualize(
                 pred_box_tensor,
                 gt_box_tensor,
-                batch_data['ego']['origin_lidar'][0],
+                ego_content['origin_lidar'][0],
                 hypes['postprocess']['gt_range'],
                 vis_path,
                 method=self.val_vis_method)
