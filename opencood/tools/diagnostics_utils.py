@@ -148,10 +148,18 @@ class DiagnosticsManager(object):
             vis_path = os.path.join(
                 vis_dir, 'epoch_%03d_batch_%05d_%s.png' %
                 (epoch, batch_id, self.val_vis_method))
+            if 'origin_lidar' in ego_content and len(ego_content['origin_lidar']) > 0:
+                point_cloud = ego_content['origin_lidar'][0]
+            else:
+                ref_tensor = pred_box_tensor
+                if ref_tensor is None or ref_tensor.numel() == 0:
+                    ref_tensor = gt_box_tensor
+                point_cloud = torch.empty(
+                    (0, 4), device=ref_tensor.device, dtype=ref_tensor.dtype)
             simple_vis.visualize(
                 pred_box_tensor,
                 gt_box_tensor,
-                ego_content['origin_lidar'][0],
+                point_cloud,
                 hypes['postprocess']['gt_range'],
                 vis_path,
                 method=self.val_vis_method)
