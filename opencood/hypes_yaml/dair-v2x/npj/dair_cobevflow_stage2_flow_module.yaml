@@ -88,7 +88,7 @@ model:
     compression: 0
     backbone_fix: True
     num_sweep_frames: *past_k
-    design_mode: 1
+    design_mode: 2
     num_roi_thres: -1
     pillar_vfe:
       use_norm: true
