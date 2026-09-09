@@ -276,6 +276,7 @@ class BaseDataset(Dataset):
                 continue
             pose = np.asarray(params[key])
             if pose.shape == (4, 4):
+                params['_%s_was_matrix' % key] = True
                 params[key] = tfm_to_pose(pose)
             elif pose.shape == (6,):
                 params[key] = pose.astype(float).tolist()

@@ -306,18 +306,24 @@ class BasePostprocessor(object):
         """
         from opencood.data_utils.datasets import GT_RANGE_OPV2V
 
-        tmp_object_dict = {}
-        for cav_content in cav_contents:
-            tmp_object_dict.update(cav_content['params']['vehicles'])
-
         output_dict = {}
         filter_range = self.params['anchor_args']['cav_lidar_range'] # if self.train else GT_RANGE_OPV2V
 
-        box_utils.project_world_objects(tmp_object_dict,
-                                        output_dict,
-                                        reference_lidar_pose,
-                                        filter_range,
-                                        self.params['order'])
+        for cav_content in cav_contents:
+            params = cav_content['params']
+            object_dict = params['vehicles']
+            if params.get('_lidar_pose_was_matrix', False):
+                self.project_local_objects(object_dict,
+                                           output_dict,
+                                           params['lidar_pose'],
+                                           reference_lidar_pose,
+                                           filter_range)
+            else:
+                box_utils.project_world_objects(object_dict,
+                                                output_dict,
+                                                reference_lidar_pose,
+                                                filter_range,
+                                                self.params['order'])
 
         object_np = np.zeros((self.params['max_num'], 7))
         mask = np.zeros(self.params['max_num'])
@@ -329,6 +335,40 @@ class BasePostprocessor(object):
             object_ids.append(object_id)
 
         return object_np, mask, object_ids
+
+    def project_local_objects(self,
+                              object_dict,
+                              output_dict,
+                              cav_lidar_pose,
+                              reference_lidar_pose,
+                              lidar_range):
+        """Project CAV-local labels, used by V2V4Real-style yaml files."""
+        cav_to_reference = box_utils.x1_to_x2(cav_lidar_pose,
+                                              reference_lidar_pose)
+        for object_id, object_content in object_dict.items():
+            location = object_content['location']
+            rotation = object_content['angle']
+            center = object_content['center']
+            extent = object_content['extent']
+
+            object_pose = [location[0] + center[0],
+                           location[1] + center[1],
+                           location[2] + center[2],
+                           rotation[0], rotation[1], rotation[2]]
+            object_to_cav = box_utils.x_to_world(object_pose)
+            object_to_reference = np.dot(cav_to_reference, object_to_cav)
+
+            bbx = box_utils.create_bbx(extent).T
+            bbx = np.r_[bbx, [np.ones(bbx.shape[1])]]
+            bbx_lidar = np.dot(object_to_reference, bbx).T
+            bbx_lidar = np.expand_dims(bbx_lidar[:, :3], 0)
+            bbx_lidar = box_utils.corner_to_center(bbx_lidar,
+                                                   order=self.params['order'])
+            bbx_lidar = box_utils.mask_boxes_outside_range_numpy(
+                bbx_lidar, lidar_range, self.params['order'])
+
+            if bbx_lidar.shape[0] > 0:
+                output_dict.update({object_id: bbx_lidar})
 
 
     def generate_object_center_v2x(self,
