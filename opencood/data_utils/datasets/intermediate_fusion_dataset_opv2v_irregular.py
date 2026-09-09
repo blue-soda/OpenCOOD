@@ -786,15 +786,13 @@ class IntermediateFusionDatasetIrregular(basedataset.BaseDataset):
         curr_lidar_poses = np.array(curr_pose_stack).reshape(-1, 6)  # (N_cav, 6)
         past_k_lidar_poses = np.array(past_k_pose_stack).reshape(-1, self.k, 6)  # (N, k, 6)
 
-        # exclude all repetitive objects    
-        unique_indices = \
-            [object_id_stack.index(x) for x in set(object_id_stack)]
         try:
             object_stack = np.vstack(object_stack)
         except ValueError:
             # print("!!! vstack ValueError !!!")
             return None
-        object_stack = object_stack[unique_indices]
+        object_stack, unique_object_ids = self.deduplicate_object_stack(
+            object_stack, object_id_stack)
 
         # make sure bounding boxes across all frames have the same number
         object_bbx_center = \
@@ -831,7 +829,7 @@ class IntermediateFusionDatasetIrregular(basedataset.BaseDataset):
              'curr_processed_lidar': merged_curr_feature_dict,
              'object_bbx_center': object_bbx_center,
              'object_bbx_mask': mask,
-             'object_ids': [object_id_stack[i] for i in unique_indices],
+             'object_ids': unique_object_ids,
              'anchor_box': anchor_box,
              'processed_lidar': merged_feature_dict,
              'label_dict': label_dict,
@@ -859,6 +857,12 @@ class IntermediateFusionDatasetIrregular(basedataset.BaseDataset):
                 np.vstack(projected_lidar_stack)})
 
         return processed_data_dict
+
+    def deduplicate_object_stack(self, object_stack, object_id_stack):
+        """Remove duplicate boxes after projecting each CAV label to ego space."""
+        unique_indices = [object_id_stack.index(x) for x in set(object_id_stack)]
+        unique_object_ids = [object_id_stack[i] for i in unique_indices]
+        return object_stack[unique_indices], unique_object_ids
 
 
     def get_item_single_car(self, selected_cav_base, ego_pose, idx):

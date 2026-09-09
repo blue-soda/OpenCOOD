@@ -129,6 +129,20 @@ def apply_debug_overrides(hypes, opt):
     return hypes
 
 
+def add_auxiliary_losses(hypes, output_dict, final_loss):
+    aux_weights = hypes.get('loss', {}).get('args', {}).get('aux_weights', {})
+    if not aux_weights:
+        return final_loss
+
+    for loss_name, weight in aux_weights.items():
+        if loss_name not in output_dict:
+            continue
+        aux_loss = output_dict[loss_name]
+        if torch.is_tensor(aux_loss) and aux_loss.numel() == 1:
+            final_loss = final_loss + float(weight) * aux_loss
+    return final_loss
+
+
 def main():
     opt = train_parser()
     if str(opt.device).lower() == "cpu":
@@ -341,6 +355,7 @@ def main():
                     final_loss += criterion(ouput_dict, batch_data['ego']['single_object_label'], suffix="_single")
                     if i % 10 == 0:
                         criterion.logging(epoch, i, len(train_loader), writer, suffix="_single")
+            final_loss = add_auxiliary_losses(hypes, ouput_dict, final_loss)
 
             # back-propagation
             final_loss.backward()
@@ -384,6 +399,7 @@ def main():
 
                     final_loss = criterion(ouput_dict,
                                            batch_data['ego']['label_dict'])
+                    final_loss = add_auxiliary_losses(hypes, ouput_dict, final_loss)
                     valid_ave_loss.append(final_loss.item())
                     diagnostics.log_validation_step(
                         writer, epoch, i, len(val_loader), final_loss,
