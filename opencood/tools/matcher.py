@@ -1074,7 +1074,8 @@ class Matcher(nn.Module):
                 flow_map_list.append(identity_grid)
                 reserved_mask.append(mask)
             else:
-                if 0 not in cav_content or 1 not in cav_content:
+                if 0 not in cav_content or 1 not in cav_content or \
+                        len(cav_content.get('past_k_time_diff', [])) < 2:
                     mask = torch.zeros(1, C, H, W).to(shape_list.device)
                     flow_map_list.append(identity_grid)
                     reserved_mask.append(mask)
