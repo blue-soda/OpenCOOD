@@ -23,7 +23,7 @@ train_params:
   eval_freq: 1
   save_freq: 1
   max_cav: &max_cav 2
-  supervise_single_flag: true
+  supervise_single_flag: false
 
 diagnostics:
   enabled: true
