@@ -288,14 +288,7 @@ class BaseDataset(Dataset):
 
     @staticmethod
     def infer_object_label_coord(params):
-        if 'object_label_coord' in params:
-            return params['object_label_coord']
-
-        path_hint = ' '.join(str(params.get(key, '')) for key in (
-            'root_dir', 'validate_dir', 'test_dir', 'data_dir'))
-        if 'v2v4real' in path_hint.lower():
-            return 'local'
-        return 'world'
+        return params.get('object_label_coord', 'world')
 
     @staticmethod
     def extract_timestamps(yaml_files):
