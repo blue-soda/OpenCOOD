@@ -581,7 +581,7 @@ class PointPillarWhere2commFlowTwoStage(nn.Module):
                 'compensated_results_list': compensated_results_list
             })
 
-        if self.design_mode == 1:
+        if self.design_mode in (1, 2):
             output_dict.update({'flow_recon_loss': flow_recon_loss})
         
         output_dict.update(result_dict) 
