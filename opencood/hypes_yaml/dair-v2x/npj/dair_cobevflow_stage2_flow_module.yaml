@@ -13,6 +13,7 @@ binomial_n: 10
 binomial_p: 0.3
 is_no_shift: true
 is_same_sample_interval: false
+is_generate_gt_flow: true
 time_delay: 3
 
 yaml_parser: "load_point_pillar_params"
