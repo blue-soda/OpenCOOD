@@ -10,6 +10,7 @@ time interval.
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class EctraRoiFlowRefiner(nn.Module):
@@ -45,7 +46,21 @@ class EctraRoiFlowRefiner(nn.Module):
         grid = torch.stack((xx, yy), dim=-1)
         return grid.unsqueeze(0).repeat(batch_size, 1, 1, 1)
 
-    def forward(self, coarse_flow_grid, reserved_mask, features, record_len, time_intervals):
+    @classmethod
+    def _flow_delta_to_grid(cls, flow_delta, height, width, device, dtype):
+        if flow_delta is None:
+            return None
+        if flow_delta.shape[-1] == 2:
+            flow_delta = flow_delta.permute(0, 3, 1, 2).contiguous()
+        flow_delta = flow_delta.to(device=device, dtype=dtype)
+        identity = cls._identity_grid(flow_delta.shape[0], height, width,
+                                      device, dtype)
+        norm_x = flow_delta[:, 0] * (2.0 / max(width - 1, 1))
+        norm_y = flow_delta[:, 1] * (2.0 / max(height - 1, 1))
+        return identity - torch.stack((norm_x, norm_y), dim=-1)
+
+    def forward(self, coarse_flow_grid, reserved_mask, features, record_len,
+                time_intervals, flow_gt=None):
         """
         Parameters
         ----------
@@ -115,5 +130,18 @@ class EctraRoiFlowRefiner(nn.Module):
             'ectra_roi_trust_mean': trust.mean(),
             'ectra_roi_trust_min': trust.min(),
             'ectra_roi_residual_abs_mean': residual_pixel.abs().mean(),
+            'ectra_roi_mask_occupancy': roi_mask.mean(),
         }
+        gt_grid = self._flow_delta_to_grid(flow_gt, height, width, device, dtype)
+        if gt_grid is not None and gt_grid.shape == refined_flow_grid.shape:
+            valid_mask = roi_mask.permute(0, 2, 3, 1)
+            flow_loss = F.smooth_l1_loss(refined_flow_grid, gt_grid,
+                                         reduction='none')
+            aux['ectra_roi_flow_loss'] = (
+                flow_loss * valid_mask).sum() / (
+                    valid_mask.sum() * flow_loss.shape[-1] + 1e-6)
+            aux['ectra_roi_coarse_flow_loss'] = (
+                F.smooth_l1_loss(coarse_flow_grid, gt_grid, reduction='none')
+                * valid_mask).sum() / (
+                    valid_mask.sum() * flow_loss.shape[-1] + 1e-6)
         return refined_flow_grid, soft_mask, aux

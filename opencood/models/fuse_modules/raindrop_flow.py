@@ -497,6 +497,7 @@ class raindrop_fuse(nn.Module):
         flow_list = []
         state_class_pred_list = []
         gt_flow_map_list = []
+        roi_mask_list = []
         for b in range(B):
             # number of valid agent
             N = record_len[b]
@@ -540,12 +541,21 @@ class raindrop_fuse(nn.Module):
             gt_flow_map = self.flow_delta_to_grid(
                 batch_flow_gt[b], H, W, flow_box.device)
             gt_flow_map_list.append(gt_flow_map)
+            roi_mask_list.append(batch_reserved_mask[b][:, :1].permute(0, 2, 3, 1))
 
         flow_all = torch.cat(flow_list, dim=0) # (sum(N_b), H, W, 2)
         state_class_pred_all = torch.cat(state_class_pred_list, dim=0)  # (sum(B,N), 2, H, W)
         gt_flow_norm = torch.cat(gt_flow_map_list, dim=0) # (sum(N_b), H, W, 2)
-        # compute the flow map loss:
-        loss = F.smooth_l1_loss(flow_all, gt_flow_norm)
+        roi_mask = torch.cat(roi_mask_list, dim=0).to(flow_all.dtype)
+        zero_flow = torch.zeros(flow_all.shape[0], 2, H, W,
+                                device=flow_all.device, dtype=flow_all.dtype)
+        identity_grid = self.flow_delta_to_grid(
+            zero_flow, H, W, flow_all.device).to(flow_all.dtype)
+        flow_abs = torch.abs(gt_flow_norm - identity_grid)
+        valid_flow = (flow_abs.max(dim=-1, keepdim=True)[0] > 1e-4).to(flow_all.dtype)
+        loss_mask = torch.clamp(roi_mask + valid_flow, 0.0, 1.0)
+        flow_loss = F.smooth_l1_loss(flow_all, gt_flow_norm, reduction='none')
+        loss = (flow_loss * loss_mask).sum() / (loss_mask.sum() * flow_loss.shape[-1] + 1e-6)
 
         updated_features_all = torch.cat(updated_features_list, dim=0)  # (sum(B,N), C, H, W)
 

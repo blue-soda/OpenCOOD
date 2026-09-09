@@ -91,7 +91,7 @@ model:
     design_mode: 0
     num_roi_thres: -1
     ectra:
-      enabled: false
+      enabled: true
       feature_dim: 64
       hidden_dim: 16
       gate_dim: 16
@@ -153,6 +153,9 @@ loss:
   args:
     cls_weight: 1.0
     reg: 2.0
+    aux_weights:
+      ectra_motion_loss: 0.05
+      ectra_roi_flow_loss: 0.5
 
 optimizer:
   core_method: Adam

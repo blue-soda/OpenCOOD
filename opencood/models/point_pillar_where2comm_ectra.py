@@ -427,7 +427,7 @@ class PointPillarWhere2commEctra(nn.Module):
                 shape_list=flow_shape_list)
             box_flow_map, reserved_mask, roi_aux = self.ectra_roi(
                 box_flow_map, reserved_mask, fusion_spatial_features,
-                record_len, fusion_record_frames)
+                record_len, fusion_record_frames, flow_gt=flow_gt)
 
         # rain attention:
         if self.multi_scale:
