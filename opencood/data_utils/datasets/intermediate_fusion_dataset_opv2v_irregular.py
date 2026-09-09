@@ -104,6 +104,7 @@ class IntermediateFusionDatasetIrregular(basedataset.BaseDataset):
             root_dir = params['validate_dir']
         
         print("Dataset dir:", root_dir)
+        self.object_label_coord = self.infer_object_label_coord(params)
 
         if 'train_params' not in params or\
                 'max_cav' not in params['train_params']:
@@ -458,7 +459,8 @@ class IntermediateFusionDatasetIrregular(basedataset.BaseDataset):
                 tmp_ego_pose = np.array(data[cav_id]['curr']['params']['true_ego_pos'])
                 tmp_ego_pose += np.array([-0.5, 0, 1.9, 0, 0, 0])
                 data[cav_id]['curr']['params']['lidar_pose'] = list(tmp_ego_pose)
-            self.normalize_pose_fields(data[cav_id]['curr']['params'])
+            self.normalize_pose_fields(data[cav_id]['curr']['params'],
+                                       self.object_label_coord)
 
             # 2.2 load curr lidar file
             # npy is faster than pcd
@@ -538,7 +540,8 @@ class IntermediateFusionDatasetIrregular(basedataset.BaseDataset):
                     tmp_ego_pose = np.array(data[cav_id]['past_k'][i]['params']['true_ego_pos'])
                     tmp_ego_pose += np.array([-0.5, 0, 1.9, 0, 0, 0])
                     data[cav_id]['past_k'][i]['params']['lidar_pose'] = list(tmp_ego_pose)
-                self.normalize_pose_fields(data[cav_id]['past_k'][i]['params'])
+                self.normalize_pose_fields(data[cav_id]['past_k'][i]['params'],
+                                           self.object_label_coord)
 
                 # load lidar file: npy is faster than pcd
                 npy_file = cav_content[timestamp_key]['lidar'].replace("pcd", "npy")

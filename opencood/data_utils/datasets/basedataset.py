@@ -87,6 +87,7 @@ class BaseDataset(Dataset):
             root_dir = params['validate_dir']
         
         print("Dataset dir:", root_dir)
+        self.object_label_coord = self.infer_object_label_coord(params)
 
         if 'train_params' not in params or\
                 'max_cav' not in params['train_params']:
@@ -246,7 +247,8 @@ class BaseDataset(Dataset):
             else:
                 data[cav_id]['params'] = \
                         load_yaml(cav_content[timestamp_key]['yaml'])
-            self.normalize_pose_fields(data[cav_id]['params'])
+            self.normalize_pose_fields(data[cav_id]['params'],
+                                       self.object_label_coord)
 
             # data[cav_id]['lidar_np'] = \
             #     pcd_utils.pcd_to_np(cav_content[timestamp_key]['lidar'])
@@ -264,7 +266,7 @@ class BaseDataset(Dataset):
         return data
 
     @staticmethod
-    def normalize_pose_fields(params):
+    def normalize_pose_fields(params, object_label_coord=None):
         """
         Normalize matrix-format pose fields to OpenCOOD's 6DoF pose format.
 
@@ -280,7 +282,20 @@ class BaseDataset(Dataset):
                 params[key] = tfm_to_pose(pose)
             elif pose.shape == (6,):
                 params[key] = pose.astype(float).tolist()
+        if object_label_coord is not None:
+            params['_object_label_coord'] = object_label_coord
         return params
+
+    @staticmethod
+    def infer_object_label_coord(params):
+        if 'object_label_coord' in params:
+            return params['object_label_coord']
+
+        path_hint = ' '.join(str(params.get(key, '')) for key in (
+            'root_dir', 'validate_dir', 'test_dir', 'data_dir'))
+        if 'v2v4real' in path_hint.lower():
+            return 'local'
+        return 'world'
 
     @staticmethod
     def extract_timestamps(yaml_files):

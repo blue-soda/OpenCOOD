@@ -312,7 +312,7 @@ class BasePostprocessor(object):
         for cav_content in cav_contents:
             params = cav_content['params']
             object_dict = params['vehicles']
-            if params.get('_lidar_pose_was_matrix', False):
+            if params.get('_object_label_coord') == 'local':
                 self.project_local_objects(object_dict,
                                            output_dict,
                                            params['lidar_pose'],
