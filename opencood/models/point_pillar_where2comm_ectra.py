@@ -275,7 +275,8 @@ class PointPillarWhere2commEctra(nn.Module):
             current_intervals.append(batch_t.view(cav_num, k)[:, 0])
         return torch.cat(current_intervals, dim=0)
 
-    def generate_box_flow(self, data_dict, pred_dict, dataset, device):
+    def generate_box_flow(self, data_dict, pred_dict, dataset, device,
+                          shape_list=None):
         if dataset is None:
             raise ValueError(
                 'ECTRA ROI mode needs dataset.generate_pred_bbx_frames; '
@@ -289,7 +290,8 @@ class PointPillarWhere2commEctra(nn.Module):
         psm_single_list = pred_dict['psm_single_list']
         rm_single_list = pred_dict['rm_single_list']
 
-        shape_list = torch.tensor([64, 200, 704], device=device)
+        if shape_list is None:
+            shape_list = torch.tensor([64, 200, 704], device=device)
         box_flow_map_list = []
         reserved_mask_list = []
 
@@ -362,6 +364,9 @@ class PointPillarWhere2commEctra(nn.Module):
         # import ipdb; ipdb.set_trace()
         batch_dict = self.scatter(batch_dict)
         batch_dict = self.backbone(batch_dict) # 'spatial_features_2d': (batch_cav_size, 128*3, H/2, W/2)
+        flow_shape_list = torch.tensor(
+            batch_dict['spatial_features'].shape[-3:],
+            device=batch_dict['spatial_features'].device)
         ectra_aux = {}
         if self.ectra_dense_enabled:
             batch_dict['spatial_features'], ectra_aux = self.ectra(
@@ -418,7 +423,8 @@ class PointPillarWhere2commEctra(nn.Module):
                 'rm_single_list': self.regroup(rm_for_box, record_len, k),
             }
             box_flow_map, reserved_mask = self.generate_box_flow(
-                data_dict, single_output, dataset, psm_single.device)
+                data_dict, single_output, dataset, psm_single.device,
+                shape_list=flow_shape_list)
             box_flow_map, reserved_mask, roi_aux = self.ectra_roi(
                 box_flow_map, reserved_mask, fusion_spatial_features,
                 record_len, fusion_record_frames)

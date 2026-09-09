@@ -594,10 +594,18 @@ class IntermediateFusionDatasetDAIRIrregularMulti(intermediate_fusion_dataset_op
                 prev_object_id_stack[t_i] = unique_object_ids
             
             # TODO: generate_flow_map: yhu, generate_flow_map_szwei: szwei
+            cav_lidar_range = self.params['preprocess']['cav_lidar_range']
+            voxel_size = self.params['preprocess']['args']['voxel_size']
+            flow_shape = torch.tensor([
+                64,
+                int(round((cav_lidar_range[4] - cav_lidar_range[1]) / voxel_size[1])),
+                int(round((cav_lidar_range[3] - cav_lidar_range[0]) / voxel_size[0])),
+            ])
             flow_map, warp_mask = generate_flow_map_szwei(prev_object_stack,
                                             prev_object_id_stack,
-                                            self.params['preprocess']['cav_lidar_range'],
-                                            self.params['preprocess']['args']['voxel_size'],
+                                            cav_lidar_range,
+                                            voxel_size,
+                                            shape_list=flow_shape,
                                             past_k=1)
 
             selected_cav_processed.update({'flow_gt': flow_map})

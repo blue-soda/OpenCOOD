@@ -288,7 +288,8 @@ class PointPillarWhere2commFlowTwoStage(nn.Module):
         split_x = torch.tensor_split(x, cum_sum_len[:-1].cpu())
         return split_x
 
-    def generate_box_flow(self, data_dict, pred_dict, dataset, device): 
+    def generate_box_flow(self, data_dict, pred_dict, dataset, device,
+                          shape_list=None):
         """
         data_dict : 
 
@@ -306,8 +307,8 @@ class PointPillarWhere2commFlowTwoStage(nn.Module):
         psm_single_list = pred_dict['psm_single_list']
         rm_single_list = pred_dict['rm_single_list']
 
-        # H, W = psm_single_list[0].shape[-2:]
-        shape_list = torch.tensor([64, 200, 704]).to(device)
+        if shape_list is None:
+            shape_list = torch.tensor([64, 200, 704]).to(device)
         
         trans_mat_pastk_2_past0_batch = []
         B = len(lidar_pose_batch)
@@ -413,6 +414,9 @@ class PointPillarWhere2commFlowTwoStage(nn.Module):
         batch_dict = self.backbone(batch_dict) # 'spatial_features_2d': (batch_cav_size, 128*3, H/2, W/2)
         # N, C, H', W'. [N, 384, 100, 352]
         spatial_features_2d = batch_dict['spatial_features_2d']
+        flow_shape_list = torch.tensor(
+            batch_dict['spatial_features'].shape[-3:],
+            device=spatial_features_2d.device)
 
         noise_pairwise_t_matrix = None
         if self.noise_flag and B==1:
@@ -453,9 +457,9 @@ class PointPillarWhere2commFlowTwoStage(nn.Module):
             single_output.update({'psm_single_list': self.regroup(psm_single, record_len, k), 
             'rm_single_list': self.regroup(rm_single, record_len, k)})
             if self.viz_bbx_flag:
-                box_flow_map, reserved_mask, single_detection_bbx, matched_idx_list, compensated_results_list = self.generate_box_flow(data_dict, single_output, dataset, psm_single.device)
+                box_flow_map, reserved_mask, single_detection_bbx, matched_idx_list, compensated_results_list = self.generate_box_flow(data_dict, single_output, dataset, psm_single.device, shape_list=flow_shape_list)
             else:
-                box_flow_map, reserved_mask = self.generate_box_flow(data_dict, single_output, dataset, psm_single.device)
+                box_flow_map, reserved_mask = self.generate_box_flow(data_dict, single_output, dataset, psm_single.device, shape_list=flow_shape_list)
 
         if 'flow_gt' in data_dict['label_dict']:
             flow_gt = data_dict['label_dict']['flow_gt']
