@@ -137,6 +137,8 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         self.is_generate_motion_gt = False
         if 'is_generate_motion_gt' in params and params['is_generate_motion_gt']:
             self.is_generate_motion_gt = True
+        self.motion_gt_only = self.is_generate_motion_gt and \
+            params.get('motion_gt_only', False)
 
         self.viz_bbx_flag = False
         
@@ -205,6 +207,82 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         self.cur_epoch = 0
         
         print("Irregular async dataset with past %d frames and expectation time delay = %d initialized! %d samples totally!" % (self.k, int(self.binomial_n*self.binomial_p), len(self.data)))
+
+    def _build_motion_gt_only_sample(self, base_data_dict):
+        past_k_object_bbx_stack = []
+        past_k_cav_object_num = []
+        cur_cav_object_bbx_debug = []
+        past_k_time_diffs_stack = []
+        past_k_sample_interval_stack = []
+
+        for cav_id, selected_cav_base in base_data_dict.items():
+            if selected_cav_base['ego']:
+                continue
+
+            past_k_object_bbx = []
+            past_k_object_ids = []
+            for i in range(self.k):
+                object_bbx_center, object_bbx_mask, object_ids = \
+                    self.generate_object_center(
+                        [selected_cav_base['past_k'][i]],
+                        selected_cav_base['past_k'][0]['params']['lidar_pose'])
+                past_k_object_bbx.append(
+                    object_bbx_center[object_bbx_mask == 1])
+                past_k_object_ids.append(object_ids)
+
+            cur_object_bbx, cur_object_mask, cur_object_ids = \
+                self.generate_object_center(
+                    [selected_cav_base['curr']],
+                    selected_cav_base['past_k'][0]['params']['lidar_pose'])
+            cur_object_bbx = cur_object_bbx[cur_object_mask == 1]
+            common_indices = self.find_common_id(
+                past_k_object_ids, cur_object_ids)
+            if not common_indices or len(common_indices[0]) == 0:
+                continue
+
+            past_k_common_bbx_list = []
+            for time_id, indices in enumerate(common_indices[:-1]):
+                indices = indices.numpy()
+                past = past_k_object_bbx[time_id][indices]
+                if len(past.shape) == 1:
+                    past = past.reshape(1, 7)
+                past_k_common_bbx_list.append(past)
+            past_k_common_bbx = np.stack(past_k_common_bbx_list, axis=0)
+            past_k_common_bbx = np.transpose(past_k_common_bbx, (1, 0, 2))
+            cur_common_bbx = cur_object_bbx[common_indices[-1].numpy()]
+            if len(cur_common_bbx.shape) == 1:
+                cur_common_bbx = cur_common_bbx.reshape(1, 7)
+            if past_k_common_bbx.shape[0] == 0:
+                continue
+
+            past_k_object_bbx_stack.append(past_k_common_bbx)
+            past_k_cav_object_num.append(past_k_common_bbx.shape[0])
+            cur_cav_object_bbx_debug.append(cur_common_bbx)
+            past_k_time_diffs_stack += [
+                selected_cav_base['past_k'][i]['time_diff']
+                for i in range(self.k)]
+            past_k_sample_interval_stack += [
+                selected_cav_base['past_k'][i]['sample_interval']
+                for i in range(self.k)]
+
+        if len(past_k_object_bbx_stack) == 0:
+            return None
+
+        past_k_sample_interval_array = np.array(past_k_sample_interval_stack)
+        past_k_time_diffs_array = np.array(past_k_time_diffs_stack)
+        processed_data_dict = OrderedDict()
+        processed_data_dict['ego'] = {
+            'label_dict': {},
+            'past_k_object_bbx': np.vstack(past_k_object_bbx_stack),
+            'past_k_cav_object_num': past_k_cav_object_num,
+            'cur_cav_object_bbx_debug': np.vstack(cur_cav_object_bbx_debug),
+            'past_k_time_diffs': past_k_time_diffs_array,
+            'past_k_sample_interval': past_k_sample_interval_array,
+            'avg_sample_interval': float(np.mean(past_k_sample_interval_array)),
+            'avg_time_delay': float(np.mean(past_k_time_diffs_array)),
+            'avg_var': float(np.var(past_k_time_diffs_array)),
+        }
+        return processed_data_dict
 
     @staticmethod
     def _resolve_split(path, data_dir, default_name):
@@ -376,8 +454,12 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             # 用于可视化前摄
             final_data[i]['curr']['camera0_files'] = os.path.join(self.root_dir, frame_info["vehicle_image_path"])
 
-            final_data[i]['curr']['lidar_np'] = pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["vehicle_pointcloud_path"]))[0] if i==0 else \
-                pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["infrastructure_pointcloud_path"]))[0]
+            if self.motion_gt_only:
+                final_data[i]['curr']['lidar_np'] = np.empty((0, 4),
+                                                             dtype=np.float32)
+            else:
+                final_data[i]['curr']['lidar_np'] = pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["vehicle_pointcloud_path"]))[0] if i==0 else \
+                    pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["infrastructure_pointcloud_path"]))[0]
             final_data[i]['curr']['params'] = OrderedDict()
             final_data[i]['curr']['params']['vehicles'] = \
                 load_json(osp.join(self.root_dir, frame_info['cooperative_label_path'])) if i == 0 else [] # 这里面存放的是世界标签
@@ -437,7 +519,11 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
                     final_data[i]['past_k'][j]['timestamp'] = latest_frame_id
                     final_data[i]['past_k'][j]['time_diff'] = int(latest_frame_id) - int(curr_inf_frame_id) # 这里被我反了一下，这是为了得到和其他数据集一样的正负关系
                     final_data[i]['past_k'][j]['sample_interval'] = - sample_interval
-                    final_data[i]['past_k'][j]['lidar_np'] = pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["infrastructure_pointcloud_path"]))[0]
+                    if self.motion_gt_only:
+                        final_data[i]['past_k'][j]['lidar_np'] = np.empty((0, 4),
+                                                                          dtype=np.float32)
+                    else:
+                        final_data[i]['past_k'][j]['lidar_np'] = pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["infrastructure_pointcloud_path"]))[0]
                     final_data[i]['past_k'][j]['params'] = OrderedDict()
                     final_data[i]['past_k'][j]['params']['vehicles'] = []
                     final_data[i]['past_k'][j]['params']['lidar_pose'] = self.get_inf_trans(latest_frame_id, system_offset)
@@ -763,6 +849,8 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         if self.w_history is not True:
             self.k = 1
         base_data_dict = self.retrieve_base_data(idx)
+        if self.motion_gt_only:
+            return self._build_motion_gt_only_sample(base_data_dict)
         ''' base_data_dict structure:
         {
             cav_id_1 : {
@@ -1131,6 +1219,49 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         return len(self.data)
 
     def collate_batch_train(self, batch):
+        if self.motion_gt_only:
+            batch = [sample for sample in batch if sample is not None]
+            if len(batch) == 0:
+                return None
+
+            past_k_object_bbx_list = []
+            past_k_object_cav_num_list = []
+            cur_object_bbx_debug_list = []
+            past_k_time_diff = []
+            past_k_sample_interval = []
+            avg_sample_interval = []
+            avg_time_delay = []
+            avg_time_var = []
+            for sample in batch:
+                ego_dict = sample['ego']
+                past_k_object_bbx_list.append(ego_dict['past_k_object_bbx'])
+                past_k_object_cav_num_list += ego_dict['past_k_cav_object_num']
+                cur_object_bbx_debug_list.append(
+                    ego_dict['cur_cav_object_bbx_debug'])
+                past_k_time_diff.append(ego_dict['past_k_time_diffs'])
+                past_k_sample_interval.append(
+                    ego_dict['past_k_sample_interval'])
+                avg_sample_interval.append(ego_dict['avg_sample_interval'])
+                avg_time_delay.append(ego_dict['avg_time_delay'])
+                avg_time_var.append(ego_dict['avg_var'])
+
+            return {'ego': {
+                'label_dict': {},
+                'past_k_object_bbx': torch.from_numpy(
+                    np.vstack(past_k_object_bbx_list)),
+                'past_k_object_cav_num': torch.from_numpy(
+                    np.array(past_k_object_cav_num_list)),
+                'cur_object_bbx_debug': torch.from_numpy(
+                    np.vstack(cur_object_bbx_debug_list)),
+                'past_k_time_interval': torch.from_numpy(
+                    np.hstack(past_k_time_diff)),
+                'past_k_sample_interval': torch.from_numpy(
+                    np.hstack(past_k_sample_interval)),
+                'avg_sample_interval': float(np.mean(avg_sample_interval)),
+                'avg_time_delay': float(np.mean(avg_time_delay)),
+                'avg_time_var': float(np.mean(avg_time_var)),
+            }}
+
         if self.is_generate_motion_gt:
             batch = [sample for sample in batch if sample is not None]
             if len(batch) == 0:
