@@ -31,6 +31,7 @@ from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_irregular_fl
 from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_irregular_flow_variance import IntermediateFusionDatasetIrregularFlowVariance
 from opencood.data_utils.datasets.intermediate_fusion_dataset_dair_irregular_multi import IntermediateFusionDatasetDAIRIrregularMulti
 from opencood.data_utils.datasets.cobevflow_dair_irregular_dataset import CoBEVFlowDAIRIrregularDataset
+from opencood.data_utils.datasets.codyntrust_dair_irregular_flow_dataset import CoDynTrustDAIRIrregularFlowDataset
 from opencood.data_utils.datasets.cobevflow_v2v4real_irregular_dataset import CoBEVFlowV2V4RealIrregularDataset
 try:
     from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_outage import IntermediateFusionDataset_outage
@@ -69,6 +70,7 @@ __all__ = {
     'IntermediateFusionDatasetDAIRIrregular': IntermediateFusionDatasetDAIRIrregular,
     'IntermediateFusionDatasetDAIRIrregularMulti': IntermediateFusionDatasetDAIRIrregularMulti,
     'CoBEVFlowDAIRIrregularDataset': CoBEVFlowDAIRIrregularDataset,
+    'CoDynTrustDAIRIrregularFlowDataset': CoDynTrustDAIRIrregularFlowDataset,
     'CoBEVFlowV2V4RealIrregularDataset': CoBEVFlowV2V4RealIrregularDataset,
     'IntermediateFusionDatasetIrregularFlowVariance': IntermediateFusionDatasetIrregularFlowVariance,
     'IntermediateFusionDatasetV2XSETFlowNew': IntermediateFusionDatasetV2XSETFlowNew,
