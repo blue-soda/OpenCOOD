@@ -10,6 +10,7 @@ from torch.autograd import Variable
 from opencood.utils import box_utils
 import copy
 import math
+import os
 
 def clones(module, N):
     "Produce N identical layers."
@@ -392,7 +393,8 @@ class Matcher(nn.Module):
     while the others are un-matched (and thus treated as non-objects).
     """
 
-    def __init__(self, fusion, cost_dist: float = 1, cost_giou: float = 1, thre: float = 20):
+    def __init__(self, fusion, cost_dist: float = 1, cost_giou: float = 1,
+                 thre: float = 20, use_learned_motion: bool = False):
         """Creates the matcher
         Params:
             cost_class: This is the relative weight of the classification error in the matching cost
@@ -403,11 +405,17 @@ class Matcher(nn.Module):
         self.cost_dist = cost_dist
         self.cost_giou = cost_giou
         self.thre = thre
+        self.use_learned_motion = use_learned_motion
 
         self.fusion = fusion
         if fusion=='flow':
             m1, m2 = make_model(4,2)
             self.compensate_motion = m1
+        self.debug_matcher = os.environ.get(
+            'OPENCOOD_MATCHER_DEBUG', '').lower() not in ('', '0', 'false')
+        self.debug_interval = int(os.environ.get(
+            'OPENCOOD_MATCHER_DEBUG_INTERVAL', '100'))
+        self.debug_calls = 0
 
     @torch.no_grad()
     def forward(self, input_dict, feature=None, shape_list=None, batch_id=0, viz_flag=False):
@@ -422,6 +430,11 @@ class Matcher(nn.Module):
         elif self.fusion=='linear':
             return self.forward_flow(input_dict, shape_list)
         elif self.fusion=='flow': # TODO: flow_dir
+            if self.use_learned_motion:
+                if self.debug_matcher and self.debug_calls == 0:
+                    print('[MatcherDebug] using learned multi-frame flow')
+                self.debug_calls += 1
+                return self.forward_flow_multi_frames(input_dict, shape_list)
             return self.forward_flow_dir(input_dict, shape_list)
         else:
             print("Attention, fusion method must be in box or feature!")

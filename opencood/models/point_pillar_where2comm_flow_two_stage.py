@@ -205,7 +205,7 @@ class PointPillarWhere2commFlowTwoStage(nn.Module):
                                     kernel_size=1)
 
         if self.design_mode == 0:
-            self.matcher = Matcher('flow')
+            self.matcher = Matcher('flow', use_learned_motion=self.k >= 3)
         else:
             self.matcher = Matcher('linear')
 
