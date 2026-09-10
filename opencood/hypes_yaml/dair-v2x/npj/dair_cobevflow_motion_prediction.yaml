@@ -22,6 +22,7 @@ dataset: "dairv2x"
 is_generate_gt_flow: false
 is_generate_motion_gt: true
 motion_gt_only: true
+motion_match_max_dist: 8.0
 viz_bbx_flag: false
 
 yaml_parser: "load_point_pillar_params"

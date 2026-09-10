@@ -129,6 +129,7 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         if 'num_roi_thres' in params:
             self.num_roi_thres = params['num_roi_thres']
             print("限制ROI个数以测量带宽性能权衡: ", self.num_roi_thres)
+        self.motion_match_max_dist = params.get('motion_match_max_dist', 8.0)
 
         # 控制是否需要生成GT flow
         self.is_generate_gt_flow = False
@@ -220,38 +221,18 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
                 continue
 
             past_k_object_bbx = []
-            past_k_object_ids = []
+            past0_pose = selected_cav_base['past_k'][0]['params']['lidar_pose']
             for i in range(self.k):
-                object_bbx_center, object_bbx_mask, object_ids = \
-                    self.generate_object_center(
-                        [selected_cav_base['past_k'][i]],
-                        selected_cav_base['past_k'][0]['params']['lidar_pose'])
                 past_k_object_bbx.append(
-                    object_bbx_center[object_bbx_mask == 1])
-                past_k_object_ids.append(object_ids)
-
-            cur_object_bbx, cur_object_mask, cur_object_ids = \
-                self.generate_object_center(
-                    [selected_cav_base['curr']],
-                    selected_cav_base['past_k'][0]['params']['lidar_pose'])
-            cur_object_bbx = cur_object_bbx[cur_object_mask == 1]
-            common_indices = self.find_common_id(
-                past_k_object_ids, cur_object_ids)
-            if not common_indices or len(common_indices[0]) == 0:
+                    self._generate_single_boxes_in_pose(
+                        selected_cav_base['past_k'][i], past0_pose))
+            cur_object_bbx = self._generate_single_boxes_in_pose(
+                selected_cav_base['curr'], past0_pose)
+            past_k_common_bbx, cur_common_bbx = \
+                self._match_temporal_boxes_by_nearest(
+                    past_k_object_bbx, cur_object_bbx)
+            if past_k_common_bbx is None:
                 continue
-
-            past_k_common_bbx_list = []
-            for time_id, indices in enumerate(common_indices[:-1]):
-                indices = indices.numpy()
-                past = past_k_object_bbx[time_id][indices]
-                if len(past.shape) == 1:
-                    past = past.reshape(1, 7)
-                past_k_common_bbx_list.append(past)
-            past_k_common_bbx = np.stack(past_k_common_bbx_list, axis=0)
-            past_k_common_bbx = np.transpose(past_k_common_bbx, (1, 0, 2))
-            cur_common_bbx = cur_object_bbx[common_indices[-1].numpy()]
-            if len(cur_common_bbx.shape) == 1:
-                cur_common_bbx = cur_common_bbx.reshape(1, 7)
             if past_k_common_bbx.shape[0] == 0:
                 continue
 
@@ -283,6 +264,58 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             'avg_var': float(np.var(past_k_time_diffs_array)),
         }
         return processed_data_dict
+
+    def _generate_single_boxes_in_pose(self, frame_content, reference_pose):
+        object_bbx_center, object_bbx_mask, _ = \
+            self.generate_object_center_dair_single([frame_content])
+        boxes = object_bbx_center[object_bbx_mask == 1]
+        if boxes.shape[0] == 0:
+            return boxes
+        source_pose = frame_content['params']['lidar_pose']
+        if source_pose == reference_pose:
+            return boxes
+        transformation_matrix = x1_to_x2(source_pose, reference_pose)
+        corners = box_utils.boxes_to_corners_3d(
+            boxes, self.params['postprocess']['order'])
+        projected_corners = box_utils.project_box3d(
+            corners, transformation_matrix)
+        return box_utils.corner_to_center(
+            projected_corners, self.params['postprocess']['order'])
+
+    def _match_temporal_boxes_by_nearest(self, past_k_boxes, cur_boxes):
+        if not past_k_boxes or past_k_boxes[0].shape[0] == 0 or \
+                cur_boxes.shape[0] == 0:
+            return None, None
+
+        matched_past = []
+        matched_cur = []
+        base_boxes = past_k_boxes[0]
+        for base_box in base_boxes:
+            track_boxes = []
+            ok = True
+            for boxes in past_k_boxes:
+                if boxes.shape[0] == 0:
+                    ok = False
+                    break
+                dist = np.linalg.norm(boxes[:, :2] - base_box[:2], axis=1)
+                nearest_idx = int(np.argmin(dist))
+                if dist[nearest_idx] > self.motion_match_max_dist:
+                    ok = False
+                    break
+                track_boxes.append(boxes[nearest_idx])
+            if not ok:
+                continue
+
+            cur_dist = np.linalg.norm(cur_boxes[:, :2] - base_box[:2], axis=1)
+            cur_idx = int(np.argmin(cur_dist))
+            if cur_dist[cur_idx] > self.motion_match_max_dist:
+                continue
+            matched_past.append(np.stack(track_boxes, axis=0))
+            matched_cur.append(cur_boxes[cur_idx])
+
+        if len(matched_past) == 0:
+            return None, None
+        return np.stack(matched_past, axis=0), np.stack(matched_cur, axis=0)
 
     @staticmethod
     def _resolve_split(path, data_dir, default_name):
@@ -527,6 +560,11 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
                     final_data[i]['past_k'][j]['params'] = OrderedDict()
                     final_data[i]['past_k'][j]['params']['vehicles'] = []
                     final_data[i]['past_k'][j]['params']['lidar_pose'] = self.get_inf_trans(latest_frame_id, system_offset)
+                    if self.motion_gt_only:
+                        final_data[i]['past_k'][j]['params']['vehicles_single'] = \
+                            load_json(os.path.join(
+                                self.root_dir,
+                                'infrastructure-side/label/virtuallidar/{}.json'.format(latest_frame_id)))
                     # 2024年7月22日 xuyujiang 增加路端的单车信息，因为在where2comm监督单车的训练中需要用到
                     # final_data[i]['past_k'][j]['params']['vehicles_single'] = \
                     #     load_json(os.path.join(self.root_dir, 'infrastructure-side/label/virtuallidar/{}.json'.format(latest_frame_id))) # 这里面存放的是single标签
