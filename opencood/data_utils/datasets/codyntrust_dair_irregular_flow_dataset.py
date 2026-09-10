@@ -980,6 +980,8 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
                 flow_gt.append(selected_cav_processed['flow_gt'])
                 warp_mask.append(selected_cav_processed['warp_mask'])
         
+        if len(pastk_2_past0_tr_mats) == 0:
+            return None
         pastk_2_past0_tr_mats = np.stack(pastk_2_past0_tr_mats, axis=0) # N, k, 4, 4
 
         # {pos: array[num_cav, k, 100, 252, 2], neg: array[num_cav, k, 100, 252, 2], target: array[num_cav, k, 100, 252, 2]}
@@ -1129,6 +1131,10 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         return len(self.data)
 
     def collate_batch_train(self, batch):
+        if self.is_generate_motion_gt:
+            batch = [sample for sample in batch if sample is not None]
+            if len(batch) == 0:
+                return None
         output_dict = super().collate_batch_train(batch)
         if output_dict is None or not self.is_generate_motion_gt:
             return output_dict
@@ -1137,8 +1143,6 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         past_k_object_cav_num_list = []
         cur_object_bbx_debug_list = []
         for sample in batch:
-            if sample is None:
-                return None
             ego_dict = sample['ego']
             if 'past_k_object_bbx' not in ego_dict or \
                     'cur_cav_object_bbx_debug' not in ego_dict:
