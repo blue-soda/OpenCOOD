@@ -1221,23 +1221,46 @@ class Matcher(nn.Module):
             original_reserved_mask = []
             matched_idx_list = []
             compensated_results_list = []
+        C, H, W = [int(value.item()) for value in shape_list]
+        basic_mat = torch.tensor([[1,0,0],[0,1,0]]).unsqueeze(0).to(
+            shape_list.device).to(torch.float32)
+        identity_grid = F.affine_grid(
+            basic_mat, [1, C, H, W], align_corners=False).to(shape_list.device)
+
+        def append_identity_result():
+            mask = torch.ones(1, C, H, W).to(shape_list.device)
+            flow_map_list.append(identity_grid)
+            reserved_mask.append(mask)
+            if self.viz_flag:
+                matched_idx_list.append(
+                    torch.zeros((0, 2), dtype=torch.long,
+                                device=shape_list.device))
+                compensated_results_list.append(
+                    torch.zeros((0, 4, 3), device=shape_list.device))
+                original_reserved_mask.append(mask)
+
         for cav, cav_content in input_dict.items():
             if cav == 0:
                 # ego do not need warp
-                C, H, W = shape_list
-                basic_mat = torch.tensor([[1,0,0],[0,1,0]]).unsqueeze(0).to(torch.float32)
-                basic_warp_mat = F.affine_grid(basic_mat, [1, C, H, W], align_corners=False).to(shape_list.device)
-                mask = torch.ones(1, C, H, W).to(shape_list)
-                flow_map_list.append(basic_warp_mat)
+                mask = torch.ones(1, C, H, W).to(shape_list.device)
+                flow_map_list.append(identity_grid)
                 reserved_mask.append(mask)
                 if self.viz_flag:
                     original_reserved_mask.append(mask)
             else:
+                if 0 not in cav_content or 1 not in cav_content or \
+                        len(cav_content.get('past_k_time_diff', [])) < 2:
+                    append_identity_result()
+                    continue
                 coord_past1 = cav_content[0]
                 coord_past2 = cav_content[1]
 
                 center_points_past1 = coord_past1['pred_box_center_tensor'][:,:2]
                 center_points_past2 = coord_past2['pred_box_center_tensor'][:,:2]
+                if center_points_past1.shape[0] == 0 or \
+                        center_points_past2.shape[0] == 0:
+                    append_identity_result()
+                    continue
 
                 cost_mat_center = torch.zeros((center_points_past2.shape[0], center_points_past1.shape[0])).to(center_points_past1.device)
 
@@ -1260,16 +1283,7 @@ class Matcher(nn.Module):
                 cost_mat_center = torch.where(visible_mat==1, cost_mat_center, tmp_thre)
 
                 if cost_mat_center.shape[1] == 0 or cost_mat_center.shape[0] == 0:
-                    C, H, W = shape_list
-                    basic_mat = torch.tensor([[1,0,0],[0,1,0]]).unsqueeze(0).to(torch.float32)
-                    basic_warp_mat = F.affine_grid(basic_mat, [1, C, H, W], align_corners=False).to(shape_list.device)
-                    mask = torch.ones(1, C, H, W).to(shape_list)
-                    flow_map_list.append(basic_warp_mat)
-                    reserved_mask.append(mask)
-                    if self.viz_flag:
-                        matched_idx_list.append(torch.stack([torch.tensor([]), torch.tensor([])], dim=1).to(shape_list.device))
-                        compensated_results_list.append(torch.zeros(0, 8, 3).to(shape_list.device))
-                        original_reserved_mask.append(mask)
+                    append_identity_result()
                     continue
 
                 match = torch.min(cost_mat_center, dim=1)
