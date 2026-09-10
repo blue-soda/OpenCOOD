@@ -211,6 +211,32 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             return osp.join(path, default_name)
         return path
 
+    def _resolve_lidar_path(self, relative_path):
+        candidate = osp.join(self.root_dir, relative_path)
+        if osp.exists(candidate):
+            return candidate
+
+        normalized = relative_path.replace("\\", "/")
+        filename = normalized.split("/")[-1]
+        root_parent = osp.dirname(self.root_dir)
+        if normalized.startswith("vehicle-side/velodyne/"):
+            alt_path = osp.join(
+                root_parent,
+                "cooperative-vehicle-infrastructure-vehicle-side-velodyne",
+                filename,
+            )
+            if osp.exists(alt_path):
+                return alt_path
+        if normalized.startswith("infrastructure-side/velodyne/"):
+            alt_path = osp.join(
+                root_parent,
+                "cooperative-vehicle-infrastructure-infrastructure-side-velodyne",
+                filename,
+            )
+            if osp.exists(alt_path):
+                return alt_path
+        return candidate
+
     def get_vehicle_trans(self, veh_frame_id):
 
         lidar_to_novatel_json_file = load_json(os.path.join(self.root_dir,'vehicle-side/calib/lidar_to_novatel/'+str(veh_frame_id)+'.json'))
@@ -347,8 +373,8 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             # 用于可视化前摄
             final_data[i]['curr']['camera0_files'] = os.path.join(self.root_dir, frame_info["vehicle_image_path"])
 
-            final_data[i]['curr']['lidar_np'] = pcd_utils.read_pcd(os.path.join(self.root_dir,frame_info["vehicle_pointcloud_path"]))[0] if i==0 else \
-                pcd_utils.read_pcd(os.path.join(self.root_dir,frame_info["infrastructure_pointcloud_path"]))[0]
+            final_data[i]['curr']['lidar_np'] = pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["vehicle_pointcloud_path"]))[0] if i==0 else \
+                pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["infrastructure_pointcloud_path"]))[0]
             final_data[i]['curr']['params'] = OrderedDict()
             final_data[i]['curr']['params']['vehicles'] = \
                 load_json(osp.join(self.root_dir, frame_info['cooperative_label_path'])) if i == 0 else [] # 这里面存放的是世界标签
@@ -408,7 +434,7 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
                     final_data[i]['past_k'][j]['timestamp'] = latest_frame_id
                     final_data[i]['past_k'][j]['time_diff'] = int(latest_frame_id) - int(curr_inf_frame_id) # 这里被我反了一下，这是为了得到和其他数据集一样的正负关系
                     final_data[i]['past_k'][j]['sample_interval'] = - sample_interval
-                    final_data[i]['past_k'][j]['lidar_np'] = pcd_utils.read_pcd(os.path.join(self.root_dir,frame_info["infrastructure_pointcloud_path"]))[0]
+                    final_data[i]['past_k'][j]['lidar_np'] = pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["infrastructure_pointcloud_path"]))[0]
                     final_data[i]['past_k'][j]['params'] = OrderedDict()
                     final_data[i]['past_k'][j]['params']['vehicles'] = []
                     final_data[i]['past_k'][j]['params']['lidar_pose'] = self.get_inf_trans(latest_frame_id, system_offset)
