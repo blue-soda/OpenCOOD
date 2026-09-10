@@ -158,7 +158,7 @@ loss:
       ectra_roi_flow_loss: 0.5
 
 optimizer:
-  core_method: Adam
+  core_method: AdamW
   lr: 0.002
   args:
     eps: 1e-10
