@@ -134,6 +134,9 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         self.is_generate_gt_flow = False
         if 'is_generate_gt_flow' in params and params['is_generate_gt_flow']:
             self.is_generate_gt_flow = True
+        self.is_generate_motion_gt = False
+        if 'is_generate_motion_gt' in params and params['is_generate_motion_gt']:
+            self.is_generate_motion_gt = True
 
         self.viz_bbx_flag = False
         
@@ -575,6 +578,8 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         
         # past k label 
         # past_k_label_dicts = [] # todo 这个部分可以删掉
+        past_k_object_bbx = []
+        past_k_object_ids = []
 
         # 判断点的数量是否合法
         if_no_point = False
@@ -625,6 +630,14 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             #         gt_box_center=object_bbx_center, anchors=anchor_box, mask=object_bbx_mask
             #     )
             # past_k_label_dicts.append(single_view_label_dict)
+            if self.is_generate_motion_gt:
+                object_bbx_center, object_bbx_mask, object_ids = \
+                    self.generate_object_center(
+                        [selected_cav_base['past_k'][i]],
+                        selected_cav_base['past_k'][0]['params']['lidar_pose'])
+                past_k_object_bbx.append(
+                    object_bbx_center[object_bbx_mask == 1])
+                past_k_object_ids.append(object_ids)
         
         
 
@@ -676,6 +689,35 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         #  'avg_past_k_sample_interval': avg_past_k_sample_interval,
         #  'past_k_label_dicts': past_k_label_dicts,
             'if_no_point': if_no_point
+            })
+
+        if self.is_generate_motion_gt:
+            cur_object_bbx, cur_object_mask, cur_object_ids = \
+                self.generate_object_center(
+                    [selected_cav_base['curr']],
+                    selected_cav_base['past_k'][0]['params']['lidar_pose'])
+            cur_object_bbx = cur_object_bbx[cur_object_mask == 1]
+            common_indices = self.find_common_id(
+                past_k_object_ids, cur_object_ids)
+            if not common_indices or len(common_indices[0]) == 0:
+                return None
+
+            past_k_common_bbx_list = []
+            for time_id, indices in enumerate(common_indices[:-1]):
+                past = past_k_object_bbx[time_id][indices]
+                if len(past.shape) == 1:
+                    past = past.reshape(1, 7)
+                past_k_common_bbx_list.append(past)
+            past_k_common_bbx = np.stack(past_k_common_bbx_list, axis=0)
+            past_k_common_bbx = np.transpose(past_k_common_bbx, (1, 0, 2))
+            cur_common_bbx = cur_object_bbx[common_indices[-1]]
+            if len(cur_common_bbx.shape) == 1:
+                cur_common_bbx = cur_common_bbx.reshape(1, 7)
+            if past_k_common_bbx.shape[0] == 0:
+                return None
+            selected_cav_processed.update({
+                'past_k_common_bbx': past_k_common_bbx,
+                'cur_common_bbx': cur_common_bbx,
             })
 
         if self.is_generate_gt_flow:
@@ -801,6 +843,9 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         past_k_label_dicts_stack = []
         past_k_sample_interval_stack = []
         past_k_time_diffs_stack = []
+        past_k_object_bbx_stack = []
+        past_k_cav_object_num = []
+        cur_cav_object_bbx_debug = []
         if self.is_generate_gt_flow:
             flow_gt = []
             warp_mask = []
@@ -872,6 +917,9 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             }
             '''
 
+            if selected_cav_processed is None:
+                illegal_cav.append(cav_id)
+                continue
             if selected_cav_processed['if_no_point']: # 把点的数量不合法的车排除
                 illegal_cav.append(cav_id)
                 debug_info = base_data_dict[cav_id].get('debug')
@@ -918,6 +966,14 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             pastk_2_past0_tr_mats.append(selected_cav_processed['pastk_2_past0_tr_mats'])
             # past k label dict: N, k, object_num, 7
             # past_k_label_dicts_stack.append(selected_cav_processed['past_k_label_dicts'])
+
+            if self.is_generate_motion_gt:
+                past_k_object_bbx_stack.append(
+                    selected_cav_processed['past_k_common_bbx'])
+                past_k_cav_object_num.append(
+                    selected_cav_processed['past_k_common_bbx'].shape[0])
+                cur_cav_object_bbx_debug.append(
+                    selected_cav_processed['cur_common_bbx'])
         
             if self.is_generate_gt_flow:
                 # for flow
@@ -935,6 +991,17 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         for cav_id in illegal_cav:
             base_data_dict.pop(cav_id)
             cav_id_list.remove(cav_id)
+        if len(cav_id_list) == 0:
+            return None
+
+        if self.is_generate_motion_gt:
+            if len(past_k_object_bbx_stack) == 0:
+                return None
+            past_k_object_bbx_stack = np.vstack(past_k_object_bbx_stack)
+            cur_cav_object_bbx_debug = np.vstack(cur_cav_object_bbx_debug)
+            if past_k_object_bbx_stack.shape[0] == 0 or \
+                    len(past_k_object_bbx_stack.shape) != 3:
+                return None
 
         merged_curr_feature_dict = self.merge_features_to_dict(curr_feature_stack)  # current 在各自view 下 feature
         
@@ -1009,6 +1076,13 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
              'pastk_2_past0_tr_mats': pastk_2_past0_tr_mats})
             #  'times': self.times})
 
+        if self.is_generate_motion_gt:
+            processed_data_dict['ego'].update({
+                'past_k_object_bbx': past_k_object_bbx_stack,
+                'past_k_cav_object_num': past_k_cav_object_num,
+                'cur_cav_object_bbx_debug': cur_cav_object_bbx_debug,
+            })
+
         if self.is_generate_gt_flow:
             flow_gt = np.vstack(flow_gt) # (N, H, W, 2)
             processed_data_dict['ego'].update({'flow_gt': flow_gt})
@@ -1054,6 +1128,41 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         # 符合条件的 frame 的数量
         return len(self.data)
 
+    def collate_batch_train(self, batch):
+        output_dict = super().collate_batch_train(batch)
+        if output_dict is None or not self.is_generate_motion_gt:
+            return output_dict
+
+        past_k_object_bbx_list = []
+        past_k_object_cav_num_list = []
+        cur_object_bbx_debug_list = []
+        for sample in batch:
+            if sample is None:
+                return None
+            ego_dict = sample['ego']
+            if 'past_k_object_bbx' not in ego_dict or \
+                    'cur_cav_object_bbx_debug' not in ego_dict:
+                return None
+            past_k_object_bbx_list.append(ego_dict['past_k_object_bbx'])
+            past_k_object_cav_num_list += ego_dict['past_k_cav_object_num']
+            cur_object_bbx_debug_list.append(
+                ego_dict['cur_cav_object_bbx_debug'])
+
+        output_dict['ego'].update({
+            'past_k_object_bbx': torch.from_numpy(
+                np.vstack(past_k_object_bbx_list)),
+            'past_k_object_cav_num': torch.from_numpy(
+                np.array(past_k_object_cav_num_list)),
+            'cur_object_bbx_debug': torch.from_numpy(
+                np.vstack(cur_object_bbx_debug_list)),
+        })
+        return output_dict
+
+    def collate_batch_test(self, batch):
+        if not self.is_generate_motion_gt:
+            return super().collate_batch_test(batch)
+        return self.collate_batch_train(batch)
+
     ### rewrite generate_object_center ###
     def generate_object_center(self,
                                cav_contents,
@@ -1097,6 +1206,36 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         """
         suffix = "_single"
         return self.post_processor.generate_object_center_dairv2x_single(cav_contents, suffix)
+
+    @staticmethod
+    def find_common_id(object_ids, cur_ids=None):
+        if not object_ids:
+            return []
+        common_ids = set(object_ids[0])
+        for ids in object_ids[1:]:
+            common_ids &= set(ids)
+        if cur_ids is not None:
+            common_ids &= set(cur_ids)
+        common_ids = sorted(common_ids)
+        if not common_ids:
+            if cur_ids is not None:
+                return [torch.tensor([], dtype=torch.long)
+                        for _ in range(len(object_ids) + 1)]
+            return [torch.tensor([], dtype=torch.long)
+                    for _ in range(len(object_ids))]
+
+        indices = []
+        for ids in object_ids:
+            id_to_idx = dict(zip(ids, range(len(ids))))
+            indices.append(torch.tensor(
+                [id_to_idx[obj_id] for obj_id in common_ids],
+                dtype=torch.long))
+        if cur_ids is not None:
+            id_to_idx = dict(zip(cur_ids, range(len(cur_ids))))
+            indices.append(torch.tensor(
+                [id_to_idx[obj_id] for obj_id in common_ids],
+                dtype=torch.long))
+        return indices
     
     def generate_pred_bbx_frames_w_uncertainty(self, m_single, trans_mat_pastk_2_past0, past_time_diff, anchor_box, pairwise_t_matrix_past0_2_cur):
         '''
