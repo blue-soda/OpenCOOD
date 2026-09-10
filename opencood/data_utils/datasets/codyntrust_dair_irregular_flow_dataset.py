@@ -267,7 +267,7 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
 
     def _generate_single_boxes_in_pose(self, frame_content, reference_pose):
         object_bbx_center, object_bbx_mask, _ = \
-            self.generate_object_center_dair_single([frame_content])
+            self.generate_object_center_dair_single([frame_content], None)
         boxes = object_bbx_center[object_bbx_mask == 1]
         if boxes.shape[0] == 0:
             return boxes
