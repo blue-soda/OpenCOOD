@@ -72,6 +72,8 @@ postprocess:
 model:
   core_method: cobevflow_motion_prediction
   args:
+    point_pillar_scatter:
+      num_features: 64
     input_dim: 4
     output_dim: 2
     num_layers: 2
