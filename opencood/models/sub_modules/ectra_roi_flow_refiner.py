@@ -135,13 +135,21 @@ class EctraRoiFlowRefiner(nn.Module):
         gt_grid = self._flow_delta_to_grid(flow_gt, height, width, device, dtype)
         if gt_grid is not None and gt_grid.shape == refined_flow_grid.shape:
             valid_mask = roi_mask.permute(0, 2, 3, 1)
-            flow_loss = F.smooth_l1_loss(refined_flow_grid, gt_grid,
-                                         reduction='none')
+            target_residual_grid = (gt_grid - coarse_flow_grid).detach()
+            target_residual_pixel = target_residual_grid / scale
+            flow_loss = F.smooth_l1_loss(
+                residual_pixel.permute(0, 2, 3, 1).contiguous(),
+                target_residual_pixel,
+                reduction='none')
             aux['ectra_roi_flow_loss'] = (
                 flow_loss * valid_mask).sum() / (
                     valid_mask.sum() * flow_loss.shape[-1] + 1e-6)
             aux['ectra_roi_coarse_flow_loss'] = (
                 F.smooth_l1_loss(coarse_flow_grid, gt_grid, reduction='none')
+                * valid_mask).sum() / (
+                    valid_mask.sum() * flow_loss.shape[-1] + 1e-6)
+            aux['ectra_roi_refined_grid_loss'] = (
+                F.smooth_l1_loss(refined_flow_grid, gt_grid, reduction='none')
                 * valid_mask).sum() / (
                     valid_mask.sum() * flow_loss.shape[-1] + 1e-6)
         return refined_flow_grid, soft_mask, aux
