@@ -118,9 +118,12 @@ def main():
     if opt.pretrained_path: # load traj pred model
         saved_path = opt.pretrained_path
         pretrained_model_dict = torch.load(saved_path, map_location='cpu')
+        if isinstance(pretrained_model_dict, dict) and \
+                'model_dict' in pretrained_model_dict:
+            pretrained_model_dict = pretrained_model_dict['model_dict']
         diff_keys = {k:v for k, v in pretrained_model_dict.items() if k not in model.state_dict()}
         modified_pretrained_model_dict = OrderedDict()
-        for k, v in pretrained_model_dict['model_dict'].items():
+        for k, v in pretrained_model_dict.items():
             modified_pretrained_model_dict.update({'matcher.compensate_motion.'+k: v})
         diff_keys = {k:v for k, v in modified_pretrained_model_dict.items() if k not in model.state_dict()}
         if diff_keys:
