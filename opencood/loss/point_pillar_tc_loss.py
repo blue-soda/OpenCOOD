@@ -76,6 +76,7 @@ class PointPillarTcLoss(nn.Module):
     def __init__(self, args):
         super(PointPillarTcLoss, self).__init__()
         self.loss_dict = {}
+        self.aux_weights = args.get('aux_weights', {})
 
         self.backbone_fix = False
         self.use_dir = False
@@ -255,6 +256,19 @@ class PointPillarTcLoss(nn.Module):
             if self.use_dir:
                 total_loss += dir_loss
                 self.loss_dict.update({'dir_loss': dir_loss})
+
+            for aux_name, aux_weight in self.aux_weights.items():
+                aux_value = output_dict.get(aux_name)
+                if aux_value is None:
+                    continue
+                if not torch.is_tensor(aux_value):
+                    aux_value = torch.as_tensor(
+                        aux_value, dtype=total_loss.dtype,
+                        device=total_loss.device)
+                aux_term = aux_value.mean() * float(aux_weight)
+                total_loss = total_loss + aux_term
+                self.loss_dict.update({aux_name: aux_value.mean(),
+                                       f'{aux_name}_weighted': aux_term})
 
         return total_loss
 

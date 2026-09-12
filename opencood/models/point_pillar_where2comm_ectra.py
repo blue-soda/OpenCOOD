@@ -9,7 +9,7 @@ import torch.nn as nn
 from opencood.models.sub_modules.pillar_vfe import PillarVFE
 from opencood.models.sub_modules.point_pillar_scatter import PointPillarScatter
 from opencood.models.sub_modules.base_bev_backbone import BaseBEVBackbone
-from opencood.models.sub_modules.base_bev_backbone_resnet import ResNetBEVBackbone
+from opencood.models.sub_modules.codyntrust_base_bev_backbone_resnet import ResNetBEVBackbone
 from opencood.models.sub_modules.downsample_conv import DownsampleConv
 from opencood.models.sub_modules.naive_compress import NaiveCompressor
 # from opencood.models.sub_modules.dcn_net import DCNNet
@@ -242,14 +242,9 @@ class PointPillarWhere2commEctra(nn.Module):
         for p in self.reg_head.parameters():
             p.requires_grad = False
 
-        # TODO: for only tune dir header use.
-        for p in self.fused_cls_head.parameters():
-            p.requires_grad = False
-        for p in self.fused_reg_head.parameters():
-            p.requires_grad = False
-
-        for p in self.rain_fusion.parameters():
-            p.requires_grad = False
+        if self.use_dir:
+            for p in self.dir_head.parameters():
+                p.requires_grad = False
     
     def regroup(self, x, record_len, k=1):
         cum_sum_len = torch.cumsum(record_len*k, dim=0)
