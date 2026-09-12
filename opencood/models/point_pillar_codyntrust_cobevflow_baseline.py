@@ -101,9 +101,9 @@ def get_past_k_pairwise_transformation2ego(past_k_lidar_pose, noise_level, k=3, 
     return pairwise_t_matrix
 
 
-class PointPillarCobevflowXyj(nn.Module):
+class PointPillarCodyntrustCobevflowBaseline(nn.Module):
     def __init__(self, args):
-        super(PointPillarCobevflowXyj, self).__init__()
+        super(PointPillarCodyntrustCobevflowBaseline, self).__init__()
 
         # PIllar VFE
         self.pillar_vfe = PillarVFE(args['pillar_vfe'],

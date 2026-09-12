@@ -122,9 +122,9 @@ def get_past_k_pairwise_transformation2ego(past_k_lidar_pose, noise_level, k=3, 
     return pairwise_t_matrix
 
 
-class PointPillarCobevflowWUncertainty(nn.Module):
+class PointPillarCodyntrust(nn.Module):
     def __init__(self, args):
-        super(PointPillarCobevflowWUncertainty, self).__init__()
+        super(PointPillarCodyntrust, self).__init__()
         print("===train cobevflow with uncertainty!===")
         # PIllar VFE
         self.pillar_vfe = PillarVFE(args['pillar_vfe'],
