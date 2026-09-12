@@ -1,8 +1,8 @@
 name: v2v4real_cobevflow_stage1_sync_where2comm_trafcost_aligned
 
-root_dir: "/path/to/v2v4real/train"
-validate_dir: "/path/to/v2v4real/val"
-test_dir: "/path/to/v2v4real/test"
+root_dir: "/data0/chen/gzc/dataset/v2v4real/extracted/train"
+validate_dir: "/data0/chen/gzc/dataset/v2v4real/extracted/val"
+test_dir: "/data0/chen/gzc/dataset/v2v4real/extracted/test"
 
 noise_setting:
   add_noise: False
