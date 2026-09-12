@@ -501,7 +501,7 @@ class Matcher(nn.Module):
         if fusion=='flow':
             m1, m2 = make_model(input_dim=3, output_dim=3, num_layers=2) # num_layers指的是Encoder Decoder的个数
             self.compensate_motion = m1
-            pre_train_weight = '/path/to/flow_estimate/net_epoch_bestval_at33.pth'
+            pre_train_weight = ''
             pretrained_model_dict = torch.load(pre_train_weight, map_location='cuda:0')
             diff_keys = {k:v for k, v in pretrained_model_dict.items() if k not in self.compensate_motion.state_dict()}
             if diff_keys:
