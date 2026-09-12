@@ -11,6 +11,24 @@ import open3d as o3d
 import numpy as np
 from pypcd import pypcd
 import struct
+import os
+
+_PCD_FALLBACK_LOG_LIMIT = int(os.environ.get('OPENCOOD_PCD_FALLBACK_LOG_LIMIT', 20))
+_pcd_fallback_log_count = 0
+
+
+def _log_pcd_binary_fallback_failure(pcd_path, exc):
+    global _pcd_fallback_log_count
+    if _pcd_fallback_log_count >= _PCD_FALLBACK_LOG_LIMIT:
+        return
+    _pcd_fallback_log_count += 1
+    print('[pcd_utils] binary_compressed parser failed; using Open3D fallback '
+          '(%d/%d): %s | %s: %s' % (
+              _pcd_fallback_log_count,
+              _PCD_FALLBACK_LOG_LIMIT,
+              pcd_path,
+              type(exc).__name__,
+              exc))
 
 def pcd_to_np(pcd_file):
     """
@@ -303,7 +321,8 @@ def  read_pcd(pcd_path):
             pcd_np_points[:, 2] = np.transpose(pc_data["z"])
             if "intensity" in pc_data.dtype.names:
                 pcd_np_points[:, 3] = np.transpose(pc_data["intensity"]) / 256.0
-        except Exception:
+        except Exception as exc:
+            _log_pcd_binary_fallback_failure(pcd_path, exc)
             pcd_np_points = _read_pcd_open3d_xyz(pcd_path)
     del_index = np.where(np.isnan(pcd_np_points))[0]
     pcd_np_points = np.delete(pcd_np_points, del_index, axis=0)

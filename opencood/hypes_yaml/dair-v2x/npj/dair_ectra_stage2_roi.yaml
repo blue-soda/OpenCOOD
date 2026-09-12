@@ -36,7 +36,7 @@ diagnostics:
     method: bev
 
 fusion:
-  core_method: 'CoBEVFlowDAIRIrregularDataset'
+  core_method: 'CoDynTrustDAIRIrregularFlowDataset'
   args:
     proj_first: false
     clip_pc: false

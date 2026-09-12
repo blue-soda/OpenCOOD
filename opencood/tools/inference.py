@@ -30,8 +30,8 @@ def test_parser():
     parser.add_argument('--fusion_method', type=str,
                         default='intermediate',
                         help='no, no_w_uncertainty, late, early or intermediate')
-    parser.add_argument('--save_vis_interval', type=int, default=40,
-                        help='interval of saving visualization')
+    parser.add_argument('--save_vis_interval', type=int, default=0,
+                        help='interval of saving visualization; 0 disables visualization data')
     parser.add_argument('--save_npy', action='store_true',
                         help='whether to save prediction and gt result'
                              'in npy file')
@@ -142,7 +142,12 @@ def main():
     print('Dataset Building')
     print(f"No Noise Added.")
     hypes.update({"noise_setting": noise_setting})
-    opencood_dataset = build_dataset(hypes, visualize=True, train=False)
+    visualize = opt.save_vis_interval > 0
+    if visualize:
+        print(f"Visualization enabled: saving every {opt.save_vis_interval} samples.")
+    else:
+        print("Visualization disabled.")
+    opencood_dataset = build_dataset(hypes, visualize=visualize, train=False)
     data_loader = DataLoader(opencood_dataset,
                             batch_size=1,
                             num_workers=4,
@@ -279,7 +284,7 @@ def main():
                                                 i,
                                                 npy_save_path)
 
-            if (i % opt.save_vis_interval == 0) and (pred_box_tensor is not None):
+            if (opt.save_vis_interval > 0) and (i % opt.save_vis_interval == 0) and (pred_box_tensor is not None):
                 vis_save_path_root = os.path.join(opt.model_dir, f'vis_{opt.note}_%.2f_{noise_note}_roi_{num_roi_thres}'%(hypes['binomial_p']))
                 if not os.path.exists(vis_save_path_root):
                     os.makedirs(vis_save_path_root)

@@ -1,48 +1,45 @@
-name: opv2v_codyntrust_cobevflow_w_uncertainty
-
-root_dir: "/remote-home/share/OPV2V_irregular_npy/train"
-validate_dir: "/remote-home/share/OPV2V_irregular_npy/validate"
-test_dir: "/remote-home/share/OPV2V_irregular_npy/test"
+name: dair_cobevflow_stage2_wide
+data_dir: "my_dair-v2x/v2x_c/cooperative-vehicle-infrastructure"
+root_dir: "my_dair-v2x/v2x_c/cooperative-vehicle-infrastructure/train.json"
+validate_dir: "my_dair-v2x/v2x_c/cooperative-vehicle-infrastructure/val.json"
+test_dir: "my_dair-v2x/v2x_c/cooperative-vehicle-infrastructure/val.json"
 
 noise_setting:
   add_noise: False
-  # args: 
-  #   pos_std: 0.2
-  #   rot_std: 0.2
-  #   pos_mean: 0
-  #   rot_mean: 0
+  args: 
+    pos_std: 0.2
+    rot_std: 0.2
+    pos_mean: 0
+    rot_mean: 0
 
-exp_name: ""
-dataset: "opv2v"
+comm_range: 100000
 num_sweep_frames: &past_k 2
 time_delay: 0
 binomial_n: 10
 binomial_p: 0.3
-with_history_frames: true
-# is_finetune: true
+with_history_frames: True
+dataset: &dataset "dairv2x"
 
 is_generate_gt_flow: False # 生成GT Flow 用于去训练flow estimate
-is_no_shift: True
 viz_bbx_flag: &viz_bbx_flag False
+
 is_single_pre_trained:
-  pre_train_flag: False
-  pre_train_fix: False
-
-is_same_sample_interval: False
-
-comm_range: 200
+  pre_train_flag: True
+  pre_train_fix: True 
+  pre_train_path: /data0/chen/gzc/workspace/logs/logs/dairv2x/repro_dair_single_pointpillar_wide_for_codyntrust_cobevflow_2026_09_11_02_51_02
+  pre_train_epoch: 57
 
 yaml_parser: "load_point_pillar_params"
 train_params:
   batch_size: &batch_size 4
-  epoches: &epoches 60
+  epoches: 60
   eval_freq: 1
   save_freq: 1
-  max_cav: &max_cav 5
+  max_cav: &max_cav 2
   supervise_single_flag: False
 
 fusion:
-  core_method: 'IntermediateFusionDatasetIrregularFlowNew' # keep the CoBEVFlow fork's OPV2V/IRV2V irregular protocol
+  core_method: 'CoDynTrustDAIRIrregularFlowDataset' # LateFusionDataset, EarlyFusionDataset, IntermediateFusionDataset supported
   args:
     proj_first: false
     clip_pc: false
@@ -51,14 +48,13 @@ fusion:
 preprocess:
   # options: BasePreprocessor, VoxelPreprocessor, BevPreprocessor
   core_method: 'SpVoxelPreprocessor'
-  past_k: *past_k
   args:
     voxel_size: &voxel_size [0.4, 0.4, 4]
     max_points_per_voxel: 32
     max_voxel_train: 32000
     max_voxel_test: 70000
   # lidar range for each individual cav. Format: xyzxyz minmax
-  cav_lidar_range: &cav_lidar [-140.8, -40, -3, 140.8, 40, 1]
+  cav_lidar_range: &cav_lidar [-100.8, -40, -3, 100.8, 40, 1]
 
 data_augment:
   - NAME: random_world_flip
@@ -76,12 +72,19 @@ postprocess:
   gt_range: *cav_lidar
   anchor_args:
     cav_lidar_range: *cav_lidar
-    l: 3.9
-    w: 1.6
+    l: 4.5
+    w: 2
     h: 1.56
     r: &anchor_yaw [0, 90]
-    feature_stride: 2 # 特征跨度为2个像素点，原本原图范围为200， 704
+    feature_stride: 2
     num: &achor_num 2
+    # 以下为yaml导入时计算得到
+    # vw: 0.4
+    # vh: 0.4
+    # vd: 4
+    # W: 504
+    # H: 200
+    # D: 1
   target_args:
     pos_threshold: 0.6
     neg_threshold: 0.45
@@ -96,7 +99,7 @@ postprocess:
 
 # model related
 model:
-  core_method: point_pillar_codyntrust_cobevflow_w_uncertainty
+  core_method: point_pillar_codyntrust_cobevflow_baseline
   
   args:
     voxel_size: *voxel_size
@@ -108,7 +111,7 @@ model:
     design_mode: 0 # 设计模式定为5
     num_sweep_frames: *past_k
     viz_bbx_flag: *viz_bbx_flag
-    use_uncertainty_guide: True
+    use_uncertainty_guide: False
 
     pillar_vfe:
       use_norm: true
@@ -117,11 +120,12 @@ model:
       num_filters: [64]
     point_pillar_scatter:
       num_features: 64
+      # grid_size: [504, 200, 1] 读取yaml时加入
 
     base_bev_backbone:
       resnet: true
-      use_dropout: true
-      dropout_enable: true # 这个会使得单车在train以及test的时候dropout都开启 协同训练的时候用于MC Dropout
+      use_dropout: false
+      dropout_enable: false # 这个会使得单车在train以及test的时候dropout都开启 协同训练的时候用于MC Dropout
       layer_nums: &layer_nums [3, 4, 5]
       layer_strides: [2, 2, 2]
       num_filters: &num_filters [128, 256, 512]
@@ -132,7 +136,7 @@ model:
 
     fuse_bev_backbone:
       resnet: true
-      use_dropout: true # fused部分是否开启dropout 开启后在验证以及测试的时候不会开启
+      use_dropout: false # fused部分是否开启dropout 开启后在验证以及测试的时候不会开启
       layer_nums: *layer_nums
       layer_strides: [2, 2, 2]
       num_filters: *num_filters
@@ -142,13 +146,21 @@ model:
       voxel_size: *voxel_size
 
     shrink_header:
-      use_atten: true
+      use_atten: false
       kernal_size: [ 3 ]
       stride: [ 1 ]
       padding: [ 1 ]
       dim: [ 256 ]
-      input_dim: 384 # 128 * 3    
+      input_dim: 384 # 128 * 3 
     
+    # dcn:
+    #   in_channels: [384]
+    #   out_channels: [256]
+    #   stride: [1]
+    #   padding: [1]
+    #   kernel_size : [3]
+    #   n_blocks: 1
+
     rain_model: # fusion_args:
       voxel_size: *voxel_size
       downsample_rate: 1
@@ -165,45 +177,28 @@ model:
       agg_operator:
         mode: 'MAX' # MAX, Transformer, ATTEN
         feature_dim: 256
-        # mode: 'Transformer'
-        # n_head: 8
-        # with_spe: true
-        # with_scm: true
-
       multi_scale: true
       layer_nums: *layer_nums
       num_filters: *num_filters
     dir_args: *dir_args
 
-    uncertainty_dim: &uncertainty_dim 3
-    re_parameterization: true
-    mc_dropout: # 单车MC Dropout
-      dropout_rate: 0.1
-      inference_stage: true
-      # The original CoDynTrust setting uses 10 MC samples. Keep the migrated
-      # config runnable on 8GB local GPUs; set this back to 10 for full runs.
-      inference_num: 2
+    # uncertainty_dim: &uncertainty_dim 3
+    # re_parameterization: true
+    # mc_dropout: # 单车MC Dropout
+    #   dropout_rate: 0.1
+    #   inference_stage: true
+    #   inference_num: 10
 
-      tp_score_mean: 0.6700
-      tp_score_std: 0.1900
-      tp_data_ucls_mean: 0.0190
-      tp_data_ucls_std: 0.0110
-      tp_model_ucls_mean: 0.7932
-      tp_model_ucls_std: 0.1906
-      data_ureg_mean: 1.3505
-      data_ureg_std: 0.2918
-      model_ureg_mean: 0.0320
-      model_ureg_std: 0.0146
-
-    matcher:
-      ego_mask: false
-
-      # dataset: *dataset
-      score_reliable: 0.6700
-      u_cls_data_reliable: 0.7781
-      u_cls_model_reliable: 0.8038
-      u_reg_data_reliable: -0.1783
-      u_reg_model_reliable: -0.1566
+    #   tp_score_mean: 0.6251
+    #   tp_score_std: 0.1549
+    #   tp_data_ucls_mean: 0.1047
+    #   tp_data_ucls_std: 0.0225
+    #   tp_model_ucls_mean: 0.8793
+    #   tp_model_ucls_std: 0.1095
+    #   data_ureg_mean: 6.3410
+    #   data_ureg_std: 1.9687
+    #   model_ureg_mean: 0.0441
+    #   model_ureg_std: 0.0207
 
 loss:
   core_method: point_pillar_tc_loss
@@ -247,14 +242,9 @@ lr_scheduler:
 
   core_method: multistep #step, multistep and Exponential support
   gamma: 0.1
-  step_size: [10, 20, 35]
+  step_size: [10, 20]
 
   # core_method: cosineannealinglr #step, multistep and Exponential support
   # T_max: 20
   # eta_min: 2e-5
-
-  # core_method: ExponentialLR #step, multistep and Exponential support
-  # gamma: 0.9
-
-
 

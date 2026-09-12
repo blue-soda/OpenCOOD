@@ -11,6 +11,7 @@ from collections import OrderedDict
 import os
 import os.path as osp
 import numpy as np
+from pytest import param
 import torch
 from torch.utils.data import DataLoader
 import json
@@ -129,17 +130,11 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         if 'num_roi_thres' in params:
             self.num_roi_thres = params['num_roi_thres']
             print("限制ROI个数以测量带宽性能权衡: ", self.num_roi_thres)
-        self.motion_match_max_dist = params.get('motion_match_max_dist', 8.0)
 
         # 控制是否需要生成GT flow
         self.is_generate_gt_flow = False
         if 'is_generate_gt_flow' in params and params['is_generate_gt_flow']:
             self.is_generate_gt_flow = True
-        self.is_generate_motion_gt = False
-        if 'is_generate_motion_gt' in params and params['is_generate_motion_gt']:
-            self.is_generate_motion_gt = True
-        self.motion_gt_only = self.is_generate_motion_gt and \
-            params.get('motion_gt_only', False)
 
         self.viz_bbx_flag = False
         
@@ -173,9 +168,9 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
 
         #这里root_dir是一个json文件！--> 代表一个split
         if self.train:
-            split_dir = self._resolve_split(params['root_dir'], params['data_dir'], "train.json")
+            split_dir = params['root_dir'] # "my_dair_v2x/v2x_c/cooperative-vehicle-infrastructure/train.json"
         else:
-            split_dir = self._resolve_split(params['validate_dir'], params['data_dir'], "val.json")
+            split_dir = params['validate_dir'] # "my_dair_v2x/v2x_c/cooperative-vehicle-infrastructure/val.json"
 
         self.root_dir = params['data_dir'] # "my_dair_v2x/v2x_c/cooperative-vehicle-infrastructure"
 
@@ -208,148 +203,6 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         self.cur_epoch = 0
         
         print("Irregular async dataset with past %d frames and expectation time delay = %d initialized! %d samples totally!" % (self.k, int(self.binomial_n*self.binomial_p), len(self.data)))
-
-    def _build_motion_gt_only_sample(self, base_data_dict):
-        past_k_object_bbx_stack = []
-        past_k_cav_object_num = []
-        cur_cav_object_bbx_debug = []
-        past_k_time_diffs_stack = []
-        past_k_sample_interval_stack = []
-
-        for cav_id, selected_cav_base in base_data_dict.items():
-            if selected_cav_base['ego']:
-                continue
-
-            past_k_object_bbx = []
-            past0_pose = selected_cav_base['past_k'][0]['params']['lidar_pose']
-            for i in range(self.k):
-                past_k_object_bbx.append(
-                    self._generate_single_boxes_in_pose(
-                        selected_cav_base['past_k'][i], past0_pose))
-            cur_object_bbx = self._generate_single_boxes_in_pose(
-                selected_cav_base['curr'], past0_pose)
-            past_k_common_bbx, cur_common_bbx = \
-                self._match_temporal_boxes_by_nearest(
-                    past_k_object_bbx, cur_object_bbx)
-            if past_k_common_bbx is None:
-                continue
-            if past_k_common_bbx.shape[0] == 0:
-                continue
-
-            past_k_object_bbx_stack.append(past_k_common_bbx)
-            past_k_cav_object_num.append(past_k_common_bbx.shape[0])
-            cur_cav_object_bbx_debug.append(cur_common_bbx)
-            past_k_time_diffs_stack += [
-                selected_cav_base['past_k'][i]['time_diff']
-                for i in range(self.k)]
-            past_k_sample_interval_stack += [
-                selected_cav_base['past_k'][i]['sample_interval']
-                for i in range(self.k)]
-
-        if len(past_k_object_bbx_stack) == 0:
-            return None
-
-        past_k_sample_interval_array = np.array(past_k_sample_interval_stack)
-        past_k_time_diffs_array = np.array(past_k_time_diffs_stack)
-        processed_data_dict = OrderedDict()
-        processed_data_dict['ego'] = {
-            'label_dict': {},
-            'past_k_object_bbx': np.vstack(past_k_object_bbx_stack),
-            'past_k_cav_object_num': past_k_cav_object_num,
-            'cur_cav_object_bbx_debug': np.vstack(cur_cav_object_bbx_debug),
-            'past_k_time_diffs': past_k_time_diffs_array,
-            'past_k_sample_interval': past_k_sample_interval_array,
-            'avg_sample_interval': float(np.mean(past_k_sample_interval_array)),
-            'avg_time_delay': float(np.mean(past_k_time_diffs_array)),
-            'avg_var': float(np.var(past_k_time_diffs_array)),
-        }
-        return processed_data_dict
-
-    def _generate_single_boxes_in_pose(self, frame_content, reference_pose):
-        object_bbx_center, object_bbx_mask, _ = \
-            self.generate_object_center_dair_single([frame_content], None)
-        boxes = object_bbx_center[object_bbx_mask == 1]
-        if boxes.shape[0] == 0:
-            return boxes
-        source_pose = frame_content['params']['lidar_pose']
-        if source_pose == reference_pose:
-            return boxes
-        transformation_matrix = x1_to_x2(source_pose, reference_pose)
-        corners = box_utils.boxes_to_corners_3d(
-            boxes, self.params['postprocess']['order'])
-        projected_corners = box_utils.project_box3d(
-            corners, transformation_matrix)
-        return box_utils.corner_to_center(
-            projected_corners, self.params['postprocess']['order'])
-
-    def _match_temporal_boxes_by_nearest(self, past_k_boxes, cur_boxes):
-        if not past_k_boxes or past_k_boxes[0].shape[0] == 0 or \
-                cur_boxes.shape[0] == 0:
-            return None, None
-
-        matched_past = []
-        matched_cur = []
-        base_boxes = past_k_boxes[0]
-        for base_box in base_boxes:
-            track_boxes = []
-            ok = True
-            for boxes in past_k_boxes:
-                if boxes.shape[0] == 0:
-                    ok = False
-                    break
-                dist = np.linalg.norm(boxes[:, :2] - base_box[:2], axis=1)
-                nearest_idx = int(np.argmin(dist))
-                if dist[nearest_idx] > self.motion_match_max_dist:
-                    ok = False
-                    break
-                track_boxes.append(boxes[nearest_idx])
-            if not ok:
-                continue
-
-            cur_dist = np.linalg.norm(cur_boxes[:, :2] - base_box[:2], axis=1)
-            cur_idx = int(np.argmin(cur_dist))
-            if cur_dist[cur_idx] > self.motion_match_max_dist:
-                continue
-            matched_past.append(np.stack(track_boxes, axis=0))
-            matched_cur.append(cur_boxes[cur_idx])
-
-        if len(matched_past) == 0:
-            return None, None
-        return np.stack(matched_past, axis=0), np.stack(matched_cur, axis=0)
-
-    @staticmethod
-    def _resolve_split(path, data_dir, default_name):
-        if not path or path.startswith("/path/to/") or path.startswith("\\path\\to\\"):
-            return osp.join(data_dir, default_name)
-        if osp.isdir(path):
-            return osp.join(path, default_name)
-        return path
-
-    def _resolve_lidar_path(self, relative_path):
-        candidate = osp.join(self.root_dir, relative_path)
-        if osp.exists(candidate):
-            return candidate
-
-        normalized = relative_path.replace("\\", "/")
-        filename = normalized.split("/")[-1]
-        root_parent = osp.dirname(self.root_dir)
-        if normalized.startswith("vehicle-side/velodyne/"):
-            alt_path = osp.join(
-                root_parent,
-                "cooperative-vehicle-infrastructure-vehicle-side-velodyne",
-                filename,
-            )
-            if osp.exists(alt_path):
-                return alt_path
-        if normalized.startswith("infrastructure-side/velodyne/"):
-            alt_path = osp.join(
-                root_parent,
-                "cooperative-vehicle-infrastructure-infrastructure-side-velodyne",
-                filename,
-            )
-            if osp.exists(alt_path):
-                return alt_path
-        return candidate
 
     def get_vehicle_trans(self, veh_frame_id):
 
@@ -487,12 +340,8 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             # 用于可视化前摄
             final_data[i]['curr']['camera0_files'] = os.path.join(self.root_dir, frame_info["vehicle_image_path"])
 
-            if self.motion_gt_only:
-                final_data[i]['curr']['lidar_np'] = np.empty((0, 4),
-                                                             dtype=np.float32)
-            else:
-                final_data[i]['curr']['lidar_np'] = pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["vehicle_pointcloud_path"]))[0] if i==0 else \
-                    pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["infrastructure_pointcloud_path"]))[0]
+            final_data[i]['curr']['lidar_np'] = pcd_utils.read_pcd(os.path.join(self.root_dir,frame_info["vehicle_pointcloud_path"]))[0] if i==0 else \
+                pcd_utils.read_pcd(os.path.join(self.root_dir,frame_info["infrastructure_pointcloud_path"]))[0]
             final_data[i]['curr']['params'] = OrderedDict()
             final_data[i]['curr']['params']['vehicles'] = \
                 load_json(osp.join(self.root_dir, frame_info['cooperative_label_path'])) if i == 0 else [] # 这里面存放的是世界标签
@@ -552,19 +401,10 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
                     final_data[i]['past_k'][j]['timestamp'] = latest_frame_id
                     final_data[i]['past_k'][j]['time_diff'] = int(latest_frame_id) - int(curr_inf_frame_id) # 这里被我反了一下，这是为了得到和其他数据集一样的正负关系
                     final_data[i]['past_k'][j]['sample_interval'] = - sample_interval
-                    if self.motion_gt_only:
-                        final_data[i]['past_k'][j]['lidar_np'] = np.empty((0, 4),
-                                                                          dtype=np.float32)
-                    else:
-                        final_data[i]['past_k'][j]['lidar_np'] = pcd_utils.read_pcd(self._resolve_lidar_path(frame_info["infrastructure_pointcloud_path"]))[0]
+                    final_data[i]['past_k'][j]['lidar_np'] = pcd_utils.read_pcd(os.path.join(self.root_dir,frame_info["infrastructure_pointcloud_path"]))[0]
                     final_data[i]['past_k'][j]['params'] = OrderedDict()
                     final_data[i]['past_k'][j]['params']['vehicles'] = []
                     final_data[i]['past_k'][j]['params']['lidar_pose'] = self.get_inf_trans(latest_frame_id, system_offset)
-                    if self.motion_gt_only:
-                        final_data[i]['past_k'][j]['params']['vehicles_single'] = \
-                            load_json(os.path.join(
-                                self.root_dir,
-                                'infrastructure-side/label/virtuallidar/{}.json'.format(latest_frame_id)))
                     # 2024年7月22日 xuyujiang 增加路端的单车信息，因为在where2comm监督单车的训练中需要用到
                     # final_data[i]['past_k'][j]['params']['vehicles_single'] = \
                     #     load_json(os.path.join(self.root_dir, 'infrastructure-side/label/virtuallidar/{}.json'.format(latest_frame_id))) # 这里面存放的是single标签
@@ -702,8 +542,6 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         
         # past k label 
         # past_k_label_dicts = [] # todo 这个部分可以删掉
-        past_k_object_bbx = []
-        past_k_object_ids = []
 
         # 判断点的数量是否合法
         if_no_point = False
@@ -754,14 +592,6 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             #         gt_box_center=object_bbx_center, anchors=anchor_box, mask=object_bbx_mask
             #     )
             # past_k_label_dicts.append(single_view_label_dict)
-            if self.is_generate_motion_gt:
-                object_bbx_center, object_bbx_mask, object_ids = \
-                    self.generate_object_center(
-                        [selected_cav_base['past_k'][i]],
-                        selected_cav_base['past_k'][0]['params']['lidar_pose'])
-                past_k_object_bbx.append(
-                    object_bbx_center[object_bbx_mask == 1])
-                past_k_object_ids.append(object_ids)
         
         
 
@@ -815,35 +645,6 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             'if_no_point': if_no_point
             })
 
-        if self.is_generate_motion_gt:
-            cur_object_bbx, cur_object_mask, cur_object_ids = \
-                self.generate_object_center(
-                    [selected_cav_base['curr']],
-                    selected_cav_base['past_k'][0]['params']['lidar_pose'])
-            cur_object_bbx = cur_object_bbx[cur_object_mask == 1]
-            common_indices = self.find_common_id(
-                past_k_object_ids, cur_object_ids)
-            if not common_indices or len(common_indices[0]) == 0:
-                return None
-
-            past_k_common_bbx_list = []
-            for time_id, indices in enumerate(common_indices[:-1]):
-                past = past_k_object_bbx[time_id][indices]
-                if len(past.shape) == 1:
-                    past = past.reshape(1, 7)
-                past_k_common_bbx_list.append(past)
-            past_k_common_bbx = np.stack(past_k_common_bbx_list, axis=0)
-            past_k_common_bbx = np.transpose(past_k_common_bbx, (1, 0, 2))
-            cur_common_bbx = cur_object_bbx[common_indices[-1]]
-            if len(cur_common_bbx.shape) == 1:
-                cur_common_bbx = cur_common_bbx.reshape(1, 7)
-            if past_k_common_bbx.shape[0] == 0:
-                return None
-            selected_cav_processed.update({
-                'past_k_common_bbx': past_k_common_bbx,
-                'cur_common_bbx': cur_common_bbx,
-            })
-
         if self.is_generate_gt_flow:
             # generate flow, from past_0 and curr
             prev_object_id_stack = {}
@@ -887,8 +688,6 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         if self.w_history is not True:
             self.k = 1
         base_data_dict = self.retrieve_base_data(idx)
-        if self.motion_gt_only:
-            return self._build_motion_gt_only_sample(base_data_dict)
         ''' base_data_dict structure:
         {
             cav_id_1 : {
@@ -969,9 +768,6 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         past_k_label_dicts_stack = []
         past_k_sample_interval_stack = []
         past_k_time_diffs_stack = []
-        past_k_object_bbx_stack = []
-        past_k_cav_object_num = []
-        cur_cav_object_bbx_debug = []
         if self.is_generate_gt_flow:
             flow_gt = []
             warp_mask = []
@@ -1043,17 +839,14 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             }
             '''
 
-            if selected_cav_processed is None:
-                illegal_cav.append(cav_id)
-                continue
             if selected_cav_processed['if_no_point']: # 把点的数量不合法的车排除
                 illegal_cav.append(cav_id)
+                # 把出现不合法sample的 场景、车辆、时刻 记录下来:
                 debug_info = base_data_dict[cav_id].get('debug')
                 if debug_info is not None:
-                    # 把出现不合法sample的 场景、车辆、时刻 记录下来:
                     illegal_path = os.path.join(debug_info['scene'], cav_id, base_data_dict[cav_id]['past_k'][0]['timestamp']+'.npy')
-                # illegal_path_list.add(illegal_path)
-                # print(illegal_path)
+                    # illegal_path_list.add(illegal_path)
+                    # print(illegal_path)
                 continue
 
             
@@ -1092,22 +885,12 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
             pastk_2_past0_tr_mats.append(selected_cav_processed['pastk_2_past0_tr_mats'])
             # past k label dict: N, k, object_num, 7
             # past_k_label_dicts_stack.append(selected_cav_processed['past_k_label_dicts'])
-
-            if self.is_generate_motion_gt:
-                past_k_object_bbx_stack.append(
-                    selected_cav_processed['past_k_common_bbx'])
-                past_k_cav_object_num.append(
-                    selected_cav_processed['past_k_common_bbx'].shape[0])
-                cur_cav_object_bbx_debug.append(
-                    selected_cav_processed['cur_common_bbx'])
         
             if self.is_generate_gt_flow:
                 # for flow
                 flow_gt.append(selected_cav_processed['flow_gt'])
                 warp_mask.append(selected_cav_processed['warp_mask'])
         
-        if len(pastk_2_past0_tr_mats) == 0:
-            return None
         pastk_2_past0_tr_mats = np.stack(pastk_2_past0_tr_mats, axis=0) # N, k, 4, 4
 
         # {pos: array[num_cav, k, 100, 252, 2], neg: array[num_cav, k, 100, 252, 2], target: array[num_cav, k, 100, 252, 2]}
@@ -1119,17 +902,6 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         for cav_id in illegal_cav:
             base_data_dict.pop(cav_id)
             cav_id_list.remove(cav_id)
-        if len(cav_id_list) == 0:
-            return None
-
-        if self.is_generate_motion_gt:
-            if len(past_k_object_bbx_stack) == 0:
-                return None
-            past_k_object_bbx_stack = np.vstack(past_k_object_bbx_stack)
-            cur_cav_object_bbx_debug = np.vstack(cur_cav_object_bbx_debug)
-            if past_k_object_bbx_stack.shape[0] == 0 or \
-                    len(past_k_object_bbx_stack.shape) != 3:
-                return None
 
         merged_curr_feature_dict = self.merge_features_to_dict(curr_feature_stack)  # current 在各自view 下 feature
         
@@ -1204,13 +976,6 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
              'pastk_2_past0_tr_mats': pastk_2_past0_tr_mats})
             #  'times': self.times})
 
-        if self.is_generate_motion_gt:
-            processed_data_dict['ego'].update({
-                'past_k_object_bbx': past_k_object_bbx_stack,
-                'past_k_cav_object_num': past_k_cav_object_num,
-                'cur_cav_object_bbx_debug': cur_cav_object_bbx_debug,
-            })
-
         if self.is_generate_gt_flow:
             flow_gt = np.vstack(flow_gt) # (N, H, W, 2)
             processed_data_dict['ego'].update({'flow_gt': flow_gt})
@@ -1256,86 +1021,6 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         # 符合条件的 frame 的数量
         return len(self.data)
 
-    def collate_batch_train(self, batch):
-        if self.motion_gt_only:
-            batch = [sample for sample in batch if sample is not None]
-            if len(batch) == 0:
-                return None
-
-            past_k_object_bbx_list = []
-            past_k_object_cav_num_list = []
-            cur_object_bbx_debug_list = []
-            past_k_time_diff = []
-            past_k_sample_interval = []
-            avg_sample_interval = []
-            avg_time_delay = []
-            avg_time_var = []
-            for sample in batch:
-                ego_dict = sample['ego']
-                past_k_object_bbx_list.append(ego_dict['past_k_object_bbx'])
-                past_k_object_cav_num_list += ego_dict['past_k_cav_object_num']
-                cur_object_bbx_debug_list.append(
-                    ego_dict['cur_cav_object_bbx_debug'])
-                past_k_time_diff.append(ego_dict['past_k_time_diffs'])
-                past_k_sample_interval.append(
-                    ego_dict['past_k_sample_interval'])
-                avg_sample_interval.append(ego_dict['avg_sample_interval'])
-                avg_time_delay.append(ego_dict['avg_time_delay'])
-                avg_time_var.append(ego_dict['avg_var'])
-
-            return {'ego': {
-                'label_dict': {},
-                'past_k_object_bbx': torch.from_numpy(
-                    np.vstack(past_k_object_bbx_list)),
-                'past_k_object_cav_num': torch.from_numpy(
-                    np.array(past_k_object_cav_num_list)),
-                'cur_object_bbx_debug': torch.from_numpy(
-                    np.vstack(cur_object_bbx_debug_list)),
-                'past_k_time_interval': torch.from_numpy(
-                    np.hstack(past_k_time_diff)),
-                'past_k_sample_interval': torch.from_numpy(
-                    np.hstack(past_k_sample_interval)),
-                'avg_sample_interval': float(np.mean(avg_sample_interval)),
-                'avg_time_delay': float(np.mean(avg_time_delay)),
-                'avg_time_var': float(np.mean(avg_time_var)),
-            }}
-
-        if self.is_generate_motion_gt:
-            batch = [sample for sample in batch if sample is not None]
-            if len(batch) == 0:
-                return None
-        output_dict = super().collate_batch_train(batch)
-        if output_dict is None or not self.is_generate_motion_gt:
-            return output_dict
-
-        past_k_object_bbx_list = []
-        past_k_object_cav_num_list = []
-        cur_object_bbx_debug_list = []
-        for sample in batch:
-            ego_dict = sample['ego']
-            if 'past_k_object_bbx' not in ego_dict or \
-                    'cur_cav_object_bbx_debug' not in ego_dict:
-                return None
-            past_k_object_bbx_list.append(ego_dict['past_k_object_bbx'])
-            past_k_object_cav_num_list += ego_dict['past_k_cav_object_num']
-            cur_object_bbx_debug_list.append(
-                ego_dict['cur_cav_object_bbx_debug'])
-
-        output_dict['ego'].update({
-            'past_k_object_bbx': torch.from_numpy(
-                np.vstack(past_k_object_bbx_list)),
-            'past_k_object_cav_num': torch.from_numpy(
-                np.array(past_k_object_cav_num_list)),
-            'cur_object_bbx_debug': torch.from_numpy(
-                np.vstack(cur_object_bbx_debug_list)),
-        })
-        return output_dict
-
-    def collate_batch_test(self, batch):
-        if not self.is_generate_motion_gt:
-            return super().collate_batch_test(batch)
-        return self.collate_batch_train(batch)
-
     ### rewrite generate_object_center ###
     def generate_object_center(self,
                                cav_contents,
@@ -1379,36 +1064,6 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         """
         suffix = "_single"
         return self.post_processor.generate_object_center_dairv2x_single(cav_contents, suffix)
-
-    @staticmethod
-    def find_common_id(object_ids, cur_ids=None):
-        if not object_ids:
-            return []
-        common_ids = set(object_ids[0])
-        for ids in object_ids[1:]:
-            common_ids &= set(ids)
-        if cur_ids is not None:
-            common_ids &= set(cur_ids)
-        common_ids = sorted(common_ids)
-        if not common_ids:
-            if cur_ids is not None:
-                return [torch.tensor([], dtype=torch.long)
-                        for _ in range(len(object_ids) + 1)]
-            return [torch.tensor([], dtype=torch.long)
-                    for _ in range(len(object_ids))]
-
-        indices = []
-        for ids in object_ids:
-            id_to_idx = dict(zip(ids, range(len(ids))))
-            indices.append(torch.tensor(
-                [id_to_idx[obj_id] for obj_id in common_ids],
-                dtype=torch.long))
-        if cur_ids is not None:
-            id_to_idx = dict(zip(cur_ids, range(len(cur_ids))))
-            indices.append(torch.tensor(
-                [id_to_idx[obj_id] for obj_id in common_ids],
-                dtype=torch.long))
-        return indices
     
     def generate_pred_bbx_frames_w_uncertainty(self, m_single, trans_mat_pastk_2_past0, past_time_diff, anchor_box, pairwise_t_matrix_past0_2_cur):
         '''
