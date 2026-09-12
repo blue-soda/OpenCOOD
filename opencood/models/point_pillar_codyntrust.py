@@ -5,7 +5,7 @@ import torch.nn as nn
 from opencood.models.sub_modules.pillar_vfe import PillarVFE
 from opencood.models.sub_modules.point_pillar_scatter import PointPillarScatter
 from opencood.models.sub_modules.base_bev_backbone import BaseBEVBackbone
-from opencood.models.sub_modules.base_bev_backbone_resnet import ResNetBEVBackbone
+from opencood.models.sub_modules.codyntrust_base_bev_backbone_resnet import ResNetBEVBackbone
 # from opencood.models.sub_modules.base_bev_backbone_resnet_BiFPN import ResNetBEVBackbone_BiFPN
 # from opencood.models.sub_modules.sparse_resnet import Sparse_resnet_backbone_aspp
 from opencood.models.sub_modules.downsample_conv import DownsampleConv, AttentionDownsampleConv
