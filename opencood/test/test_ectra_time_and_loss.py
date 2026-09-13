@@ -17,6 +17,23 @@ def load_module(name, relative):
 
 
 class EctraRegressionTest(unittest.TestCase):
+    def test_residual_state_preserves_empty_support_and_zero_time(self):
+        cls = load_module('recurrent', 'models/sub_modules/ectra_recurrent_alignment.py').EctraRecurrentAlignment
+        model = cls({'feature_dim': 2, 'hidden_dim': 4, 'gate_dim': 4,
+                     'state_update_mode': 'residual_observation'}).eval()
+        hidden = torch.rand(1, 2, 4, 5)
+        pred, flow, gamma = model._propagate(hidden, hidden, torch.zeros(1))
+        torch.testing.assert_allclose(pred, hidden)
+        self.assertEqual(flow.abs().sum().item(), 0.)
+        torch.testing.assert_allclose(gamma, torch.ones_like(gamma))
+        empty = torch.zeros_like(hidden)
+        state, *_ = model._update(empty, empty, hidden, torch.ones(1))
+        self.assertEqual(state.abs().sum().item(), 0.)
+        state, *_ = model._update(hidden, hidden, hidden, torch.ones(1))
+        self.assertGreaterEqual(state.min().item(), 0.)
+        state.sum().backward()
+        self.assertGreater(model.candidate_net[-2].weight.grad.abs().sum().item(), 0.)
+
     def test_decoder_bn_separates_statistics_with_shared_affine(self):
         cls = load_module('domain', 'models/sub_modules/decoder_domain_norm.py').DecoderDomainBatchNorm2d
         bn = cls(torch.nn.BatchNorm2d(2, momentum=1.)).train()

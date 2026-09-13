@@ -16,6 +16,10 @@ class EctraRecurrentAlignment(nn.Module):
         super(EctraRecurrentAlignment, self).__init__()
         self.feature_dim = args.get('feature_dim', 64)
         self.extrapolate_to_current = args.get('extrapolate_to_current', True)
+        self.state_update_mode = args.get('state_update_mode', 'legacy')
+        if self.state_update_mode not in ('legacy', 'residual_observation'):
+            raise ValueError('Unknown ECTRA state_update_mode')
+        self.residual_gain = float(args.get('residual_gain', 0.1))
         self.time_scale = float(args.get('time_scale', 10.0))
         self.motion_range = float(args.get('motion_range', 8.0))
         self.calib_range = float(args.get('calib_range', 4.0))
@@ -84,6 +88,10 @@ class EctraRecurrentAlignment(nn.Module):
         motion = self.motion_net(torch.cat((hidden, ego_ref, time_maps), dim=1))
         flow = torch.tanh(motion[:, :2]) * self.motion_range
         gamma = torch.sigmoid(motion[:, 2:3])
+        if self.state_update_mode == 'residual_observation':
+            elapsed = dt.to(hidden).view(-1, 1, 1, 1).clamp_min(0) / self.time_scale
+            flow = flow * elapsed
+            gamma = torch.exp(-F.softplus(motion[:, 2:3]) * elapsed)
         hidden_pred = gamma * self._warp_by_flow(hidden, flow)
         return hidden_pred, flow, gamma
 
@@ -108,6 +116,11 @@ class EctraRecurrentAlignment(nn.Module):
         candidate = self.candidate_net(torch.cat((
             r_pred * hidden_pred, r_obs * obs_calib, ego_ref, r_pred, r_obs
         ), dim=1))
+        if self.state_update_mode == 'residual_observation':
+            # Bias terms must not create dense features in unobserved space.
+            support = ((obs_calib.abs().amax(dim=1, keepdim=True) > 0)
+                       | (hidden_pred.abs().amax(dim=1, keepdim=True) > 0)).to(obs.dtype)
+            candidate = F.relu(obs_calib + self.residual_gain * candidate) * support
         write = z * r_obs
         hidden = (1.0 - write) * hidden_pred + write * candidate
         trust = torch.clamp(0.5 * (r_pred + r_obs), 0.0, 1.0)
