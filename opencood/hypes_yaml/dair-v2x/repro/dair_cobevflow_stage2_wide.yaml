@@ -31,12 +31,22 @@ is_single_pre_trained:
 
 yaml_parser: "load_point_pillar_params"
 train_params:
-  batch_size: &batch_size 4
-  epoches: 60
+  batch_size: &batch_size 2
+  epoches: 30
   eval_freq: 1
   save_freq: 1
   max_cav: &max_cav 2
   supervise_single_flag: False
+
+diagnostics:
+  enabled: true
+  scalar_interval: 20
+  grad_interval: 200
+  val_visualize:
+    enabled: true
+    interval: 400
+    max_images: 8
+    method: bev
 
 fusion:
   core_method: 'CoDynTrustDAIRIrregularFlowDataset' # LateFusionDataset, EarlyFusionDataset, IntermediateFusionDataset supported

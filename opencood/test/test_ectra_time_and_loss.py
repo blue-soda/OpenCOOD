@@ -17,6 +17,28 @@ def load_module(name, relative):
 
 
 class EctraRegressionTest(unittest.TestCase):
+    def test_decoder_bn_separates_statistics_with_shared_affine(self):
+        cls = load_module('domain', 'models/sub_modules/decoder_domain_norm.py').DecoderDomainBatchNorm2d
+        bn = cls(torch.nn.BatchNorm2d(2, momentum=1.)).train()
+        bn(torch.full((2, 2, 3, 3), 2.))
+        bn.fusion_domain = bn.fusion_training = True
+        bn(torch.full((2, 2, 3, 3), 8.))
+        torch.testing.assert_allclose(bn.running_mean, torch.full((2,), 2.))
+        torch.testing.assert_allclose(bn.fusion_running_mean, torch.full((2,), 8.))
+        self.assertEqual(sum(p.numel() for p in bn.parameters()), 4)
+
+    def test_roi_identity_grid_preserves_pixels_and_flow_has_gradient(self):
+        cls = load_module('roi', 'models/sub_modules/ectra_roi_flow_refiner.py').EctraRoiFlowRefiner
+        model = cls({'feature_dim': 2, 'hidden_dim': 4}).eval()
+        features = torch.randn(2, 2, 4, 5)
+        grid = model._identity_grid(2, 4, 5, features.device, features.dtype)
+        torch.testing.assert_allclose(torch.nn.functional.grid_sample(features, grid, align_corners=False), features)
+        refined, mask, aux = model(grid, torch.ones_like(features), features, torch.tensor([2]), torch.tensor([0., -3.]))
+        sampled = torch.nn.functional.grid_sample(features, refined, align_corners=False) * mask
+        sampled.square().mean().backward()
+        self.assertGreater(model.flow_head.weight.grad.abs().sum().item(), 0.)
+        self.assertGreater(model.trust_head.weight.grad.abs().sum().item(), 0.)
+
     def test_signed_offsets_encode_elapsed_time(self):
         cls = load_module('roi', 'models/sub_modules/ectra_roi_flow_refiner.py').EctraRoiFlowRefiner
         model = cls({'feature_dim': 2, 'hidden_dim': 4}).eval()

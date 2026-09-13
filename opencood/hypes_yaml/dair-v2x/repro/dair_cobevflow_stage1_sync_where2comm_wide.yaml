@@ -88,6 +88,7 @@ model:
   core_method: point_pillar_where2comm_attn
   args:
     voxel_size: *voxel_size
+    separate_decoder_bn: true
     lidar_range: *cav_lidar
     anchor_number: *anchor_num
     max_cav: *max_cav

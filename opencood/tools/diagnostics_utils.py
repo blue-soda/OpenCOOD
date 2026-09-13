@@ -107,14 +107,19 @@ class DiagnosticsManager(object):
             return
         total_sq_norm = 0.0
         trainable_count = 0
-        for _, parameter in model.named_parameters():
+        module_sq_norm = {}
+        for name, parameter in model.named_parameters():
             if parameter.grad is None:
                 continue
             grad_norm = parameter.grad.detach().data.norm(2).item()
             total_sq_norm += grad_norm * grad_norm
+            group = '.'.join(name.split('.')[:2])
+            module_sq_norm[group] = module_sq_norm.get(group, 0.) + grad_norm * grad_norm
             trainable_count += 1
         writer.add_scalar('Diagnostics/grad_total_norm', total_sq_norm ** 0.5, step)
         writer.add_scalar('Diagnostics/grad_parameter_count', trainable_count, step)
+        for group, value in module_sq_norm.items():
+            writer.add_scalar('Diagnostics/grad_modules/' + group, value ** 0.5, step)
 
     def maybe_save_validation_visual(self, batch_data, output_dict, dataset, hypes, epoch, batch_id):
         if not self.enabled or not self.val_vis_enabled:

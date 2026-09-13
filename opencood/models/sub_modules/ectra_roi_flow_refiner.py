@@ -40,8 +40,8 @@ class EctraRoiFlowRefiner(nn.Module):
 
     @staticmethod
     def _identity_grid(batch_size, height, width, device, dtype):
-        ys = torch.linspace(-1.0, 1.0, height, device=device, dtype=dtype)
-        xs = torch.linspace(-1.0, 1.0, width, device=device, dtype=dtype)
+        ys = (torch.arange(height, device=device, dtype=dtype) + 0.5) * (2.0 / height) - 1.0
+        xs = (torch.arange(width, device=device, dtype=dtype) + 0.5) * (2.0 / width) - 1.0
         yy, xx = torch.meshgrid(ys, xs, indexing='ij')
         grid = torch.stack((xx, yy), dim=-1)
         return grid.unsqueeze(0).repeat(batch_size, 1, 1, 1)
@@ -55,8 +55,8 @@ class EctraRoiFlowRefiner(nn.Module):
         flow_delta = flow_delta.to(device=device, dtype=dtype)
         identity = cls._identity_grid(flow_delta.shape[0], height, width,
                                       device, dtype)
-        norm_x = flow_delta[:, 0] * (2.0 / max(width - 1, 1))
-        norm_y = flow_delta[:, 1] * (2.0 / max(height - 1, 1))
+        norm_x = flow_delta[:, 0] * (2.0 / width)
+        norm_y = flow_delta[:, 1] * (2.0 / height)
         return identity - torch.stack((norm_x, norm_y), dim=-1)
 
     def forward(self, coarse_flow_grid, reserved_mask, features, record_len,
@@ -109,7 +109,7 @@ class EctraRoiFlowRefiner(nn.Module):
         trust = self.min_trust + (1.0 - self.min_trust) * trust
 
         scale = torch.tensor(
-            [2.0 / max(width - 1, 1), 2.0 / max(height - 1, 1)],
+            [2.0 / width, 2.0 / height],
             device=device, dtype=dtype).view(1, 1, 1, 2)
         residual_grid = residual_pixel.permute(0, 2, 3, 1).contiguous() * scale
         refined_flow_grid = coarse_flow_grid + residual_grid * roi_mask.permute(0, 2, 3, 1)
@@ -128,6 +128,8 @@ class EctraRoiFlowRefiner(nn.Module):
 
         soft_mask = reserved_mask * trust.expand_as(reserved_mask)
         aux = {
+            'ectra_roi_residual_loss': (residual_pixel.square() * roi_mask * (1.0 - ego_mask)).sum()
+                / ((roi_mask * (1.0 - ego_mask)).sum() * 2 + 1e-6),
             'ectra_roi_trust_mean': trust.mean(),
             'ectra_roi_trust_min': trust.min(),
             'ectra_roi_residual_abs_mean': residual_pixel.abs().mean(),

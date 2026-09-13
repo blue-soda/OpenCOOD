@@ -10,6 +10,7 @@ from opencood.models.sub_modules.pillar_vfe import PillarVFE
 from opencood.models.sub_modules.point_pillar_scatter import PointPillarScatter
 from opencood.models.sub_modules.base_bev_backbone import BaseBEVBackbone
 from opencood.models.sub_modules.codyntrust_base_bev_backbone_resnet import ResNetBEVBackbone
+from opencood.models.sub_modules.decoder_domain_norm import split_decoder_statistics, set_decoder_domain
 from opencood.models.sub_modules.downsample_conv import DownsampleConv
 from opencood.models.sub_modules.naive_compress import NaiveCompressor
 # from opencood.models.sub_modules.dcn_net import DCNNet
@@ -214,8 +215,22 @@ class PointPillarWhere2commEctra(nn.Module):
         else:
             self.use_dir = False
 
+        if args.get('separate_decoder_bn', False):
+            split_decoder_statistics(self.backbone.deblocks)
+            if self.shrink_flag:
+                split_decoder_statistics(self.shrink_conv)
+        self.freeze_single_bn = args.get('freeze_single_bn', False)
         if args['backbone_fix']:
             self.backbone_fix()
+
+    def train(self, mode=True):
+        super().train(mode)
+        if mode and self.freeze_single_bn:
+            for name in ('pillar_vfe', 'backbone', 'shrink_conv'):
+                module = getattr(self, name, None)
+                if module is not None:
+                    module.eval()
+        return self
 
     def backbone_fix(self):
         """
@@ -337,6 +352,7 @@ class PointPillarWhere2commEctra(nn.Module):
         return torch.cat(box_flow_map_list, dim=0), torch.cat(reserved_mask_list, dim=0)
 
     def forward(self, data_dict, dataset=None):
+        set_decoder_domain(self, False, self.training)
         voxel_features = data_dict['processed_lidar']['voxel_features']         #(M, 32, 4)
         voxel_coords = data_dict['processed_lidar']['voxel_coords']             #(M, 4)
         voxel_num_points = data_dict['processed_lidar']['voxel_num_points']     #(M, )
@@ -406,6 +422,7 @@ class PointPillarWhere2commEctra(nn.Module):
         if self.use_dir:
             dm_single = self.dir_head(spatial_features_2d)
         psm_fusion = self.select_current_frames(psm_single, record_len, k)
+        set_decoder_domain(self, True, self.training)
         roi_aux = {}
         flow_gt = data_dict['label_dict'].get('flow_gt', None) \
             if 'label_dict' in data_dict else None

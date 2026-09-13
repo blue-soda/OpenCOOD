@@ -94,6 +94,8 @@ model:
   core_method: point_pillar_where2comm_ectra
   args:
     voxel_size: *voxel_size
+    separate_decoder_bn: true
+    freeze_single_bn: true
     lidar_range: *cav_lidar
     anchor_number: *anchor_num
     max_cav: *max_cav
@@ -105,6 +107,7 @@ model:
     dir_args: *dir_args
     ectra:
       enabled: true
+      extrapolate_to_current: false
       feature_dim: 64
       hidden_dim: 16
       gate_dim: 16
@@ -172,7 +175,7 @@ loss:
       anchor_yaw: *anchor_yaw
     aux_weights:
       ectra_motion_loss: 0.05
-      ectra_roi_flow_loss: 0.5
+      ectra_roi_residual_loss: 0.001
 
 optimizer:
   core_method: AdamW

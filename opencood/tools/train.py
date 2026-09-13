@@ -444,9 +444,13 @@ def main():
     
     if run_test and not opt.skip_test:
         fusion_method = opt.fusion_method
-        cmd = f"python opencood/tools/inference_multi_sweep.py --model_dir {saved_path} --fusion_method {fusion_method}"
+        inference_path = os.path.join(os.path.dirname(__file__), 'inference.py')
+        dataset_code = 'd' if str(hypes.get('dataset', '')).lower() == 'dairv2x' else 'o'
+        cmd = [sys.executable, inference_path, '--model_dir', saved_path,
+               '--fusion_method', fusion_method, '--two_stage', str(opt.two_stage),
+               '--dataset', dataset_code]
         print(f"Running command: {cmd}")
-        os.system(cmd)
+        subprocess.run(cmd, check=True)
 
 if __name__ == '__main__':
     main()

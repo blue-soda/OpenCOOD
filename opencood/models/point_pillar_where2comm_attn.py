@@ -5,6 +5,7 @@
 
 from numpy import record
 import torch.nn as nn
+from opencood.models.sub_modules.decoder_domain_norm import split_decoder_statistics, set_decoder_domain
 
 from opencood.models.sub_modules.pillar_vfe import PillarVFE
 from opencood.models.sub_modules.point_pillar_scatter import PointPillarScatter
@@ -194,6 +195,10 @@ class PointPillarWhere2commAttn(nn.Module):
         else:
             self.use_dir = False
 
+        if args.get('separate_decoder_bn', False):
+            split_decoder_statistics(self.backbone.deblocks)
+            if self.shrink_flag:
+                split_decoder_statistics(self.shrink_conv)
         if args['backbone_fix']:
             self.backbone_fix()
 
@@ -237,6 +242,7 @@ class PointPillarWhere2commAttn(nn.Module):
         return split_x
 
     def forward(self, data_dict):
+        set_decoder_domain(self, False, self.training)
         voxel_features = data_dict['processed_lidar']['voxel_features']         #(M, 32, 4)
         voxel_coords = data_dict['processed_lidar']['voxel_coords']             #(M, 4)
         voxel_num_points = data_dict['processed_lidar']['voxel_num_points']     #(M, )
@@ -294,6 +300,7 @@ class PointPillarWhere2commAttn(nn.Module):
         if self.use_dir:
             dm_single = self.dir_head(spatial_features_2d)
 
+        set_decoder_domain(self, True, self.training)
         # rain attention:
         if self.multi_scale:
             if self.compensation:

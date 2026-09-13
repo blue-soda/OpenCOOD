@@ -15,6 +15,7 @@ class EctraRecurrentAlignment(nn.Module):
     def __init__(self, args):
         super(EctraRecurrentAlignment, self).__init__()
         self.feature_dim = args.get('feature_dim', 64)
+        self.extrapolate_to_current = args.get('extrapolate_to_current', True)
         self.time_scale = float(args.get('time_scale', 10.0))
         self.motion_range = float(args.get('motion_range', 8.0))
         self.calib_range = float(args.get('calib_range', 4.0))
@@ -175,7 +176,7 @@ class EctraRecurrentAlignment(nn.Module):
                     prev_time = curr_time
 
                 final_dt = torch.abs(batch_intervals[cav_idx, 0:1])
-                if torch.any(final_dt > 0):
+                if self.extrapolate_to_current and torch.any(final_dt > 0):
                     hidden, _, _ = self._propagate(hidden, ego_seq[0:1], final_dt)
 
                 updated_current = last_trust * hidden + \
