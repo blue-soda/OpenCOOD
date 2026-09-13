@@ -13,22 +13,55 @@ from pypcd import pypcd
 import struct
 import os
 
-_PCD_FALLBACK_LOG_LIMIT = int(os.environ.get('OPENCOOD_PCD_FALLBACK_LOG_LIMIT', 20))
-_pcd_fallback_log_count = 0
+_PCD_ISSUE_LOG_LIMIT = int(os.environ.get('OPENCOOD_PCD_ISSUE_LOG_LIMIT', 8))
+_PCD_ISSUE_REASON_LOG_LIMIT = int(
+    os.environ.get('OPENCOOD_PCD_ISSUE_REASON_LOG_LIMIT', 4))
+_pcd_issue_log_count = 0
+_pcd_issue_reason_counts = {}
+
+
+def _empty_pcd_points():
+    return np.zeros((0, 4), dtype=np.float32)
+
+
+def _log_pcd_read_issue(pcd_path, reason, exc=None):
+    global _pcd_issue_log_count
+    if _pcd_issue_log_count >= _PCD_ISSUE_LOG_LIMIT:
+        return
+    reason_count = _pcd_issue_reason_counts.get(reason, 0)
+    if reason_count >= _PCD_ISSUE_REASON_LOG_LIMIT:
+        return
+    _pcd_issue_log_count += 1
+    _pcd_issue_reason_counts[reason] = reason_count + 1
+    detail = ''
+    if exc is not None:
+        detail = ' | %s: %s' % (type(exc).__name__, exc)
+    print('[pcd_utils] %s (%d/%d): %s%s' % (
+        reason,
+        _pcd_issue_log_count,
+        _PCD_ISSUE_LOG_LIMIT,
+        pcd_path,
+        detail))
 
 
 def _log_pcd_binary_fallback_failure(pcd_path, exc):
-    global _pcd_fallback_log_count
-    if _pcd_fallback_log_count >= _PCD_FALLBACK_LOG_LIMIT:
-        return
-    _pcd_fallback_log_count += 1
-    print('[pcd_utils] binary_compressed parser failed; using Open3D fallback '
-          '(%d/%d): %s | %s: %s' % (
-              _pcd_fallback_log_count,
-              _PCD_FALLBACK_LOG_LIMIT,
-              pcd_path,
-              type(exc).__name__,
-              exc))
+    _log_pcd_read_issue(
+        pcd_path,
+        'binary_compressed parser failed; using Open3D fallback',
+        exc)
+
+
+def _is_corrupt_binary_compressed_error(exc):
+    message = str(exc).lower()
+    return any(token in message for token in (
+        'invalid pcd header',
+        'error decompressing',
+        'error in compressed data',
+        'decompress',
+        'unpack requires',
+        'buffer',
+        'truncated',
+    ))
 
 def pcd_to_np(pcd_file):
     """
@@ -301,9 +334,18 @@ def _read_pcd_open3d_xyz(pcd_path):
 
 
 def  read_pcd(pcd_path):
+    time = None
+    try:
+        file_size = os.path.getsize(pcd_path)
+    except OSError as exc:
+        _log_pcd_read_issue(pcd_path, 'pcd file is not readable; using empty cloud', exc)
+        return _empty_pcd_points(), time
+    if file_size == 0:
+        _log_pcd_read_issue(pcd_path, 'pcd file is empty; using empty cloud')
+        return _empty_pcd_points(), time
+
     try:
         pcd = pypcd.PointCloud.from_path(pcd_path)
-        time = None
         pcd_np_points = np.zeros((pcd.points, 4), dtype=np.float32)
         pcd_np_points[:, 0] = np.transpose(pcd.pc_data["x"])
         pcd_np_points[:, 1] = np.transpose(pcd.pc_data["y"])
@@ -322,6 +364,12 @@ def  read_pcd(pcd_path):
             if "intensity" in pc_data.dtype.names:
                 pcd_np_points[:, 3] = np.transpose(pc_data["intensity"]) / 256.0
         except Exception as exc:
+            if _is_corrupt_binary_compressed_error(exc):
+                _log_pcd_read_issue(
+                    pcd_path,
+                    'pcd file appears corrupt; using empty cloud',
+                    exc)
+                return _empty_pcd_points(), time
             _log_pcd_binary_fallback_failure(pcd_path, exc)
             pcd_np_points = _read_pcd_open3d_xyz(pcd_path)
     del_index = np.where(np.isnan(pcd_np_points))[0]
