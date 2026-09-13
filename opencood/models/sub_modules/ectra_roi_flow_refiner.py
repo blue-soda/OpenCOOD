@@ -80,7 +80,8 @@ class EctraRoiFlowRefiner(nn.Module):
         device = features.device
 
         roi_mask = reserved_mask[:, :1].clamp(0, 1).to(dtype=dtype)
-        time_intervals = time_intervals.view(-1, 1, 1, 1).to(device=device, dtype=dtype)
+        # Dataset timestamps are signed offsets from the current ego frame.
+        time_intervals = time_intervals.view(-1, 1, 1, 1).to(device=device, dtype=dtype).abs()
         norm_dt = torch.clamp(time_intervals / max(self.time_scale, 1e-6), min=0.0, max=4.0)
         log_dt = torch.log1p(torch.clamp(time_intervals, min=0.0)) / torch.log(
             torch.tensor(self.time_scale + 1.0, device=device, dtype=dtype))

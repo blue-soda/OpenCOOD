@@ -145,6 +145,7 @@ class PointPillarTcLoss(nn.Module):
         output_dict : dict
         target_dict : dict
         """
+        self.loss_dict = {}
         if self.backbone_fix:
             total_loss = 0
             ###### flow loss ######
@@ -270,6 +271,7 @@ class PointPillarTcLoss(nn.Module):
                 self.loss_dict.update({aux_name: aux_value.mean(),
                                        f'{aux_name}_weighted': aux_term})
 
+        self.loss_dict['total_loss'] = total_loss
         return total_loss
 
     def cls_loss_func(self, input: torch.Tensor,
@@ -393,9 +395,21 @@ class PointPillarTcLoss(nn.Module):
             dir_loss = self.loss_dict['dir_loss']
             print_msg += " || Dir Loss: %.4f" % dir_loss.item()
 
+        for aux_name in self.aux_weights:
+            if aux_name in self.loss_dict:
+                print_msg += " || %s: %.6f" % (aux_name, self.loss_dict[aux_name])
+            else:
+                print_msg += " || %s: missing" % aux_name
         print(print_msg)
 
         if not writer is None:
+            writer.add_scalar('Total_loss'+suffix, total_loss,
+                              epoch*batch_len + batch_id)
+            for aux_name in self.aux_weights:
+                for key in (aux_name, aux_name + '_weighted'):
+                    if key in self.loss_dict:
+                        writer.add_scalar(key+suffix, self.loss_dict[key],
+                                          epoch*batch_len + batch_id)
             writer.add_scalar('Regression_loss'+suffix, reg_loss,
                             epoch*batch_len + batch_id)
             writer.add_scalar('Confidence_loss'+suffix, conf_loss,
