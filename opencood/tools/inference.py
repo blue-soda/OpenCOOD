@@ -45,6 +45,8 @@ def test_parser():
     parser.add_argument('--dataset', default='o', type=str, choices=['o', 'd'], help='which dataset will be used, o is for OPV2V/IRV2V, d is for DAIR-V2X.')
     parser.add_argument('--debug_max_samples', default=0, type=int,
                         help='maximum inference samples for smoke tests')
+    parser.add_argument('--eval_seed', default=303, type=int,
+                        help='seed for evaluation dataset and worker sampling')
     opt = parser.parse_args()
     return opt
 
@@ -134,7 +136,7 @@ def main():
     model.eval()
 
     # setting noise
-    np.random.seed(303)
+    np.random.seed(opt.eval_seed)
     noise_setting = OrderedDict()
     noise_setting['add_noise'] = False
     
@@ -154,7 +156,9 @@ def main():
                             collate_fn=opencood_dataset.collate_batch_test,
                             shuffle=False,
                             pin_memory=False,
+                            generator=torch.Generator().manual_seed(opt.eval_seed),
                             drop_last=False)
+    print(f"Evaluation sampling seed: {opt.eval_seed}")
     
     # Create the dictionary for evaluation
     result_stat = {0.3: {'tp': [], 'fp': [], 'gt': 0, 'score': []},
