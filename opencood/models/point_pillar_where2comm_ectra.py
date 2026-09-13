@@ -215,6 +215,13 @@ class PointPillarWhere2commEctra(nn.Module):
         else:
             self.use_dir = False
 
+        self.independent_fusion_backbone = args.get('independent_fusion_backbone', False)
+        if self.independent_fusion_backbone:
+            if not self.ectra_roi_flag or not self.multi_scale:
+                raise ValueError('Independent ECTRA fusion backbone requires multiscale ROI mode')
+            self.fused_backbone = ResNetBEVBackbone(args['base_bev_backbone'], 64)
+            if self.shrink_flag:
+                self.fused_shrink_conv = DownsampleConv(args['shrink_header'])
         if args.get('separate_decoder_bn', False):
             split_decoder_statistics(self.backbone.deblocks)
             if self.shrink_flag:
@@ -442,6 +449,7 @@ class PointPillarWhere2commEctra(nn.Module):
                 record_len, fusion_record_frames, flow_gt=flow_gt)
 
         # rain attention:
+        fusion_backbone = self.fused_backbone if self.independent_fusion_backbone else self.backbone
         if self.multi_scale:
             if self.ectra_roi_flag:
                 fused_feature, communication_rates, result_dict = self.rain_fusion(
@@ -450,7 +458,7 @@ class PointPillarWhere2commEctra(nn.Module):
                     record_len,
                     pairwise_t_matrix,
                     record_frames,
-                    self.backbone,
+                    fusion_backbone,
                     [self.shrink_conv, self.cls_head, self.reg_head],
                     box_flow=box_flow_map,
                     reserved_mask=reserved_mask,
@@ -485,7 +493,8 @@ class PointPillarWhere2commEctra(nn.Module):
                     noise_pairwise_t_matrix=noise_pairwise_t_matrix)
             # downsample feature to reduce memory
             if self.shrink_flag:
-                fused_feature = self.shrink_conv(fused_feature)
+                fusion_shrink = self.fused_shrink_conv if self.independent_fusion_backbone else self.shrink_conv
+                fused_feature = fusion_shrink(fused_feature)
                 if self.single_supervise:
                     single_feature = self.shrink_conv(single_feature)
                 # if self.compensation:
