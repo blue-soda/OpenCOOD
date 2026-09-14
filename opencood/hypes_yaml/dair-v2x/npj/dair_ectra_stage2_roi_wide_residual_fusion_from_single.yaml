@@ -109,6 +109,8 @@ model:
     ectra:
       enabled: true
       state_update_mode: residual_observation
+      output_mode: hidden
+      motion_loss_mode: active
       residual_gain: 0.1
       extrapolate_to_current: false
       feature_dim: 64

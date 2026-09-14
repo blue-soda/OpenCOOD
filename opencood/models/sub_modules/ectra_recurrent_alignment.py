@@ -19,6 +19,12 @@ class EctraRecurrentAlignment(nn.Module):
         self.state_update_mode = args.get('state_update_mode', 'legacy')
         if self.state_update_mode not in ('legacy', 'residual_observation'):
             raise ValueError('Unknown ECTRA state_update_mode')
+        self.output_mode = args.get('output_mode', 'trust_blend')
+        if self.output_mode not in ('trust_blend', 'hidden'):
+            raise ValueError('Unknown ECTRA output_mode')
+        self.motion_loss_mode = args.get('motion_loss_mode', 'dense')
+        if self.motion_loss_mode not in ('dense', 'active'):
+            raise ValueError('Unknown ECTRA motion_loss_mode')
         self.residual_gain = float(args.get('residual_gain', 0.1))
         self.time_scale = float(args.get('time_scale', 10.0))
         self.motion_range = float(args.get('motion_range', 8.0))
@@ -126,6 +132,16 @@ class EctraRecurrentAlignment(nn.Module):
         trust = torch.clamp(0.5 * (r_pred + r_obs), 0.0, 1.0)
         return hidden, obs_calib, calib_flow, trust, r_pred, r_obs
 
+    def _motion_consistency_loss(self, hidden_pred, obs_calib):
+        loss = F.smooth_l1_loss(hidden_pred, obs_calib.detach(),
+                                reduction='none')
+        if self.motion_loss_mode == 'active':
+            active = ((hidden_pred.detach().abs().amax(dim=1, keepdim=True) > 0)
+                      | (obs_calib.detach().abs().amax(dim=1, keepdim=True) > 0))
+            active = active.to(loss.dtype)
+            return (loss * active).sum() / (active.sum() * loss.shape[1] + 1e-6)
+        return loss.mean()
+
     def _reshape_time_intervals(self, time_intervals, record_len, k, device):
         if time_intervals is None:
             total_cav = int(torch.sum(record_len).item())
@@ -184,16 +200,18 @@ class EctraRecurrentAlignment(nn.Module):
                         hidden_pred, nodes[cav_idx, frame_idx:frame_idx + 1],
                         ego_ref, dt)
                     motion_losses.append(
-                        F.smooth_l1_loss(hidden_pred, obs_calib.detach(),
-                                         reduction='mean'))
+                        self._motion_consistency_loss(hidden_pred, obs_calib))
                     prev_time = curr_time
 
                 final_dt = torch.abs(batch_intervals[cav_idx, 0:1])
                 if self.extrapolate_to_current and torch.any(final_dt > 0):
                     hidden, _, _ = self._propagate(hidden, ego_seq[0:1], final_dt)
 
-                updated_current = last_trust * hidden + \
-                    (1.0 - last_trust) * nodes[cav_idx, 0:1]
+                if self.output_mode == 'hidden':
+                    updated_current = hidden
+                else:
+                    updated_current = last_trust * hidden + \
+                        (1.0 - last_trust) * nodes[cav_idx, 0:1]
                 cav_sequences.append(torch.cat(
                     (updated_current, nodes[cav_idx, 1:]), dim=0))
                 trust_maps.append(last_trust)
