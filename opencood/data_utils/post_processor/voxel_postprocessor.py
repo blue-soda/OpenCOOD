@@ -384,16 +384,34 @@ class VoxelPostprocessor(BasePostprocessor):
             boxes3d = torch.masked_select(batch_box3d[i],
                                         mask_reg[i]).view(-1, 7)
             scores = torch.masked_select(prob[i], mask[i])
+            pre_nms_topk_idx = None
             if has_uncertainty:
                 u_cls_data = torch.masked_select(cls_data_unc[i], mask[i])
                 u_cls_model = torch.masked_select(cls_model_unc[i], mask[i])
                 u_reg_data = torch.masked_select(reg_data_unc[i], mask[i])
                 u_reg_model = torch.masked_select(reg_model_unc[i], mask[i])
 
+            roi_pre_nms_topk = self.params['target_args'].get(
+                'roi_pre_nms_topk', -1)
+            if roi_pre_nms_topk is not None and roi_pre_nms_topk > 0 and \
+                    scores.shape[0] > roi_pre_nms_topk:
+                topk_scores, topk_idx = torch.topk(
+                    scores, int(roi_pre_nms_topk), largest=True, sorted=False)
+                boxes3d = boxes3d[topk_idx]
+                scores = topk_scores
+                pre_nms_topk_idx = topk_idx
+                if has_uncertainty:
+                    u_cls_data = u_cls_data[topk_idx]
+                    u_cls_model = u_cls_model[topk_idx]
+                    u_reg_data = u_reg_data[topk_idx]
+                    u_reg_model = u_reg_model[topk_idx]
+
             ########### adding dir classifier
             if use_dir_flag and len(boxes3d)!=0:
                 dir_cls_preds = dm[i:i+1].permute(0, 2, 3, 1).contiguous().reshape(1, -1, num_bins) # [1, N*H*W*2, 2]
                 dir_cls_preds = dir_cls_preds[mask[i:i+1]]
+                if pre_nms_topk_idx is not None:
+                    dir_cls_preds = dir_cls_preds[pre_nms_topk_idx]
                 # if rot_gt > 0, then the label is 1, then the regression target is [0, 1]
                 dir_labels = torch.max(dir_cls_preds, dim=-1)[1]  # indices. shape [1, N*H*W*2].  value 0 or 1. If value is 1, then rot_gt > 0p
                 

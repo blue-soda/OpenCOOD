@@ -82,6 +82,7 @@ postprocess:
     pos_threshold: 0.6
     neg_threshold: 0.45
     score_threshold: 0.2
+    roi_pre_nms_topk: 256
   order: 'hwl'
   max_num: 100
   nms_thresh: 0.15
