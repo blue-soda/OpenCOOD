@@ -30,6 +30,8 @@ class EctraRecurrentAlignment(nn.Module):
         self.motion_range = float(args.get('motion_range', 8.0))
         self.calib_range = float(args.get('calib_range', 4.0))
         self.roi_context_dim = int(args.get('roi_context_dim', 0))
+        self.roi_trust_enabled = bool(args.get('roi_trust_enabled', False))
+        self.max_roi_trust_masks = int(args.get('max_roi_trust_masks', 64))
         hidden_dim = int(args.get('hidden_dim', self.feature_dim))
         gate_dim = int(args.get('gate_dim', max(16, self.feature_dim // 2)))
 
@@ -122,6 +124,38 @@ class EctraRecurrentAlignment(nn.Module):
         context = self._format_roi_context(roi_context, like)
         return torch.cat(tuple(tensors) + (context,), dim=1)
 
+    def _roi_pool_trust_logits(self, trust_logits, roi_masks):
+        if not self.roi_trust_enabled or roi_masks is None:
+            return trust_logits, None
+        if roi_masks.numel() == 0:
+            return trust_logits, None
+
+        masks = roi_masks.to(
+            device=trust_logits.device, dtype=trust_logits.dtype).clamp(0, 1)
+        if masks.dim() == 3:
+            masks = masks.unsqueeze(1)
+        masks = masks[:self.max_roi_trust_masks]
+        if masks.shape[-2:] != trust_logits.shape[-2:]:
+            masks = F.interpolate(masks, size=trust_logits.shape[-2:],
+                                  mode='nearest')
+
+        denom = masks.flatten(2).sum(dim=-1).clamp_min(1.0)
+        pooled = (trust_logits * masks).flatten(2).sum(dim=-1) / denom
+        roi_logits = torch.zeros_like(trust_logits)
+        roi_counts = torch.zeros_like(trust_logits[:, :1])
+        for roi_idx in range(masks.shape[0]):
+            mask = masks[roi_idx:roi_idx + 1]
+            roi_logits = roi_logits + pooled[roi_idx].view(
+                1, -1, 1, 1) * mask
+            roi_counts = roi_counts + mask
+
+        roi_region = roi_counts > 0
+        trust_logits = torch.where(
+            roi_region.expand_as(trust_logits),
+            roi_logits / roi_counts.clamp_min(1.0),
+            trust_logits)
+        return trust_logits, roi_region.to(trust_logits.dtype).mean()
+
     def _propagate(self, hidden, ego_ref, dt, roi_context=None):
         time_maps = self._time_maps(dt, hidden)
         motion = self.motion_net(self._cat_with_roi_context(
@@ -135,7 +169,8 @@ class EctraRecurrentAlignment(nn.Module):
         hidden_pred = gamma * self._warp_by_flow(hidden, flow)
         return hidden_pred, flow, gamma
 
-    def _update(self, hidden_pred, obs, ego_ref, dt, roi_context=None):
+    def _update(self, hidden_pred, obs, ego_ref, dt, roi_context=None,
+                roi_masks=None):
         time_maps = self._time_maps(dt, hidden_pred)
         calib_flow = torch.tanh(
             self.calib_net(self._cat_with_roi_context(
@@ -150,6 +185,8 @@ class EctraRecurrentAlignment(nn.Module):
         trust_logits = self.trust_net(self._cat_with_roi_context((
             hidden_pred, obs_calib, ego_ref, pred_residual, obs_residual, time_maps
         ), roi_context, hidden_pred))
+        trust_logits, roi_trust_fraction = self._roi_pool_trust_logits(
+            trust_logits, roi_masks)
         r_pred = torch.sigmoid(trust_logits[:, 0:1])
         r_obs = torch.sigmoid(trust_logits[:, 1:2])
         z = torch.sigmoid(trust_logits[:, 2:3])
@@ -165,7 +202,7 @@ class EctraRecurrentAlignment(nn.Module):
         write = z * r_obs
         hidden = (1.0 - write) * hidden_pred + write * candidate
         trust = torch.clamp(0.5 * (r_pred + r_obs), 0.0, 1.0)
-        return hidden, obs_calib, calib_flow, trust, r_pred, r_obs
+        return hidden, obs_calib, calib_flow, trust, r_pred, r_obs, roi_trust_fraction
 
     def _motion_consistency_loss(self, hidden_pred, obs_calib):
         loss = F.smooth_l1_loss(hidden_pred, obs_calib.detach(),
@@ -209,21 +246,33 @@ class EctraRecurrentAlignment(nn.Module):
         chunks = torch.tensor_split(
             features, torch.cumsum(record_len * k, dim=0)[:-1].cpu())
         context_chunks = None
-        if self.roi_context_dim > 0 and roi_context is not None:
-            if roi_context.shape[-2:] != (h, w):
-                roi_context = F.interpolate(
-                    roi_context.to(device=features.device, dtype=features.dtype),
+        roi_mask_chunks = None
+        dense_roi_context = roi_context
+        if isinstance(roi_context, dict):
+            dense_roi_context = roi_context.get('dense', None)
+            roi_masks = roi_context.get('roi_masks', None)
+            if roi_masks is not None:
+                roi_mask_chunks = []
+                start = 0
+                for cav_num in record_len.tolist():
+                    roi_mask_chunks.append(roi_masks[start:start + cav_num])
+                    start += cav_num
+        if self.roi_context_dim > 0 and dense_roi_context is not None:
+            if dense_roi_context.shape[-2:] != (h, w):
+                dense_roi_context = F.interpolate(
+                    dense_roi_context.to(device=features.device, dtype=features.dtype),
                     size=(h, w), mode='bilinear', align_corners=False)
             else:
-                roi_context = roi_context.to(device=features.device,
-                                             dtype=features.dtype)
+                dense_roi_context = dense_roi_context.to(
+                    device=features.device, dtype=features.dtype)
             context_chunks = torch.tensor_split(
-                roi_context, torch.cumsum(record_len, dim=0)[:-1].cpu())
+                dense_roi_context, torch.cumsum(record_len, dim=0)[:-1].cpu())
 
         aligned_chunks = []
         trust_maps = []
         motion_losses = []
         roi_context_maps = []
+        roi_trust_fractions = []
         cav_offset = 0
         for batch_idx, batch_features in enumerate(chunks):
             cav_num = int(record_len[batch_idx].item())
@@ -231,6 +280,8 @@ class EctraRecurrentAlignment(nn.Module):
             ego_seq = nodes[0]
             batch_context = context_chunks[batch_idx] \
                 if context_chunks is not None else None
+            batch_roi_masks = roi_mask_chunks[batch_idx] \
+                if roi_mask_chunks is not None else None
             batch_intervals = intervals[cav_offset:cav_offset + cav_num]
             cav_offset += cav_num
 
@@ -239,6 +290,8 @@ class EctraRecurrentAlignment(nn.Module):
                 hidden = nodes[cav_idx, k - 1:k]
                 cav_context = batch_context[cav_idx:cav_idx + 1] \
                     if batch_context is not None else None
+                cav_roi_masks = batch_roi_masks[cav_idx] \
+                    if batch_roi_masks is not None else None
                 prev_time = torch.abs(batch_intervals[cav_idx, k - 1:k])
                 last_trust = torch.ones(1, 1, h, w, device=features.device,
                                         dtype=features.dtype)
@@ -249,9 +302,11 @@ class EctraRecurrentAlignment(nn.Module):
                     ego_ref = ego_seq[frame_idx:frame_idx + 1]
                     hidden_pred, _, _ = self._propagate(
                         hidden, ego_ref, dt, cav_context)
-                    hidden, obs_calib, _, last_trust, _, _ = self._update(
+                    hidden, obs_calib, _, last_trust, _, _, roi_trust_fraction = self._update(
                         hidden_pred, nodes[cav_idx, frame_idx:frame_idx + 1],
-                        ego_ref, dt, cav_context)
+                        ego_ref, dt, cav_context, cav_roi_masks)
+                    if roi_trust_fraction is not None:
+                        roi_trust_fractions.append(roi_trust_fraction)
                     motion_losses.append(
                         self._motion_consistency_loss(hidden_pred, obs_calib))
                     prev_time = curr_time
@@ -283,4 +338,7 @@ class EctraRecurrentAlignment(nn.Module):
         if roi_context_maps:
             aux['ectra_roi_context_occupancy'] = torch.cat(
                 roi_context_maps, dim=0).mean()
+        if roi_trust_fractions:
+            aux['ectra_roi_trust_fraction'] = torch.stack(
+                roi_trust_fractions).mean()
         return aligned, aux

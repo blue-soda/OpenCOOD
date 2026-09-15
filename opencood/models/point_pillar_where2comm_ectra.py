@@ -25,8 +25,10 @@ from opencood.models.sub_modules.ectra_roi_flow_refiner import EctraRoiFlowRefin
 from opencood.tools.matcher import Matcher
 from collections import OrderedDict
 import torch
+from scipy.optimize import linear_sum_assignment
 
 import numpy as np
+from opencood.utils import box_utils
 from opencood.utils.transformation_utils import tfm_to_pose, x1_to_x2, x_to_world
 
 def generate_noise(pos_std, rot_std, pos_mean=0, rot_mean=0):
@@ -166,6 +168,19 @@ class PointPillarWhere2commEctra(nn.Module):
         self.ectra_roi_flag = args.get('ectra_roi', {}).get('enabled', False)
         self.ectra_dense_enabled = args.get('ectra', {}).get(
             'enabled', not self.ectra_roi_flag)
+        self.ectra_roi_context_dim = int(args.get('ectra', {}).get(
+            'roi_context_dim', 0))
+        self.ectra_roi_match_thresh = float(args.get('ectra', {}).get(
+            'roi_match_thresh', 5.0))
+        self.ectra_roi_velocity_scale = float(args.get('ectra', {}).get(
+            'roi_velocity_scale', 10.0))
+        self.ectra_roi_flow_scale = float(args.get('ectra', {}).get(
+            'roi_flow_scale', 20.0))
+        x_span = max(float(args['lidar_range'][3] - args['lidar_range'][0]), 1.0)
+        y_span = max(float(args['lidar_range'][4] - args['lidar_range'][1]), 1.0)
+        self.ectra_roi_position_scale = (x_span * 0.5, y_span * 0.5)
+        self.ectra_roi_size_scale = float(args.get('ectra', {}).get(
+            'roi_size_scale', 8.0))
 
         # 用于 single 部分的监督
         self.single_supervise = False
@@ -311,6 +326,8 @@ class PointPillarWhere2commEctra(nn.Module):
             shape_list = torch.tensor([64, 200, 704], device=device)
         box_flow_map_list = []
         reserved_mask_list = []
+        roi_context_list = []
+        roi_mask_list = []
 
         for b, lidar_pose in enumerate(lidar_pose_batch):
             cav_num = int(data_dict['record_len'][b].item())
@@ -355,8 +372,22 @@ class PointPillarWhere2commEctra(nn.Module):
                 box_results, shape_list=shape_list, viz_flag=self.viz_bbx_flag)
             box_flow_map_list.append(box_flow_map)
             reserved_mask_list.append(reserved_mask)
+            if self.ectra_roi_context_dim > 0:
+                roi_context, batch_roi_masks = self.build_ectra_roi_context(
+                    box_results, shape_list, device)
+                roi_context_list.append(roi_context)
+                roi_mask_list.extend(batch_roi_masks)
 
-        return torch.cat(box_flow_map_list, dim=0), torch.cat(reserved_mask_list, dim=0)
+        if self.ectra_roi_context_dim > 0 and roi_context_list:
+            roi_context = {
+                'dense': torch.cat(roi_context_list, dim=0),
+                'roi_masks': roi_mask_list,
+            }
+        else:
+            roi_context = None
+        return (torch.cat(box_flow_map_list, dim=0),
+                torch.cat(reserved_mask_list, dim=0),
+                roi_context)
 
     @staticmethod
     def _identity_grid(batch_size, height, width, device, dtype):
@@ -368,28 +399,169 @@ class PointPillarWhere2commEctra(nn.Module):
         grid = torch.stack((xx, yy), dim=-1)
         return grid.unsqueeze(0).repeat(batch_size, 1, 1, 1)
 
-    def build_ectra_roi_context(self, box_flow_map, reserved_mask):
-        """
-        Convert CoBEVFlow's object-box flow grid into dense RNN context maps.
+    def _empty_roi_context(self, shape_list, device, dtype=torch.float32):
+        _, height, width = [int(x.item()) if torch.is_tensor(x) else int(x)
+                           for x in shape_list]
+        context = torch.zeros(
+            self.ectra_roi_context_dim, height, width,
+            device=device, dtype=dtype)
+        masks = torch.zeros(0, 1, height, width, device=device, dtype=dtype)
+        return context, masks
 
-        Channels are ROI mask, x/y normalized grid displacement, and displacement
-        magnitude. They are zero outside matched object regions, so the dense
-        recurrent module receives object-level motion hints without changing the
-        matcher protocol.
+    def _match_current_previous_rois(self, current, previous):
+        current_centers = current['pred_box_center_tensor'][:, :2]
+        previous_centers = previous['pred_box_center_tensor'][:, :2]
+        if current_centers.shape[0] == 0 or previous_centers.shape[0] == 0:
+            device = current_centers.device
+            empty = torch.zeros(0, dtype=torch.long, device=device)
+            return empty, empty, torch.zeros(0, device=device)
+
+        cost = torch.cdist(previous_centers, current_centers)
+        prev_np, curr_np = linear_sum_assignment(cost.detach().cpu().numpy())
+        prev_ids = torch.as_tensor(
+            prev_np, dtype=torch.long, device=current_centers.device)
+        curr_ids = torch.as_tensor(
+            curr_np, dtype=torch.long, device=current_centers.device)
+        if prev_ids.numel() == 0:
+            return prev_ids, curr_ids, torch.zeros(0, device=current_centers.device)
+
+        match_dist = cost[prev_ids, curr_ids]
+        keep = match_dist < self.ectra_roi_match_thresh
+        return prev_ids[keep], curr_ids[keep], match_dist[keep]
+
+    def _rasterize_roi_context(self, context, roi_masks, centers, corners2d,
+                               scores, velocity, displacement, match_valid,
+                               match_dist, scale=2.5):
+        if centers.shape[0] == 0:
+            return
+        _, height, width = context.shape
+        dtype = context.dtype
+        device = context.device
+
+        corners2d = corners2d[:, :, :2].to(device=device, dtype=dtype)
+        centers = centers.to(device=device, dtype=dtype)
+        scores = scores.to(device=device, dtype=dtype).view(-1)
+        velocity = velocity.to(device=device, dtype=dtype)
+        displacement = displacement.to(device=device, dtype=dtype)
+        match_valid = match_valid.to(device=device, dtype=dtype).view(-1)
+        match_dist = match_dist.to(device=device, dtype=dtype).view(-1)
+
+        warped = corners2d * scale + displacement[:, None, :] * scale
+        x_min = (warped[:, :, 0].min(dim=1)[0] - 1 + int(width / 2)).long()
+        x_max = (warped[:, :, 0].max(dim=1)[0] + 1 + int(width / 2)).long()
+        y_min = (warped[:, :, 1].min(dim=1)[0] - 1 + int(height / 2)).long()
+        y_max = (warped[:, :, 1].max(dim=1)[0] + 1 + int(height / 2)).long()
+        x_min = torch.clamp(x_min, 0, width)
+        x_max = torch.clamp(x_max, 0, width)
+        y_min = torch.clamp(y_min, 0, height)
+        y_max = torch.clamp(y_max, 0, height)
+
+        cur_center = centers[:, :2] + displacement
+        pos_scale_x, pos_scale_y = self.ectra_roi_position_scale
+        yaw = centers[:, 6]
+        values = torch.stack((
+            torch.ones_like(scores),
+            torch.clamp(cur_center[:, 0] / pos_scale_x, -2.0, 2.0),
+            torch.clamp(cur_center[:, 1] / pos_scale_y, -2.0, 2.0),
+            torch.clamp(centers[:, 3] / self.ectra_roi_size_scale, 0.0, 4.0),
+            torch.clamp(centers[:, 4] / self.ectra_roi_size_scale, 0.0, 4.0),
+            torch.clamp(centers[:, 5] / self.ectra_roi_size_scale, 0.0, 4.0),
+            torch.sin(yaw),
+            torch.cos(yaw),
+            torch.clamp(velocity[:, 0] / self.ectra_roi_velocity_scale, -4.0, 4.0),
+            torch.clamp(velocity[:, 1] / self.ectra_roi_velocity_scale, -4.0, 4.0),
+            torch.clamp(displacement[:, 0] / self.ectra_roi_flow_scale, -4.0, 4.0),
+            torch.clamp(displacement[:, 1] / self.ectra_roi_flow_scale, -4.0, 4.0),
+            torch.clamp(scores, 0.0, 1.0),
+            match_valid,
+            torch.clamp(match_dist / max(self.ectra_roi_match_thresh, 1e-3), 0.0, 4.0),
+        ), dim=1)
+
+        for roi_idx in range(centers.shape[0]):
+            if x_max[roi_idx] <= x_min[roi_idx] or y_max[roi_idx] <= y_min[roi_idx]:
+                continue
+            y0, y1 = y_min[roi_idx].item(), y_max[roi_idx].item()
+            x0, x1 = x_min[roi_idx].item(), x_max[roi_idx].item()
+            used_channels = min(self.ectra_roi_context_dim, values.shape[1])
+            context[:used_channels, y0:y1, x0:x1] = \
+                values[roi_idx, :used_channels].view(-1, 1, 1)
+            roi_masks.append(context.new_zeros(1, height, width))
+            roi_masks[-1][:, y0:y1, x0:x1] = 1.0
+
+    def build_ectra_roi_context(self, box_results, shape_list, device):
         """
-        if box_flow_map is None or reserved_mask is None:
-            return None
-        if getattr(self.ectra, 'roi_context_dim', 0) <= 0:
-            return None
-        num_cav, height, width, _ = box_flow_map.shape
-        dtype = box_flow_map.dtype
-        device = box_flow_map.device
-        roi_mask = reserved_mask[:, :1].to(device=device, dtype=dtype).clamp(0, 1)
-        identity = self._identity_grid(num_cav, height, width, device, dtype)
-        grid_delta = (box_flow_map - identity).permute(0, 3, 1, 2).contiguous()
-        grid_delta = grid_delta * roi_mask
-        delta_mag = torch.linalg.vector_norm(grid_delta, dim=1, keepdim=True)
-        return torch.cat((roi_mask, grid_delta, delta_mag), dim=1)
+        Convert per-frame ROI detections into dense RNN context maps.
+
+        Channels are, in order: ROI mask, normalized center x/y, box size
+        h/w/l, sin/cos yaw, estimated velocity x/y, extrapolated displacement
+        x/y, score, match-valid flag, and normalized match distance.
+        """
+        dense_context = []
+        roi_masks_by_cav = []
+        for cav_idx, cav_content in box_results.items():
+            if cav_idx == 'past_k_time_diff':
+                continue
+            context, masks = self._empty_roi_context(shape_list, device)
+            roi_masks = []
+            if cav_idx != 0 and 0 in cav_content and 1 in cav_content:
+                current = cav_content[0]
+                previous = cav_content[1]
+                prev_ids, curr_ids, match_dist = self._match_current_previous_rois(
+                    current, previous)
+
+                current_centers = current['pred_box_center_tensor']
+                current_scores = current['scores']
+                if curr_ids.numel() > 0:
+                    t0 = torch.as_tensor(
+                        cav_content['past_k_time_diff'][0],
+                        device=device, dtype=current_centers.dtype)
+                    t1 = torch.as_tensor(
+                        cav_content['past_k_time_diff'][1],
+                        device=device, dtype=current_centers.dtype)
+                    dt = t0 - t1
+                    dt = torch.where(
+                        torch.abs(dt) < 1e-3, torch.ones_like(dt), dt)
+                    matched_current = current_centers[curr_ids]
+                    matched_previous = previous['pred_box_center_tensor'][prev_ids]
+                    velocity = (matched_current[:, :2] -
+                                matched_previous[:, :2]) / dt
+                    displacement = velocity * (0 - t0)
+                    score = 0.5 * (
+                        current_scores[curr_ids] + previous['scores'][prev_ids])
+                    corners2d = box_utils.boxes_to_corners2d(
+                        matched_current, order='hwl')
+                    self._rasterize_roi_context(
+                        context, roi_masks, matched_current, corners2d, score,
+                        velocity, displacement,
+                        torch.ones_like(score), match_dist)
+
+                if current_centers.shape[0] > curr_ids.numel():
+                    matched = torch.zeros(
+                        current_centers.shape[0], dtype=torch.bool,
+                        device=current_centers.device)
+                    if curr_ids.numel() > 0:
+                        matched[curr_ids] = True
+                    remain_ids = torch.where(~matched)[0]
+                    if remain_ids.numel() > 0:
+                        remain_centers = current_centers[remain_ids]
+                        remain_scores = current_scores[remain_ids]
+                        zeros = torch.zeros(
+                            remain_ids.numel(), 2,
+                            device=device, dtype=remain_centers.dtype)
+                        corners2d = box_utils.boxes_to_corners2d(
+                            remain_centers, order='hwl')
+                        self._rasterize_roi_context(
+                            context, roi_masks, remain_centers, corners2d,
+                            remain_scores, zeros, zeros,
+                            torch.zeros_like(remain_scores),
+                            torch.ones_like(remain_scores) *
+                            self.ectra_roi_match_thresh)
+
+            if roi_masks:
+                masks = torch.stack(roi_masks, dim=0)
+            dense_context.append(context.unsqueeze(0))
+            roi_masks_by_cav.append(masks)
+        return torch.cat(dense_context, dim=0), roi_masks_by_cav
 
     def forward(self, data_dict, dataset=None):
         set_decoder_domain(self, False, self.training)
@@ -469,10 +641,9 @@ class PointPillarWhere2commEctra(nn.Module):
                 'psm_single_list': self.regroup(psm_for_box, record_len, k),
                 'rm_single_list': self.regroup(rm_for_box, record_len, k),
             }
-            box_flow_map, reserved_mask = self.generate_box_flow(
+            box_flow_map, reserved_mask, roi_context = self.generate_box_flow(
                 data_dict, single_output, dataset, psm_single.device,
                 shape_list=flow_shape_list)
-            roi_context = self.build_ectra_roi_context(box_flow_map, reserved_mask)
 
         if self.ectra_dense_enabled:
             batch_dict['spatial_features'], ectra_aux = self.ectra(

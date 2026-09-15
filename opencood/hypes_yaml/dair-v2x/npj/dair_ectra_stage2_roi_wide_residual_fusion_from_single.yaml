@@ -116,7 +116,13 @@ model:
       feature_dim: 64
       hidden_dim: 16
       gate_dim: 16
-      roi_context_dim: 4
+      roi_context_dim: 15
+      roi_trust_enabled: true
+      max_roi_trust_masks: 64
+      roi_match_thresh: 5.0
+      roi_velocity_scale: 10.0
+      roi_flow_scale: 20.0
+      roi_size_scale: 8.0
       time_scale: 10.0
       motion_range: 8.0
       calib_range: 4.0
