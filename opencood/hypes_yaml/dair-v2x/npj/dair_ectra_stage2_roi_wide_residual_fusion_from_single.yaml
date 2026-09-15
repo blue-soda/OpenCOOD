@@ -53,11 +53,11 @@ preprocess:
   core_method: 'SpVoxelPreprocessor'
   past_k: *past_k
   args:
-    voxel_size: &voxel_size [0.4, 0.4, 4]
+    voxel_size: &voxel_size [0.4, 0.4, 5]
     max_points_per_voxel: 32
     max_voxel_train: 32000
     max_voxel_test: 70000
-  cav_lidar_range: &cav_lidar [-100.8, -40, -3, 100.8, 40, 1]
+  cav_lidar_range: &cav_lidar [-100.8, -40, -3.5, 100.8, 40, 1.5]
 
 data_augment:
   - NAME: random_world_flip
@@ -97,6 +97,9 @@ model:
     separate_decoder_bn: false
     independent_fusion_backbone: true
     freeze_single_bn: true
+    diagnostics:
+      roi_box_stats: true
+      roi_match_distance: 4.0
     lidar_range: *cav_lidar
     anchor_number: *anchor_num
     max_cav: *max_cav
@@ -120,9 +123,9 @@ model:
       roi_trust_enabled: true
       max_roi_trust_masks: 64
       roi_match_thresh: 5.0
-      roi_score_threshold: 0.12
-      roi_fallback_score_threshold: 0.1
-      roi_min_count: 8
+      roi_score_threshold: 0.2
+      roi_fallback_score_threshold:
+      roi_min_count: 0
       roi_context_topk: 64
       roi_velocity_scale: 10.0
       roi_flow_scale: 20.0

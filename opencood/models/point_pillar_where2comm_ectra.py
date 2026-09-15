@@ -184,6 +184,11 @@ class PointPillarWhere2commEctra(nn.Module):
             'roi_min_count', 0))
         self.ectra_roi_context_topk = int(args.get('ectra', {}).get(
             'roi_context_topk', -1))
+        diagnostics_args = args.get('diagnostics', {})
+        self.diagnostic_roi_box_stats = bool(
+            diagnostics_args.get('roi_box_stats', False))
+        self.diagnostic_roi_match_distance = float(
+            diagnostics_args.get('roi_match_distance', 4.0))
         x_span = max(float(args['lidar_range'][3] - args['lidar_range'][0]), 1.0)
         y_span = max(float(args['lidar_range'][4] - args['lidar_range'][1]), 1.0)
         self.ectra_roi_position_scale = (x_span * 0.5, y_span * 0.5)
@@ -374,6 +379,7 @@ class PointPillarWhere2commEctra(nn.Module):
         roi_context_list = []
         roi_mask_list = []
         roi_context_aux_list = []
+        roi_diag_aux_list = []
         self._ectra_roi_threshold_fallback_count = 0
         roi_generation_calls = 0
 
@@ -387,8 +393,22 @@ class PointPillarWhere2commEctra(nn.Module):
                 cav_num, self.k, rm_single_list[b].shape[1],
                 rm_single_list[b].shape[-2], rm_single_list[b].shape[-1])
             cav_past_k_time_diff = past_k_time_diff[b].view(cav_num, self.k)
+            single_score_stats = {}
 
             for cav_idx in range(cav_num):
+                if self.diagnostic_roi_box_stats and dataset is not None:
+                    post_processor = getattr(dataset, 'post_processor', None)
+                    threshold = 0.0
+                    if post_processor is not None:
+                        threshold = post_processor.params['target_args'][
+                            'score_threshold']
+                    prob = torch.sigmoid(
+                        psm_single[cav_idx].permute(0, 2, 3, 1))
+                    prob = prob.reshape(self.k, -1)
+                    single_score_stats[cav_idx] = {
+                        'raw_anchor_count': (prob > threshold).float().sum(1),
+                        'max_score': prob.max(1)[0],
+                    }
                 pastk_trans_mat = []
                 for frame_idx in range(self.k):
                     unit_mat = x1_to_x2(
@@ -427,9 +447,17 @@ class PointPillarWhere2commEctra(nn.Module):
             if self.ectra_roi_context_dim > 0:
                 roi_context, batch_roi_masks, roi_context_aux = self.build_ectra_roi_context(
                     box_results, shape_list, device)
+                if self.diagnostic_roi_box_stats:
+                    roi_context_aux.update(self._diagnose_single_roi_predictions(
+                        box_results, data_dict, b, lidar_pose, device,
+                        single_score_stats))
                 roi_context_list.append(roi_context)
                 roi_mask_list.extend(batch_roi_masks)
                 roi_context_aux_list.append(roi_context_aux)
+            elif self.diagnostic_roi_box_stats:
+                roi_diag_aux_list.append(self._diagnose_single_roi_predictions(
+                    box_results, data_dict, b, lidar_pose, device,
+                    single_score_stats))
 
         if self.ectra_roi_context_dim > 0 and roi_context_list:
             roi_context = {
@@ -442,6 +470,13 @@ class PointPillarWhere2commEctra(nn.Module):
                     float(self._ectra_roi_threshold_fallback_count) /
                     max(float(roi_generation_calls), 1.0),
                     device=device)
+            if roi_diag_aux_list:
+                roi_context['aux'].update(
+                    self._merge_roi_context_aux(roi_diag_aux_list))
+        elif self.diagnostic_roi_box_stats and roi_diag_aux_list:
+            roi_context = {
+                'aux': self._merge_roi_context_aux(roi_diag_aux_list),
+            }
         else:
             roi_context = None
         return (torch.cat(box_flow_map_list, dim=0),
@@ -582,6 +617,190 @@ class PointPillarWhere2commEctra(nn.Module):
                 values[roi_idx, :used_channels].view(-1, 1, 1)
             roi_masks.append(context.new_zeros(1, height, width))
             roi_masks[-1][:, y0:y1, x0:x1] = 1.0
+
+    def _gt_boxes_for_batch(self, data_dict, batch_idx, device):
+        centers = data_dict.get('object_bbx_center', None)
+        masks = data_dict.get('object_bbx_mask', None)
+        if centers is None or masks is None:
+            return torch.zeros(0, 7, device=device)
+
+        centers = centers.to(device=device, dtype=torch.float32)
+        masks = masks.to(device=device)
+        if centers.dim() == 2:
+            batch_centers = centers
+            batch_masks = masks
+        else:
+            batch_centers = centers[batch_idx]
+            batch_masks = masks[batch_idx]
+
+        valid = batch_masks > 0
+        if valid.numel() == 0:
+            return torch.zeros(0, 7, device=device)
+        return batch_centers[valid]
+
+    def _center_match_summary(self, pred_centers, gt_centers, device):
+        pred_count = torch.tensor(float(pred_centers.shape[0]), device=device)
+        gt_count = torch.tensor(float(gt_centers.shape[0]), device=device)
+        if pred_centers.shape[0] == 0 or gt_centers.shape[0] == 0:
+            zero = torch.tensor(0.0, device=device)
+            return {
+                'pred_count': pred_count,
+                'gt_count': gt_count,
+                'gt_recall': zero,
+                'pred_precision': zero,
+                'min_center_dist': zero,
+            }
+
+        dist = torch.cdist(gt_centers[:, :2], pred_centers[:, :2])
+        gt_min = dist.min(dim=1)[0]
+        pred_min = dist.min(dim=0)[0]
+        thresh = self.diagnostic_roi_match_distance
+        return {
+            'pred_count': pred_count,
+            'gt_count': gt_count,
+            'gt_recall': (gt_min < thresh).float().mean(),
+            'pred_precision': (pred_min < thresh).float().mean(),
+            'min_center_dist': gt_min.mean(),
+        }
+
+    @staticmethod
+    def _batch_anchor_box(anchor_box, batch_idx):
+        if torch.is_tensor(anchor_box) and anchor_box.dim() == 5:
+            return anchor_box[batch_idx]
+        return anchor_box
+
+    def _decode_head_centers_for_diagnostics(self, dataset, psm, rm, anchor_box,
+                                             batch_idx):
+        device = psm.device
+        post_processor = getattr(dataset, 'post_processor', None)
+        if post_processor is None:
+            return torch.zeros(0, 7, device=device), torch.tensor(0.0, device=device)
+
+        threshold = post_processor.params['target_args']['score_threshold']
+        prob = torch.sigmoid(psm[batch_idx:batch_idx + 1].permute(0, 2, 3, 1))
+        prob = prob.reshape(1, -1)
+        raw_count = (prob[0] > threshold).float().sum()
+        if raw_count.item() == 0:
+            return torch.zeros(0, 7, device=device), raw_count
+
+        anchors = self._batch_anchor_box(anchor_box, batch_idx)
+        batch_box3d = post_processor.delta_to_boxes3d(
+            rm[batch_idx:batch_idx + 1], anchors)
+        mask = torch.gt(prob, threshold).view(1, -1)
+        mask_reg = mask.unsqueeze(2).repeat(1, 1, 7)
+        boxes3d = torch.masked_select(batch_box3d[0], mask_reg[0]).view(-1, 7)
+        scores = torch.masked_select(prob[0], mask[0])
+        if boxes3d.shape[0] == 0:
+            return torch.zeros(0, 7, device=device), raw_count
+
+        boxes3d_corner = box_utils.boxes_to_corners_3d(
+            boxes3d, order=post_processor.params['order'])
+        keep_index_1 = box_utils.remove_large_pred_bbx(boxes3d_corner)
+        keep_index_2 = box_utils.remove_bbx_abnormal_z(boxes3d_corner)
+        keep_index = torch.logical_and(keep_index_1, keep_index_2)
+        boxes3d_corner = boxes3d_corner[keep_index]
+        scores = scores[keep_index]
+        if boxes3d_corner.shape[0] == 0:
+            return torch.zeros(0, 7, device=device), raw_count
+
+        keep_index = box_utils.nms_rotated(
+            boxes3d_corner, scores, post_processor.params['nms_thresh'])
+        boxes3d_corner = boxes3d_corner[keep_index]
+        if boxes3d_corner.shape[0] == 0:
+            return torch.zeros(0, 7, device=device), raw_count
+
+        range_mask = box_utils.get_mask_for_boxes_within_range_torch(
+            boxes3d_corner, post_processor.params['gt_range'])
+        boxes3d_corner = boxes3d_corner[range_mask]
+        if boxes3d_corner.shape[0] == 0:
+            return torch.zeros(0, 7, device=device), raw_count
+        return box_utils.corner_to_center_torch(
+            boxes3d_corner, post_processor.params['order']), raw_count
+
+    def _project_roi_centers_to_ego(self, frame_result, transform, device):
+        corners = frame_result.get('pred_box_3dcorner_tensor', None)
+        if not torch.is_tensor(corners) or corners.shape[0] == 0:
+            return torch.zeros(0, 7, device=device)
+        transform = torch.as_tensor(transform, device=device, dtype=torch.float32)
+        projected = box_utils.project_box3d(corners.to(device), transform)
+        return box_utils.corner_to_center_torch(projected, order='hwl')
+
+    def _diagnose_single_roi_predictions(self, box_results, data_dict,
+                                         batch_idx, lidar_pose, device,
+                                         single_score_stats=None):
+        gt_centers = self._gt_boxes_for_batch(data_dict, batch_idx, device)
+        pred_centers = []
+        post_frame_counts = []
+        raw_anchor_counts = []
+        max_scores = []
+        ego_pose = lidar_pose[0, 0].detach().cpu().numpy()
+        for cav_idx, cav_content in box_results.items():
+            if cav_idx == 'past_k_time_diff' or 0 not in cav_content:
+                continue
+            if single_score_stats and cav_idx in single_score_stats:
+                raw_anchor_counts.extend([
+                    value.detach()
+                    for value in single_score_stats[cav_idx]['raw_anchor_count']
+                ])
+                max_scores.extend([
+                    value.detach()
+                    for value in single_score_stats[cav_idx]['max_score']
+                ])
+            for frame_idx, frame_result in cav_content.items():
+                if not isinstance(frame_idx, int):
+                    continue
+                centers = frame_result.get('pred_box_center_tensor', None)
+                count = float(centers.shape[0]) if torch.is_tensor(centers) else 0.0
+                post_frame_counts.append(torch.tensor(count, device=device))
+                if frame_idx == 0 and torch.is_tensor(centers):
+                    cav_pose = lidar_pose[cav_idx, 0].detach().cpu().numpy()
+                    transform = x1_to_x2(cav_pose, ego_pose)
+                    pred_centers.append(self._project_roi_centers_to_ego(
+                        frame_result, transform, device))
+
+        if pred_centers:
+            pred_centers = torch.cat(pred_centers, dim=0)
+        else:
+            pred_centers = torch.zeros(0, 7, device=device)
+        stats = self._center_match_summary(pred_centers, gt_centers, device)
+        return {
+            'ectra_diag_single_roi_boxes_mean': stats['pred_count'],
+            'ectra_diag_gt_centered_roi_count_mean': stats['gt_count'],
+            'ectra_diag_single_roi_gt_recall': stats['gt_recall'],
+            'ectra_diag_single_roi_pred_precision': stats['pred_precision'],
+            'ectra_diag_single_roi_min_center_dist': stats['min_center_dist'],
+            'ectra_diag_single_roi_frame_boxes_mean': self._safe_mean(
+                post_frame_counts, device),
+            'ectra_diag_single_roi_raw_anchor_mean': self._safe_mean(
+                raw_anchor_counts, device),
+            'ectra_diag_single_roi_max_score_mean': self._safe_mean(
+                max_scores, device),
+        }
+
+    def _diagnose_fused_predictions(self, data_dict, dataset, psm, rm):
+        device = psm.device
+        batch_stats = []
+        raw_counts = []
+        batch_size = psm.shape[0]
+        for batch_idx in range(batch_size):
+            gt_centers = self._gt_boxes_for_batch(data_dict, batch_idx, device)
+            pred_centers, raw_count = self._decode_head_centers_for_diagnostics(
+                dataset, psm, rm, data_dict['anchor_box'], batch_idx)
+            raw_counts.append(raw_count.detach())
+            batch_stats.append(self._center_match_summary(
+                pred_centers.detach(), gt_centers.detach(), device))
+        return {
+            'ectra_diag_final_fused_boxes_mean': self._safe_mean(
+                [x['pred_count'] for x in batch_stats], device),
+            'ectra_diag_final_fused_raw_anchor_mean': self._safe_mean(
+                raw_counts, device),
+            'ectra_diag_final_fused_gt_recall': self._safe_mean(
+                [x['gt_recall'] for x in batch_stats], device),
+            'ectra_diag_final_fused_pred_precision': self._safe_mean(
+                [x['pred_precision'] for x in batch_stats], device),
+            'ectra_diag_final_fused_min_center_dist': self._safe_mean(
+                [x['min_center_dist'] for x in batch_stats], device),
+        }
 
     def build_ectra_roi_context(self, box_results, shape_list, device):
         """
@@ -899,6 +1118,11 @@ class PointPillarWhere2commEctra(nn.Module):
         if self.use_dir:
             dm = self.fused_dir_head(fused_feature)
             output_dict.update({'dm': dm})
+
+        if self.diagnostic_roi_box_stats and dataset is not None:
+            with torch.no_grad():
+                output_dict.update(self._diagnose_fused_predictions(
+                    data_dict, dataset, psm.detach(), rm.detach()))
 
         if self.compensation:
             if self.single_supervise:
