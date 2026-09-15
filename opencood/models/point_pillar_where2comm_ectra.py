@@ -178,6 +178,10 @@ class PointPillarWhere2commEctra(nn.Module):
             'roi_flow_scale', 20.0))
         self.ectra_roi_score_threshold = args.get('ectra', {}).get(
             'roi_score_threshold', None)
+        self.ectra_roi_fallback_score_threshold = args.get('ectra', {}).get(
+            'roi_fallback_score_threshold', None)
+        self.ectra_roi_min_count = int(args.get('ectra', {}).get(
+            'roi_min_count', 0))
         self.ectra_roi_context_topk = int(args.get('ectra', {}).get(
             'roi_context_topk', -1))
         x_span = max(float(args['lidar_range'][3] - args['lidar_range'][0]), 1.0)
@@ -317,14 +321,36 @@ class PointPillarWhere2commEctra(nn.Module):
             if post_processor is not None else {}
         target_args = params.get('target_args', None)
         old_threshold = None
-        if self.ectra_roi_score_threshold is not None and target_args is not None:
+        if target_args is not None:
             old_threshold = target_args.get('score_threshold', None)
-            target_args['score_threshold'] = float(self.ectra_roi_score_threshold)
-        try:
+
+        def call_with_threshold(threshold):
+            if threshold is not None and target_args is not None:
+                target_args['score_threshold'] = float(threshold)
             return dataset.generate_pred_bbx_frames(*args, **kwargs)
+
+        try:
+            result = call_with_threshold(self.ectra_roi_score_threshold)
+            fallback = self.ectra_roi_fallback_score_threshold
+            if (fallback is not None and self.ectra_roi_min_count > 0 and
+                    self._count_pred_bbx_frames(result) < self.ectra_roi_min_count):
+                result = call_with_threshold(fallback)
+                self._ectra_roi_threshold_fallback_count += 1
+            return result
         finally:
             if old_threshold is not None:
                 target_args['score_threshold'] = old_threshold
+
+    @staticmethod
+    def _count_pred_bbx_frames(box_results):
+        count = 0
+        for key, value in box_results.items():
+            if not isinstance(key, int) or not isinstance(value, dict):
+                continue
+            boxes = value.get('pred_box_center_tensor', None)
+            if torch.is_tensor(boxes):
+                count += int(boxes.shape[0])
+        return count
 
     def generate_box_flow(self, data_dict, pred_dict, dataset, device,
                           shape_list=None):
@@ -348,6 +374,8 @@ class PointPillarWhere2commEctra(nn.Module):
         roi_context_list = []
         roi_mask_list = []
         roi_context_aux_list = []
+        self._ectra_roi_threshold_fallback_count = 0
+        roi_generation_calls = 0
 
         for b, lidar_pose in enumerate(lidar_pose_batch):
             cav_num = int(data_dict['record_len'][b].item())
@@ -371,6 +399,7 @@ class PointPillarWhere2commEctra(nn.Module):
                     np.stack(pastk_trans_mat, axis=0)).to(device)
 
                 try:
+                    roi_generation_calls += 1
                     box_results[cav_idx] = self._generate_pred_bbx_frames_for_roi(
                         dataset,
                         psm_single[cav_idx],
@@ -379,6 +408,7 @@ class PointPillarWhere2commEctra(nn.Module):
                         cav_past_k_time_diff[cav_idx],
                         anchor_box)
                 except TypeError:
+                    roi_generation_calls += 1
                     single_pred = {
                         'psm_single': psm_single[cav_idx],
                         'rm_single': rm_single[cav_idx],
@@ -407,6 +437,11 @@ class PointPillarWhere2commEctra(nn.Module):
                 'roi_masks': roi_mask_list,
                 'aux': self._merge_roi_context_aux(roi_context_aux_list),
             }
+            roi_context['aux']['ectra_roi_threshold_fallback_mean'] = \
+                torch.tensor(
+                    float(self._ectra_roi_threshold_fallback_count) /
+                    max(float(roi_generation_calls), 1.0),
+                    device=device)
         else:
             roi_context = None
         return (torch.cat(box_flow_map_list, dim=0),
