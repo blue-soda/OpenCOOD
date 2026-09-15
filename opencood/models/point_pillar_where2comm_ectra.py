@@ -402,6 +402,8 @@ class PointPillarWhere2commEctra(nn.Module):
                     if post_processor is not None:
                         threshold = post_processor.params['target_args'][
                             'score_threshold']
+                    if self.ectra_roi_score_threshold is not None:
+                        threshold = float(self.ectra_roi_score_threshold)
                     prob = torch.sigmoid(
                         psm_single[cav_idx].permute(0, 2, 3, 1))
                     prob = prob.reshape(self.k, -1)

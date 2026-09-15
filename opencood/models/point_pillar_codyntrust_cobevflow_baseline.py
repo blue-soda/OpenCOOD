@@ -167,6 +167,7 @@ class PointPillarCodyntrustCobevflowBaseline(nn.Module):
         if 'num_roi_thres' in args.keys():
             self.num_roi_thres = args['num_roi_thres']
             print(f'=== num_roi_thres : {self.num_roi_thres} ===')
+        self.roi_score_threshold = args.get('roi_score_threshold', None)
         diagnostics_args = args.get('diagnostics', {})
         self.diagnostic_roi_box_stats = bool(
             diagnostics_args.get('roi_box_stats', False))
@@ -520,6 +521,23 @@ class PointPillarCodyntrustCobevflowBaseline(nn.Module):
                 [x['min_center_dist'] for x in batch_stats], device),
         }
 
+    def _generate_pred_bbx_frames_for_roi(self, dataset, *args, **kwargs):
+        post_processor = getattr(dataset, 'post_processor', None)
+        params = getattr(post_processor, 'params', {}) \
+            if post_processor is not None else {}
+        target_args = params.get('target_args', None)
+        old_threshold = None
+        if target_args is not None:
+            old_threshold = target_args.get('score_threshold', None)
+            if self.roi_score_threshold is not None:
+                target_args['score_threshold'] = float(
+                    self.roi_score_threshold)
+        try:
+            return dataset.generate_pred_bbx_frames(*args, **kwargs)
+        finally:
+            if old_threshold is not None:
+                target_args['score_threshold'] = old_threshold
+
     def generate_box_flow(self, data_dict, pred_dict, dataset, shape_list, device): 
         """
         data_dict : 
@@ -589,6 +607,8 @@ class PointPillarCodyntrustCobevflowBaseline(nn.Module):
                     if post_processor is not None:
                         threshold = post_processor.params['target_args'][
                             'score_threshold']
+                    if self.roi_score_threshold is not None:
+                        threshold = float(self.roi_score_threshold)
                     prob = torch.sigmoid(
                         psm_single[cav_idx].permute(0, 2, 3, 1))
                     prob = prob.reshape(self.k, -1)
@@ -609,7 +629,10 @@ class PointPillarCodyntrustCobevflowBaseline(nn.Module):
                 if self.use_dir:
                     m_single['dm_single'] = dm_single[cav_idx] #(k, 4, H, W)
                 # 1. generate one cav's box results 接下来这一步本质上是过滤，选出合适的bbx作为预测结果 输入k帧的检测结果
-                box_results[cav_idx] = dataset.generate_pred_bbx_frames(m_single, pastk_trans_mat_pastk_2_past0, cav_past_k_time_diff[cav_idx*self.k:cav_idx*self.k+self.k], anchor_box)
+                box_results[cav_idx] = self._generate_pred_bbx_frames_for_roi(
+                    dataset, m_single, pastk_trans_mat_pastk_2_past0,
+                    cav_past_k_time_diff[cav_idx*self.k:cav_idx*self.k+self.k],
+                    anchor_box)
 
 
 
