@@ -178,6 +178,8 @@ class PointPillarWhere2commEctra(nn.Module):
             'roi_flow_scale', 20.0))
         self.ectra_roi_score_threshold = args.get('ectra', {}).get(
             'roi_score_threshold', None)
+        self.ectra_roi_context_topk = int(args.get('ectra', {}).get(
+            'roi_context_topk', -1))
         x_span = max(float(args['lidar_range'][3] - args['lidar_range'][0]), 1.0)
         y_span = max(float(args['lidar_range'][4] - args['lidar_range'][1]), 1.0)
         self.ectra_roi_position_scale = (x_span * 0.5, y_span * 0.5)
@@ -469,6 +471,24 @@ class PointPillarWhere2commEctra(nn.Module):
         keep = match_dist < self.ectra_roi_match_thresh
         return prev_ids[keep], curr_ids[keep], match_dist[keep]
 
+    def _select_topk_rois(self, frame_result):
+        if self.ectra_roi_context_topk <= 0:
+            return frame_result
+        scores = frame_result.get('scores', None)
+        centers = frame_result.get('pred_box_center_tensor', None)
+        if scores is None or centers is None:
+            return frame_result
+        if scores.numel() <= self.ectra_roi_context_topk:
+            return frame_result
+        keep = torch.topk(scores, self.ectra_roi_context_topk).indices
+        selected = dict(frame_result)
+        for key in ('scores', 'pred_box_center_tensor',
+                    'pred_box_3dcorner_tensor', 'pred_box_2dcorner_tensor'):
+            value = selected.get(key, None)
+            if torch.is_tensor(value) and value.shape[0] == scores.shape[0]:
+                selected[key] = value[keep]
+        return selected
+
     def _rasterize_roi_context(self, context, roi_masks, centers, corners2d,
                                scores, velocity, displacement, match_valid,
                                match_dist, scale=2.5):
@@ -538,6 +558,7 @@ class PointPillarWhere2commEctra(nn.Module):
         """
         dense_context = []
         roi_masks_by_cav = []
+        raw_roi_counts = []
         total_roi_counts = []
         matched_roi_counts = []
         unmatched_roi_counts = []
@@ -551,13 +572,18 @@ class PointPillarWhere2commEctra(nn.Module):
             context, masks = self._empty_roi_context(shape_list, device)
             roi_masks = []
             if cav_idx != 0 and 0 in cav_content and 1 in cav_content:
-                current = cav_content[0]
-                previous = cav_content[1]
+                current_raw = cav_content[0]
+                previous_raw = cav_content[1]
+                current = self._select_topk_rois(current_raw)
+                previous = self._select_topk_rois(previous_raw)
                 prev_ids, curr_ids, match_dist = self._match_current_previous_rois(
                     current, previous)
 
                 current_centers = current['pred_box_center_tensor']
                 current_scores = current['scores']
+                raw_roi_counts.append(torch.tensor(
+                    float(current_raw['pred_box_center_tensor'].shape[0]),
+                    device=device))
                 total_roi_counts.append(torch.tensor(
                     float(current_centers.shape[0]), device=device))
                 matched_roi_counts.append(torch.tensor(
@@ -625,6 +651,8 @@ class PointPillarWhere2commEctra(nn.Module):
         total = self._safe_mean(total_roi_counts, device)
         matched = self._safe_mean(matched_roi_counts, device)
         aux = {
+            'ectra_roi_raw_total_mean': self._safe_mean(
+                raw_roi_counts, device),
             'ectra_roi_total_mean': total,
             'ectra_roi_matched_mean': matched,
             'ectra_roi_unmatched_mean': self._safe_mean(
