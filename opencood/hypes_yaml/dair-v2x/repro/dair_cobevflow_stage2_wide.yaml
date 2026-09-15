@@ -118,6 +118,9 @@ model:
     max_cav: *max_cav
     compression: 0 # compression rate
     backbone_fix: True
+    diagnostics:
+      roi_box_stats: true
+      roi_match_distance: 4.0
     design_mode: 0 # 设计模式定为5
     num_sweep_frames: *past_k
     viz_bbx_flag: *viz_bbx_flag
