@@ -176,6 +176,8 @@ class PointPillarWhere2commEctra(nn.Module):
             'roi_velocity_scale', 10.0))
         self.ectra_roi_flow_scale = float(args.get('ectra', {}).get(
             'roi_flow_scale', 20.0))
+        self.ectra_roi_score_threshold = args.get('ectra', {}).get(
+            'roi_score_threshold', None)
         x_span = max(float(args['lidar_range'][3] - args['lidar_range'][0]), 1.0)
         y_span = max(float(args['lidar_range'][4] - args['lidar_range'][1]), 1.0)
         self.ectra_roi_position_scale = (x_span * 0.5, y_span * 0.5)
@@ -307,6 +309,21 @@ class PointPillarWhere2commEctra(nn.Module):
             current_intervals.append(batch_t.view(cav_num, k)[:, 0])
         return torch.cat(current_intervals, dim=0)
 
+    def _generate_pred_bbx_frames_for_roi(self, dataset, *args, **kwargs):
+        post_processor = getattr(dataset, 'post_processor', None)
+        params = getattr(post_processor, 'params', {}) \
+            if post_processor is not None else {}
+        target_args = params.get('target_args', None)
+        old_threshold = None
+        if self.ectra_roi_score_threshold is not None and target_args is not None:
+            old_threshold = target_args.get('score_threshold', None)
+            target_args['score_threshold'] = float(self.ectra_roi_score_threshold)
+        try:
+            return dataset.generate_pred_bbx_frames(*args, **kwargs)
+        finally:
+            if old_threshold is not None:
+                target_args['score_threshold'] = old_threshold
+
     def generate_box_flow(self, data_dict, pred_dict, dataset, device,
                           shape_list=None):
         if dataset is None:
@@ -352,7 +369,8 @@ class PointPillarWhere2commEctra(nn.Module):
                     np.stack(pastk_trans_mat, axis=0)).to(device)
 
                 try:
-                    box_results[cav_idx] = dataset.generate_pred_bbx_frames(
+                    box_results[cav_idx] = self._generate_pred_bbx_frames_for_roi(
+                        dataset,
                         psm_single[cav_idx],
                         rm_single[cav_idx],
                         pastk_trans_mat,
@@ -363,7 +381,8 @@ class PointPillarWhere2commEctra(nn.Module):
                         'psm_single': psm_single[cav_idx],
                         'rm_single': rm_single[cav_idx],
                     }
-                    box_results[cav_idx] = dataset.generate_pred_bbx_frames(
+                    box_results[cav_idx] = self._generate_pred_bbx_frames_for_roi(
+                        dataset,
                         single_pred,
                         pastk_trans_mat,
                         cav_past_k_time_diff[cav_idx],

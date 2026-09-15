@@ -120,6 +120,7 @@ model:
       roi_trust_enabled: true
       max_roi_trust_masks: 64
       roi_match_thresh: 5.0
+      roi_score_threshold: 0.1
       roi_velocity_scale: 10.0
       roi_flow_scale: 20.0
       roi_size_scale: 8.0
