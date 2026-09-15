@@ -202,7 +202,7 @@ class EctraRecurrentAlignment(nn.Module):
         write = z * r_obs
         hidden = (1.0 - write) * hidden_pred + write * candidate
         trust = torch.clamp(0.5 * (r_pred + r_obs), 0.0, 1.0)
-        return hidden, obs_calib, calib_flow, trust, r_pred, r_obs, roi_trust_fraction
+        return hidden, obs_calib, calib_flow, trust, r_pred, r_obs, write, roi_trust_fraction
 
     def _motion_consistency_loss(self, hidden_pred, obs_calib):
         loss = F.smooth_l1_loss(hidden_pred, obs_calib.detach(),
@@ -273,6 +273,12 @@ class EctraRecurrentAlignment(nn.Module):
         motion_losses = []
         roi_context_maps = []
         roi_trust_fractions = []
+        motion_flow_abs = []
+        motion_gamma_mean = []
+        calib_flow_abs = []
+        pred_trust_mean = []
+        obs_trust_mean = []
+        write_gate_mean = []
         cav_offset = 0
         for batch_idx, batch_features in enumerate(chunks):
             cav_num = int(record_len[batch_idx].item())
@@ -300,15 +306,21 @@ class EctraRecurrentAlignment(nn.Module):
                     curr_time = torch.abs(batch_intervals[cav_idx, frame_idx:frame_idx + 1])
                     dt = torch.clamp(prev_time - curr_time, min=0.0)
                     ego_ref = ego_seq[frame_idx:frame_idx + 1]
-                    hidden_pred, _, _ = self._propagate(
+                    hidden_pred, motion_flow, motion_gamma = self._propagate(
                         hidden, ego_ref, dt, cav_context)
-                    hidden, obs_calib, _, last_trust, _, _, roi_trust_fraction = self._update(
+                    hidden, obs_calib, calib_flow, last_trust, r_pred, r_obs, write_gate, roi_trust_fraction = self._update(
                         hidden_pred, nodes[cav_idx, frame_idx:frame_idx + 1],
                         ego_ref, dt, cav_context, cav_roi_masks)
                     if roi_trust_fraction is not None:
                         roi_trust_fractions.append(roi_trust_fraction)
                     motion_losses.append(
                         self._motion_consistency_loss(hidden_pred, obs_calib))
+                    motion_flow_abs.append(motion_flow.detach().abs().mean())
+                    motion_gamma_mean.append(motion_gamma.detach().mean())
+                    calib_flow_abs.append(calib_flow.detach().abs().mean())
+                    pred_trust_mean.append(r_pred.detach().mean())
+                    obs_trust_mean.append(r_obs.detach().mean())
+                    write_gate_mean.append(write_gate.detach().mean())
                     prev_time = curr_time
 
                 final_dt = torch.abs(batch_intervals[cav_idx, 0:1])
@@ -341,4 +353,17 @@ class EctraRecurrentAlignment(nn.Module):
         if roi_trust_fractions:
             aux['ectra_roi_trust_fraction'] = torch.stack(
                 roi_trust_fractions).mean()
+        if motion_flow_abs:
+            aux['ectra_motion_flow_abs_mean'] = torch.stack(
+                motion_flow_abs).mean()
+            aux['ectra_motion_gamma_mean'] = torch.stack(
+                motion_gamma_mean).mean()
+            aux['ectra_calib_flow_abs_mean'] = torch.stack(
+                calib_flow_abs).mean()
+            aux['ectra_pred_trust_mean'] = torch.stack(
+                pred_trust_mean).mean()
+            aux['ectra_obs_trust_mean'] = torch.stack(
+                obs_trust_mean).mean()
+            aux['ectra_write_gate_mean'] = torch.stack(
+                write_gate_mean).mean()
         return aligned, aux

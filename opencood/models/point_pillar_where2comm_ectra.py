@@ -328,6 +328,7 @@ class PointPillarWhere2commEctra(nn.Module):
         reserved_mask_list = []
         roi_context_list = []
         roi_mask_list = []
+        roi_context_aux_list = []
 
         for b, lidar_pose in enumerate(lidar_pose_batch):
             cav_num = int(data_dict['record_len'][b].item())
@@ -373,15 +374,17 @@ class PointPillarWhere2commEctra(nn.Module):
             box_flow_map_list.append(box_flow_map)
             reserved_mask_list.append(reserved_mask)
             if self.ectra_roi_context_dim > 0:
-                roi_context, batch_roi_masks = self.build_ectra_roi_context(
+                roi_context, batch_roi_masks, roi_context_aux = self.build_ectra_roi_context(
                     box_results, shape_list, device)
                 roi_context_list.append(roi_context)
                 roi_mask_list.extend(batch_roi_masks)
+                roi_context_aux_list.append(roi_context_aux)
 
         if self.ectra_roi_context_dim > 0 and roi_context_list:
             roi_context = {
                 'dense': torch.cat(roi_context_list, dim=0),
                 'roi_masks': roi_mask_list,
+                'aux': self._merge_roi_context_aux(roi_context_aux_list),
             }
         else:
             roi_context = None
@@ -407,6 +410,24 @@ class PointPillarWhere2commEctra(nn.Module):
             device=device, dtype=dtype)
         masks = torch.zeros(0, 1, height, width, device=device, dtype=dtype)
         return context, masks
+
+    @staticmethod
+    def _safe_mean(values, device):
+        if not values:
+            return torch.tensor(0.0, device=device)
+        values = [value.reshape(1).to(device=device, dtype=torch.float32)
+                  for value in values]
+        return torch.cat(values, dim=0).mean()
+
+    def _merge_roi_context_aux(self, aux_list):
+        if not aux_list:
+            return {}
+        device = next(iter(aux_list[0].values())).device
+        merged = {}
+        for key in aux_list[0].keys():
+            values = [aux[key] for aux in aux_list if key in aux]
+            merged[key] = self._safe_mean(values, device)
+        return merged
 
     def _match_current_previous_rois(self, current, previous):
         current_centers = current['pred_box_center_tensor'][:, :2]
@@ -498,6 +519,13 @@ class PointPillarWhere2commEctra(nn.Module):
         """
         dense_context = []
         roi_masks_by_cav = []
+        total_roi_counts = []
+        matched_roi_counts = []
+        unmatched_roi_counts = []
+        match_dist_means = []
+        velocity_abs_means = []
+        displacement_abs_means = []
+        score_means = []
         for cav_idx, cav_content in box_results.items():
             if cav_idx == 'past_k_time_diff':
                 continue
@@ -511,6 +539,13 @@ class PointPillarWhere2commEctra(nn.Module):
 
                 current_centers = current['pred_box_center_tensor']
                 current_scores = current['scores']
+                total_roi_counts.append(torch.tensor(
+                    float(current_centers.shape[0]), device=device))
+                matched_roi_counts.append(torch.tensor(
+                    float(curr_ids.numel()), device=device))
+                unmatched_roi_counts.append(torch.tensor(
+                    float(max(current_centers.shape[0] - curr_ids.numel(), 0)),
+                    device=device))
                 if curr_ids.numel() > 0:
                     t0 = torch.as_tensor(
                         cav_content['past_k_time_diff'][0],
@@ -528,6 +563,12 @@ class PointPillarWhere2commEctra(nn.Module):
                     displacement = velocity * (0 - t0)
                     score = 0.5 * (
                         current_scores[curr_ids] + previous['scores'][prev_ids])
+                    match_dist_means.append(match_dist.detach().float().mean())
+                    velocity_abs_means.append(
+                        velocity.detach().float().abs().mean())
+                    displacement_abs_means.append(
+                        displacement.detach().float().abs().mean())
+                    score_means.append(score.detach().float().mean())
                     corners2d = box_utils.boxes_to_corners2d(
                         matched_current, order='hwl')
                     self._rasterize_roi_context(
@@ -545,6 +586,7 @@ class PointPillarWhere2commEctra(nn.Module):
                     if remain_ids.numel() > 0:
                         remain_centers = current_centers[remain_ids]
                         remain_scores = current_scores[remain_ids]
+                        score_means.append(remain_scores.detach().float().mean())
                         zeros = torch.zeros(
                             remain_ids.numel(), 2,
                             device=device, dtype=remain_centers.dtype)
@@ -561,7 +603,23 @@ class PointPillarWhere2commEctra(nn.Module):
                 masks = torch.stack(roi_masks, dim=0)
             dense_context.append(context.unsqueeze(0))
             roi_masks_by_cav.append(masks)
-        return torch.cat(dense_context, dim=0), roi_masks_by_cav
+        total = self._safe_mean(total_roi_counts, device)
+        matched = self._safe_mean(matched_roi_counts, device)
+        aux = {
+            'ectra_roi_total_mean': total,
+            'ectra_roi_matched_mean': matched,
+            'ectra_roi_unmatched_mean': self._safe_mean(
+                unmatched_roi_counts, device),
+            'ectra_roi_match_ratio': matched / total.clamp_min(1.0),
+            'ectra_roi_match_dist_mean': self._safe_mean(
+                match_dist_means, device),
+            'ectra_roi_velocity_abs_mean': self._safe_mean(
+                velocity_abs_means, device),
+            'ectra_roi_displacement_abs_mean': self._safe_mean(
+                displacement_abs_means, device),
+            'ectra_roi_score_mean': self._safe_mean(score_means, device),
+        }
+        return torch.cat(dense_context, dim=0), roi_masks_by_cav, aux
 
     def forward(self, data_dict, dataset=None):
         set_decoder_domain(self, False, self.training)
@@ -649,6 +707,8 @@ class PointPillarWhere2commEctra(nn.Module):
             batch_dict['spatial_features'], ectra_aux = self.ectra(
                 batch_dict['spatial_features'], record_len, record_frames,
                 roi_context=roi_context)
+            if isinstance(roi_context, dict):
+                ectra_aux.update(roi_context.get('aux', {}))
 
         fusion_spatial_features = self.select_current_frames(
             batch_dict['spatial_features'], record_len, k)
