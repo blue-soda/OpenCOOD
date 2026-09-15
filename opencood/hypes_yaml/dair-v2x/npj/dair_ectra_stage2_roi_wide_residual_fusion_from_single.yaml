@@ -1,4 +1,4 @@
-name: dair_ectra_stage2_roi_wide_residual_fusion_from_single
+name: dair_ectra_stage2_roi_context_wide_residual_fusion_from_single
 data_dir: "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure"
 root_dir: "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/train.json"
 validate_dir: "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json"
@@ -116,6 +116,7 @@ model:
       feature_dim: 64
       hidden_dim: 16
       gate_dim: 16
+      roi_context_dim: 4
       time_scale: 10.0
       motion_range: 8.0
       calib_range: 4.0

@@ -358,6 +358,39 @@ class PointPillarWhere2commEctra(nn.Module):
 
         return torch.cat(box_flow_map_list, dim=0), torch.cat(reserved_mask_list, dim=0)
 
+    @staticmethod
+    def _identity_grid(batch_size, height, width, device, dtype):
+        ys = (torch.arange(height, device=device, dtype=dtype) + 0.5) * \
+            (2.0 / height) - 1.0
+        xs = (torch.arange(width, device=device, dtype=dtype) + 0.5) * \
+            (2.0 / width) - 1.0
+        yy, xx = torch.meshgrid(ys, xs, indexing='ij')
+        grid = torch.stack((xx, yy), dim=-1)
+        return grid.unsqueeze(0).repeat(batch_size, 1, 1, 1)
+
+    def build_ectra_roi_context(self, box_flow_map, reserved_mask):
+        """
+        Convert CoBEVFlow's object-box flow grid into dense RNN context maps.
+
+        Channels are ROI mask, x/y normalized grid displacement, and displacement
+        magnitude. They are zero outside matched object regions, so the dense
+        recurrent module receives object-level motion hints without changing the
+        matcher protocol.
+        """
+        if box_flow_map is None or reserved_mask is None:
+            return None
+        if getattr(self.ectra, 'roi_context_dim', 0) <= 0:
+            return None
+        num_cav, height, width, _ = box_flow_map.shape
+        dtype = box_flow_map.dtype
+        device = box_flow_map.device
+        roi_mask = reserved_mask[:, :1].to(device=device, dtype=dtype).clamp(0, 1)
+        identity = self._identity_grid(num_cav, height, width, device, dtype)
+        grid_delta = (box_flow_map - identity).permute(0, 3, 1, 2).contiguous()
+        grid_delta = grid_delta * roi_mask
+        delta_mag = torch.linalg.vector_norm(grid_delta, dim=1, keepdim=True)
+        return torch.cat((roi_mask, grid_delta, delta_mag), dim=1)
+
     def forward(self, data_dict, dataset=None):
         set_decoder_domain(self, False, self.training)
         voxel_features = data_dict['processed_lidar']['voxel_features']         #(M, 32, 4)
@@ -386,14 +419,6 @@ class PointPillarWhere2commEctra(nn.Module):
             batch_dict['spatial_features'].shape[-3:],
             device=batch_dict['spatial_features'].device)
         ectra_aux = {}
-        if self.ectra_dense_enabled:
-            batch_dict['spatial_features'], ectra_aux = self.ectra(
-                batch_dict['spatial_features'], record_len, record_frames)
-        fusion_spatial_features = self.select_current_frames(
-            batch_dict['spatial_features'], record_len, k)
-        fusion_pairwise_t_matrix = pairwise_t_matrix[:, :, 0:1]
-        fusion_record_frames = self.select_current_intervals(
-            record_frames, record_len, k)
         # N, C, H', W'. [N, 384, 100, 352]
         spatial_features_2d = batch_dict['spatial_features_2d']
 
@@ -431,6 +456,9 @@ class PointPillarWhere2commEctra(nn.Module):
         psm_fusion = self.select_current_frames(psm_single, record_len, k)
         set_decoder_domain(self, True, self.training)
         roi_aux = {}
+        box_flow_map = None
+        reserved_mask = None
+        roi_context = None
         flow_gt = data_dict['label_dict'].get('flow_gt', None) \
             if 'label_dict' in data_dict else None
 
@@ -444,6 +472,20 @@ class PointPillarWhere2commEctra(nn.Module):
             box_flow_map, reserved_mask = self.generate_box_flow(
                 data_dict, single_output, dataset, psm_single.device,
                 shape_list=flow_shape_list)
+            roi_context = self.build_ectra_roi_context(box_flow_map, reserved_mask)
+
+        if self.ectra_dense_enabled:
+            batch_dict['spatial_features'], ectra_aux = self.ectra(
+                batch_dict['spatial_features'], record_len, record_frames,
+                roi_context=roi_context)
+
+        fusion_spatial_features = self.select_current_frames(
+            batch_dict['spatial_features'], record_len, k)
+        fusion_pairwise_t_matrix = pairwise_t_matrix[:, :, 0:1]
+        fusion_record_frames = self.select_current_intervals(
+            record_frames, record_len, k)
+
+        if self.ectra_roi_flag:
             box_flow_map, reserved_mask, roi_aux = self.ectra_roi(
                 box_flow_map, reserved_mask, fusion_spatial_features,
                 record_len, fusion_record_frames, flow_gt=flow_gt)
