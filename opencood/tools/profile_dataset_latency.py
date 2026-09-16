@@ -65,6 +65,8 @@ def main():
     parser.add_argument('--seed', type=int, default=303)
     parser.add_argument('--stack_interval', type=float, default=30)
     parser.add_argument('--num_workers', type=int, default=0)
+    parser.add_argument('--multiprocessing_context', choices=['fork', 'spawn', 'forkserver'],
+                        default=None)
     args = parser.parse_args()
     if (args.start < 0 or args.count <= 0 or args.stack_interval <= 0
             or args.num_workers < 0):
@@ -81,11 +83,14 @@ def main():
     dataset = build_dataset(load_yaml(args.hypes_yaml), visualize=False,
                             train=False)
     if args.num_workers:
+        loader_options = {}
+        if args.multiprocessing_context:
+            loader_options['multiprocessing_context'] = args.multiprocessing_context
         loader = torch.utils.data.DataLoader(
             ProfiledDataset(dataset, output, args.stack_interval), batch_size=1,
             sampler=range(args.start, min(args.start + args.count, len(dataset))),
             num_workers=args.num_workers, collate_fn=dataset.collate_batch_test,
-            generator=torch.Generator().manual_seed(args.seed))
+            generator=torch.Generator().manual_seed(args.seed), **loader_options)
         last = time.perf_counter()
         with (output / 'received.jsonl').open('w') as records:
             for index, batch in enumerate(loader, args.start):
