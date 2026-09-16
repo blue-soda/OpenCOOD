@@ -1470,7 +1470,11 @@ class IntermediateFusionDatasetIrregularFlowNew(basedataset.BaseDataset):
                                    'past_k_sample_interval': past_k_sample_interval,
                                    'avg_sample_interval': avg_sample_interval,
                                    'avg_time_delay': avg_time_delay,
-                                   'avg_time_var': avg_time_var})
+                                   'avg_time_var': avg_time_var,
+                                   'sample_idx': torch.as_tensor(
+                                       [batch_i['ego']['sample_idx']
+                                        for batch_i in batch],
+                                       dtype=torch.long)})
                                 #    'times': time_consume})
         output_dict['ego'].update({'anchor_box':
                 torch.from_numpy(np.array(self.anchor_box))})

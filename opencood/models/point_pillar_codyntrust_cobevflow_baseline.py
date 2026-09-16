@@ -17,6 +17,12 @@ from collections import OrderedDict
 import torch
 import numpy as np
 from opencood.utils import box_utils
+from opencood.utils.roi_cache_utils import (
+    RoiBoxCache,
+    make_roi_cache_key,
+    tensor_digest,
+    value_digest,
+)
 
 def generate_noise(pos_std, rot_std, pos_mean=0, rot_mean=0):
     """ Add localization error to the 6dof pose
@@ -168,6 +174,7 @@ class PointPillarCodyntrustCobevflowBaseline(nn.Module):
             self.num_roi_thres = args['num_roi_thres']
             print(f'=== num_roi_thres : {self.num_roi_thres} ===')
         self.roi_score_threshold = args.get('roi_score_threshold', None)
+        self.roi_cache = RoiBoxCache(args.get('roi_cache', None))
         diagnostics_args = args.get('diagnostics', {})
         self.diagnostic_roi_box_stats = bool(
             diagnostics_args.get('roi_box_stats', False))
@@ -223,6 +230,7 @@ class PointPillarCodyntrustCobevflowBaseline(nn.Module):
             self.backbone_fix_flag = True
             self.backbone_fix()
             print('=== backbone fixed ===')
+        self.freeze_single_bn = args.get('freeze_single_bn', False)
 
         self.only_tune_header_flag = False
         if 'only_tune_header' in args.keys() and args['only_tune_header']:
@@ -235,6 +243,15 @@ class PointPillarCodyntrustCobevflowBaseline(nn.Module):
             self.viz_bbx_flag = True
         
         assert self.backbone_fix_flag == False or self.only_tune_header_flag == False, 'backbone_fix and only_tune_header cannot be True at the same time'
+
+    def train(self, mode=True):
+        super().train(mode)
+        if mode and self.freeze_single_bn:
+            for name in ('pillar_vfe', 'backbone', 'shrink_conv'):
+                module = getattr(self, name, None)
+                if module is not None:
+                    module.eval()
+        return self
     
     def only_tune_header(self):
         """
@@ -521,7 +538,33 @@ class PointPillarCodyntrustCobevflowBaseline(nn.Module):
                 [x['min_center_dist'] for x in batch_stats], device),
         }
 
-    def _generate_pred_bbx_frames_for_roi(self, dataset, *args, **kwargs):
+    @staticmethod
+    def _sample_idx_at(sample_idx, batch_idx):
+        if sample_idx is None:
+            return batch_idx
+        if torch.is_tensor(sample_idx):
+            if sample_idx.dim() == 0:
+                return int(sample_idx.detach().cpu().item())
+            return int(sample_idx[batch_idx].detach().cpu().item())
+        if isinstance(sample_idx, (list, tuple, np.ndarray)):
+            return sample_idx[batch_idx]
+        return sample_idx
+
+    def _roi_prediction_hash(self, m_single):
+        if not self.roi_cache.wants_prediction_hash():
+            return None
+        values = [
+            tensor_digest(m_single.get('psm_single')),
+            tensor_digest(m_single.get('rm_single')),
+        ]
+        if 'dm_single' in m_single:
+            values.append(tensor_digest(m_single.get('dm_single')))
+        return value_digest(values)
+
+    def _generate_pred_bbx_frames_for_roi(self, dataset, m_single,
+                                          trans_mat_pastk_2_past0,
+                                          past_time_diff, anchor_box,
+                                          sample_idx=None, cav_idx=0):
         post_processor = getattr(dataset, 'post_processor', None)
         params = getattr(post_processor, 'params', {}) \
             if post_processor is not None else {}
@@ -532,8 +575,35 @@ class PointPillarCodyntrustCobevflowBaseline(nn.Module):
             if self.roi_score_threshold is not None:
                 target_args['score_threshold'] = float(
                     self.roi_score_threshold)
+        split = 'train' if getattr(dataset, 'train', False) else 'val'
+        threshold = self.roi_score_threshold
+        if threshold is None and target_args is not None:
+            threshold = target_args.get('score_threshold', None)
+        prediction_hash = self._roi_prediction_hash(m_single)
+        cache_key = make_roi_cache_key(
+            sample_idx=sample_idx,
+            cav_idx=cav_idx,
+            split=split,
+            k=self.k,
+            threshold=threshold,
+            num_roi_thres=self.num_roi_thres,
+            time_diff=past_time_diff,
+            prediction_hash=prediction_hash)
+        cached = self.roi_cache.load(split, cache_key, anchor_box.device)
+        if cached is not None:
+            return cached
         try:
-            return dataset.generate_pred_bbx_frames(*args, **kwargs)
+            result = dataset.generate_pred_bbx_frames(
+                m_single, trans_mat_pastk_2_past0, past_time_diff, anchor_box)
+            self.roi_cache.save(split, cache_key, result, {
+                'sample_idx': sample_idx,
+                'cav_idx': int(cav_idx),
+                'threshold': threshold,
+                'k': self.k,
+                'num_roi_thres': self.num_roi_thres,
+                'prediction_hash': prediction_hash,
+            })
+            return result
         finally:
             if old_threshold is not None:
                 target_args['score_threshold'] = old_threshold
@@ -571,6 +641,7 @@ class PointPillarCodyntrustCobevflowBaseline(nn.Module):
         if self.viz_bbx_flag:
             ori_reserved_mask_list = []
             single_box_results = None
+        sample_indices = data_dict.get('sample_idx', None)
         
         # for all batches
         for b in range(B):
@@ -632,7 +703,9 @@ class PointPillarCodyntrustCobevflowBaseline(nn.Module):
                 box_results[cav_idx] = self._generate_pred_bbx_frames_for_roi(
                     dataset, m_single, pastk_trans_mat_pastk_2_past0,
                     cav_past_k_time_diff[cav_idx*self.k:cav_idx*self.k+self.k],
-                    anchor_box)
+                    anchor_box,
+                    sample_idx=self._sample_idx_at(sample_indices, b),
+                    cav_idx=cav_idx)
 
 
 

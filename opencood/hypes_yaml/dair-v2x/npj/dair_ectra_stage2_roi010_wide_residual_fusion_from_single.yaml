@@ -106,6 +106,13 @@ model:
     max_cav: *max_cav
     compression: 0
     backbone_fix: true
+    roi_cache:
+      enabled: true
+      mode: readwrite
+      root_dir: /data0/chen/gzc/workspace/roi_cache
+      namespace: dair_ectra_stage2_roi010
+      strict_prediction_hash: true
+      log_interval: 200
     num_sweep_frames: *past_k
     design_mode: 0
     num_roi_thres: -1

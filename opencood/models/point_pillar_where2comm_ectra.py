@@ -30,6 +30,12 @@ from scipy.optimize import linear_sum_assignment
 import numpy as np
 from opencood.utils import box_utils
 from opencood.utils.transformation_utils import tfm_to_pose, x1_to_x2, x_to_world
+from opencood.utils.roi_cache_utils import (
+    RoiBoxCache,
+    make_roi_cache_key,
+    tensor_digest,
+    value_digest,
+)
 
 def generate_noise(pos_std, rot_std, pos_mean=0, rot_mean=0):
     """ Add localization error to the 6dof pose
@@ -194,6 +200,7 @@ class PointPillarWhere2commEctra(nn.Module):
         self.ectra_roi_position_scale = (x_span * 0.5, y_span * 0.5)
         self.ectra_roi_size_scale = float(args.get('ectra', {}).get(
             'roi_size_scale', 8.0))
+        self.roi_cache = RoiBoxCache(args.get('roi_cache', None))
 
         # 用于 single 部分的监督
         self.single_supervise = False
@@ -320,7 +327,35 @@ class PointPillarWhere2commEctra(nn.Module):
             current_intervals.append(batch_t.view(cav_num, k)[:, 0])
         return torch.cat(current_intervals, dim=0)
 
-    def _generate_pred_bbx_frames_for_roi(self, dataset, *args, **kwargs):
+    @staticmethod
+    def _sample_idx_at(sample_idx, batch_idx):
+        if sample_idx is None:
+            return batch_idx
+        if torch.is_tensor(sample_idx):
+            if sample_idx.dim() == 0:
+                return int(sample_idx.detach().cpu().item())
+            return int(sample_idx[batch_idx].detach().cpu().item())
+        if isinstance(sample_idx, (list, tuple, np.ndarray)):
+            return sample_idx[batch_idx]
+        return sample_idx
+
+    def _roi_prediction_hash(self, args):
+        if not self.roi_cache.wants_prediction_hash():
+            return None
+        values = []
+        if args and isinstance(args[0], dict):
+            values.append(tensor_digest(args[0].get('psm_single')))
+            values.append(tensor_digest(args[0].get('rm_single')))
+            if 'dm_single' in args[0]:
+                values.append(tensor_digest(args[0].get('dm_single')))
+        elif len(args) >= 2:
+            values.append(tensor_digest(args[0]))
+            values.append(tensor_digest(args[1]))
+        return value_digest(values)
+
+    def _generate_pred_bbx_frames_for_roi(self, dataset, *args,
+                                          sample_idx=None, cav_idx=0,
+                                          **kwargs):
         post_processor = getattr(dataset, 'post_processor', None)
         params = getattr(post_processor, 'params', {}) \
             if post_processor is not None else {}
@@ -334,6 +369,27 @@ class PointPillarWhere2commEctra(nn.Module):
                 target_args['score_threshold'] = float(threshold)
             return dataset.generate_pred_bbx_frames(*args, **kwargs)
 
+        split = 'train' if getattr(dataset, 'train', False) else 'val'
+        threshold = self.ectra_roi_score_threshold
+        if threshold is None and target_args is not None:
+            threshold = target_args.get('score_threshold', None)
+        past_time_diff = args[-2] if len(args) >= 2 else None
+        anchor_box = args[-1] if len(args) >= 1 else None
+        device = anchor_box.device if torch.is_tensor(anchor_box) else torch.device('cpu')
+        prediction_hash = self._roi_prediction_hash(args)
+        cache_key = make_roi_cache_key(
+            sample_idx=sample_idx,
+            cav_idx=cav_idx,
+            split=split,
+            k=self.k,
+            threshold=threshold,
+            num_roi_thres=self.num_roi_thres,
+            time_diff=past_time_diff,
+            prediction_hash=prediction_hash)
+        cached = self.roi_cache.load(split, cache_key, device)
+        if cached is not None:
+            return cached
+
         try:
             result = call_with_threshold(self.ectra_roi_score_threshold)
             fallback = self.ectra_roi_fallback_score_threshold
@@ -341,6 +397,14 @@ class PointPillarWhere2commEctra(nn.Module):
                     self._count_pred_bbx_frames(result) < self.ectra_roi_min_count):
                 result = call_with_threshold(fallback)
                 self._ectra_roi_threshold_fallback_count += 1
+            self.roi_cache.save(split, cache_key, result, {
+                'sample_idx': sample_idx,
+                'cav_idx': int(cav_idx),
+                'threshold': threshold,
+                'k': self.k,
+                'num_roi_thres': self.num_roi_thres,
+                'prediction_hash': prediction_hash,
+            })
             return result
         finally:
             if old_threshold is not None:
@@ -382,6 +446,7 @@ class PointPillarWhere2commEctra(nn.Module):
         roi_diag_aux_list = []
         self._ectra_roi_threshold_fallback_count = 0
         roi_generation_calls = 0
+        sample_indices = data_dict.get('sample_idx', None)
 
         for b, lidar_pose in enumerate(lidar_pose_batch):
             cav_num = int(data_dict['record_len'][b].item())
@@ -428,7 +493,9 @@ class PointPillarWhere2commEctra(nn.Module):
                         rm_single[cav_idx],
                         pastk_trans_mat,
                         cav_past_k_time_diff[cav_idx],
-                        anchor_box)
+                        anchor_box,
+                        sample_idx=self._sample_idx_at(sample_indices, b),
+                        cav_idx=cav_idx)
                 except TypeError:
                     roi_generation_calls += 1
                     single_pred = {
@@ -440,7 +507,9 @@ class PointPillarWhere2commEctra(nn.Module):
                         single_pred,
                         pastk_trans_mat,
                         cav_past_k_time_diff[cav_idx],
-                        anchor_box)
+                        anchor_box,
+                        sample_idx=self._sample_idx_at(sample_indices, b),
+                        cav_idx=cav_idx)
 
             box_flow_map, reserved_mask = self.matcher(
                 box_results, shape_list=shape_list, viz_flag=self.viz_bbx_flag)

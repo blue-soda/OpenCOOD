@@ -119,10 +119,18 @@ model:
     max_cav: *max_cav
     compression: 0 # compression rate
     backbone_fix: True
+    freeze_single_bn: true
     diagnostics:
       roi_box_stats: true
       roi_match_distance: 4.0
     roi_score_threshold: 0.1
+    roi_cache:
+      enabled: true
+      mode: readwrite
+      root_dir: /data0/chen/gzc/workspace/roi_cache
+      namespace: dair_cobevflow_stage2_wide_roi010
+      strict_prediction_hash: true
+      log_interval: 200
     design_mode: 0 # 设计模式定为5
     num_sweep_frames: *past_k
     viz_bbx_flag: *viz_bbx_flag
