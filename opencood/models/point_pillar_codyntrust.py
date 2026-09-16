@@ -8,7 +8,10 @@ from opencood.models.sub_modules.base_bev_backbone import BaseBEVBackbone
 from opencood.models.sub_modules.codyntrust_base_bev_backbone_resnet import ResNetBEVBackbone
 # from opencood.models.sub_modules.base_bev_backbone_resnet_BiFPN import ResNetBEVBackbone_BiFPN
 # from opencood.models.sub_modules.sparse_resnet import Sparse_resnet_backbone_aspp
-from opencood.models.sub_modules.downsample_conv import DownsampleConv, AttentionDownsampleConv
+from opencood.models.sub_modules.codyntrust_downsample_conv import (
+    DownsampleConv,
+    AttentionDownsampleConv,
+)
 from opencood.models.sub_modules.naive_compress import NaiveCompressor
 from opencood.models.fuse_modules.where2comm_attn import Where2comm
 from opencood.models.fuse_modules.raindrop_swin import raindrop_swin

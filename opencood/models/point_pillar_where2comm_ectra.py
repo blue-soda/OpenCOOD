@@ -11,7 +11,7 @@ from opencood.models.sub_modules.point_pillar_scatter import PointPillarScatter
 from opencood.models.sub_modules.base_bev_backbone import BaseBEVBackbone
 from opencood.models.sub_modules.codyntrust_base_bev_backbone_resnet import ResNetBEVBackbone
 from opencood.models.sub_modules.decoder_domain_norm import split_decoder_statistics, set_decoder_domain
-from opencood.models.sub_modules.downsample_conv import DownsampleConv
+from opencood.models.sub_modules.codyntrust_downsample_conv import DownsampleConv
 from opencood.models.sub_modules.naive_compress import NaiveCompressor
 # from opencood.models.sub_modules.dcn_net import DCNNet
 # from opencood.models.fuse_modules.where2comm import Where2comm

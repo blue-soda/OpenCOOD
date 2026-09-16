@@ -5,7 +5,10 @@ from opencood.models.sub_modules.pillar_vfe import PillarVFE
 from opencood.models.sub_modules.point_pillar_scatter import PointPillarScatter
 from opencood.models.sub_modules.base_bev_backbone import BaseBEVBackbone
 from opencood.models.sub_modules.codyntrust_base_bev_backbone_resnet import ResNetBEVBackbone
-from opencood.models.sub_modules.downsample_conv import DownsampleConv, AttentionDownsampleConv
+from opencood.models.sub_modules.codyntrust_downsample_conv import (
+    DownsampleConv,
+    AttentionDownsampleConv,
+)
 from opencood.models.sub_modules.naive_compress import NaiveCompressor
 from opencood.models.fuse_modules.where2comm_attn import Where2comm
 from opencood.models.fuse_modules.raindrop_swin import raindrop_swin
