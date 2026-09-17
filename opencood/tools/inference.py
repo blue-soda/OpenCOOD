@@ -47,6 +47,10 @@ def test_parser():
                         help='maximum inference samples for smoke tests')
     parser.add_argument('--eval_seed', default=303, type=int,
                         help='seed for evaluation dataset and worker sampling')
+    from opencood.tools.ectra_ablation_utils import ABLATIONS
+    parser.add_argument('--ectra_ablation', choices=ABLATIONS, default='none')
+    parser.add_argument('--ectra_diagnostics', default='',
+                        help='optional per-sample scalar JSONL path; must not exist')
     opt = parser.parse_args()
     return opt
 
@@ -134,6 +138,12 @@ def main():
         model.load_state_dict(modified_pretrained_model_dict, strict=False)
     
     model.eval()
+    if opt.ectra_ablation != 'none' or opt.ectra_diagnostics:
+        from opencood.tools.ectra_ablation_utils import install_ablation, install_diagnostics
+        install_ablation(model, opt.ectra_ablation)
+        if opt.ectra_diagnostics:
+            install_diagnostics(model, opt.ectra_diagnostics, opt.ectra_ablation)
+        print('ECTRA fixed-checkpoint ablation: %s' % opt.ectra_ablation)
 
     # setting noise
     np.random.seed(opt.eval_seed)
