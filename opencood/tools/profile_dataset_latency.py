@@ -65,6 +65,8 @@ def main():
     parser.add_argument('--seed', type=int, default=303)
     parser.add_argument('--stack_interval', type=float, default=30)
     parser.add_argument('--num_workers', type=int, default=0)
+    parser.add_argument('--voxel_backend', choices=['auto', 'numpy', 'spconv2'],
+                        default='auto')
     parser.add_argument('--multiprocessing_context', choices=['fork', 'spawn', 'forkserver'],
                         default=None)
     args = parser.parse_args()
@@ -80,8 +82,9 @@ def main():
     torch.manual_seed(args.seed)
     # DataLoader workers also use one torch CPU thread.
     torch.set_num_threads(1)
-    dataset = build_dataset(load_yaml(args.hypes_yaml), visualize=False,
-                            train=False)
+    hypes = load_yaml(args.hypes_yaml)
+    hypes['preprocess']['voxel_backend'] = args.voxel_backend
+    dataset = build_dataset(hypes, visualize=False, train=False)
     if args.num_workers:
         loader_options = {}
         if args.multiprocessing_context:

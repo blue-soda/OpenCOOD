@@ -68,6 +68,39 @@ class NumpyVoxelGenerator(object):
         )
 
 
+class Spconv2VoxelGenerator(object):
+    """CPU voxelization with owned output arrays and worker-local storage."""
+
+    def __init__(self, voxel_size, point_cloud_range, max_num_points, max_voxels):
+        from spconv.utils import Point2VoxelCPU3d
+        self.voxel_size = list(voxel_size)
+        self.point_cloud_range = list(point_cloud_range)
+        self.max_num_points = int(max_num_points)
+        self.max_voxels = int(max_voxels)
+        self._generator = None
+        self._feature_dim = None
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state['_generator'] = None
+        state['_feature_dim'] = None
+        return state
+
+    def generate(self, points):
+        from cumm import tensorview as tv
+        from spconv.utils import Point2VoxelCPU3d
+        points = np.ascontiguousarray(points, dtype=np.float32)
+        feature_dim = points.shape[1]
+        if self._generator is None or self._feature_dim != feature_dim:
+            self._generator = Point2VoxelCPU3d(
+                self.voxel_size, self.point_cloud_range, feature_dim,
+                self.max_voxels, self.max_num_points)
+            self._feature_dim = feature_dim
+        result = self._generator.point_to_voxel(tv.from_numpy(points))
+        # Native buffers are reused on the next historical frame.
+        return tuple(value.numpy().copy() for value in result)
+
+
 class SpVoxelPreprocessor(BasePreprocessor):
     def __init__(self, preprocess_params, train):
         super(SpVoxelPreprocessor, self).__init__(preprocess_params,
@@ -103,6 +136,16 @@ class SpVoxelPreprocessor(BasePreprocessor):
         grid_size = (np.array(self.lidar_range[3:6]) -
                      np.array(self.lidar_range[0:3])) / np.array(self.voxel_size)
         self.grid_size = np.round(grid_size).astype(np.int64)
+
+        backend = self.params.get('voxel_backend', 'auto')
+        if backend == 'spconv2':
+            voxel_generator_cls = Spconv2VoxelGenerator
+            self.spconv_version = 2
+        elif backend == 'numpy':
+            voxel_generator_cls = NumpyVoxelGenerator
+            self.spconv_version = 0
+        elif backend != 'auto':
+            raise ValueError('Unsupported voxel_backend: %s' % backend)
 
         # use sparse conv library to generate voxel
         self.voxel_generator = voxel_generator_cls(
