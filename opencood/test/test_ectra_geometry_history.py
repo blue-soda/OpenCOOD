@@ -40,6 +40,28 @@ class GeometryTest(unittest.TestCase):
         self.assertEqual(y.sum().item(), 0)
         self.assertEqual(mask.sum().item(), 0)
 
+    def test_static_scene_uses_one_coordinate_frame(self):
+        model = EctraRecurrentAlignment(dict(
+            feature_dim=1, hidden_dim=2, gate_dim=2,
+            coordinate_mode='collaborator_latest', lidar_range=self.bounds,
+            extrapolate_to_current=False, state_update_mode='residual_observation')).eval()
+        features = torch.zeros(4, 1, 9, 9)
+        features[:2, 0, 4, 6] = 1  # ego sees world x=2
+        features[2, 0, 4, 5] = 1   # latest CAV origin at world x=1
+        features[3, 0, 4, 3] = 1   # older CAV origin at world x=3
+        transforms = torch.eye(4).repeat(1, 2, 2, 1, 1)
+        transforms[0, 1, 0, 0, 3] = 1
+        transforms[0, 1, 1, 0, 3] = 3
+        captured = []
+        handle = model.motion_net.register_forward_pre_hook(
+            lambda _, inputs: captured.append(inputs[0].detach().clone()))
+        output, _ = model(features, torch.tensor([2]), torch.tensor([0., 0., -3., -6.]),
+                          pairwise_t_matrix=transforms)
+        handle.remove()
+        torch.testing.assert_close(captured[0][:, :1], features[2:3])
+        torch.testing.assert_close(captured[0][:, 1:2], features[2:3])
+        torch.testing.assert_close(output[3:], features[3:])
+
     def test_recurrent_identity_legacy_parity(self):
         args = dict(feature_dim=2, hidden_dim=2, gate_dim=2,
                     state_update_mode='residual_observation', output_mode='hidden',

@@ -1057,6 +1057,7 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
                         print('[ECTRA ego history] invalid {}: {}'.format(path, error))
                         self.ectra_history_warnings += 1
                     points = np.zeros((0, 4), dtype=np.float32)
+                    valid = False
             # No shuffle/extra random draws: the baseline sampler stream is preserved.
             if valid:
                 processed = self.pre_processor.preprocess(points)
