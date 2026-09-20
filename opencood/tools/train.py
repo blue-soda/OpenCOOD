@@ -3,6 +3,8 @@
 # Modified: Sizhe Wei
 
 import argparse
+import faulthandler
+import functools
 import os
 import statistics
 import sys
@@ -29,6 +31,16 @@ run_test = True
 # from opencood.data_utils.datasets.intermediate_fusion_dataset_opv2v_irregular import illegal_path_list
 compensation = True 
 
+
+def initialize_loader_diagnostics(worker_id, output_dir, interval):
+    """Keep a worker-local stream alive for opt-in periodic stack reports."""
+    global _loader_stack_stream
+    os.makedirs(output_dir, exist_ok=True)
+    path = os.path.join(output_dir, 'worker_%d_%d.log' % (worker_id, os.getpid()))
+    _loader_stack_stream = open(path, 'a', buffering=1)
+    faulthandler.dump_traceback_later(interval, repeat=True,
+                                    file=_loader_stack_stream)
+
 def train_parser():
     parser = argparse.ArgumentParser(description="synthetic data generation")
     parser.add_argument("--hypes_yaml", "-y", type=str, required=True,
@@ -46,6 +58,10 @@ def train_parser():
     parser.add_argument('--multiprocessing_context', default=None,
                         choices=['fork', 'spawn', 'forkserver'],
                         help='optional DataLoader worker start method; requires workers > 0')
+    parser.add_argument('--loader_stack_interval', default=0, type=float,
+                        help='opt-in periodic worker stack dump seconds (0 disables)')
+    parser.add_argument('--loader_stack_dir', default='',
+                        help='required output directory when worker stack dumps are enabled')
     parser.add_argument('--skip_test', action='store_true',
                         help='skip automatic inference after training')
     parser.add_argument('--debug_max_iters', default=0, type=int,
@@ -87,6 +103,10 @@ def train_parser():
         parser.error('--num_workers must be nonnegative')
     if opt.multiprocessing_context and opt.num_workers == 0:
         parser.error('--multiprocessing_context requires --num_workers > 0')
+    if opt.loader_stack_interval < 0:
+        parser.error('--loader_stack_interval must be nonnegative')
+    if opt.loader_stack_interval and (not opt.loader_stack_dir or opt.num_workers == 0):
+        parser.error('worker stack dumps require --loader_stack_dir and workers > 0')
     return opt
 
 
@@ -177,6 +197,10 @@ def main():
     loader_options = {}
     if opt.multiprocessing_context:
         loader_options['multiprocessing_context'] = opt.multiprocessing_context
+    if opt.loader_stack_interval:
+        loader_options['worker_init_fn'] = functools.partial(
+            initialize_loader_diagnostics, output_dir=opt.loader_stack_dir,
+            interval=opt.loader_stack_interval)
     train_loader = DataLoader(opencood_train_dataset,
                             batch_size=hypes['train_params']['batch_size'],
                             num_workers=opt.num_workers,
