@@ -183,6 +183,14 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
         self.inf_fid2veh_fid = build_inf_fid_to_veh_fid(load_json(osp.join(self.root_dir, "cooperative/data_info.json"))
         )
 
+        self.ectra_history_args = params.get('ectra_ego_history', {})
+        self.ectra_history_enabled = self.ectra_history_args.get('enabled', False)
+        if self.ectra_history_enabled:
+            from opencood.data_utils.ectra_ego_history import CausalEgoHistoryIndex
+            self.ectra_history_index = CausalEgoHistoryIndex(
+                load_json(osp.join(self.root_dir, 'vehicle-side/data_info.json')),
+                self.ectra_history_args.get('max_age_ms', 100))
+            self.ectra_history_warnings = 0
         self.data_split = load_json(split_dir)
         self.data = []
         for veh_idx in self.data_split: # 读取数据集划分文件，这里分为训练集和验证集两种，存储车端id
@@ -1015,7 +1023,69 @@ class CoDynTrustDAIRIrregularFlowDataset(intermediate_fusion_dataset_opv2v_irreg
                     'single_object_ids': single_object_id_stack[id]
                 })
 
+        if self.ectra_history_enabled:
+            processed_data_dict['ego']['ectra_ego_history'] = self._get_ectra_history(
+                base_data_dict)
         return processed_data_dict
+
+    def _get_ectra_history(self, base_data):
+        current = base_data[0]['curr']
+        history = {'processed': [], 'valid': [], 'to_current_ego': [],
+                   'age_ms': [], 'frame_ids': []}
+        frames = list(base_data[1]['past_k'].values()) if 1 in base_data else [None] * self.k
+        for frame in frames:
+            fid, age = None, None
+            if frame is not None:
+                stamp = self.inf_idx2info[frame['frame_id']]['pointcloud_timestamp']
+                fid, age = self.ectra_history_index.select(current['frame_id'], stamp)
+            points = np.zeros((0, 4), dtype=np.float32)
+            transform = np.eye(4, dtype=np.float32)
+            valid = False
+            if fid is not None:
+                info = self.ectra_history_index.by_id[fid]
+                path = osp.join(self.root_dir, 'vehicle-side', info['pointcloud_path'])
+                try:
+                    points = pcd_utils.read_pcd(path)[0]
+                    points = mask_ego_points(points)
+                    points = mask_points_by_range(points, self.params['preprocess']['cav_lidar_range'])
+                    valid = len(points) > 0
+                    if valid:
+                        transform = x1_to_x2(self.get_vehicle_trans(fid),
+                                            current['params']['lidar_pose'])
+                except (OSError, ValueError, RuntimeError) as error:
+                    if self.ectra_history_warnings < 5:
+                        print('[ECTRA ego history] invalid {}: {}'.format(path, error))
+                        self.ectra_history_warnings += 1
+                    points = np.zeros((0, 4), dtype=np.float32)
+            # No shuffle/extra random draws: the baseline sampler stream is preserved.
+            if valid:
+                processed = self.pre_processor.preprocess(points)
+                valid = processed['voxel_coords'].shape[0] > 0
+            else:
+                processed = {
+                    'voxel_features': np.zeros((0, self.params['preprocess']['args']['max_points_per_voxel'], 4), dtype=np.float32),
+                    'voxel_coords': np.zeros((0, 3), dtype=np.int32),
+                    'voxel_num_points': np.zeros((0,), dtype=np.int32)}
+            history['processed'].append(processed)
+            history['valid'].append(valid)
+            history['to_current_ego'].append(transform)
+            history['age_ms'].append(-1 if age is None else age)
+            history['frame_ids'].append(fid or '')
+        return history
+
+    def collate_batch_train(self, batch):
+        output = super().collate_batch_train(batch)
+        if output is None or not self.ectra_history_enabled:
+            return output
+        histories = [item['ego']['ectra_ego_history'] for item in batch]
+        processed = [frame for item in histories for frame in item['processed']]
+        output['ego']['ectra_ego_history'] = {
+            'processed_lidar': self.pre_processor.collate_batch(processed),
+            'valid': torch.as_tensor([item['valid'] for item in histories]),
+            'to_current_ego': torch.as_tensor(np.array([item['to_current_ego'] for item in histories]), dtype=torch.float32),
+            'age_ms': torch.as_tensor([item['age_ms'] for item in histories], dtype=torch.float32),
+        }
+        return output
 
     def __len__(self):
         # 符合条件的 frame 的数量

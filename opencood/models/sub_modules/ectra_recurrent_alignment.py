@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from opencood.models.sub_modules.ectra_geometry import warp_metric_bev
 
 
 class EctraRecurrentAlignment(nn.Module):
@@ -15,7 +16,15 @@ class EctraRecurrentAlignment(nn.Module):
     def __init__(self, args):
         super(EctraRecurrentAlignment, self).__init__()
         self.feature_dim = args.get('feature_dim', 64)
+        self.coordinate_mode = args.get('coordinate_mode', 'legacy')
+        if self.coordinate_mode not in ('legacy', 'collaborator_latest'):
+            raise ValueError('Unknown ECTRA coordinate_mode')
+        self.lidar_range = args.get('lidar_range')
+        if self.coordinate_mode != 'legacy' and self.lidar_range is None:
+            raise ValueError('Metric alignment requires lidar_range')
         self.extrapolate_to_current = args.get('extrapolate_to_current', True)
+        if self.coordinate_mode != 'legacy' and self.extrapolate_to_current:
+            raise ValueError('Metric recurrent state stays at latest history; downstream ROI flow extrapolates to now')
         self.state_update_mode = args.get('state_update_mode', 'legacy')
         if self.state_update_mode not in ('legacy', 'residual_observation'):
             raise ValueError('Unknown ECTRA state_update_mode')
@@ -170,7 +179,7 @@ class EctraRecurrentAlignment(nn.Module):
         return hidden_pred, flow, gamma
 
     def _update(self, hidden_pred, obs, ego_ref, dt, roi_context=None,
-                roi_masks=None):
+                roi_masks=None, ego_valid=None):
         time_maps = self._time_maps(dt, hidden_pred)
         calib_flow = torch.tanh(
             self.calib_net(self._cat_with_roi_context(
@@ -182,6 +191,8 @@ class EctraRecurrentAlignment(nn.Module):
                                    keepdim=True)
         obs_residual = torch.mean(torch.abs(obs_calib - ego_ref), dim=1,
                                   keepdim=True)
+        if ego_valid is not None:
+            obs_residual = obs_residual * ego_valid
         trust_logits = self.trust_net(self._cat_with_roi_context((
             hidden_pred, obs_calib, ego_ref, pred_residual, obs_residual, time_maps
         ), roi_context, hidden_pred))
@@ -228,7 +239,7 @@ class EctraRecurrentAlignment(nn.Module):
         return time_intervals[:expected].view(-1, k)
 
     def forward(self, features, record_len, time_intervals=None,
-                roi_context=None):
+                roi_context=None, pairwise_t_matrix=None, ego_history=None):
         if features.numel() == 0:
             return features, {}
 
@@ -238,6 +249,8 @@ class EctraRecurrentAlignment(nn.Module):
             return features, {}
 
         k = total_frames // total_cav
+        if self.coordinate_mode != 'legacy' and pairwise_t_matrix is None:
+            raise ValueError('Missing historical CAV-to-current-ego transforms')
         if k <= 1:
             return features, {}
 
@@ -279,6 +292,7 @@ class EctraRecurrentAlignment(nn.Module):
         pred_trust_mean = []
         obs_trust_mean = []
         write_gate_mean = []
+        reference_coverage = []
         cav_offset = 0
         for batch_idx, batch_features in enumerate(chunks):
             cav_num = int(record_len[batch_idx].item())
@@ -293,7 +307,30 @@ class EctraRecurrentAlignment(nn.Module):
 
             cav_sequences = [nodes[0]]
             for cav_idx in range(1, cav_num):
-                hidden = nodes[cav_idx, k - 1:k]
+                observations = nodes[cav_idx]
+                ego_references = ego_seq
+                ego_validity = torch.ones_like(ego_seq[:, :1])
+                if self.coordinate_mode == 'collaborator_latest':
+                    transforms = pairwise_t_matrix[batch_idx, cav_idx, :k].to(features)
+                    ego_to_latest = torch.linalg.inv(transforms[0])
+                    observations, _ = warp_metric_bev(
+                        observations, ego_to_latest.unsqueeze(0) @ transforms,
+                        self.lidar_range)
+                    ref_transforms = torch.eye(4, device=features.device,
+                                               dtype=features.dtype).repeat(k, 1, 1)
+                    if ego_history is not None:
+                        if cav_num != 2:
+                            raise ValueError('DAIR ego history currently supports one collaborator')
+                        ego_references = ego_history['features'][batch_idx]
+                        ref_transforms = ego_history['to_current_ego'][batch_idx]
+                    ego_references, ego_validity = warp_metric_bev(
+                        ego_references, ego_to_latest.unsqueeze(0) @ ref_transforms,
+                        self.lidar_range)
+                    if ego_history is not None:
+                        ego_validity = ego_validity * ego_history['valid'][batch_idx].to(features).view(k, 1, 1, 1)
+                        ego_references = ego_references * (ego_validity > 0).to(features)
+                    reference_coverage.append(ego_validity.detach().mean())
+                hidden = observations[k - 1:k]
                 cav_context = batch_context[cav_idx:cav_idx + 1] \
                     if batch_context is not None else None
                 cav_roi_masks = batch_roi_masks[cav_idx] \
@@ -305,12 +342,13 @@ class EctraRecurrentAlignment(nn.Module):
                 for frame_idx in range(k - 2, -1, -1):
                     curr_time = torch.abs(batch_intervals[cav_idx, frame_idx:frame_idx + 1])
                     dt = torch.clamp(prev_time - curr_time, min=0.0)
-                    ego_ref = ego_seq[frame_idx:frame_idx + 1]
+                    ego_ref = ego_references[frame_idx:frame_idx + 1]
                     hidden_pred, motion_flow, motion_gamma = self._propagate(
                         hidden, ego_ref, dt, cav_context)
                     hidden, obs_calib, calib_flow, last_trust, r_pred, r_obs, write_gate, roi_trust_fraction = self._update(
-                        hidden_pred, nodes[cav_idx, frame_idx:frame_idx + 1],
-                        ego_ref, dt, cav_context, cav_roi_masks)
+                        hidden_pred, observations[frame_idx:frame_idx + 1],
+                        ego_ref, dt, cav_context, cav_roi_masks,
+                        ego_validity[frame_idx:frame_idx + 1])
                     if roi_trust_fraction is not None:
                         roi_trust_fractions.append(roi_trust_fraction)
                     motion_losses.append(
@@ -343,6 +381,8 @@ class EctraRecurrentAlignment(nn.Module):
 
         aligned = torch.cat(aligned_chunks, dim=0)
         aux = {}
+        if reference_coverage:
+            aux['ectra_ego_reference_coverage'] = torch.stack(reference_coverage).mean()
         if trust_maps:
             aux['ectra_trust'] = torch.cat(trust_maps, dim=0)
         if motion_losses:

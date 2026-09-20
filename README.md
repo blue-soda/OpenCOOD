@@ -1,3 +1,9 @@
+> Research fork entry point: read [the workspace guide](../agent-doc/guide.md)
+> and [the validated runbook](../agent-doc/reproduction.md) before running experiments.
+> These sibling documents live in the research workspace, not this Git repository.
+> DAIR uses the CoDynTrust-style reproduction pipeline; the original paper README
+> below is preserved for reference and is not the current experiment command whitelist.
+
 # <div align="center">CoBEVFlow (NeurIPS 2023)</div>
 This repository contains the official PyTorch implementation of NeurIPS 2023 paper "[Asynchrony-Robust Collaborative Perception via Bird’s Eye View Flow](https://arxiv.org/abs/2309.16940)". 
 [Sizhe Wei](https://sizhewei.github.io/), [Yuxi Wei](https://www.linkedin.cn/incareer/in/ACoAADSxRKcB7zJIIKFvPU9bvO1G2BT7Mx6S4vw), [Yue Hu](https://phyllish.github.io), [Yifan Lu](https://yifanlu0227.github.io/), [Yiqi Zhong](https://scholar.google.com/citations?user=Bv8l8jkAAAAJ&hl=en&authuser=1), [Siheng Chen](http://siheng-chen.github.io/), [Ya Zhang](https://mediabrain.sjtu.edu.cn/yazhang/).

@@ -22,6 +22,7 @@ from opencood.models.fuse_modules.raindrop_swin import raindrop_swin
 from opencood.models.fuse_modules.raindrop_swin_w_single import raindrop_swin_w_single
 from opencood.models.sub_modules.ectra_recurrent_alignment import EctraRecurrentAlignment
 from opencood.models.sub_modules.ectra_roi_flow_refiner import EctraRoiFlowRefiner
+from opencood.models.sub_modules.ectra_geometry import warp_metric_bev
 from opencood.tools.matcher import Matcher
 from collections import OrderedDict
 import torch
@@ -220,7 +221,10 @@ class PointPillarWhere2commEctra(nn.Module):
                 self.rain_fusion = raindrop_attn_fuse(args['rain_model'])
 
         self.multi_scale = args['rain_model']['multi_scale']
-        self.ectra = EctraRecurrentAlignment(args.get('ectra', {}))
+        ectra_args = dict(args.get('ectra', {}))
+        ectra_args.setdefault('lidar_range', args['lidar_range'])
+        self.ectra = EctraRecurrentAlignment(ectra_args)
+        self.ectra_require_history = bool(ectra_args.get('require_ego_history', False))
         self.ectra_roi = EctraRoiFlowRefiner(args.get('ectra_roi', {})) \
             if self.ectra_roi_flag else None
         self.matcher = Matcher('flow') if self.ectra_roi_flag else None
@@ -1075,10 +1079,30 @@ class PointPillarWhere2commEctra(nn.Module):
                 data_dict, single_output, dataset, psm_single.device,
                 shape_list=flow_shape_list)
 
+        ego_history = None
+        if self.ectra_require_history:
+            if 'ectra_ego_history' not in data_dict:
+                raise ValueError('ECTRA requires real ego-history reader inputs')
+            ego_history = dict(data_dict['ectra_ego_history'])
+            with torch.no_grad():
+                history_lidar = dict(ego_history['processed_lidar'])
+                count = int(ego_history['valid'].numel())
+                template = batch_dict['spatial_features']
+                encoded_history = template.new_zeros(count, *template.shape[1:])
+                if history_lidar['voxel_coords'].shape[0] > 0:
+                    encoded = self.scatter(self.pillar_vfe(history_lidar))['spatial_features']
+                    encoded_history[:encoded.shape[0]] = encoded
+                ego_history['features'] = encoded_history.view(B, k, *template.shape[1:])
         if self.ectra_dense_enabled:
             batch_dict['spatial_features'], ectra_aux = self.ectra(
                 batch_dict['spatial_features'], record_len, record_frames,
-                roi_context=roi_context)
+                roi_context=roi_context, pairwise_t_matrix=pairwise_t_matrix,
+                ego_history=ego_history)
+            if ego_history is not None:
+                valid = ego_history['valid'].to(psm_single)
+                ectra_aux['ectra_ego_history_valid_fraction'] = valid.mean()
+                ectra_aux['ectra_ego_history_age_ms'] = (
+                    ego_history['age_ms'].to(valid) * valid).sum() / valid.sum().clamp_min(1)
             if isinstance(roi_context, dict):
                 ectra_aux.update(roi_context.get('aux', {}))
 
@@ -1089,9 +1113,24 @@ class PointPillarWhere2commEctra(nn.Module):
             record_frames, record_len, k)
 
         if self.ectra_roi_flag:
+            roi_ego_refs, roi_ego_valid = None, None
+            if self.ectra.coordinate_mode == 'collaborator_latest':
+                refs, masks = [], []
+                offset = 0
+                for b, ncav in enumerate(record_len.tolist()):
+                    ego = fusion_spatial_features[offset:offset + 1]
+                    ref, mask = warp_metric_bev(
+                        ego.expand(ncav, -1, -1, -1),
+                        torch.linalg.inv(pairwise_t_matrix[b, :ncav, 0]),
+                        self.ectra.lidar_range)
+                    refs.append(ref)
+                    masks.append(mask)
+                    offset += ncav
+                roi_ego_refs, roi_ego_valid = torch.cat(refs), torch.cat(masks)
             box_flow_map, reserved_mask, roi_aux = self.ectra_roi(
                 box_flow_map, reserved_mask, fusion_spatial_features,
-                record_len, fusion_record_frames, flow_gt=flow_gt)
+                record_len, fusion_record_frames, flow_gt=flow_gt,
+                ego_references=roi_ego_refs, ego_validity=roi_ego_valid)
 
         # rain attention:
         fusion_backbone = self.fused_backbone if self.independent_fusion_backbone else self.backbone

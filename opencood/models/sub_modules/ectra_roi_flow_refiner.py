@@ -60,7 +60,7 @@ class EctraRoiFlowRefiner(nn.Module):
         return identity - torch.stack((norm_x, norm_y), dim=-1)
 
     def forward(self, coarse_flow_grid, reserved_mask, features, record_len,
-                time_intervals, flow_gt=None):
+                time_intervals, flow_gt=None, ego_references=None, ego_validity=None):
         """
         Parameters
         ----------
@@ -89,13 +89,16 @@ class EctraRoiFlowRefiner(nn.Module):
         ego_refs = []
         for batch_feats in self.regroup(features, record_len):
             ego_refs.append(batch_feats[0:1].repeat(batch_feats.shape[0], 1, 1, 1))
-        ego_features = torch.cat(ego_refs, dim=0)
+        ego_features = torch.cat(ego_refs, dim=0) if ego_references is None else ego_references
+        reference_residual = torch.abs(features - ego_features)
+        if ego_validity is not None:
+            reference_residual = reference_residual * ego_validity
 
         inputs = torch.cat(
             (
                 features,
                 ego_features,
-                torch.abs(features - ego_features),
+                reference_residual,
                 roi_mask,
                 norm_dt.expand(num_cav, 1, height, width),
                 log_dt.expand(num_cav, 1, height, width),
