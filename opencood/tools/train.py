@@ -43,6 +43,9 @@ def train_parser():
     parser.add_argument('--two_stage', help='whether to use two stage training', default=0, type=int)
     parser.add_argument('--num_workers', default=16, type=int,
                         help='number of dataloader workers')
+    parser.add_argument('--multiprocessing_context', default=None,
+                        choices=['fork', 'spawn', 'forkserver'],
+                        help='optional DataLoader worker start method; requires workers > 0')
     parser.add_argument('--skip_test', action='store_true',
                         help='skip automatic inference after training')
     parser.add_argument('--debug_max_iters', default=0, type=int,
@@ -80,6 +83,10 @@ def train_parser():
     parser.add_argument('--diagnostics_max_val_vis', default=0, type=int,
                         help='maximum validation visualizations saved by diagnostics')
     opt = parser.parse_args()
+    if opt.num_workers < 0:
+        parser.error('--num_workers must be nonnegative')
+    if opt.multiprocessing_context and opt.num_workers == 0:
+        parser.error('--multiprocessing_context requires --num_workers > 0')
     return opt
 
 
@@ -167,20 +174,23 @@ def main():
                                               visualize=False,
                                               train=False)
 
+    loader_options = {}
+    if opt.multiprocessing_context:
+        loader_options['multiprocessing_context'] = opt.multiprocessing_context
     train_loader = DataLoader(opencood_train_dataset,
                             batch_size=hypes['train_params']['batch_size'],
                             num_workers=opt.num_workers,
                             collate_fn=opencood_train_dataset.collate_batch_train,
                             shuffle=True,
                             pin_memory=True,
-                            drop_last=True)
+                            drop_last=True, **loader_options)
     val_loader = DataLoader(opencood_validate_dataset,
                             batch_size=hypes['train_params']['batch_size'],
                             num_workers=opt.num_workers,
                             collate_fn=opencood_train_dataset.collate_batch_train,
                             shuffle=True,
                             pin_memory=True,
-                            drop_last=True)
+                            drop_last=True, **loader_options)
     end_time = time.time()
     print("=== Time consumed: %.1f minutes. ===" % ((end_time - start_time)/60))
     start_time = time.time()
