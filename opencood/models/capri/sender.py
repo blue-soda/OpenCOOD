@@ -9,6 +9,8 @@ def diverse_indices(xyz, count):
         return torch.arange(len(xyz), device=xyz.device)
     # Bound FPS work before selecting spatially distributed keypoints.
     pool = torch.linspace(0, len(xyz) - 1, min(len(xyz), 2048), device=xyz.device).long()
+    if len(pool) <= count:
+        return pool
     points = xyz[pool, :2]
     distance = points.new_full((len(points),), float('inf'))
     selected = []
