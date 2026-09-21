@@ -161,6 +161,7 @@ class Capri(nn.Module):
 
 def capri_loss(output, gt):
     boxes, logits = output['boxes'], output['logits']
+    gt = gt.to(boxes)
     pred_ids, gt_ids = associate(boxes, gt, radius=4.)
     labels = logits.new_zeros(logits.shape)
     labels[pred_ids] = 1

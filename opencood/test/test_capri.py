@@ -57,7 +57,7 @@ class CapriTest(unittest.TestCase):
         output = model(messages, torch.eye(4).repeat(2, 2, 1, 1),
                        torch.tensor([[0., 0.], [-.1, -.2]]), [message(), message()],
                        torch.eye(4).repeat(2, 1, 1), torch.tensor([False, False]))
-        objective, _ = capri_loss(output, message(.5)['boxes'])
+        objective, _ = capri_loss(output, message(.5)['boxes'].double())
         objective.backward()
         self.assertTrue(torch.isfinite(objective))
         self.assertGreater(sum(float(p.grad.abs().sum()) for p in model.motion.parameters() if p.grad is not None), 0)
