@@ -81,7 +81,8 @@ def register_background(source, target, radius=2., max_yaw=.15):
     error = (transform_points(a, transform)[:, :2] - b[:, :2]).norm(dim=1).mean()
     before = (a[:, :2] - b[:, :2]).norm(dim=1).mean()
     angle = torch.atan2(transform[1, 0], transform[0, 0]).abs()
-    accepted = bool(singular[-1] > .02 and angle < max_yaw and
+    accepted = bool(singular[-1] > .02 and angle < max_yaw and error < .5 and
+                    keep.float().mean() >= .05 and
                     transform[:2, 3].norm() < radius and error <= before + 1e-5)
     confidence = float(keep.float().mean() * torch.exp(-error)) if accepted else 0.
     return (transform if accepted else identity), {

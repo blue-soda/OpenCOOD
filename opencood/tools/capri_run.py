@@ -111,7 +111,9 @@ def main():
     model.train(args.mode == 'train')
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg['learning_rate'], weight_decay=cfg['weight_decay'])
     collate = dataset.collate_batch_train if args.mode == 'train' else dataset.collate_batch_test
-    loader = DataLoader(dataset, batch_size=1, shuffle=args.mode == 'train', num_workers=args.workers, collate_fn=collate)
+    generator = torch.Generator().manual_seed(cfg['eval_seed']) if args.mode == 'eval' else None
+    loader = DataLoader(dataset, batch_size=1, shuffle=args.mode == 'train', num_workers=args.workers,
+                        collate_fn=collate, generator=generator)
     metadata = {'arguments': vars(args), 'single_sha256': digest(cfg['single_checkpoint']),
                 'checkpoint_sha256': digest(args.checkpoint) if args.checkpoint else None,
                 'commit': subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip(),

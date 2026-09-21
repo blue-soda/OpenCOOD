@@ -61,7 +61,8 @@ class Capri(nn.Module):
             old_ids, new_ids = associate(pred['boxes'], obs['boxes'], self.settings['match_radius'])
             updated = self.initialize(obs, time, confidences[index])
             if len(old_ids):
-                losses.append(F.smooth_l1_loss(pred['boxes'][old_ids, :2], obs['boxes'][new_ids, :2].detach()))
+                if time-previous > 1e-6:
+                    losses.append(F.smooth_l1_loss(pred['boxes'][old_ids, :2], obs['boxes'][new_ids, :2].detach()))
                 hidden = updated['hidden'].clone()
                 hidden[new_ids] = self.recurrent(updated['hidden'][new_ids], pred['hidden'][old_ids])
                 velocity = updated['velocity'].clone()

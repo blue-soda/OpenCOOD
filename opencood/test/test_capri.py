@@ -39,6 +39,30 @@ class CapriTest(unittest.TestCase):
         torch.testing.assert_allclose(state['boxes'], result['boxes'])
         torch.testing.assert_allclose(state['points'], result['points'])
 
+    def test_registration_accepts_consistent_points_and_rejects_line(self):
+        torch.manual_seed(3)
+        xyz = torch.randn(40, 3)*4
+        features = torch.eye(40)
+        source = {'xyz': xyz, 'descriptor': features, 'quality': torch.ones(40)}
+        target = dict(source, xyz=xyz+torch.tensor([.1, -.1, 0.]))
+        transform, stats = register_background(source, target)
+        self.assertEqual(stats['accepted'], 1.)
+        torch.testing.assert_allclose(transform[:2, 3], torch.tensor([.1, -.1]), atol=1e-5, rtol=1e-5)
+        source['xyz'] = torch.stack((torch.arange(40).float(), torch.zeros(40), torch.zeros(40)), 1)
+        target['xyz'] = source['xyz']+torch.tensor([.1, 0., 0.])
+        transform, stats = register_background(source, target)
+        self.assertEqual(stats['accepted'], 0.)
+
+    def test_empty_scene_is_finite(self):
+        model = self.model()
+        output = model([message(count=0) for _ in range(4)], torch.eye(4).repeat(2, 2, 1, 1),
+                       torch.tensor([[0., 0.], [-.1, -.2]]), [message(), message()],
+                       torch.eye(4).repeat(2, 1, 1), torch.tensor([False, False]))
+        loss, _ = capri_loss(output, message()['boxes'])
+        loss.backward()
+        self.assertTrue(torch.isfinite(loss))
+        self.assertEqual(len(output['boxes']), 0)
+
     def test_rigid_keypoint_motion(self):
         mixed = self.model().transform_message(message(), torch.eye(4, dtype=torch.float64))
         self.assertEqual(mixed['boxes'].dtype, torch.float32)
