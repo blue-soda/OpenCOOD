@@ -16,6 +16,16 @@ sys.path.insert(0, os.getcwd())
 from opencood.tools.ectra_ablation_utils import ABLATIONS, DEFAULT_ABLATIONS
 
 
+def stage_checkpoint(checkpoint, folder):
+    # The directory loader ignores arbitrary names. This is an alias, not epoch metadata.
+    target = folder / 'net_epoch_bestval_at1.pth'
+    try:
+        os.link(str(checkpoint), str(target))
+    except OSError:
+        shutil.copy2(checkpoint, target)
+    return target
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--checkpoint', required=True)
@@ -45,7 +55,9 @@ def main():
         for chunk in iter(lambda: stream.read(1024 * 1024), b''):
             sha.update(chunk)
     manifest = dict(vars(args), checkpoint_sha256=sha.hexdigest(),
-                    screening=args.limit > 0)
+                    screening=args.limit > 0,
+                    staged_checkpoint_name='net_epoch_bestval_at1.pth',
+                    staged_epoch_is_alias=True)
     (output / 'manifest.json').write_text(json.dumps(manifest, indent=2))
     env = os.environ.copy()
     env['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -55,10 +67,7 @@ def main():
         folder = output / mode
         folder.mkdir()
         shutil.copy2(config, folder / 'config.yaml')
-        try:
-            os.link(str(checkpoint), str(folder / checkpoint.name))
-        except OSError:
-            shutil.copy2(checkpoint, folder / checkpoint.name)
+        stage_checkpoint(checkpoint, folder)
         command = [sys.executable, '-u', 'opencood/tools/inference.py',
                    '--model_dir', str(folder), '--fusion_method', 'intermediate',
                    '--two_stage', '1', '--dataset', 'd', '--save_vis_interval', '0',

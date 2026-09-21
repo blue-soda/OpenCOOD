@@ -133,7 +133,8 @@ def load_saved_model(saved_path, model):
     # model.load_state_dict(ckpt_new, strict=False)
     return initial_epoch, model
 
-def load_saved_model_diff(saved_path, model, finetune_flag=False):
+def load_saved_model_diff(saved_path, model, finetune_flag=False,
+                          require_checkpoint=False):
     """
     Load saved model, model and checkpoint may not be totally same.
 
@@ -224,6 +225,11 @@ def load_saved_model_diff(saved_path, model, finetune_flag=False):
             print(f"!!! Trained model has keys: {diff_keys.keys()}, \
                 which are not in the model you have created!!!")
         model.load_state_dict(trained_model_dict, strict=False)
+
+    elif require_checkpoint:
+        raise FileNotFoundError(
+            'No loadable checkpoint in %s; expected net_epochN.pth (N > 0) '
+            'or net_epoch_bestval_atN.pth' % saved_path)
 
     return initial_epoch, model
 

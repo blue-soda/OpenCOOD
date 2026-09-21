@@ -119,7 +119,8 @@ def main():
 
     print('Loading Model from checkpoint')
     saved_path = opt.model_dir
-    _, model = train_utils.load_saved_model_diff(saved_path, model)
+    _, model = train_utils.load_saved_model_diff(
+        saved_path, model, require_checkpoint=True)
     
     if opt.pretrained_path: # load traj pred model
         saved_path = opt.pretrained_path
