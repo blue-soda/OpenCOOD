@@ -30,9 +30,14 @@ def main():
     parser.add_argument('--checkpoint', required=True)
     parser.add_argument('--output', required=True)
     parser.add_argument('--samples', type=int, default=8)
+    parser.add_argument('--start', type=int, default=0)
+    parser.add_argument('--stride', type=int, default=1,
+                        help='space audit indices across scenes instead of adjacent frames')
     parser.add_argument('--input_gradients', action='store_true',
                         help='probe detection/total loss sensitivity to recurrent input branches')
     args = parser.parse_args()
+    if args.samples < 1 or args.start < 0 or args.stride < 1:
+        parser.error('samples/stride must be positive and start nonnegative')
     destination = Path(args.output)
     if destination.exists():
         raise FileExistsError(str(destination))
@@ -49,7 +54,9 @@ def main():
         from opencood.tools.ectra_gradient_diagnostics import EctraInputGradientProbe
         probe = EctraInputGradientProbe(model.ectra)
     rows = []
-    for idx in range(args.samples):
+    if args.start >= len(dataset):
+        parser.error('start is outside the dataset')
+    for idx in range(args.start, min(len(dataset), args.start + args.samples * args.stride), args.stride):
         seed(303 + idx)
         old = baseline[idx]
         seed(303 + idx)
@@ -96,7 +103,9 @@ def main():
     valid_rows = [row for row in rows if not row.get('skipped')]
     assert valid_rows, 'No usable audit samples'
     assert all(any(row['gradients'][key] > 0 for row in valid_rows) for key in valid_rows[0]['gradients'])
-    destination.write_text(json.dumps(dict(status='passed', rows=rows), indent=2))
+    destination.write_text(json.dumps(dict(status='passed', arguments=vars(args),
+                                           model_mode='train_without_optimizer_step',
+                                           rows=rows), indent=2))
     if probe is not None:
         probe.close()
 
