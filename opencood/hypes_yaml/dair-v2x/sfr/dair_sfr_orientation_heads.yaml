@@ -1,0 +1,32 @@
+name: dair_sfr_v3_orientation_heads
+interface_version: sfr-2-forward
+base_config: opencood/hypes_yaml/dair-v2x/repro/dair_cobevflow_stage2_wide.yaml
+single_checkpoint: /data0/chen/gzc/workspace/logs/logs/dairv2x/repro_dair_single_pointpillar_wide_for_codyntrust_cobevflow_2026_09_11_02_51_02/net_epoch_bestval_at57.pth
+seed: 2301
+eval_seed: 303
+time_policy: paired
+history_max_age_ms: 100
+sender:
+  max_instances: 64
+  cells_per_instance: 96
+  max_cells: 4096
+  foreground_margin_m: 0.4
+temporal:
+  hidden_dim: 64
+  max_speed: 35.0
+  max_acceleration: 6.0
+  max_yaw_rate: 1.0
+  ttl_s: 2.0
+  match_radius_m: 5.0
+  gate_growth_mps: 1.0
+fusion:
+  hidden_dim: 64
+  train_heads: true
+  orientation_conditioned: true
+training:
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  epochs: 3
+  motion_pseudo_score: 0.5
+  motion_yaw_weight: 0.2
+  motion_min_dt_s: 0.05

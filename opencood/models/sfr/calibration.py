@@ -44,28 +44,37 @@ class BackgroundCalibration(nn.Module):
 
     def forward(self, source, target):
         xyz, ref = source['xyz'], target['xyz']
+        source_descriptor = source['descriptor']
+        max_queries = self.settings.get('max_queries', len(xyz))
+        if len(xyz) > max_queries:
+            selected = torch.linspace(0, len(xyz)-1, max_queries, device=xyz.device).long()
+            xyz, source_descriptor = xyz[selected], source_descriptor[selected]
         identity = torch.eye(4, device=xyz.device, dtype=xyz.dtype)
         zero = sum(p.sum()*0 for p in self.parameters())
         empty = dict(accepted=False, usable=False, reason='insufficient_background', matches=0,
                      source_points=len(xyz), target_points=len(ref), overlap=0., residual_before=None, residual_after=None)
         if len(xyz) < self.settings['min_matches'] or len(ref) < self.settings['min_matches']:
             return identity, xyz.new_zeros(3)+zero, empty
-        diff = ref[None, :, :2]-xyz[:, None, :2]
-        distance = diff.square().sum(-1).sqrt()
-        height = (ref[None, :, 2]-xyz[:, None, 2]).abs()
-        a, b = source['descriptor'], target['descriptor']
-        density = (a[:, None, 0]-b[None, :, 0]).abs()/4
-        std = (a[:, None, 1]-b[None, :, 1]).abs()/2
+        # Dense target support avoids making two independently thinned maps
+        # appear geometrically inconsistent. Only local K candidates enter the MLP.
+        distance = torch.cdist(xyz[:, :2], ref[:, :2])
+        k = min(self.settings.get('candidate_neighbors', len(ref)), len(ref))
+        distance, nearest = distance.topk(k, dim=1, largest=False, sorted=True)
+        candidates = ref[nearest]
+        height = (candidates[:, :, 2]-xyz[:, None, 2]).abs()
+        a, b = source_descriptor, target['descriptor'][nearest]
+        density = (a[:, None, 0]-b[:, :, 0]).abs()/4
+        std = (a[:, None, 1]-b[:, :, 1]).abs()/2
         features = torch.stack((distance/self.settings['radius_m'], height/3, density, std,
-                                a[:, None, 0].expand_as(distance)/4, b[None, :, 0].expand_as(distance)/4,
-                                a[:, None, 1].expand_as(distance)/2, b[None, :, 1].expand_as(distance)/2), -1)
+                                a[:, None, 0].expand_as(distance)/4, b[:, :, 0]/4,
+                                a[:, None, 1].expand_as(distance)/2, b[:, :, 1]/2), -1)
         logits = -(distance/self.settings['temperature_m']).square()-2*height-density-.5*std
         logits = logits+4*self.matcher(features).squeeze(-1).tanh()
         feasible = (distance <= self.settings['radius_m']) & (height <= self.settings['max_height_difference_m'])
         supported = feasible.any(-1)
         probabilities = logits.masked_fill(~feasible, -1e4).softmax(-1)*feasible
         probabilities = probabilities/probabilities.sum(-1, keepdim=True).clamp_min(1e-8)
-        correspondences = probabilities@ref[:, :2]
+        correspondences = (probabilities[:, :, None]*candidates[:, :, :2]).sum(1)
         confidence = probabilities.max(-1).values
         weights = confidence*supported
         count = int(supported.sum())

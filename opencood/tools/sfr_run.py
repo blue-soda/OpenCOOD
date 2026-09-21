@@ -250,7 +250,7 @@ def main():
                 else:
                     with torch.no_grad():
                         tracks, diagnostics = temporal.sequence(messages, mode=args.temporal_mode)
-                        transported = temporal.collect(tracks)
+                        transported = temporal.collect(tracks, include_orientation=cfg['fusion'].get('orientation_conditioned', False))
                     output, coverage = fusion(ego, transported)
                     diagnostics.update(coverage)
                     loss = criterion(output, batch['ego']['label_dict'])
@@ -308,7 +308,7 @@ def main():
         (out/('samples_epoch%d.json' % (epoch+1))).write_text(json.dumps(identities))
         if args.mode == 'train':
             torch.save(dict(model=model.state_dict(), optimizer=optimizer.state_dict(), config=cfg, epoch=epoch+1,
-                            stage=args.stage, interface_version='sfr-1', manifest=metadata), out/('sfr_%s_epoch%d.pth' % (args.stage, epoch+1)))
+                            stage=args.stage, interface_version=cfg['interface_version'], manifest=metadata), out/('sfr_%s_epoch%d.pth' % (args.stage, epoch+1)))
         elif args.stage == 'fusion':
             summary['ap30'], summary['ap50'], summary['ap70'] = eval_utils.eval_final_results(stats, str(out), dataset='d')
         (out/('summary_epoch%d.json' % (epoch+1))).write_text(json.dumps(summary, indent=2))

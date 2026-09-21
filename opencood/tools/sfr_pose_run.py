@@ -114,9 +114,13 @@ def learn_or_eval(args,cfg,output):
         saved=torch.load(args.checkpoint,map_location='cpu')
         if saved['config']!=cfg:raise ValueError('Pose checkpoint configuration mismatch')
         model.load_state_dict(saved['model'],strict=True)
-    if args.mode=='eval':
-        if not args.checkpoint:raise ValueError('Evaluation requires checkpoint')
-        result=evaluate(model.eval(),rows,cfg,cfg['eval_seed']);(output/'summary.json').write_text(json.dumps(result,indent=2));print(json.dumps(result));return
+    if args.mode in ('eval','audit'):
+        if args.mode=='eval' and not args.checkpoint:raise ValueError('Evaluation requires checkpoint')
+        result=evaluate(model.eval(),rows,cfg,cfg['eval_seed'])
+        result.update(untrained=args.checkpoint is None,cache_sha256=digest(args.cache),
+                      checkpoint_sha256=digest(args.checkpoint) if args.checkpoint else None,
+                      source_sha256=digest('opencood/models/sfr/calibration.py'))
+        (output/'summary.json').write_text(json.dumps(result,indent=2));print(json.dumps(result));return
     optimizer=torch.optim.AdamW(model.parameters(),lr=cfg['learning_rate'],weight_decay=.0001)
     manifest=dict(config=cfg,arguments=vars(args),train_cache_sha256=digest(args.cache),dev_cache_sha256=digest(args.dev_cache),
                   source_sha256=digest('opencood/models/sfr/calibration.py'),supervision='known_artificial_SE2_only',stage='B',started_at=time.time())
@@ -155,7 +159,7 @@ def learn_or_eval(args,cfg,output):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--mode',choices=['cache','train','eval'],required=True);p.add_argument('--config',required=True);p.add_argument('--output',required=True)
+    p.add_argument('--mode',choices=['cache','train','eval','audit'],required=True);p.add_argument('--config',required=True);p.add_argument('--output',required=True)
     p.add_argument('--split_file');p.add_argument('--training_data',action='store_true');p.add_argument('--cache');p.add_argument('--dev_cache');p.add_argument('--checkpoint')
     p.add_argument('--workers',type=int,default=4);p.add_argument('--epochs',type=int);p.add_argument('--max_steps',type=int,default=0)
     args=p.parse_args();cfg=yaml.safe_load(Path(args.config).read_text());out=Path(args.output);out.mkdir(parents=True,exist_ok=False)

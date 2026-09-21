@@ -52,3 +52,21 @@ def test_background_excludes_foreground_and_unobserved():
     points=background_points(dict(geometry=geometry,observed=observed,foreground=foreground),torch.eye(4),[0,0,-1,6,6,3],100,1)
     assert len(points['xyz'])==36-9-1
     assert (points['xyz'][:,2]==2).all()
+
+
+def test_local_candidates_preserve_dense_matching_and_query_budget():
+    torch.manual_seed(3)
+    cfg=settings();cfg['temperature_m']=.5
+    dense=BackgroundCalibration(cfg)
+    local=BackgroundCalibration(dict(cfg,candidate_neighbors=12,max_queries=8))
+    local.load_state_dict(dense.state_dict())
+    xyz=torch.randn(12,3)*3
+    target=dict(xyz=xyz,descriptor=torch.randn(12,2))
+    source=dict(xyz=xyz+torch.tensor([.1,-.1,0.]),descriptor=target['descriptor'])
+    _,delta,stats=local(source,target)
+    indices=torch.linspace(0,11,8).long()
+    _,reference,_=dense({k:v[indices] for k,v in source.items()},target)
+    torch.testing.assert_close(delta,reference)
+    assert stats['source_points']==8
+    delta.square().sum().backward()
+    assert all(torch.isfinite(p.grad).all() for p in local.parameters() if p.grad is not None)

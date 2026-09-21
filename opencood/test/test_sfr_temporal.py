@@ -65,3 +65,14 @@ def test_future_observation_excluded_and_scene_mixture_rejected():
     assert model.sequence([msg(1., 0.)])[0] == []
     with pytest.raises(ValueError):
         model.sequence([msg(-1., 0.), msg(0., 0., scene='b')])
+
+
+def test_collected_orientation_composes_sensor_and_final_transport_turn():
+    from opencood.models.sfr.geometry import se2
+    model=temporal();message=msg(-.5,0.)
+    message['nominal_to_reference']=se2(torch.tensor([1.,2.,.3]))
+    track=model.observe(message,0,-.5,mode='cv')
+    track.box=track.box.clone();track.box[6]=.2
+    data=model.collect([track],include_orientation=True)
+    torch.testing.assert_close(data[4],torch.tensor([[torch.sin(torch.tensor(.5)),torch.cos(torch.tensor(.5))]]))
+    assert torch.equal(data[1],message['features'])

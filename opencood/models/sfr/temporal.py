@@ -72,8 +72,10 @@ class Temporal(nn.Module):
         ids = message['instance_ids'] == index
         # Keep each source's last nonempty cache. No repeated historical evidence.
         if bool(ids.any()):
+            transform = message.get('nominal_to_reference')
+            source_yaw = box.new_zeros(()) if transform is None else torch.atan2(transform[1, 0], transform[0, 0])
             caches[source] = dict(box=box, points=message['points'][ids], features=message['features'][ids],
-                                  time=time, frame_id=message['metadata']['frame_id'], score=score)
+                                  time=time, frame_id=message['metadata']['frame_id'], score=score, source_yaw=source_yaw)
         return Track(box, hidden, velocity, acceleration, omega, time, box, time, score, caches,
                      1 if old is None else old.observations+1)
 
@@ -112,8 +114,8 @@ class Temporal(nn.Module):
                 counts[key] += update[key]
         return [self.predict(t, query_time, mode) for t in tracks if query_time-t.observed_time <= self.settings['ttl_s']], counts
 
-    def collect(self, tracks, query_time=0., exclude_source='0'):
-        points, features, ages, scores = [], [], [], []
+    def collect(self, tracks, query_time=0., exclude_source='0', include_orientation=False):
+        points, features, ages, scores, orientations = [], [], [], [], []
         for track in tracks:
             for source, cache in sorted(track.caches.items()):
                 age = query_time-cache['time']
@@ -124,9 +126,13 @@ class Temporal(nn.Module):
                 features.append(cache['features'])
                 ages.append(track.box.new_full((n,), age))
                 scores.append(cache['score'].expand(n))
+                if include_orientation:
+                    angle = cache.get('source_yaw', track.box.new_zeros(()))+track.box[6]-cache['box'][6]
+                    orientations.append(torch.stack((angle.sin(), angle.cos())).expand(n, 2))
         if not points:
             return None
-        return tuple(torch.cat(x) for x in (points, features, ages, scores))
+        output = tuple(torch.cat(x) for x in (points, features, ages, scores))
+        return output+(torch.cat(orientations),) if include_orientation else output
 
 
 class ReplayWindow:

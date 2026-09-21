@@ -1,0 +1,25 @@
+base_sfr_config: opencood/hypes_yaml/dair-v2x/sfr/dair_sfr_v2.yaml
+seed: 2401
+eval_seed: 303
+max_pairs_per_sample: 1
+max_points: 4096
+foreground_margin_cells: 2
+perturb_translation_m: 1.0
+perturb_yaw_rad: 0.03
+learning_rate: 0.001
+epochs: 4
+calibration:
+  max_queries: 512
+  candidate_neighbors: 16
+  hidden_dim: 32
+  radius_m: 4.0
+  temperature_m: 1.0
+  max_height_difference_m: 2.0
+  min_matches: 16
+  min_overlap: 0.08
+  min_spread_m2: 1.0
+  max_translation_m: 3.0
+  max_yaw_rad: 0.10
+  max_residual_m: 0.9
+  translation_loss_scale_m: 1.0
+  yaw_loss_scale_rad: 0.03

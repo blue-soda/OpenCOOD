@@ -55,7 +55,7 @@ def main():
     temporal = Temporal(cfg['temporal']).to(device).eval()
     loader = DataLoader(data, batch_size=1, shuffle=False, num_workers=args.workers,
                         collate_fn=data.collate_batch_test, generator=torch.Generator().manual_seed(303))
-    names = ['ego', 'late_latest', 'late_cv', 'dense_max_untrained']
+    names = ['ego', 'ego_boxes', 'late_latest', 'late_cv', 'dense_max_untrained']
     statistics = {name: {x: dict(tp=[], fp=[], gt=0, score=[]) for x in (.3, .5, .7)} for name in names}
     metadata = dict(arguments=vars(args), single_sha256=digest(cfg['single_checkpoint']),
                     split_sha256=digest(args.split_file), config=cfg,
@@ -80,6 +80,7 @@ def main():
                 return data.post_processor.post_process(batch, dict(ego=result))
             predictions = dict(ego=head(ego))
             current = [m for m in messages if m['metadata']['agent_id'] == '0'][0]
+            predictions['ego_boxes'] = late_predictions(current['boxes'], current['scores'], data.post_processor)
             infra = max([m for m in messages if m['metadata']['agent_id'] == '1'], key=lambda m:m['metadata']['time_s'])
             predictions['late_latest'] = late_predictions(torch.cat((current['boxes'], infra['boxes'])), torch.cat((current['scores'], infra['scores'])), data.post_processor)
             tracks, _ = temporal.sequence([m for m in messages if m['metadata']['agent_id'] == '1'], mode='cv')
