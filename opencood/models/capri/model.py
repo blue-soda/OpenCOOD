@@ -87,6 +87,7 @@ class Capri(nn.Module):
 
     @staticmethod
     def transform_message(message, transform):
+        transform = transform.to(message['boxes'])
         out = dict(message)
         out['boxes'] = transform_boxes(message['boxes'], transform)
         out['points'] = transform_points(message['points'], transform)

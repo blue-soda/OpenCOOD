@@ -40,6 +40,8 @@ class CapriTest(unittest.TestCase):
         torch.testing.assert_allclose(state['points'], result['points'])
 
     def test_rigid_keypoint_motion(self):
+        mixed = self.model().transform_message(message(), torch.eye(4, dtype=torch.float64))
+        self.assertEqual(mixed['boxes'].dtype, torch.float32)
         old = message()['boxes']
         new = old.clone()
         new[:, :2] += 2
