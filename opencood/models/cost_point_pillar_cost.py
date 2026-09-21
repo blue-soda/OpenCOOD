@@ -21,7 +21,7 @@ from opencood.models.sub_modules.cost_communication import CompressFuse
 
 class CostPointPillarCost(nn.Module):
     def __init__(self, args):
-        super(PointPillarCost, self).__init__()
+        super(CostPointPillarCost, self).__init__()
 
         self.max_cav = args['max_cav']
         # PIllar VFE
@@ -281,4 +281,3 @@ class CostPointPillarCost(nn.Module):
         }
 
         return output_dict
-
