@@ -21,7 +21,7 @@ from opencood.data_utils.datasets.sfr_dair import SfrDAIRDataset
 from opencood.models.sfr.sender import SfrSender
 from opencood.models.sfr.temporal import Temporal
 from opencood.models.sfr.fusion import SfrFusion
-from opencood.models.sfr.geometry import transform_boxes, transform_points, associate
+from opencood.models.sfr.geometry import transform_boxes, transform_points, associate, reader_to_reference
 from opencood.loss.point_pillar_tc_loss import PointPillarTcLoss
 from opencood.tools.train_utils import to_device
 from opencood.utils import eval_utils
@@ -75,7 +75,7 @@ def prepare(batch, sender, dataset, cfg, need_target=False):
             metadata['time_policy'] = cfg['time_policy']
             metadata['paired_offset_ms'] = meta['paired_offset_ms']
             message, costs = sender.wire_message(raw[agent*k+i], metadata)
-            transform = data['pairwise_t_matrix'][0, agent, i].to(message['boxes'])
+            transform = reader_to_reference(data['pairwise_t_matrix'][0, agent, i].to(message['boxes']))
             message['boxes'] = transform_boxes(message['boxes'], transform)
             message['points'] = transform_points(message['points'], transform)
             message['nominal_to_reference'] = transform
@@ -160,6 +160,8 @@ def main():
     parser.add_argument('--start_index', type=int, default=0)
     args = parser.parse_args()
     cfg = yaml.safe_load(Path(args.config).read_text())
+    if cfg.get('interface_version') != 'sfr-2-forward':
+        parser.error('Use the verified sfr-2-forward configuration; v1 weights use invalid coordinates')
     if args.mode == 'eval' and not args.checkpoint:
         parser.error('Independent inference requires an explicit stage checkpoint')
     if args.stage == 'motion' and args.mode == 'train' and args.temporal_mode != 'learned':

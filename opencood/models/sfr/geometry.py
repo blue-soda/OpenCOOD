@@ -4,6 +4,15 @@ import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
 
 
+def reader_to_reference(inverse_sampling_transform):
+    """DAIR past-k reader stores ego->source for grid sampling, despite its docstring.
+
+    SFR transports metric points/boxes forward, so it needs source->ego instead.
+    Keep this conversion at the reader boundary; warp_map already inverts internally.
+    """
+    return torch.inverse(inverse_sampling_transform)
+
+
 def se2(delta):
     x, y, yaw = delta.unbind(-1)
     c, s = yaw.cos(), yaw.sin()
