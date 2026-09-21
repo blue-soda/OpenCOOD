@@ -1,0 +1,257 @@
+binomial_n: 10
+binomial_p: 0.3
+comm_range: 100000
+data_augment:
+- ALONG_AXIS_LIST:
+  - x
+  NAME: random_world_flip
+- NAME: random_world_rotation
+  WORLD_ROT_ANGLE:
+  - -0.78539816
+  - 0.78539816
+- NAME: random_world_scaling
+  WORLD_SCALE_RANGE:
+  - 0.95
+  - 1.05
+data_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure
+dataset: dairv2x
+diagnostics:
+  enabled: true
+  grad_interval: 200
+  scalar_interval: 20
+  val_visualize:
+    enabled: true
+    interval: 400
+    max_images: 8
+    method: bev
+fusion:
+  args:
+    clip_pc: false
+    proj_first: false
+  core_method: CoDynTrustDAIRIrregularFlowDataset
+is_generate_gt_flow: false
+is_single_pre_trained:
+  pre_train_epoch: 57
+  pre_train_fix: true
+  pre_train_flag: true
+  pre_train_path: /data0/chen/gzc/workspace/logs/logs/dairv2x/repro_dair_single_pointpillar_wide_for_codyntrust_cobevflow_2026_09_11_02_51_02
+loss:
+  args:
+    cls_weight: 1.0
+    dir_args:
+      anchor_yaw: &id001
+      - 0
+      - 90
+      args: &id002
+        anchor_yaw: *id001
+        dir_offset: 0.7853
+        num_bins: 2
+      dir_weight: 0.2
+    reg: 2.0
+  core_method: point_pillar_tc_loss
+lr_scheduler:
+  core_method: multistep
+  gamma: 0.1
+  step_size:
+  - 10
+  - 20
+model:
+  args:
+    anchor_number: 2
+    backbone_fix: true
+    base_bev_backbone:
+      compression: 0
+      dropout_enable: false
+      layer_nums: &id003
+      - 3
+      - 4
+      - 5
+      layer_strides:
+      - 2
+      - 2
+      - 2
+      num_filters: &id004
+      - 128
+      - 256
+      - 512
+      num_upsample_filter:
+      - 128
+      - 128
+      - 128
+      resnet: true
+      upsample_strides:
+      - 1
+      - 2
+      - 4
+      use_dropout: false
+      voxel_size: &id005
+      - 0.4
+      - 0.4
+      - 5
+    compression: 0
+    design_mode: 0
+    diagnostics:
+      roi_box_stats: true
+      roi_match_distance: 4.0
+    dir_args: *id002
+    fuse_bev_backbone:
+      compression: 0
+      layer_nums: *id003
+      layer_strides:
+      - 2
+      - 2
+      - 2
+      num_filters: *id004
+      num_upsample_filter:
+      - 128
+      - 128
+      - 128
+      resnet: true
+      upsample_strides:
+      - 1
+      - 2
+      - 4
+      use_dropout: false
+      voxel_size: *id005
+    lidar_range: &id006
+    - -100.8
+    - -40
+    - -3.5
+    - 100.8
+    - 40
+    - 1.5
+    max_cav: 2
+    num_sweep_frames: 2
+    pillar_vfe:
+      num_filters:
+      - 64
+      use_absolute_xyz: true
+      use_norm: true
+      with_distance: false
+    point_pillar_scatter:
+      grid_size: !!python/object/apply:numpy.core.multiarray._reconstruct
+        args:
+        - !!python/name:numpy.ndarray ''
+        - !!python/tuple
+          - 0
+        - !!binary |
+          Yg==
+        state: !!python/tuple
+        - 1
+        - !!python/tuple
+          - 3
+        - !!python/object/apply:numpy.dtype
+          args:
+          - i8
+          - false
+          - true
+          state: !!python/tuple
+          - 3
+          - <
+          - null
+          - null
+          - null
+          - -1
+          - -1
+          - 0
+        - false
+        - !!binary |
+          +AEAAAAAAADIAAAAAAAAAAEAAAAAAAAA
+      num_features: 64
+    rain_model:
+      agg_operator:
+        feature_dim: 256
+        mode: MAX
+      communication:
+        gaussian_smooth:
+          c_sigma: 1.0
+          k_size: 5
+        round: 1
+        thre: 0.01
+      downsample_rate: 1
+      dropout_rate: 0
+      in_channels: 256
+      layer_nums: *id003
+      multi_scale: true
+      n_head: 8
+      num_filters: *id004
+      only_attention: true
+      voxel_size: *id005
+    shrink_header:
+      dim:
+      - 256
+      input_dim: 384
+      kernal_size:
+      - 3
+      padding:
+      - 1
+      stride:
+      - 1
+      use_atten: false
+    use_uncertainty_guide: false
+    viz_bbx_flag: false
+    voxel_size: *id005
+  # Opt-in copy: the baseline config and model remain unchanged.
+  core_method: point_pillar_codyntrust_cobevflow_optimized
+name: dair_cobevflow_stage2_wide
+noise_setting:
+  add_noise: false
+  args:
+    pos_mean: 0
+    pos_std: 0.2
+    rot_mean: 0
+    rot_std: 0.2
+num_sweep_frames: 2
+optimizer:
+  args:
+    eps: 1.0e-10
+    weight_decay: 0.0001
+  core_method: AdamW
+  lr: 0.002
+postprocess:
+  anchor_args:
+    D: 1
+    H: 200
+    W: 504
+    cav_lidar_range: *id006
+    feature_stride: 2
+    h: 1.56
+    l: 4.5
+    num: 2
+    r: *id001
+    vd: 5
+    vh: 0.4
+    vw: 0.4
+    w: 2
+  core_method: VoxelPostprocessor
+  dir_args: *id002
+  gt_range: *id006
+  max_num: 100
+  nms_thresh: 0.15
+  order: hwl
+  target_args:
+    neg_threshold: 0.45
+    pos_threshold: 0.6
+    score_threshold: 0.2
+preprocess:
+  args:
+    max_points_per_voxel: 32
+    max_voxel_test: 70000
+    max_voxel_train: 32000
+    voxel_size: *id005
+  cav_lidar_range: *id006
+  core_method: SpVoxelPreprocessor
+root_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/train.json
+test_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json
+time_delay: 0
+train_params:
+  batch_size: 2
+  epoches: 30
+  eval_freq: 1
+  max_cav: 2
+  save_freq: 1
+  supervise_single_flag: false
+validate_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json
+viz_bbx_flag: false
+with_history_frames: true
+yaml_parser: load_point_pillar_params
