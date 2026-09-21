@@ -278,6 +278,10 @@ class TrafAlign_(nn.Module):
                 b, c, h, w = c_.shape
                 mask = torch.zeros((b, h, w)).type_as(features)
                 stride = self.cfg["model"]["deform"]["input_stride"][0]
+                # OpenCOOD's collate path may promote voxel coordinates to
+                # floating point.  They are indices here, so normalize the
+                # dtype explicitly before integer division/indexing.
+                coords = coords.long().clone()
                 coords[:, 2:] = coords[:, 2:] // stride
                 mask[coords[:, 0], coords[:, 2], coords[:, 3]] = 1
                 mask = mask.reshape(-1, 1, h, w)
@@ -291,5 +295,4 @@ class TrafAlign_(nn.Module):
         _, c, h, w = x.shape
         x = x.reshape(self.max_cav, -1, c, h, w).transpose(0, 1)
         return x
-
 
