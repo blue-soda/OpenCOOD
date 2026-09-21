@@ -49,6 +49,19 @@ class EctraInputGradientProbe:
                 raise ValueError('Unexpected ECTRA input channel layout')
             if remaining:
                 layout.append(('roi_context', remaining))
+            regions = {}
+            if remaining:
+                core_width = value.shape[1] - remaining
+                roi = (value.detach()[:, core_width:core_width + 1] > 0).to(value.dtype)
+                ego_offset = 0
+                for branch, width in self.layouts[name]:
+                    if branch == 'ego':
+                        ego = value.detach()[:, ego_offset:ego_offset + width]
+                        break
+                    ego_offset += width
+                regions = {'roi': roi,
+                           'roi_ego_overlap': roi * (ego.abs().amax(dim=1, keepdim=True) > 0)}
+                row['region_fraction'] = {k: mask.mean().item() for k, mask in regions.items()}
             for branch, width in layout:
                 x = value.detach()[:, offset:offset + width]
                 g = None if gradient is None else gradient.detach()[:, offset:offset + width]
@@ -57,6 +70,11 @@ class EctraInputGradientProbe:
                     'gradient_abs_mean': None if g is None else g.abs().mean().item(),
                     'gradient_times_input_abs_mean': None if g is None else (g * x).abs().mean().item(),
                 }
+                for region, mask in regions.items():
+                    denominator = mask.sum() * width
+                    row['branches'][branch][region + '_gradient_times_input_abs_mean'] = (
+                        None if g is None or denominator.item() == 0 else
+                        ((g * x).abs() * mask).sum().div(denominator).item())
                 offset += width
             rows.append(row)
         return rows

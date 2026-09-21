@@ -33,6 +33,20 @@ class InputGradientTest(unittest.TestCase):
         self.assertFalse(probe.records)
         self.assertFalse(probe.handles)
 
+    def test_roi_regions_are_measured_separately(self):
+        module = EctraRecurrentAlignment({'feature_dim': 2, 'hidden_dim': 4,
+                                          'roi_context_dim': 1}).eval()
+        probe = EctraInputGradientProbe(module)
+        x = torch.ones(1, 7, 2, 2)
+        x[:, -1] = 0
+        x[:, -1, 0, 0] = 1
+        output = module.motion_net(x)
+        row = probe.summarize(output.sum())[0]
+        self.assertEqual(row['region_fraction']['roi'], 0.25)
+        self.assertEqual(row['region_fraction']['roi_ego_overlap'], 0.25)
+        self.assertIsNotNone(row['branches']['ego']['roi_gradient_times_input_abs_mean'])
+        probe.close()
+
 
 if __name__ == '__main__':
     unittest.main()
