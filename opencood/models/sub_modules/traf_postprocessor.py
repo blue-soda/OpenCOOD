@@ -3,7 +3,14 @@
 import torch
 
 from opencood.utils import box_utils
-from opencood.pcdet_utils.iou3d_nms.iou3d_nms_utils import nms_gpu
+
+try:
+    from opencood.pcdet_utils.iou3d_nms.iou3d_nms_utils import nms_gpu as _traf_nms_gpu
+except ImportError:
+    # The server's OpenCOOD environment does not ship nvcc-built pcdet
+    # extensions.  Keep the original CUDA path when available and fall back
+    # to the repository's geometry implementation otherwise.
+    _traf_nms_gpu = None
 
 
 class TrafResidualCoder:
@@ -65,14 +72,19 @@ class TrafPostProcessor:
             if box.numel() == 0:
                 results.append({"box3d_lidar": box, "scores": score})
                 continue
-            keep = nms_gpu(
-                box.contiguous(),
-                score.contiguous(),
-                thresh=self.post_cfg["score_thresh"],
-                pre_maxsize=self.post_cfg["nms_config"]["nms_pre_maxsize"],
-                post_maxsize=self.post_cfg["nms_config"]["nms_post_maxsize"],
-            )[0]
-            keep = keep.to(device=box.device, dtype=torch.long)
+            if _traf_nms_gpu is not None:
+                keep = _traf_nms_gpu(
+                    box.contiguous(),
+                    score.contiguous(),
+                    thresh=self.post_cfg["score_thresh"],
+                    pre_maxsize=self.post_cfg["nms_config"]["nms_pre_maxsize"],
+                    post_maxsize=self.post_cfg["nms_config"]["nms_post_maxsize"],
+                )[0]
+                keep = keep.to(device=box.device, dtype=torch.long)
+            else:
+                corners = box_utils.boxes_to_corners_3d(box, order="lhw")
+                keep = box_utils.nms_rotated(corners, score, self.post_cfg["score_thresh"])
+                keep = torch.as_tensor(keep, device=box.device, dtype=torch.long)
             results.append({
                 "box3d_lidar": box[keep][:, [0, 1, 2, 5, 4, 3, 6]],
                 "scores": score[keep],
