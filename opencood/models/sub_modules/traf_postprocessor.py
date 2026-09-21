@@ -3,6 +3,7 @@
 import torch
 
 from opencood.utils import box_utils
+from opencood.pcdet_utils.iou3d_nms.iou3d_nms_utils import nms_gpu
 
 
 class TrafResidualCoder:
@@ -64,9 +65,14 @@ class TrafPostProcessor:
             if box.numel() == 0:
                 results.append({"box3d_lidar": box, "scores": score})
                 continue
-            corners = box_utils.boxes_to_corners_3d(box, order="lhw")
-            keep = box_utils.nms_rotated(corners, score, self.post_cfg["score_thresh"])
-            keep = torch.as_tensor(keep, device=box.device, dtype=torch.long)
+            keep = nms_gpu(
+                box.contiguous(),
+                score.contiguous(),
+                thresh=self.post_cfg["score_thresh"],
+                pre_maxsize=self.post_cfg["nms_config"]["nms_pre_maxsize"],
+                post_maxsize=self.post_cfg["nms_config"]["nms_post_maxsize"],
+            )[0]
+            keep = keep.to(device=box.device, dtype=torch.long)
             results.append({
                 "box3d_lidar": box[keep][:, [0, 1, 2, 5, 4, 3, 6]],
                 "scores": score[keep],
