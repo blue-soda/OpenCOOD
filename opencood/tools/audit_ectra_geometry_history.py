@@ -30,6 +30,8 @@ def main():
     parser.add_argument('--checkpoint', required=True)
     parser.add_argument('--output', required=True)
     parser.add_argument('--samples', type=int, default=8)
+    parser.add_argument('--input_gradients', action='store_true',
+                        help='probe detection/total loss sensitivity to recurrent input branches')
     args = parser.parse_args()
     destination = Path(args.output)
     if destination.exists():
@@ -42,6 +44,10 @@ def main():
     model = train_utils.create_model(cfg).cuda().train()
     model.load_state_dict(torch.load(args.checkpoint, map_location='cpu'), strict=True)
     criterion = train_utils.create_loss(cfg)
+    probe = None
+    if args.input_gradients:
+        from opencood.tools.ectra_gradient_diagnostics import EctraInputGradientProbe
+        probe = EctraInputGradientProbe(model.ectra)
     rows = []
     for idx in range(args.samples):
         seed(303 + idx)
@@ -57,9 +63,15 @@ def main():
         history = new['ego']['ectra_ego_history']
         batch = train_utils.to_device(dataset.collate_batch_test([new]), torch.device('cuda'))
         model.zero_grad()
+        if probe is not None:
+            probe.clear()
         result = model(batch['ego'], dataset)
-        loss = add_auxiliary_losses(cfg, result, criterion(result, batch['ego']['label_dict']))
+        detection_loss = criterion(result, batch['ego']['label_dict'])
+        loss = add_auxiliary_losses(cfg, result, detection_loss)
         assert torch.isfinite(loss).all()
+        input_gradients = None if probe is None else {
+            'detection': probe.summarize(detection_loss),
+            'total': probe.summarize(loss)}
         loss.backward()
         grads = {}
         for name in ('motion_net', 'calib_net', 'trust_net', 'candidate_net'):
@@ -75,12 +87,18 @@ def main():
                    diagnostics={key: float(value.detach().mean()) for key, value in result.items()
                                 if key.startswith('ectra_') and torch.is_tensor(value)})
         rows.append(row)
+        if input_gradients is not None:
+            row['input_gradients'] = input_gradients
         print(json.dumps(row), flush=True)
-        del result, loss, batch
+        del result, loss, detection_loss, batch
+        if probe is not None:
+            probe.clear()
     valid_rows = [row for row in rows if not row.get('skipped')]
     assert valid_rows, 'No usable audit samples'
     assert all(any(row['gradients'][key] > 0 for row in valid_rows) for key in valid_rows[0]['gradients'])
     destination.write_text(json.dumps(dict(status='passed', rows=rows), indent=2))
+    if probe is not None:
+        probe.close()
 
 
 if __name__ == '__main__':
