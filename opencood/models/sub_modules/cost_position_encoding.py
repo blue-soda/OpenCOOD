@@ -14,7 +14,7 @@ import math
 import torch
 from torch import nn
 
-from .util.misc import NestedTensor
+from .cost_util_misc import NestedTensor
 
 
 class PositionEmbeddingSine(nn.Module):
@@ -92,7 +92,6 @@ def build_position_encoding(args):
         raise ValueError(f"not supported {args.position_embedding}")
 
     return position_embedding
-
 
 
 
