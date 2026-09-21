@@ -1,0 +1,20 @@
+name: dair_capri_v1
+base_config: opencood/hypes_yaml/dair-v2x/repro/dair_cobevflow_stage2_wide.yaml
+single_checkpoint: /data0/chen/gzc/workspace/logs/logs/dairv2x/repro_dair_single_pointpillar_wide_for_codyntrust_cobevflow_2026_09_11_02_51_02/net_epoch_bestval_at57.pth
+seed: 2201
+eval_seed: 303
+frame_period_s: 0.1
+epochs: 3
+learning_rate: 0.0002
+weight_decay: 0.0001
+sender:
+  max_instances: 64
+  points_per_instance: 16
+  background_points: 192
+  background_min_z: -1.5
+model:
+  hidden_dim: 64
+  max_acceleration: 6.0
+  match_radius: 5.0
+  max_missing_age_s: 2.0
+  fusion_radius: 6.0
