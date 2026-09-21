@@ -13,7 +13,7 @@ import sys
 import time
 
 sys.path.insert(0, os.getcwd())
-from opencood.tools.ectra_ablation_utils import ABLATIONS
+from opencood.tools.ectra_ablation_utils import ABLATIONS, DEFAULT_ABLATIONS
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
     parser.add_argument('--config', required=True)
     parser.add_argument('--output', required=True)
     parser.add_argument('--gpu', required=True)
-    parser.add_argument('--modes', default=','.join(ABLATIONS))
+    parser.add_argument('--modes', default=','.join(DEFAULT_ABLATIONS))
     parser.add_argument('--limit', type=int, default=256,
                         help='0 means full evaluation; screening AP is not final AP')
     parser.add_argument('--timeout', type=int, default=7200)

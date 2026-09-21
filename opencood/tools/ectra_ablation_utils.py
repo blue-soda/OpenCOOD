@@ -10,7 +10,10 @@ import torch
 ABLATIONS = ('none', 'recurrent_bypass', 'motion_identity', 'motion_no_decay',
              'calib_identity', 'trust_uniform', 'candidate_zero',
              'roi_context_zero', 'roi_refiner_bypass', 'roi_flow_bypass',
-             'roi_trust_bypass')
+             'roi_trust_bypass', 'ego_history_zero', 'ego_history_current')
+
+# History-specific interventions are opt-in; legacy checkpoints have no payload.
+DEFAULT_ABLATIONS = tuple(mode for mode in ABLATIONS if not mode.startswith('ego_history_'))
 
 
 def install_ablation(model, mode):
@@ -25,7 +28,26 @@ def install_ablation(model, mode):
     if recurrent is None or refiner is None:
         raise ValueError('This ablation requires both ECTRA branches')
     handles = []
-    if mode == 'recurrent_bypass':
+    if mode in ('ego_history_zero', 'ego_history_current'):
+        if recurrent.coordinate_mode != 'collaborator_latest':
+            raise ValueError('Ego history interventions require metric alignment')
+        original = recurrent.forward
+
+        def forward(self, features, record_len, time_intervals=None,
+                    roi_context=None, pairwise_t_matrix=None, ego_history=None):
+            if ego_history is None:
+                raise ValueError('Ego history intervention requires real history input')
+            replacement = None
+            if mode == 'ego_history_zero':
+                replacement = dict(ego_history)
+                replacement['features'] = torch.zeros_like(ego_history['features'])
+                replacement['valid'] = torch.zeros_like(ego_history['valid'])
+            # None deliberately selects the existing current-ego reference path.
+            return original(features, record_len, time_intervals, roi_context,
+                            pairwise_t_matrix, replacement)
+
+        recurrent.forward = MethodType(forward, recurrent)
+    elif mode == 'recurrent_bypass':
         handles.append(recurrent.register_forward_hook(
             lambda module, inputs, output: (inputs[0], output[1])))
     elif mode == 'motion_identity':

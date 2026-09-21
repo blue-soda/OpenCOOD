@@ -18,6 +18,8 @@ def make_model():
 class AblationTest(unittest.TestCase):
     def test_all_recurrent_interventions_have_finite_outputs(self):
         for mode in ABLATIONS:
+            if mode.startswith('ego_history_'):
+                continue
             with self.subTest(mode=mode):
                 model = make_model()
                 install_ablation(model, mode)
@@ -60,6 +62,41 @@ class AblationTest(unittest.TestCase):
     def test_training_interventions_rejected(self):
         with self.assertRaises(ValueError):
             install_ablation(make_model().train(), 'calib_identity')
+
+    def test_history_interventions_preserve_inputs_and_weights(self):
+        for mode in ('ego_history_zero', 'ego_history_current'):
+            model = make_model()
+            model.ectra.coordinate_mode = 'collaborator_latest'
+            model.ectra.extrapolate_to_current = False
+            model.ectra.lidar_range = [-5, -4, -3, 5, 4, 2]
+            x = torch.rand(4, 2, 4, 5)
+            lengths = torch.tensor([2])
+            times = torch.tensor([0., 0., -3., -6.])
+            transforms = torch.eye(4).repeat(1, 2, 2, 1, 1)
+            history = {'features': torch.rand(1, 2, 2, 4, 5),
+                       'valid': torch.ones(1, 2, dtype=torch.bool),
+                       'to_current_ego': torch.eye(4).repeat(1, 2, 1, 1)}
+            saved_history = {k: v.clone() for k, v in history.items()}
+            saved_weights = {k: v.clone() for k, v in model.state_dict().items()}
+            current_output, _ = model.ectra(x, lengths, times, pairwise_t_matrix=transforms)
+            install_ablation(model, mode)
+            actual, aux = model.ectra(x, lengths, times,
+                                     pairwise_t_matrix=transforms, ego_history=history)
+            self.assertTrue(torch.isfinite(actual).all())
+            if mode == 'ego_history_current':
+                torch.testing.assert_allclose(actual, current_output)
+            else:
+                self.assertEqual(aux['ectra_ego_reference_coverage'].item(), 0)
+            for key in history:
+                torch.testing.assert_allclose(history[key], saved_history[key])
+            for key, value in model.state_dict().items():
+                torch.testing.assert_allclose(value, saved_weights[key])
+            with self.assertRaises(ValueError):
+                model.ectra(x, lengths, times, pairwise_t_matrix=transforms)
+
+    def test_history_interventions_reject_legacy_coordinates(self):
+        with self.assertRaises(ValueError):
+            install_ablation(make_model(), 'ego_history_zero')
 
 
 if __name__ == '__main__':
