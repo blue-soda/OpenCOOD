@@ -17,6 +17,7 @@ from opencood.models.sub_modules.cost_deformable_detr import DeformableDETR
 from opencood.tools.inference_utils import inference_late_fusion
 from opencood.utils.cost_transformation_utils import align_features
 from opencood.models.sub_modules.cost_communication import CompressFuse
+from opencood.models.sub_modules.cost_postprocessor import CostPostProcessor
 
 
 class CostPointPillarCost(nn.Module):
@@ -78,7 +79,17 @@ class CostPointPillarCost(nn.Module):
             self.align_ratio = args['feature_stride'] * args['voxel_size'][0] # to fix
         # self.multi_scale = args['deformable_transformer']['multi_scale']
         self.use_temporal = args['deformable_transformer']['multi_time']
+        self.postprocessor = None
         # self.ms_strides = args['deformable_transformer']['ms_strides']
+
+    def set_postprocessor(self, params):
+        """Attach CoST's decode/project/NMS implementation after dataset setup."""
+        self.postprocessor = CostPostProcessor(params)
+
+    def post_process(self, data_dict, output_dict):
+        if self.postprocessor is None:
+            raise RuntimeError('Call set_postprocessor(dataset.post_processor.params) first')
+        return self.postprocessor.post_process(data_dict, output_dict)
 
     def backbone_fix(self):
         """

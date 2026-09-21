@@ -12,6 +12,7 @@ from torch import nn
 from opencood.models.traf_pillar_encoder import PillarFeatureNet
 from opencood.models.traf_sparseresnet import SparseResNet
 from opencood.models.traf_traf_align_fusion import TrafAlign_
+from opencood.models.traf_postprocessor import TrafPostProcessor
 
 
 class TrafTrafAlign(nn.Module):
@@ -27,6 +28,7 @@ class TrafTrafAlign(nn.Module):
         mapping_dim = int(self.cfg['model']['deform']['mapping_dim'])
         self.cls_head = nn.Conv2d(mapping_dim, 2, kernel_size=1)
         self.reg_head = nn.Conv2d(mapping_dim, 14, kernel_size=1)
+        self.postprocessor = TrafPostProcessor(self.cfg)
 
     def _runtime_data(self, data_dict):
         data = dict(data_dict)
@@ -50,9 +52,14 @@ class TrafTrafAlign(nn.Module):
         features = self.backbone(features, data_dict)
         fused, trajectory, offsets = self.fusion_net(
             features, data_dict, lidar)
-        return {
+        output = {
             'psm': self.cls_head(fused),
             'rm': self.reg_head(fused),
             'x_traj': trajectory,
             'x_offset': offsets,
         }
+        return output
+
+    def post_process(self, data_dict, output_dict):
+        """Run TraF's anchor decode and rotated-NMS post-processing."""
+        return self.postprocessor.post_process(data_dict, output_dict)
