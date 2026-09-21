@@ -14,7 +14,7 @@ from opencood.models.sub_modules.cost_swap_fusion_modules import \
     SwapFusionEncoder
 from opencood.models.sub_modules.cost_fuse_utils import regroup
 from opencood.models.sub_modules.cost_deformable_detr import DeformableDETR
-from opencood.tools.infrence_utils import inference_late_fusion
+from opencood.tools.inference_utils import inference_late_fusion
 from opencood.utils.transformation_utils import align_features
 from opencood.models.sub_modules.cost_communication import CompressFuse
 
@@ -281,6 +281,5 @@ class CostPointPillarCost(nn.Module):
         }
 
         return output_dict
-
 
 
