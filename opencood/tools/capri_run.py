@@ -175,7 +175,7 @@ def main():
                     and saved_visualizations < args.max_vis):
                 from opencood.visualization.simple_vis import visualize
                 corners, scores = predictions(result, dataset.post_processor)
-                gt_corners = dataset.post_processor.generate_gt_bbx(batch)
+                gt_corners = box_utils.boxes_to_corners_3d(gt.to(result['boxes']), order='hwl')
                 lidar = data['processed_lidar']
                 points = lidar['voxel_features'][lidar['voxel_coords'][:, 0] == 0, 0, :4]
                 visualize(corners.detach(), gt_corners.detach(), points.detach(),
