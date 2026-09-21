@@ -12,7 +12,7 @@ from torch import nn
 from opencood.models.traf_pillar_encoder import PillarFeatureNet
 from opencood.models.traf_sparseresnet import SparseResNet
 from opencood.models.traf_traf_align_fusion import TrafAlign_
-from opencood.models.traf_postprocessor import TrafPostProcessor
+from opencood.models.sub_modules.traf_postprocessor import TrafPostProcessor
 
 
 class TrafTrafAlign(nn.Module):
