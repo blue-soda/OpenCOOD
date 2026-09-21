@@ -1,6 +1,7 @@
 """CAPRI DAIR training/evaluation. No ECTRA model or flow compensation is used."""
 import argparse
 import copy
+import distutils.version
 import hashlib
 import json
 import os
