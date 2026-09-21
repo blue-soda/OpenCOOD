@@ -293,6 +293,8 @@ class EctraRecurrentAlignment(nn.Module):
         obs_trust_mean = []
         write_gate_mean = []
         reference_coverage = []
+        reference_roi_coverage = []
+        reference_roi_signal = []
         cav_offset = 0
         for batch_idx, batch_features in enumerate(chunks):
             cav_num = int(record_len[batch_idx].item())
@@ -343,6 +345,14 @@ class EctraRecurrentAlignment(nn.Module):
                     curr_time = torch.abs(batch_intervals[cav_idx, frame_idx:frame_idx + 1])
                     dt = torch.clamp(prev_time - curr_time, min=0.0)
                     ego_ref = ego_references[frame_idx:frame_idx + 1]
+                    if self.coordinate_mode == 'collaborator_latest' and cav_context is not None:
+                        roi = (cav_context[:, :1] > 0).to(features).detach()
+                        roi_area = roi.sum()
+                        if roi_area.item() > 0:
+                            valid_ref = ego_validity[frame_idx:frame_idx + 1].detach()
+                            reference_roi_coverage.append((roi * valid_ref).sum() / roi_area)
+                            signal = (ego_ref.detach().abs().amax(dim=1, keepdim=True) > 0)
+                            reference_roi_signal.append((roi * signal).sum() / roi_area)
                     hidden_pred, motion_flow, motion_gamma = self._propagate(
                         hidden, ego_ref, dt, cav_context)
                     hidden, obs_calib, calib_flow, last_trust, r_pred, r_obs, write_gate, roi_trust_fraction = self._update(
@@ -383,6 +393,9 @@ class EctraRecurrentAlignment(nn.Module):
         aux = {}
         if reference_coverage:
             aux['ectra_ego_reference_coverage'] = torch.stack(reference_coverage).mean()
+        if reference_roi_coverage:
+            aux['ectra_roi_ego_geometric_coverage'] = torch.stack(reference_roi_coverage).mean()
+            aux['ectra_roi_ego_nonzero_fraction'] = torch.stack(reference_roi_signal).mean()
         if trust_maps:
             aux['ectra_trust'] = torch.cat(trust_maps, dim=0)
         if motion_losses:

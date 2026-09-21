@@ -40,6 +40,28 @@ class GeometryTest(unittest.TestCase):
         self.assertEqual(y.sum().item(), 0)
         self.assertEqual(mask.sum().item(), 0)
 
+    def test_roi_reference_geometry_is_distinct_from_signal(self):
+        model = EctraRecurrentAlignment(dict(
+            feature_dim=1, hidden_dim=2, gate_dim=2, roi_context_dim=1,
+            coordinate_mode='collaborator_latest', lidar_range=self.bounds,
+            extrapolate_to_current=False)).eval()
+        features = torch.ones(4, 1, 9, 9)
+        context = torch.zeros(2, 1, 9, 9)
+        context[1, :, 4, 4] = 1
+        transforms = torch.eye(4).repeat(1, 2, 2, 1, 1)
+        history = {'features': torch.zeros(1, 2, 1, 9, 9),
+                   'valid': torch.ones(1, 2, dtype=torch.bool),
+                   'to_current_ego': torch.eye(4).repeat(1, 2, 1, 1)}
+        for valid, signal, expected_coverage, expected_signal in [
+                (True, 0, 1, 0), (True, 1, 1, 1), (False, 1, 0, 0)]:
+            history['features'].fill_(signal)
+            history['valid'].fill_(valid)
+            _, aux = model(features, torch.tensor([2]), torch.tensor([0., 0., -3., -6.]),
+                           roi_context=context, pairwise_t_matrix=transforms,
+                           ego_history=history)
+            self.assertAlmostEqual(aux['ectra_roi_ego_geometric_coverage'].item(), expected_coverage)
+            self.assertAlmostEqual(aux['ectra_roi_ego_nonzero_fraction'].item(), expected_signal)
+
     def test_static_scene_uses_one_coordinate_frame(self):
         model = EctraRecurrentAlignment(dict(
             feature_dim=1, hidden_dim=2, gate_dim=2,
