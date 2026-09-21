@@ -45,4 +45,8 @@ class CostPostProcessor:
         corners = box_utils.project_box3d(corners, transform.to(torch.float32))
         keep = box_utils.nms_rotated(corners, scores, self.params["nms_thresh"])
         keep = torch.as_tensor(keep, device=boxes.device, dtype=torch.long)
-        return corners[keep], scores[keep]
+        corners, scores = corners[keep], scores[keep]
+        within = box_utils.get_mask_for_boxes_within_range_torch(
+            corners, self.params["anchor_args"]["cav_lidar_range"]
+        )
+        return corners[within], scores[within]
