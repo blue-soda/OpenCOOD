@@ -85,6 +85,8 @@ def main():
     parser.add_argument('--max_steps', type=int, default=0, help='Smoke limit; 0 means full split')
     parser.add_argument('--epochs', type=int)
     parser.add_argument('--workers', type=int, default=4)
+    parser.add_argument('--save_vis_interval', type=int, default=0)
+    parser.add_argument('--max_vis', type=int, default=6)
     args = parser.parse_args()
     cfg = yaml.safe_load(Path(args.config).read_text())
     if args.mode == 'eval' and not args.checkpoint:
@@ -118,12 +120,14 @@ def main():
                 'checkpoint_sha256': digest(args.checkpoint) if args.checkpoint else None,
                 'commit': subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip(),
                 'parameters': sum(p.numel() for p in model.parameters()),
+                'frozen_sender_parameters': sum(p.numel() for p in sender.parameters()),
                 'modules': {name: sum(p.numel() for p in module.parameters()) for name, module in model.named_children()},
                 'smoke': args.max_steps > 0, 'started_at': time.time()}
     (out/'manifest.json').write_text(json.dumps(metadata, indent=2))
     writer = SummaryWriter(str(out/'tensorboard'))
     epochs = (args.epochs or cfg['epochs']) if args.mode == 'train' else 1
     total_step = 0
+    saved_visualizations = 0
     for epoch in range(epochs):
         statistics = {x: {'tp': [], 'fp': [], 'gt': 0, 'score': []} for x in (.3, .5, .7)}
         identities, losses = [], []
@@ -167,6 +171,17 @@ def main():
             row = dict(epoch=epoch+1, step=index, loss=float(loss.detach()), sample_idx=sample,
                        time_intervals=intervals, communication_bytes=communication, **parts,
                        **result['diagnostics'])
+            if (args.save_vis_interval > 0 and total_step % args.save_vis_interval == 0
+                    and saved_visualizations < args.max_vis):
+                from opencood.visualization.simple_vis import visualize
+                corners, scores = predictions(result, dataset.post_processor)
+                gt_corners = dataset.post_processor.generate_gt_bbx(batch)
+                lidar = data['processed_lidar']
+                points = lidar['voxel_features'][lidar['voxel_coords'][:, 0] == 0, 0, :4]
+                visualize(corners.detach(), gt_corners.detach(), points.detach(),
+                          dataset.post_processor.params['gt_range'],
+                          str(out/('ego_sparse_scene_%04d.png' % saved_visualizations)), method='bev')
+                saved_visualizations += 1
             if args.mode == 'train' and (index < 3 or index % 100 == 0):
                 row['gradients'] = gradients
             with (out/'scalars.jsonl').open('a') as stream:
