@@ -76,3 +76,14 @@ def test_collected_orientation_composes_sensor_and_final_transport_turn():
     data=model.collect([track],include_orientation=True)
     torch.testing.assert_close(data[4],torch.tensor([[torch.sin(torch.tensor(.5)),torch.cos(torch.tensor(.5))]]))
     assert torch.equal(data[1],message['features'])
+
+
+def test_one_observation_does_not_learn_acceleration_without_velocity():
+    model=temporal();model.settings['minimum_motion_observations']=2
+    with torch.no_grad():model.motion[-1].bias.fill_(1.)
+    track=model.observe(msg(-.5,0.),0,-.5,mode='learned')
+    assert track.acceleration.abs().sum()==0 and track.yaw_rate.abs().sum()==0
+    state=model.predict(track,0.,'learned')
+    torch.testing.assert_close(state.box,track.box)
+    next_track=model.observe(msg(0.,1.),0,0.,state,mode='learned')
+    assert next_track.acceleration.abs().sum()>0

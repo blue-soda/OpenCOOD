@@ -65,6 +65,9 @@ class Temporal(nn.Module):
             angle = box[6:7]-old.observed_box[6:7]
             omega = (torch.atan2(angle.sin(), angle.cos())/dt).clamp(-self.settings['max_yaw_rate'], self.settings['max_yaw_rate'])
         correction = self.motion(torch.cat((hidden, velocity/30))).tanh()
+        observation_count = 1 if old is None else old.observations+1
+        if observation_count < self.settings.get('minimum_motion_observations', 1):
+            correction = correction*0
         acceleration = correction[:2]*self.settings['max_acceleration']
         if mode == 'learned':
             omega = (omega+correction[2:3]*self.settings['max_yaw_rate']).clamp(-self.settings['max_yaw_rate'], self.settings['max_yaw_rate'])
@@ -77,7 +80,7 @@ class Temporal(nn.Module):
             caches[source] = dict(box=box, points=message['points'][ids], features=message['features'][ids],
                                   time=time, frame_id=message['metadata']['frame_id'], score=score, source_yaw=source_yaw)
         return Track(box, hidden, velocity, acceleration, omega, time, box, time, score, caches,
-                     1 if old is None else old.observations+1)
+                     observation_count)
 
     def update(self, tracks, message, time, mode='learned'):
         predicted = [self.predict(t, time, mode) for t in tracks]

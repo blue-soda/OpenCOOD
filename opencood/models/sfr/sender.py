@@ -93,17 +93,18 @@ class SfrSender(PointPillarCodyntrustSingle):
         predictions = postprocessor.single_post_process(output,
             torch.eye(4, device=raw.device).repeat(frame_count, 1, 1),
             torch.zeros(frame_count, device=raw.device), anchors, num_sweeps=frame_count, num_roi_thres=-1)
+        communication_features = spatial if self.settings.get('feature_level') == 'pillar' else features
         result = []
         for i in range(frame_count):
             pred = predictions[i]
             # Stable tie order on the deployed legacy torch version.
             order = torch.as_tensor(np.argsort(-pred['scores'].detach().cpu().numpy(), kind='stable'), device=raw.device)[:self.settings['max_instances']]
             boxes, scores = pred['pred_box_center_tensor'][order], pred['scores'][order]
-            sparse = foreground_cells(boxes, scores, features[i], self.bounds, self.settings)
+            sparse = foreground_cells(boxes, scores, communication_features[i], self.bounds, self.settings)
             keep = coords[:, 0] == i
-            maps, valid = geometry_map(raw[keep], processed['voxel_num_points'][keep], features.shape[-2:], self.bounds)
+            maps, valid = geometry_map(raw[keep], processed['voxel_num_points'][keep], communication_features.shape[-2:], self.bounds)
             result.append(dict(boxes=boxes, scores=scores, geometry=maps, observed=valid, **sparse))
-        return features, result
+        return communication_features, result
 
     def wire_message(self, message, metadata):
         """All receiver data passes through the actual codec, including evaluation."""

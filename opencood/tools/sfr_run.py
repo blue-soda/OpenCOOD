@@ -21,6 +21,7 @@ from opencood.data_utils.datasets.sfr_dair import SfrDAIRDataset
 from opencood.models.sfr.sender import SfrSender
 from opencood.models.sfr.temporal import Temporal
 from opencood.models.sfr.fusion import SfrFusion
+from opencood.models.sfr.pillar_fusion import SfrPillarFusion
 from opencood.models.sfr.geometry import transform_boxes, transform_points, associate, reader_to_reference
 from opencood.loss.point_pillar_tc_loss import PointPillarTcLoss
 from opencood.tools.train_utils import to_device
@@ -96,6 +97,7 @@ def motion_objective(model, messages, target, settings, prediction_mode='learned
     """Predict BEFORE target-time updates; frozen-detector pseudo labels explicitly identified."""
     histories = [m for m in messages if m['metadata']['agent_id'] != '0']
     terms, center_errors, counts = [], [], 0
+    excluded_history = 0
     targets = [(m['metadata']['time_s'], m) for m in histories]
     if target is not None:
         targets.append((0., target))
@@ -112,16 +114,28 @@ def motion_objective(model, messages, target, settings, prediction_mode='learned
         if not prefix:
             continue
         tracks, _ = model.sequence(prefix, time_s, prediction_mode)
+        minimum_observations = settings.get('motion_min_observations', 1)
+        excluded_history += sum(t.observations < minimum_observations for t in tracks)
+        tracks = [t for t in tracks if t.observations >= minimum_observations]
         if not tracks:
             continue
         boxes = torch.stack([t.box for t in tracks])
         keep = observation['scores'] >= settings['motion_pseudo_score']
         target_boxes = observation['boxes'][keep].detach()
-        rows, cols = associate(boxes.detach(), target_boxes, 4.)
+        assignment_boxes = boxes.detach()
+        if settings.get('motion_fixed_cv_targets', False):
+            reference, _ = model.sequence(prefix, time_s, 'cv')
+            def identity(track):
+                return (track.observed_time, tuple(track.observed_box.detach().cpu().tolist()))
+            by_identity = {identity(t): t.box.detach() for t in reference}
+            if any(identity(t) not in by_identity for t in tracks):
+                raise RuntimeError('Learned/CV history association diverged; cannot claim fixed target evaluation')
+            assignment_boxes = torch.stack([by_identity[identity(t)] for t in tracks])
+        rows, cols = associate(assignment_boxes, target_boxes, 4.)
         if not len(rows):
             continue
         # Exclude ambiguous target assignments within a small center margin.
-        distances = torch.cdist(boxes.detach()[:, :2], target_boxes[:, :2])
+        distances = torch.cdist(assignment_boxes[:, :2], target_boxes[:, :2])
         reliable = torch.ones(len(rows), dtype=torch.bool, device=boxes.device)
         if len(target_boxes) > 1:
             sorted_distance = distances[rows].sort(dim=1).values
@@ -139,6 +153,8 @@ def motion_objective(model, messages, target, settings, prediction_mode='learned
     zero = sum(p.sum()*0 for p in model.parameters())
     loss = sum(terms, zero)/max(counts, 1)
     return loss, dict(motion_valid_count=counts, motion_center_error_m=float(sum(center_errors)/counts) if counts else None,
+                     motion_excluded_history_count=excluded_history,
+                     motion_assignment='fixed_cv' if settings.get('motion_fixed_cv_targets', False) else 'prediction_dependent',
                      supervision='frozen_single_pseudo_boxes_axial_yaw')
 
 
@@ -194,7 +210,8 @@ def main():
         if saved['stage'] != 'motion' or saved['config']['temporal'] != cfg['temporal']:
             raise ValueError('Incompatible temporal checkpoint')
         temporal.load_state_dict(saved['model'], strict=True)
-    fusion = SfrFusion(sender, cfg['fusion']).to(device)
+    fusion_class = SfrPillarFusion if cfg['sender'].get('feature_level') == 'pillar' else SfrFusion
+    fusion = fusion_class(sender, cfg['fusion']).to(device)
     model = temporal if args.stage == 'motion' else fusion
     if args.checkpoint:
         saved = torch.load(args.checkpoint, map_location='cpu')
