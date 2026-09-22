@@ -18,6 +18,7 @@ class Track:
     score: torch.Tensor
     caches: dict
     observations: int = 1
+    observed_source: str = ''
 
 
 class Temporal(nn.Module):
@@ -56,6 +57,12 @@ class Temporal(nn.Module):
         box, score = message['boxes'][index], message['scores'][index]
         source = str(message['metadata']['agent_id'])
         dt = 0. if old is None else time-old.observed_time
+        if old is not None and self.settings.get('axial_observations', False):
+            # Frozen detector headings have a pi ambiguity. Resolve the nearest
+            # equivalent axis before estimating yaw rate or transporting caches.
+            angle = box[6:7]-old.box[6:7]
+            yaw = old.box[6:7]+.5*torch.atan2((2*angle).sin(), (2*angle).cos())
+            box = torch.cat((box[:6], yaw))
         hidden = self.observation_hidden(box, score, old, dt, message.get('quality', 1.))
         velocity = box.new_zeros(2) if old is None else old.velocity
         omega = box.new_zeros(1) if old is None else old.yaw_rate
@@ -80,19 +87,32 @@ class Temporal(nn.Module):
             caches[source] = dict(box=box, points=message['points'][ids], features=message['features'][ids],
                                   time=time, frame_id=message['metadata']['frame_id'], score=score, source_yaw=source_yaw)
         return Track(box, hidden, velocity, acceleration, omega, time, box, time, score, caches,
-                     observation_count)
+                     observation_count, source)
 
     def update(self, tracks, message, time, mode='learned'):
         predicted = [self.predict(t, time, mode) for t in tracks]
         predicted = [t for t in predicted if time-t.observed_time <= self.settings['ttl_s']]
         boxes = torch.stack([t.box for t in predicted]) if predicted else message['boxes'][:0]
         elapsed = max([time-t.observed_time for t in predicted] or [0.])
-        rows, cols = associate(boxes, message['boxes'], self.settings['match_radius_m']+self.settings['gate_growth_mps']*elapsed)
+        radius = self.settings['match_radius_m']+self.settings['gate_growth_mps']*elapsed
+        source = str(message['metadata']['agent_id'])
+        if predicted and self.settings.get('cross_source_radius_m') is not None:
+            radius = boxes.new_tensor([min(radius, self.settings['cross_source_radius_m'])
+                if t.observed_source and t.observed_source != source else radius for t in predicted])[:,None]
+        rows, cols = associate(boxes, message['boxes'], radius)
         matches = dict(zip(cols.tolist(), rows.tolist()))
         used = set(rows.tolist())
         result = [self.observe(message, j, time, predicted[matches[j]] if j in matches else None, mode) for j in range(len(message['boxes']))]
         result += [track for j, track in enumerate(predicted) if j not in used]
-        return result, {'matched': len(matches), 'births': len(message['boxes'])-len(matches), 'missing': len(predicted)-len(matches)}
+        axial_flips = sum(int(torch.cos(message['boxes'][col,6]-predicted[row].box[6]) < 0)
+                          for col,row in matches.items())
+        cross_matches = [(col,row) for col,row in matches.items()
+                         if predicted[row].observed_source and predicted[row].observed_source != source]
+        cross_far = sum(int((message['boxes'][col,:2]-predicted[row].box[:2]).norm() > 2.)
+                        for col,row in cross_matches)
+        return result, {'matched': len(matches), 'births': len(message['boxes'])-len(matches), 'missing': len(predicted)-len(matches),
+                        'axial_flip_matches': axial_flips, 'cross_source_matches': len(cross_matches),
+                        'cross_source_matches_over_2m': cross_far}
 
     def sequence(self, messages, query_time=0., mode='learned'):
         """Sample-local reference frame, dedup; simultaneous messages use a fixed order."""
@@ -110,7 +130,8 @@ class Temporal(nn.Module):
         sequences = {m['metadata']['sequence_id'] for m in ordered}
         if len(sequences) > 1:
             raise ValueError('Cross-scene recurrence is forbidden')
-        tracks, counts = [], {'matched': 0, 'births': 0, 'missing': 0, 'deduplicated': len(messages)-len(unique)}
+        tracks, counts = [], {'matched': 0, 'births': 0, 'missing': 0, 'deduplicated': len(messages)-len(unique),
+                             'axial_flip_matches': 0, 'cross_source_matches': 0, 'cross_source_matches_over_2m': 0}
         for message in ordered:
             tracks, update = self.update(tracks, message, message['metadata']['time_s'], mode)
             for key in update:

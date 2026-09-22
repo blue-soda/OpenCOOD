@@ -50,6 +50,7 @@ def main():
     p.add_argument('--p', type=float, default=.3)
     p.add_argument('--max_steps', type=int, default=0)
     p.add_argument('--workers', type=int, default=4)
+    p.add_argument('--temporal_variant', choices=['original','axial','axial_gate','infra_only'], default='original')
     args = p.parse_args()
     out = Path(args.output); out.mkdir(parents=True, exist_ok=False)
     cfg = yaml.safe_load(Path(args.config).read_text())
@@ -64,7 +65,12 @@ def main():
     device = torch.device('cuda')
     sender = SfrSender(base['model']['args'], cfg['sender']).to(device)
     sender.load_state_dict(torch.load(cfg['single_checkpoint'], map_location='cpu'), strict=True)
-    temporal = Temporal(cfg['temporal']).to(device).eval()
+    temporal_settings = dict(cfg['temporal'])
+    if args.temporal_variant in ('axial','axial_gate'):
+        temporal_settings['axial_observations'] = True
+    if args.temporal_variant == 'axial_gate':
+        temporal_settings['cross_source_radius_m'] = 2.
+    temporal = Temporal(temporal_settings).to(device).eval()
     model = SfrPillarFusion(sender, cfg['fusion']).to(device).eval()
     saved = torch.load(args.checkpoint, map_location='cpu')
     if saved['config'] != cfg or saved['stage'] != 'fusion':
@@ -76,10 +82,11 @@ def main():
                     single_sha256=digest(cfg['single_checkpoint']), split_sha256=digest(args.split_file),
                     source_sha256={str(f):digest(f) for f in list(Path('opencood/models/sfr').glob('*.py'))+
                                    [Path(__file__),Path('opencood/tools/sfr_run.py'),Path('opencood/data_utils/datasets/sfr_dair.py')]},
-                    config=cfg, note='GT and current-infra pseudo boxes only measure coverage; never enter messages or predictions. '
-                    'binary_prediction_support is a frozen-checkpoint diagnostic intervention, not a matched trained ablation.')
+                    config=cfg, temporal_settings=temporal_settings,
+                    note='GT and current-infra pseudo boxes only measure coverage; never enter messages or predictions. '
+                    'Temporal overrides and binary_prediction_support are frozen-checkpoint diagnostic interventions, not matched trained ablations.')
     (out/'manifest.json').write_text(json.dumps(manifest, indent=2))
-    names = ['ego', 'v4_soft', 'binary_prediction_support']
+    names = ['ego', 'v4_soft' if args.temporal_variant == 'original' else 'frozen_fusion', 'binary_prediction_support']
     stats = {n:{t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.3,.5,.7)} for n in names}
     all_iou, all_alpha, identities = {}, [], []
     for index, batch in enumerate(loader):
@@ -88,10 +95,12 @@ def main():
         batch = to_device(batch, device)
         with torch.no_grad():
             ego, messages, target, _ = prepare(batch, sender, dataset, cfg, need_target=True)
-            tracks, _ = temporal.sequence(messages, mode='cv')
+            history = [m for m in messages if m['metadata']['agent_id'] != '0'] if args.temporal_variant == 'infra_only' else messages
+            tracks, tracking = temporal.sequence(history, mode='cv')
             transported = temporal.collect(tracks, include_orientation=cfg['fusion'].get('orientation_conditioned', False))
             output, diagnostic = model(ego, transported, return_components=True)
             baseline, decoded, mask = diagnostic.pop('components')
+            diagnostic.update(tracking)
             binary = {key:baseline[key]+(mask>0).to(mask)*(value-baseline[key]) for key,value in decoded.items()}
             gt = dataset.post_processor.generate_gt_bbx(batch)
             ious = {}
@@ -121,7 +130,7 @@ def main():
     alpha = np.array(all_alpha)
     groups = dict(all=np.ones(len(alpha),dtype=bool), ego_missed_iou50=arrays['ego']<.5,
                   ego_missed_iou70=arrays['ego']<.7)
-    report = dict(samples=len(identities), gt_count=len(alpha), smoke=bool(args.max_steps),
+    report = dict(samples=len(identities), gt_count=len(alpha), smoke=bool(args.max_steps), temporal_variant=args.temporal_variant,
                   sample_time_sha256=hashlib.sha256(json.dumps(identities,sort_keys=True).encode()).hexdigest(), arms={}, groups={})
     for name in names:
         path=out/name;path.mkdir()

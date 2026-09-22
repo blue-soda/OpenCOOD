@@ -87,3 +87,25 @@ def test_one_observation_does_not_learn_acceleration_without_velocity():
     torch.testing.assert_close(state.box,track.box)
     next_track=model.observe(msg(0.,1.),0,0.,state,mode='learned')
     assert next_track.acceleration.abs().sum()>0
+
+
+def test_axial_flip_does_not_create_turn_or_rotate_immutable_cache():
+    model=temporal();model.settings['axial_observations']=True
+    first=msg(-.5,0.);first['points'][0,0]=1.
+    second=msg(0.,0.,source='0');second['boxes'][0,6]=torch.pi
+    before=second['boxes'].clone()
+    tracks,diagnostics=model.sequence([first,second],mode='cv')
+    assert len(tracks)==1 and diagnostics['axial_flip_matches']==1
+    assert tracks[0].yaw_rate.abs().max()<1e-5
+    torch.testing.assert_close(model.collect(tracks)[0],first['points'],atol=1e-5,rtol=0)
+    torch.testing.assert_close(second['boxes'],before,atol=0,rtol=0)
+    torch.testing.assert_close(tracks[0].caches['1']['points'],first['points'],atol=0,rtol=0)
+
+
+def test_cross_source_gate_preserves_distant_collaborator_and_same_source_motion():
+    model=temporal();model.settings['cross_source_radius_m']=2.
+    tracks,stats=model.sequence([msg(-.5,0.),msg(0.,3.,source='0')],mode='cv')
+    assert len(tracks)==2 and stats['cross_source_matches']==0
+    torch.testing.assert_close(model.collect(tracks)[0],torch.tensor([[0.,0.,0.]]))
+    same,_=model.sequence([msg(-.5,0.),msg(0.,3.)],mode='cv')
+    assert len(same)==1 and same[0].velocity[0]==pytest.approx(6.)

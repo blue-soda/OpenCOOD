@@ -11,12 +11,15 @@ import time
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', required=True)
-    parser.add_argument('--arm', choices=['cv', 'none', 'motion'], required=True)
+    parser.add_argument('--arm', choices=['cv', 'none', 'motion', 'learned'], required=True)
+    parser.add_argument('--temporal_checkpoint')
     parser.add_argument('--gpu', required=True)
     parser.add_argument('--config', required=True)
     parser.add_argument('--epochs', type=int, default=3)
     parser.add_argument('--run', action='store_true')
     args = parser.parse_args()
+    if (args.arm == 'learned') != bool(args.temporal_checkpoint):
+        parser.error('The learned fusion arm requires an explicit temporal checkpoint; other arms must omit it')
     root, arm = Path(args.root).resolve(), args.arm
     queue = root/('queue_'+arm)
     env = dict(os.environ, CUDA_VISIBLE_DEVICES=args.gpu, PYTHONPATH=os.getcwd(),
@@ -36,6 +39,8 @@ def main():
     training = root/(arm+'_train_v1')
     stage, motion = ('motion', 'learned') if arm == 'motion' else ('fusion', arm)
     common = [sys.executable, '-u', 'opencood/tools/sfr_run.py', '--config', args.config, '--stage', stage, '--workers', '4']
+    if args.temporal_checkpoint:
+        common += ['--temporal_checkpoint', args.temporal_checkpoint]
     commands = [common+['--output', str(training), '--temporal_mode', motion, '--epochs', str(args.epochs),
                         '--split_file', str(root/'splits/fit.json')]]
     for epoch in range(1, args.epochs+1):
