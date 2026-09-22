@@ -32,13 +32,17 @@ class SfrPillarFusion(nn.Module):
             if name.startswith('single_'):module.eval()
         return self
 
-    def forward(self,ego,transported):
+    def forward(self,ego,transported,return_components=False):
         with torch.no_grad():
             single=self.single_shrink(self.single_backbone(dict(spatial_features=ego))['spatial_features_2d'])
             baseline=dict(psm=self.single_cls_head(single),rm=self.single_reg_head(single))
             if self.single_dir_head is not None:baseline['dm']=self.single_dir_head(single)
         mass=ego.new_zeros(1,1,*ego.shape[-2:])
-        if transported is None:return baseline,dict(coverage_fraction=0.,coverage_mass=0.)
+        if transported is None:
+            diagnostics=dict(coverage_fraction=0.,coverage_mass=0.)
+            if return_components:
+                diagnostics['components']=(baseline,baseline,ego.new_zeros(1,1,*baseline['psm'].shape[-2:]))
+            return baseline,diagnostics
         xyz,features,ages,scores=transported[:4]
         inputs=torch.cat((features,transported[4]),-1) if self.orientation_conditioned else features
         received,mass=splat(xyz,inputs,self.bounds,ego.shape[-2:],scores)
@@ -51,6 +55,9 @@ class SfrPillarFusion(nn.Module):
         # Decode neighbourhood around received foreground rather than only the
         # exact sampled cell; no support means exact single predictions.
         mask=F.adaptive_max_pool2d(F.max_pool2d(support,7,stride=1,padding=3),single.shape[-2:])
+        decoded_output=output
         output={key:baseline[key]+mask*(value-baseline[key]) for key,value in output.items()}
-        return output,dict(coverage_fraction=float((support>0).float().mean()),coverage_mass=float(support.sum()),
-                           prediction_support_fraction=float((mask>0).float().mean()))
+        diagnostics=dict(coverage_fraction=float((support>0).float().mean()),coverage_mass=float(support.sum()),
+                         prediction_support_fraction=float((mask>0).float().mean()))
+        if return_components:diagnostics['components']=(baseline,decoded_output,mask)
+        return output,diagnostics

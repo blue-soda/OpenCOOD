@@ -24,3 +24,19 @@ def test_pillar_decoder_gradient_and_single_bn_fallback():
     assert model.adapter.weight.grad.abs().sum()>0 and model.backbone.conv.weight.grad.abs().sum()>0
     assert all(p.grad is None for p in model.single_backbone.parameters())
     torch.testing.assert_close(running,model.single_backbone.bn.running_mean,atol=0,rtol=0)
+
+
+def test_diagnostic_components_reconstruct_prediction_without_changing_forward():
+    sender=SimpleNamespace(bounds=[0,0,-1,8,8,1],backbone=Backbone().eval(),shrink_flag=False,
+                           cls_head=nn.Conv2d(8,2,1),reg_head=nn.Conv2d(8,14,1),use_dir=False)
+    model=SfrPillarFusion(sender,dict(orientation_conditioned=False)).eval()
+    ego=torch.randn(1,64,8,8)
+    received=(torch.tensor([[3.5,3.5,0.]]),torch.ones(1,64),torch.tensor([.3]),torch.tensor([.25]))
+    for message in (None,received):
+        original,_=model(ego,message)
+        output,diagnostic=model(ego,message,return_components=True)
+        baseline,decoded,mask=diagnostic['components']
+        assert mask.shape[-2:]==output['psm'].shape[-2:]
+        for key in output:
+            torch.testing.assert_close(output[key],original[key],atol=0,rtol=0)
+            torch.testing.assert_close(output[key],baseline[key]+mask*(decoded[key]-baseline[key]),atol=0,rtol=0)
