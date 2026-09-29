@@ -1,0 +1,51 @@
+{
+  "source": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_packet_audit_epoch19_20260929_v2",
+  "samples_for_byte_accounting": 64,
+  "mean_bytes": {
+    "address": 36217.03125,
+    "mask": 96578.75,
+    "count": 22230.796875,
+    "overhead": 276.0,
+    "mask_nonzero_2bit": 147892.4375,
+    "flat16_nonzero_2bit": 123747.75,
+    "occupancy_nonzero_2bit": 114038.40625
+  },
+  "accounting_scope": "Arithmetic estimates from observed 64-frame row/channel counts. New layouts not implemented.",
+  "zlib_probe": {
+    "frame_id": "000211",
+    "original_packet_bytes": 128189,
+    "packet_sha256": "b593dfbf72df292c09286256d412606957a04291727c81b6feeab47a7e05ab16",
+    "repeats": 30,
+    "results": [
+      {
+        "level": 1,
+        "compressed_bytes": 63487,
+        "encode_median_ms": 3.634983964730054,
+        "decode_median_ms": 0.9478124557062984,
+        "byte_exact": true
+      },
+      {
+        "level": 3,
+        "compressed_bytes": 60537,
+        "encode_median_ms": 6.570184486918151,
+        "decode_median_ms": 0.8388429996557534,
+        "byte_exact": true
+      },
+      {
+        "level": 6,
+        "compressed_bytes": 56832,
+        "encode_median_ms": 18.864437006413937,
+        "decode_median_ms": 0.8350199786946177,
+        "byte_exact": true
+      },
+      {
+        "level": 9,
+        "compressed_bytes": 54910,
+        "encode_median_ms": 138.91350652556866,
+        "decode_median_ms": 0.803817471023649,
+        "byte_exact": true
+      }
+    ],
+    "scope": "one saved packet only; no claim about 64-frame mean; CPU resident buffers; zlib stream excludes extra transport wrapper"
+  }
+}
