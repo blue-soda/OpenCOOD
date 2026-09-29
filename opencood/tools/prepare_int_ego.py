@@ -16,10 +16,15 @@ def main():
     directory.mkdir(parents=True, exist_ok=False)
     (directory/'sequence_manifest.json').write_text(json.dumps(manifest, indent=2))
     smoke = dict(manifest)
-    # Same deterministic subset for each mode; enough scans for timing warmup.
+    # Preserve causal prefix, including unlabeled warmup, through 32 labels.
     for split in ['train', 'val']:
-        smoke[split] = manifest[split][:64]
-    smoke['scope'] = 'SMOKE ONLY: first 64 valid scans per split'
+        labels, end = 0, 0
+        for end, row in enumerate(manifest[split], 1):
+            labels += int(row['supervised'])
+            if labels >= 32 and end >= 64:
+                break
+        smoke[split] = manifest[split][:end]
+    smoke['scope'] = 'SMOKE ONLY: causal prefix through at least 32 labels and 64 scans'
     (directory/'smoke_manifest.json').write_text(json.dumps(smoke, indent=2))
     print(json.dumps(manifest['summary'], indent=2), flush=True)
 

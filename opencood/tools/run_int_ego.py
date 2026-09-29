@@ -179,6 +179,9 @@ def main():
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--eval-only', action='store_true')
     args = parser.parse_args()
+    # TF32 convolution can amplify identity-path rounding through the detector.
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
     directory = Path(args.output)
     directory.mkdir(parents=True, exist_ok=False)
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed); torch.cuda.manual_seed_all(args.seed)
@@ -199,6 +202,7 @@ def main():
                       python=sys.executable, torch=torch.__version__, checkpoint_sha256=sha256(args.checkpoint),
                       manifest_sha256=sha256(args.manifest), strict_spatial_state_entries=loaded,
                       upstream_int='988157ff131a0c027472bd0f00c0bda0e08cded0',
+                      tf32=False,
                       protocol='FM-only; PC/PM disabled; dataset reference ego poses; BEV SE(2) nearest warp; ego labels only')
     write_json(directory/'manifest.json', provenance)
     # Confirm single and identity-initialized Concat preserve pretrained detector output.
