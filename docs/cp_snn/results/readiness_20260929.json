@@ -1,0 +1,548 @@
+{
+  "kind": "cp_snn_readiness_only",
+  "status": "passed",
+  "git_commit": "388035953c9bb6b1e19c50310c18c9452204d0d0",
+  "git_status": "?? .codex_transfer/\n?? build_iou3d_setup.py\n?? opencood/hypes_yaml/codyntrust_optimized_dair.yaml\n?? opencood/models/point_pillar_codyntrust_optimized.py\n?? opencood/tools/profile_codyntrust_stages_compat.py\n",
+  "config": "opencood/hypes_yaml/dair-v2x/repro/dair_cobevflow_stage1_sync_where2comm_wide.yaml",
+  "config_sha256": "d5d62227b94b225a6e07e92bab4bfbc684ba865e93d75c61caaa2c72fb3b12d1",
+  "arguments": {
+    "config": "opencood/hypes_yaml/dair-v2x/repro/dair_cobevflow_stage1_sync_where2comm_wide.yaml",
+    "samples": 3,
+    "seed": 20260929,
+    "voxel_size": [
+      0.4,
+      0.4,
+      0.1
+    ],
+    "output": "/data0/chen/gzc/workspace/diagnostics/cp_snn_20260929/readiness.json"
+  },
+  "environment": {
+    "python": "3.7.11",
+    "torch": "1.10.0+cu113",
+    "numpy": "1.21.6",
+    "spconv": "2.3.6",
+    "cuda_runtime": "11.3",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "cuda_visible_devices": "1",
+    "python_executable": "/data0/chen/miniconda3/envs/opencood/bin/python"
+  },
+  "count_operator_boundary_check": "passed",
+  "protocol": {
+    "data_root": "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+    "sample_count_per_split": 3,
+    "seed": 20260929,
+    "reader": "CoDynTrustDAIRIrregularFlowDataset",
+    "added_delay_frames": 0,
+    "history_frames": 0,
+    "preprocess_backend": "spconv2",
+    "reader_voxel_size": [
+      0.4,
+      0.4,
+      4
+    ],
+    "probe_voxel_size": [
+      0.4,
+      0.4,
+      0.1
+    ],
+    "lidar_range": [
+      -100.8,
+      -40,
+      -3,
+      100.8,
+      40,
+      1
+    ],
+    "augmentation": false,
+    "probe_batchnorm": "train",
+    "probe_weights": "random",
+    "timestamp_note": "Reader timestamp is a frame ID; sensor timestamps below are raw metadata units."
+  },
+  "splits": {
+    "train": {
+      "split_file": "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/train.json",
+      "split_sha256": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+      "split_entries": 4811,
+      "reader_entries": 4811,
+      "samples": [
+        {
+          "index": 0,
+          "vehicle_frame_id": "000010",
+          "infrastructure_frame_id": "006689",
+          "infra_to_ego": [
+            [
+              -0.019201056365016206,
+              0.9997554204963823,
+              -0.010973541933650043,
+              85.1196206550994
+            ],
+            [
+              -0.9997034843282979,
+              -0.01903335211367185,
+              0.0151879863437557,
+              56.39764733959237
+            ],
+            [
+              0.014975408386037482,
+              0.011261913488350183,
+              0.9998244378130855,
+              -0.6997991932817875
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "vehicle_pointcloud_timestamp_raw": "1626155123981443",
+          "infra_pointcloud_timestamp_raw": "1626155124004314",
+          "infra_minus_vehicle_timestamp_raw": 22871,
+          "gt_boxes_in_range": 30,
+          "collated_voxel_shape": [
+            18486,
+            32,
+            4
+          ],
+          "sparse_probe": {
+            "agents": [
+              {
+                "raw_points": 66003,
+                "active_voxels": 20205,
+                "voxel_cap_reached": false
+              },
+              {
+                "raw_points": 57435,
+                "active_voxels": 17288,
+                "voxel_cap_reached": false
+              }
+            ],
+            "grid_xyz": [
+              504,
+              200,
+              40
+            ],
+            "feature_shape": [
+              37493,
+              16
+            ],
+            "count_histogram_0_to_4": [
+              431658,
+              132303,
+              29460,
+              5350,
+              1117
+            ],
+            "nonzero_value_fraction": 0.2804356813430786,
+            "input_grad_abs_sum": 0.021406514570116997,
+            "weight_grad_abs_sum": 8.084022521972656,
+            "count_tensor_bytes_float32": 2399552,
+            "coordinate_tensor_bytes_int32": 599888,
+            "packed_payload_bytes": null,
+            "note": "No codec, fusion, detector head, trained weights, or energy measurement."
+          },
+          "status": "passed"
+        },
+        {
+          "index": 2405,
+          "vehicle_frame_id": "008822",
+          "infrastructure_frame_id": "019842",
+          "infra_to_ego": [
+            [
+              0.026853942571494125,
+              0.99960058480317,
+              -0.008805488602410908,
+              39.99175792346523
+            ],
+            [
+              -0.9992244841258376,
+              0.02709551493252495,
+              0.02857032365926108,
+              69.40118426921057
+            ],
+            [
+              0.028797501485728027,
+              0.00803143397542518,
+              0.9995530000837763,
+              -1.477975315489843
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "vehicle_pointcloud_timestamp_raw": "1626165661617971",
+          "infra_pointcloud_timestamp_raw": "1626165661622634",
+          "infra_minus_vehicle_timestamp_raw": 4663,
+          "gt_boxes_in_range": 6,
+          "collated_voxel_shape": [
+            14644,
+            32,
+            4
+          ],
+          "sparse_probe": {
+            "agents": [
+              {
+                "raw_points": 61340,
+                "active_voxels": 17433,
+                "voxel_cap_reached": false
+              },
+              {
+                "raw_points": 43729,
+                "active_voxels": 10489,
+                "voxel_cap_reached": false
+              }
+            ],
+            "grid_xyz": [
+              504,
+              200,
+              40
+            ],
+            "feature_shape": [
+              27922,
+              16
+            ],
+            "count_histogram_0_to_4": [
+              326189,
+              95814,
+              19012,
+              4091,
+              1646
+            ],
+            "nonzero_value_fraction": 0.26986560225486755,
+            "input_grad_abs_sum": 0.0181430671364069,
+            "weight_grad_abs_sum": 6.590710163116455,
+            "count_tensor_bytes_float32": 1787008,
+            "coordinate_tensor_bytes_int32": 446752,
+            "packed_payload_bytes": null,
+            "note": "No codec, fusion, detector head, trained weights, or energy measurement."
+          },
+          "status": "passed"
+        },
+        {
+          "index": 4810,
+          "vehicle_frame_id": "020374",
+          "infrastructure_frame_id": "004215",
+          "infra_to_ego": [
+            [
+              0.07910172458261856,
+              0.9968541362103986,
+              -0.004974765147797986,
+              -63.72227926304424
+            ],
+            [
+              -0.9967416991258385,
+              0.0790118535494446,
+              -0.01622073433656143,
+              78.2863894656382
+            ],
+            [
+              -0.015776640700470596,
+              0.006241643926186675,
+              0.9998560593852032,
+              0.5570778704774142
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "vehicle_pointcloud_timestamp_raw": "1626246983828120",
+          "infra_pointcloud_timestamp_raw": "1626246983817151",
+          "infra_minus_vehicle_timestamp_raw": -10969,
+          "gt_boxes_in_range": 25,
+          "collated_voxel_shape": [
+            20020,
+            32,
+            4
+          ],
+          "sparse_probe": {
+            "agents": [
+              {
+                "raw_points": 65939,
+                "active_voxels": 17313,
+                "voxel_cap_reached": false
+              },
+              {
+                "raw_points": 64737,
+                "active_voxels": 19551,
+                "voxel_cap_reached": false
+              }
+            ],
+            "grid_xyz": [
+              504,
+              200,
+              40
+            ],
+            "feature_shape": [
+              36864,
+              16
+            ],
+            "count_histogram_0_to_4": [
+              431804,
+              124059,
+              26649,
+              5709,
+              1603
+            ],
+            "nonzero_value_fraction": 0.2679104208946228,
+            "input_grad_abs_sum": 0.02012893185019493,
+            "weight_grad_abs_sum": 8.891608238220215,
+            "count_tensor_bytes_float32": 2359296,
+            "coordinate_tensor_bytes_int32": 589824,
+            "packed_payload_bytes": null,
+            "note": "No codec, fusion, detector head, trained weights, or energy measurement."
+          },
+          "status": "passed"
+        }
+      ]
+    },
+    "val": {
+      "split_file": "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json",
+      "split_sha256": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814",
+      "split_entries": 1789,
+      "reader_entries": 1789,
+      "samples": [
+        {
+          "index": 0,
+          "vehicle_frame_id": "000211",
+          "infrastructure_frame_id": "007410",
+          "infra_to_ego": [
+            [
+              -0.05316314286480739,
+              -0.9985599123424914,
+              -0.007195950478694413,
+              107.3915003167314
+            ],
+            [
+              0.9985078029716212,
+              -0.05324769614628652,
+              0.01211817890192134,
+              -41.30551574330275
+            ],
+            [
+              -0.01248389544662645,
+              -0.006540972226549599,
+              0.9999006790860828,
+              1.4185249312772115
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "vehicle_pointcloud_timestamp_raw": "1626155287082532",
+          "infra_pointcloud_timestamp_raw": "1626155287061164",
+          "infra_minus_vehicle_timestamp_raw": -21368,
+          "gt_boxes_in_range": 18,
+          "collated_voxel_shape": [
+            19006,
+            32,
+            4
+          ],
+          "sparse_probe": {
+            "agents": [
+              {
+                "raw_points": 64895,
+                "active_voxels": 19678,
+                "voxel_cap_reached": false
+              },
+              {
+                "raw_points": 56396,
+                "active_voxels": 18686,
+                "voxel_cap_reached": false
+              }
+            ],
+            "grid_xyz": [
+              504,
+              200,
+              40
+            ],
+            "feature_shape": [
+              38364,
+              16
+            ],
+            "count_histogram_0_to_4": [
+              446868,
+              131113,
+              28168,
+              5995,
+              1680
+            ],
+            "nonzero_value_fraction": 0.2719932794570923,
+            "input_grad_abs_sum": 0.019246792420744896,
+            "weight_grad_abs_sum": 7.839235305786133,
+            "count_tensor_bytes_float32": 2455296,
+            "coordinate_tensor_bytes_int32": 613824,
+            "packed_payload_bytes": null,
+            "note": "No codec, fusion, detector head, trained weights, or energy measurement."
+          },
+          "status": "passed"
+        },
+        {
+          "index": 894,
+          "vehicle_frame_id": "011002",
+          "infrastructure_frame_id": "017007",
+          "infra_to_ego": [
+            [
+              0.11331127996993295,
+              0.9935315402940587,
+              -0.007458704478032646,
+              -60.67249071600327
+            ],
+            [
+              -0.9932995692886765,
+              0.11345015888711768,
+              0.022023330797524863,
+              66.11999498580224
+            ],
+            [
+              0.02272706497779532,
+              0.004913236143612565,
+              0.9997296337650955,
+              -1.9808118592336115
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "vehicle_pointcloud_timestamp_raw": "1626167067122288",
+          "infra_pointcloud_timestamp_raw": "1626167067101664",
+          "infra_minus_vehicle_timestamp_raw": -20624,
+          "gt_boxes_in_range": 18,
+          "collated_voxel_shape": [
+            17856,
+            32,
+            4
+          ],
+          "sparse_probe": {
+            "agents": [
+              {
+                "raw_points": 61917,
+                "active_voxels": 17391,
+                "voxel_cap_reached": false
+              },
+              {
+                "raw_points": 48992,
+                "active_voxels": 14446,
+                "voxel_cap_reached": false
+              }
+            ],
+            "grid_xyz": [
+              504,
+              200,
+              40
+            ],
+            "feature_shape": [
+              31837,
+              16
+            ],
+            "count_histogram_0_to_4": [
+              371309,
+              109919,
+              21690,
+              4794,
+              1680
+            ],
+            "nonzero_value_fraction": 0.2710741460323334,
+            "input_grad_abs_sum": 0.02122761681675911,
+            "weight_grad_abs_sum": 8.282626152038574,
+            "count_tensor_bytes_float32": 2037568,
+            "coordinate_tensor_bytes_int32": 509392,
+            "packed_payload_bytes": null,
+            "note": "No codec, fusion, detector head, trained weights, or energy measurement."
+          },
+          "status": "passed"
+        },
+        {
+          "index": 1788,
+          "vehicle_frame_id": "019992",
+          "infrastructure_frame_id": "004668",
+          "infra_to_ego": [
+            [
+              -0.9963651610494261,
+              0.08493070438707517,
+              -0.006575811681213908,
+              -16.52495293940865
+            ],
+            [
+              -0.08497768604780938,
+              -0.9963566315042841,
+              0.007228812585490346,
+              4.187510781652577
+            ],
+            [
+              -0.005937905431332966,
+              0.0077613342764939145,
+              0.999952250344654,
+              -0.9718075481588855
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "vehicle_pointcloud_timestamp_raw": "1626246791627629",
+          "infra_pointcloud_timestamp_raw": "1626246791598387",
+          "infra_minus_vehicle_timestamp_raw": -29242,
+          "gt_boxes_in_range": 18,
+          "collated_voxel_shape": [
+            17962,
+            32,
+            4
+          ],
+          "sparse_probe": {
+            "agents": [
+              {
+                "raw_points": 64623,
+                "active_voxels": 14677,
+                "voxel_cap_reached": false
+              },
+              {
+                "raw_points": 65237,
+                "active_voxels": 19958,
+                "voxel_cap_reached": false
+              }
+            ],
+            "grid_xyz": [
+              504,
+              200,
+              40
+            ],
+            "feature_shape": [
+              34635,
+              16
+            ],
+            "count_histogram_0_to_4": [
+              404754,
+              116546,
+              25153,
+              5991,
+              1716
+            ],
+            "nonzero_value_fraction": 0.2696080505847931,
+            "input_grad_abs_sum": 0.01766163483262062,
+            "weight_grad_abs_sum": 8.849241256713867,
+            "count_tensor_bytes_float32": 2216640,
+            "coordinate_tensor_bytes_int32": 554160,
+            "packed_payload_bytes": null,
+            "note": "No codec, fusion, detector head, trained weights, or energy measurement."
+          },
+          "status": "passed"
+        }
+      ]
+    }
+  },
+  "peak_cuda_allocated_bytes": 27433472
+}

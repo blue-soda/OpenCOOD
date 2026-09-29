@@ -51,6 +51,24 @@ CUDA_VISIBLE_DEVICES=1 /data0/chen/miniconda3/envs/opencood/bin/python \
 体素数、计数分布、梯度和 GPU 内存峰值。索引总量不等于全量样本均已验证。
 诊断配置仍属于现有 ANN reader，不能直接用它启动“SNN 训练”。
 
+## 2026-09-29 实测结果
+
+代码 `388035953c9bb6b1e19c50310c18c9452204d0d0` 已经本地 push、服务器 pull 后执行。
+[原始 JSON 报告](results/readiness_20260929.json) 状态为 passed，进程退出码为 0。
+服务器日志及运行前未跟踪文件备份保存在
+`/data0/chen/gzc/workspace/diagnostics/cp_snn_20260929/`。
+
+- 环境：Python 3.7.11、PyTorch 1.10.0+cu113、spconv 2.3.6、NumPy 1.21.6、RTX 3090（GPU 1）。
+- 索引：train 4,811，val 1,789；本次只抽查各 3 帧，不是全量清洗或全量评估。
+- 六个样本的真实两端点云、GT、collate、SE(3) 检查与稀疏 CUDA 前向/反向均通过。
+- 两端合计三维活动体素 27,922–38,364；每体素输出 16 通道，值位于整数集合 {0,1,2,3,4}。
+- Count4 边界与替代梯度检查通过，点特征和稀疏卷积权重均得到有限且非零梯度。
+- 两端原始时间戳差值均非零，具体值留在报告；不能用 reader 的 time_diff=0 证明物理同步。
+- torch 峰值 allocated 为 27,433,472 bytes，只包含这个小探针的 PyTorch 分配统计，不能外推完整主干显存。
+
+这确认的是服务器的数据与基础算子可用。尚未实现完整 E-3DSNN 检测器、训练、通信编码或协同融合；
+没有新的 AP、实际消息 bytes 或节能结论。已有 SNN 预训练权重不作为本次探针的依赖。
+
 ## 接下来的模型实验
 
 1. 移植并核对 E-3DSNN 三维计数主干，建立 DAIR 单端 SNN 检测链，先单 batch 过拟合，再训练单端基线。
