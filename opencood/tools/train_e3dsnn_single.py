@@ -54,7 +54,7 @@ def checked_forward(model, criterion, batch):
     return output, loss
 
 
-def validate(model, dataset, workers, limit=0, include_3d=False):
+def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=None, profile=False):
     model.eval()
     stat = {threshold: {'tp': [], 'fp': [], 'gt': 0, 'score': []} for threshold in (.3, .5, .7)}
     stat_3d = {threshold: {'tp': [], 'fp': [], 'gt': 0, 'score': []} for threshold in stat}
@@ -62,17 +62,37 @@ def validate(model, dataset, workers, limit=0, include_3d=False):
                         collate_fn=dataset.collate_batch_test, worker_init_fn=seed_worker,
                         **({'multiprocessing_context': 'spawn'} if workers else {}))
     evaluated, predicted, ground_truth = 0, 0, 0
+    frames, timings = [], []
+    if prediction_dir is not None:
+        prediction_dir = Path(prediction_dir)
+        prediction_dir.mkdir(exist_ok=False)
+    if profile:
+        torch.cuda.synchronize()
+        torch.cuda.reset_peak_memory_stats()
+    previous_done = time.perf_counter()
     with torch.no_grad():
         for index, batch in enumerate(loader):
             if limit and index >= limit:
                 break
             if batch is None or set(batch) != {'ego'}:
                 raise ValueError('Invalid or non-single-agent validation batch at {}'.format(index))
+            batch_ready = time.perf_counter()
             batch = train_utils.to_device(batch, torch.device('cuda'))
+            if profile:
+                torch.cuda.synchronize()
+            transfer_done = time.perf_counter()
             output = model(batch['ego'])
+            if profile:
+                torch.cuda.synchronize()
+            forward_done = time.perf_counter()
             boxes, scores, gt = dataset.post_process_no_fusion(batch, {'ego': output})
+            if profile:
+                torch.cuda.synchronize()
+            decode_done = time.perf_counter()
             if boxes is not None and not torch.isfinite(boxes).all():
                 raise FloatingPointError('Nonfinite decoded boxes')
+            if scores is not None and not torch.isfinite(scores).all():
+                raise FloatingPointError('Nonfinite confidence scores')
             for threshold in stat:
                 eval_utils.caluclate_tp_fp(boxes, scores, gt, stat, threshold)
             if include_3d:
@@ -80,8 +100,30 @@ def validate(model, dataset, workers, limit=0, include_3d=False):
             evaluated += 1
             predicted += 0 if boxes is None else len(boxes)
             ground_truth += len(gt)
-            if include_3d and evaluated % 250 == 0:
+            timing = {'batch_wait_ms': (batch_ready - previous_done) * 1000,
+                'h2d_ms': (transfer_done - batch_ready) * 1000,
+                'forward_ms': (forward_done - transfer_done) * 1000,
+                'postprocess_ms': (decode_done - forward_done) * 1000,
+                'ready_batch_inference_ms': (decode_done - batch_ready) * 1000}
+            if profile:
+                timings.append(timing)
+            if prediction_dir is not None:
+                # Preserve numeric dtype and loader order for exact AP replay.
+                frame_id = str(dataset.data[index])
+                path = prediction_dir / '{:06d}.npz'.format(index)
+                pred_array = boxes.detach().cpu().numpy() if boxes is not None else np.empty((0, 8, 3), dtype=np.float32)
+                score_array = scores.detach().cpu().numpy() if scores is not None else np.empty((0,), dtype=np.float32)
+                np.savez_compressed(str(path), frame_id=np.asarray(frame_id), pred_boxes=pred_array,
+                                    scores=score_array, gt_boxes=gt.detach().cpu().numpy())
+                frame = {'index': index, 'frame_id': frame_id, 'file': path.name,
+                    'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+                    'predicted_boxes': len(pred_array), 'gt_boxes': len(gt)}
+                if profile:
+                    frame['timing'] = timing
+                frames.append(frame)
+            if (include_3d or prediction_dir is not None or profile) and evaluated % 250 == 0:
                 print(json.dumps({'eval_samples': evaluated, 'indexed_samples': len(dataset)}), flush=True)
+            previous_done = time.perf_counter()
     result = {'samples': evaluated, 'indexed_samples': len(dataset),
             'full_split': evaluated == len(dataset), 'predicted_boxes': predicted,
             'gt_boxes': ground_truth, 'metric': 'BEV AP, vehicle-local GT, no fusion',
@@ -91,6 +133,20 @@ def validate(model, dataset, workers, limit=0, include_3d=False):
             'ap_3d': {str(t): eval_utils.calculate_ap(stat_3d, t)[0] for t in stat_3d},
             'ap_convention': 'VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40',
             'iou_3d': 'rotated BEV intersection area times height overlap / volume union'})
+    if prediction_dir is not None:
+        write_json(prediction_dir / 'index.json', {'schema': 1, 'frames': frames,
+            'order': 'validation loader order', 'metric': 'AP means BEV AP; optional 3D AP separately labeled'})
+        result['predictions'] = {'directory': prediction_dir.name, 'frames': len(frames),
+            'index_sha256': hashlib.sha256((prediction_dir / 'index.json').read_bytes()).hexdigest()}
+    if profile:
+        warmup = min(20, max(0, len(timings) - 1))
+        kept = timings[warmup:]
+        result['profile'] = {'batch_size': 1, 'warmup_frames_excluded': warmup, 'timed_frames': len(kept),
+            'milliseconds': {key: {'mean': float(np.mean([r[key] for r in kept])),
+                                  'median': float(np.median([r[key] for r in kept])),
+                                  'p95': float(np.percentile([r[key] for r in kept], 95))} for key in kept[0]},
+            'peak_allocated_bytes': torch.cuda.max_memory_allocated(),
+            'scope': 'CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency.'}
     return result
 
 
@@ -133,7 +189,8 @@ def execute(args, output_dir):
     if args.mode == 'eval':
         if not args.checkpoint:
             raise ValueError('Evaluation requires --checkpoint')
-        metrics = validate(model, val_data, args.workers, include_3d=args.eval_3d)
+        metrics = validate(model, val_data, args.workers, include_3d=args.eval_3d,
+            prediction_dir=output_dir / 'predictions' if args.save_predictions else None, profile=args.profile)
         write_json(output_dir / 'evaluation.json', metrics)
         return metrics
     if args.mode == 'overfit':
@@ -254,10 +311,14 @@ def main():
     parser.add_argument('--epochs', type=int, default=0)
     parser.add_argument('--checkpoint')
     parser.add_argument('--eval-3d', action='store_true', help='Also report volume-IoU AP in eval mode')
+    parser.add_argument('--save-predictions', action='store_true', help='Save per-frame boxes/scores/GT and hashes for offline AP replay')
+    parser.add_argument('--profile', action='store_true', help='Profile synchronized batch=1 inference in eval mode')
     parser.add_argument('--resume', action='store_true')
     args = parser.parse_args()
-    if args.eval_3d and args.mode != 'eval':
-        parser.error('--eval-3d is a supplemental evaluation option; training selection stays BEV AP50')
+    if (args.eval_3d or args.save_predictions or args.profile) and args.mode != 'eval':
+        parser.error('--eval-3d, --save-predictions and --profile require eval mode')
+    if args.resume and args.mode != 'train':
+        parser.error('--resume requires train mode')
     output_dir = Path(args.output)
     if output_dir.exists() and any(output_dir.iterdir()) and not args.resume:
         raise FileExistsError('Use a fresh output directory or explicit --resume')
