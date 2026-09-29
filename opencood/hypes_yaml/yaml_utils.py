@@ -137,6 +137,20 @@ def load_point_pillar_params(param):
     return param
 
 
+def load_e3dsnn_params(param):
+    """Use one integral grid for sparse shapes and anchors (avoid float truncation)."""
+    param = load_second_params(param)
+    extent = (np.asarray(param['preprocess']['cav_lidar_range'][3:]) -
+              param['preprocess']['cav_lidar_range'][:3])
+    raw = extent / param['preprocess']['args']['voxel_size']
+    grid = np.rint(raw).astype(np.int64)
+    if not np.allclose(raw, grid, atol=1e-6, rtol=0):
+        raise ValueError('E3DSNN range must be divisible by voxel size')
+    for key, size in zip(('W', 'H', 'D'), grid):
+        param['postprocess']['anchor_args'][key] = int(size)
+    return param
+
+
 def load_second_params(param):
     """
     Based on the lidar range and resolution of voxel, calcuate the anchor box

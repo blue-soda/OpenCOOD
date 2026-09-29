@@ -1,5 +1,5 @@
 name: e3dsnn_vehicle_single_stage_v1
-yaml_parser: load_second_params
+yaml_parser: load_e3dsnn_params
 data_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure
 root_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/train.json
 validate_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json

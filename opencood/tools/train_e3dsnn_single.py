@@ -45,7 +45,8 @@ def seed_worker(worker_id):
 def checked_forward(model, criterion, batch):
     output = model(batch['ego'])
     labels = batch['ego']['label_dict']
-    assert output['psm'].shape[2:] == labels['pos_equal_one'].shape[1:3]
+    assert output['psm'].shape[2:] == labels['pos_equal_one'].shape[1:3], (
+        'Prediction/anchor grid mismatch', output['psm'].shape, labels['pos_equal_one'].shape)
     assert all(torch.isfinite(output[key]).all() for key in ('psm', 'rm', 'dm'))
     loss = criterion(output, labels)
     if not torch.isfinite(loss):
