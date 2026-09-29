@@ -1,0 +1,26 @@
+{
+  "pid": 1006838,
+  "gpu": 2,
+  "command": [
+    "/data0/chen/miniconda3/envs/opencood/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.run_int_ego",
+    "--data",
+    "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+    "--manifest",
+    "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/manifests_v2/sequence_manifest.json",
+    "--eval-only",
+    "--workers",
+    "4",
+    "--mode",
+    "concat",
+    "--history-policy",
+    "no-align",
+    "--checkpoint",
+    "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/bounded_concat/trained.pth",
+    "--output",
+    "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/ablation_concat_no_align"
+  ],
+  "code_commit": "d5625681d9bf82a140d2af0196d2d9cb3dc8dd7d"
+}

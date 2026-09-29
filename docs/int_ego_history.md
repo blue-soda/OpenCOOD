@@ -152,3 +152,17 @@ GRU). Reset discards history at every scan; no-align retains state without
 pose warping. All other inputs and thresholds remain fixed. Give each run a
 new output directory; non-default policies are rejected during training.
 The thread heartbeat remains at 60 minutes to collect these ablations.
+
+Launched on commit `d5625681d9bf82a140d2af0196d2d9cb3dc8dd7d`:
+
+| Directory under `$RUN` | GPU | PID |
+|---|---:|---:|
+| ablation_concat_reset | 1 | 1006837 |
+| ablation_concat_no_align | 2 | 1006838 |
+| ablation_gru_reset | 3 | 1006839 |
+| ablation_gru_no_align | 5 | 1006840 |
+
+Exact launch records are in `docs/int_ego_results/ablation_*_launch.json`.
+These use the existing trained checkpoints without further optimization.
+On the next follow-up, verify all labels/GT, input/weight hashes, and reset/warp
+logs before comparing AP. The completed bounded runs should not be restarted.
