@@ -109,8 +109,11 @@ def execute(args, output_dir):
         'data_manifest_sha256': hashlib.sha256(Path(cfg['data_manifest']).read_bytes()).hexdigest(),
         'torch': torch.__version__, 'gpu': torch.cuda.get_device_name(0),
         'gpu_visible': os.getenv('CUDA_VISIBLE_DEVICES'), 'parameters': sum(p.numel() for p in model.parameters()),
+        'architecture': cfg['model']['core_method'],
+        'activation': cfg['model']['args'].get('activation', 'count4'),
+        'checkpoint_sha256': hashlib.sha256(Path(args.checkpoint).read_bytes()).hexdigest() if args.checkpoint else None,
         'train_samples': len(train_data), 'val_samples': len(val_data),
-        'protocol': 'vehicle-only point cloud and local GT; no history/infra; one-stage E3DSNN adaptation'}
+        'protocol': 'vehicle-only point cloud and local GT; no history/infra; see architecture for model'}
     write_json(output_dir / ('manifest_{}.json'.format(int(time.time()))), manifest)
     (output_dir / 'config.yaml').write_bytes(Path(args.config).read_bytes())
     if args.checkpoint:
@@ -139,8 +142,11 @@ def execute(args, output_dir):
                         raise ValueError('Missing/nonfinite/zero gradient: ' + name)
                     gradients[name] = float(grad.abs().sum())
                 spikes = result['spike_features'].detach()
-                assert torch.equal(spikes, spikes.round()) and spikes.min() >= 0 and spikes.max() <= 4
-                hist = torch.bincount(spikes.long().flatten(), minlength=5).cpu().tolist()
+                if cfg['model']['args'].get('activation', 'count4') == 'count4':
+                    assert torch.equal(spikes, spikes.round()) and spikes.min() >= 0 and spikes.max() <= 4
+                    hist = torch.bincount(spikes.long().flatten(), minlength=5).cpu().tolist()
+                else:
+                    assert torch.isfinite(spikes).all() and spikes.min() >= 0
             torch.nn.utils.clip_grad_norm_(model.parameters(), 10., error_if_nonfinite=True)
             optimizer.step()
             losses.append(float(loss.detach()))
@@ -150,7 +156,8 @@ def execute(args, output_dir):
         # A reduction is a wiring gate, not proof of convergence/generalization.
         passed = float(np.mean(losses[-10:])) < float(np.mean(losses[:10])) * .5
         result = {'passed': passed, 'losses': losses, 'gradients': gradients,
-            'initial_count_histogram': hist, 'vehicle_frame': train_data.data[args.sample_index],
+            'initial_count_histogram': hist, 'activation': cfg['model']['args'].get('activation', 'count4'),
+            'vehicle_frame': train_data.data[args.sample_index],
             'positive_anchors': int(batch['ego']['label_dict']['pos_equal_one'].sum()),
             'gate': 'last-10 mean loss < 50% of first-10 mean loss',
             'decode_check': validate(model, val_data, 0, limit=2),
