@@ -152,3 +152,18 @@ evaluation.json 固定索引哈希。离线工具在 CPU 上校验全部文件�
 
 CPU 正确性回归：`python -m unittest opencood.tools.test_e3dsnn_prediction_replay -v`，
 覆盖 BEV/3D 区别、重复框、漏检/空帧、NPZ/索引篡改和错误汇总 AP。
+
+## 2026-09-30：SNN 已完成，继续跟进 ANN
+
+SNN 原运行 `e3dsnn_vehicle_single_v2` 已正常完成全部 60 轮，原 PID 947559 已退出。
+以 status.json=complete 与完整 metrics 为准；旧 progress.json 停留在 validating epoch60，不代表仍在验证。
+不得重启这条已完成训练。按 AP50 选出的 best 为 epoch53，已冻结到：
+`/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_snn_20260930/snn_best_epoch_53.pth`。
+该目录的 `pipeline_status.json` 跟踪最终 GPU 推理和 CPU 复算，`evaluation/` 保存逐帧 NPZ 与指标；
+检查此处的完成状态后归档结果，避免重复启动。结果汇总见 [FINAL_BASELINE.md](FINAL_BASELINE.md)。
+本轮最终 SNN 流程已完成，CPU 全量复算通过；最终 AP30/50/70 为 84.32% / 81.93% / 68.19%。
+证据已归档到 `results/final_snn_20260930/`，后续 heartbeat 不需重复 SNN 验证，仅继续剩余 ANN 工作。
+
+ANN 原运行 `e3dsnn_vehicle_ann_relu_v1` 继续训练。只在其 status=complete 且原进程退出后，
+冻结对应 AP50 best，按相同流程执行最终验证和 CPU 复算。两条最终结果完整后汇总单车对照并结束当前跟进，
+不自动启动协同模型训练。

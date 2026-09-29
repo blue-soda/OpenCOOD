@@ -1,0 +1,58 @@
+{
+  "created_unix": 1790704247.5532773,
+  "training_directory": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_single_v2",
+  "training_complete": true,
+  "epochs": 60,
+  "selection": "maximum validation BEV AP50; first epoch in case of ties",
+  "selected_epoch": 53,
+  "checkpoint": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_snn_20260930/snn_best_epoch_53.pth",
+  "checkpoint_sha256": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
+  "config_sha256": "8872a065ce4a01e5d3f10ced1100e4fa3f8571691288649ce1040ecdbd0aad63",
+  "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+  "best_training_metrics": {
+    "samples": 1738,
+    "indexed_samples": 1738,
+    "full_split": true,
+    "predicted_boxes": 25502,
+    "gt_boxes": 22971,
+    "metric": "BEV AP, vehicle-local GT, no fusion",
+    "ap": {
+      "0.3": 0.8431357800909348,
+      "0.5": 0.8192281239271105,
+      "0.7": 0.6821408438309622
+    },
+    "epoch": 53,
+    "train_loss": 0.5704454100387326,
+    "train_samples": 4678,
+    "seconds": 387.18064516200684
+  },
+  "runtime_commit": "e2ec1780e10dc4d85e489d84bda91b4e5698a149",
+  "evaluation_command": [
+    "/data0/chen/miniconda3/envs/opencood/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.train_e3dsnn_single",
+    "--mode",
+    "eval",
+    "--config",
+    "/data0/chen/gzc/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_single.yaml",
+    "--checkpoint",
+    "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_snn_20260930/snn_best_epoch_53.pth",
+    "--output",
+    "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_snn_20260930/evaluation",
+    "--workers",
+    "2",
+    "--eval-3d",
+    "--save-predictions",
+    "--profile"
+  ],
+  "replay_command": [
+    "/data0/chen/miniconda3/envs/opencood/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.replay_e3dsnn_predictions",
+    "--evaluation-dir",
+    "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_snn_20260930/evaluation"
+  ],
+  "gpu": "4"
+}

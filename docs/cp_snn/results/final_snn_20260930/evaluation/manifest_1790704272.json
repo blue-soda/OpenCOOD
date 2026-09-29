@@ -1,0 +1,34 @@
+{
+  "git_commit": "e2ec1780e10dc4d85e489d84bda91b4e5698a149",
+  "arguments": {
+    "mode": "eval",
+    "config": "/data0/chen/gzc/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_single.yaml",
+    "output": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_snn_20260930/evaluation",
+    "seed": 20260929,
+    "workers": 2,
+    "steps": 200,
+    "sample_index": 0,
+    "epochs": 0,
+    "checkpoint": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_snn_20260930/snn_best_epoch_53.pth",
+    "eval_3d": true,
+    "save_predictions": true,
+    "profile": true,
+    "resume": false
+  },
+  "config_sha256": "8872a065ce4a01e5d3f10ced1100e4fa3f8571691288649ce1040ecdbd0aad63",
+  "split_sha256": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+  },
+  "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+  "torch": "1.10.0+cu113",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "gpu_visible": "4",
+  "parameters": 3020564,
+  "architecture": "e3dsnn_single",
+  "activation": "count4",
+  "checkpoint_sha256": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
+  "train_samples": 4678,
+  "val_samples": 1738,
+  "protocol": "vehicle-only point cloud and local GT; no history/infra; see architecture for model"
+}

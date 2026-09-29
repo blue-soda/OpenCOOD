@@ -1,0 +1,103 @@
+{
+  "model": "E-3DSNN single-stage vehicle adaptation",
+  "training_epochs": 60,
+  "selected_epoch": 53,
+  "selection": "validation BEV AP50",
+  "training_complete": true,
+  "final_snn_verified": true,
+  "ann_comparison_complete": false,
+  "checkpoint_sha256": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
+  "runtime_commit": "e2ec1780e10dc4d85e489d84bda91b4e5698a149",
+  "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+  "architecture": "e3dsnn_single",
+  "parameters": 3020564,
+  "evaluation": {
+    "samples": 1738,
+    "indexed_samples": 1738,
+    "full_split": true,
+    "predicted_boxes": 25504,
+    "gt_boxes": 22971,
+    "metric": "BEV and upright 3D AP, vehicle-local GT, no fusion",
+    "ap": {
+      "0.3": 0.8432432094252732,
+      "0.5": 0.8193232800266079,
+      "0.7": 0.6818611598513237
+    },
+    "ap_3d": {
+      "0.3": 0.8372657838888926,
+      "0.5": 0.7707139975662418,
+      "0.7": 0.42583115304042785
+    },
+    "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+    "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+    "predictions": {
+      "directory": "predictions",
+      "frames": 1738,
+      "index_sha256": "df099215f6debf8019481a79b48130cf916633f907984baeb8ad049ad9018ec5"
+    },
+    "profile": {
+      "batch_size": 1,
+      "warmup_frames_excluded": 20,
+      "timed_frames": 1718,
+      "milliseconds": {
+        "batch_wait_ms": {
+          "mean": 7.8125332703876795,
+          "median": 6.524330470710993,
+          "p95": 14.385739562567306
+        },
+        "h2d_ms": {
+          "mean": 6.955124499201471,
+          "median": 6.3887195428833365,
+          "p95": 11.112984328065064
+        },
+        "forward_ms": {
+          "mean": 26.877299260550824,
+          "median": 23.852336045820266,
+          "p95": 41.238635528134175
+        },
+        "postprocess_ms": {
+          "mean": 25.595808526453897,
+          "median": 20.188735506962985,
+          "p95": 62.078036629827665
+        },
+        "ready_batch_inference_ms": {
+          "mean": 59.428232286206196,
+          "median": 53.611295006703585,
+          "p95": 106.78658797405659
+        }
+      },
+      "peak_allocated_bytes": 136950784,
+      "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+    }
+  },
+  "offline_replay": {
+    "passed": true,
+    "samples": 1738,
+    "predicted_boxes": 25504,
+    "gt_boxes": 22971,
+    "ap": {
+      "0.3": 0.8432432094252732,
+      "0.5": 0.8193232800266079,
+      "0.7": 0.6818611598513237
+    },
+    "exact_match": true,
+    "all_file_hashes_verified": true,
+    "ap_3d": {
+      "0.3": 0.8372657838888926,
+      "0.5": 0.7707139975662418,
+      "0.7": 0.42583115304042785
+    }
+  },
+  "evidence_sha256": {
+    "convergence.json": "a931837427af81dfe9aa97a5dbee2b33caa478a6208ac628d250c844b6d46ecb",
+    "evaluation/evaluation.json": "6df36fc6de73bd6361e6b33ad8bb57316b97f7e193e7bb75e1360b18ee9b652e",
+    "evaluation/manifest_1790704272.json": "6124d41254349d8ea473a6e006d153b0a6f831fd30b316b7419ab7d7460d8c6e",
+    "evaluation/offline_replay.json": "86f70fdf6369d9d8d93e3063bb6102898ea3672d96e41fb5cef04ba517559a53",
+    "evaluation/status.json": "19bdec4bf69d7589ca50f1f53336f7ef5641e1e96132cea86ce42dcd6e154a2a",
+    "final_manifest.json": "ae7fcc6b3821dd3504637e68c8b00eb32ba427fe25aa8edd1fa3eb044506aa3a",
+    "pipeline_status.json": "10ac683d440c681aaefa7dd448b215f60a2eea4471212dedf3a728518a348a7e",
+    "training_best_metrics.json": "e4f7594876ffd229215eeab2eedf392dd5048421f5b475b6c92c23b49f40b629",
+    "training_metrics.jsonl": "23f874b9d9e0da8459c388cca897a9feee91edb9c4b6a68895bea7e3e1d4517c",
+    "training_status.json": "b8b00cb8afc069d758a0505d5c11bd4267c8399fa259d0aaf12616bfe826bc82"
+  }
+}
