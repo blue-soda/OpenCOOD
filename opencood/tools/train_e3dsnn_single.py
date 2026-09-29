@@ -106,6 +106,7 @@ def execute(args, output_dir):
         'arguments': vars(args), 'config_sha256': hashlib.sha256(Path(args.config).read_bytes()).hexdigest(),
         'split_sha256': {key: hashlib.sha256(Path(cfg[key]).read_bytes()).hexdigest()
                          for key in ('root_dir', 'validate_dir')},
+        'data_manifest_sha256': hashlib.sha256(Path(cfg['data_manifest']).read_bytes()).hexdigest(),
         'torch': torch.__version__, 'gpu': torch.cuda.get_device_name(0),
         'gpu_visible': os.getenv('CUDA_VISIBLE_DEVICES'), 'parameters': sum(p.numel() for p in model.parameters()),
         'train_samples': len(train_data), 'val_samples': len(val_data),
@@ -162,6 +163,8 @@ def execute(args, output_dir):
     start_epoch, best = 0, -1.
     if args.resume:
         state = torch.load(str(output_dir / 'last.pt'), map_location='cpu')
+        if state['config_sha256'] != manifest['config_sha256'] or state['data_manifest_sha256'] != manifest['data_manifest_sha256']:
+            raise ValueError('Resume requires the same config and data manifest')
         model.load_state_dict(state['model'], strict=True)
         optimizer.load_state_dict(state['optimizer'])
         scheduler.load_state_dict(state['scheduler'])
@@ -209,6 +212,7 @@ def execute(args, output_dir):
             save_torch(output_dir / 'best.pth', model.state_dict())
             write_json(output_dir / 'best_metrics.json', metrics)
         save_torch(output_dir / 'last.pt', {'epoch': epoch + 1, 'model': model.state_dict(),
+            'config_sha256': manifest['config_sha256'], 'data_manifest_sha256': manifest['data_manifest_sha256'],
             'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(), 'best_ap50': best,
             'random_state': random.getstate(), 'numpy_state': np.random.get_state(),
             'torch_state': torch.get_rng_state(), 'cuda_state': torch.cuda.get_rng_state_all(),

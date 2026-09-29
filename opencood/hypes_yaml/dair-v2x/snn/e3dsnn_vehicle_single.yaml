@@ -5,6 +5,7 @@ root_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infra
 validate_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json
 test_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json
 dataset: dairv2x
+data_manifest: /data0/chen/gzc/workspace/diagnostics/e3dsnn_data_v1/manifest.json
 noise_setting: {add_noise: false}
 comm_range: 100
 only_vis_ego: true

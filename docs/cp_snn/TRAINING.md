@@ -20,7 +20,7 @@ OpenCOOD 分类/框回归/方向头。源代码固定于 E-3DSNN dbe5d173；保�
 配置：`opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_single.yaml`。
 
 - 车端当前点云及**车端本地标签**；不随机抽路端，不要求历史路端帧齐全。
-- 使用原始 train.json / val.json（4,811 / 1,789）；不静默跳过样本，不丢尾 batch。
+- 原始 train.json / val.json（4,811 / 1,789）经全量车端 PCD 审计；使用 manifest 固定有效样本，不静默跳过、不丢尾 batch。
 - 范围 [-100.8,-40,-3.5,100.8,40,1.5]；体素 [0.2,0.2,0.1]，最多 70,000 体素。
 - 3D grid xyz=[1008,400,50]，spconv z+1；3D 输出 stride=8，高度为 3，BEV 输入 384 通道。
 - 检测网格 H×W=50×126，两个朝向 anchor；为浮点舍入新增独立配置解析，避免 1008 被截断成 1007。
@@ -46,7 +46,7 @@ export PYTHONPATH="$PWD"
 export NUMPY_MADVISE_HUGEPAGE=0 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 CUDA_VISIBLE_DEVICES=4 /data0/chen/miniconda3/envs/opencood/bin/python -u \
   -m opencood.tools.train_e3dsnn_single --mode train --workers 4 \
-  --output /data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_single_v1
+  --output /data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_single_v2
 ```
 
 正式结果目录固定为上述 output，nohup 日志为同路径加 `.log`，PID 为同路径加 `.pid`。
@@ -58,7 +58,7 @@ CUDA_VISIBLE_DEVICES=4 /data0/chen/miniconda3/envs/opencood/bin/python -u \
 
 4 样本 batch 与严格权重重载已通过，输出 [4,2,50,126]，原始解码框 [4,12600,7]，
 全部有限且尺寸为正：[原始报告](results/batch_decode_20260929.json)。
-首次正式运行代码为 `12a5db0`，GPU 4；GPU 1 启动前检查发现已有其他任务，未在该卡启动。
+首次正式运行（v1，代码 `12a5db0`，PID 941718）因 009369.pcd 是 0 字节文件而明确退出，失败日志保留。v2 在全量 PCD 审计后从随机初始化重启，使用 GPU 4；GPU 1 启动前检查发现已有其他任务，未在该卡启动。
 代码快照为结果目录同路径加 `_source.tar.gz`。60 轮训练从随机初始化开始。
 
 训练中不因读到新 main 提交自动重启，不改动运行中的模型/配置。每次执行保存配置、Git 提交和划分哈希。
