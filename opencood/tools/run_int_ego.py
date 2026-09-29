@@ -133,6 +133,8 @@ def evaluate(model, rows, config, args, directory):
                 align=args.history_policy != 'no-align')
             torch.cuda.synchronize()
             elapsed = (time.perf_counter()-tick)*1000
+            if any(not torch.isfinite(value).all() for value in prediction.values()):
+                raise RuntimeError('Non-finite prediction at '+meta['frame'])
             if scans >= 10:
                 step_ms.append(elapsed)
             entry = dict(frame=meta['frame'], scene=meta['segment'], timestamp_us=meta['timestamp_us'],

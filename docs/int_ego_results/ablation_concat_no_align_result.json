@@ -1,0 +1,27 @@
+{
+  "evaluation": {
+    "gt_boxes": 22971,
+    "history_diagnostics": [],
+    "history_policy": "no-align",
+    "labels": 1738,
+    "metrics": {
+      "bev_ap30": 0.8377760995345247,
+      "bev_ap50": 0.8173187180245037,
+      "bev_ap70": 0.7187612289824651
+    },
+    "model_step_ms_p50": 21.322142973076552,
+    "model_step_ms_p95": 25.07425443036481,
+    "peak_allocated_bytes": 421952512,
+    "predicted_boxes": 31705,
+    "resets": {
+      "initial": 1,
+      "scene": 213
+    },
+    "scans": 5794,
+    "seconds": 478.0164639619179,
+    "state_bytes": 25804800,
+    "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+  },
+  "status": "COMPLETED",
+  "training": null
+}
