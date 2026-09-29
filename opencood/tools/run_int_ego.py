@@ -65,6 +65,8 @@ def train(model, rows, config, args, directory, optimizer=None, order=None,
                 break
             meta = sample['meta']
             if sample['ego'] is None:
+                if full_epoch:
+                    raise RuntimeError('Invalid frozen training frame %s: %s' % (meta['frame'], meta['invalid']))
                 state = None
                 log.write(json.dumps(dict(frame=meta['frame'], invalid=meta['invalid']))+'\n')
                 continue
@@ -94,7 +96,7 @@ def train(model, rows, config, args, directory, optimizer=None, order=None,
                 print('TRAIN', args.mode, updates, 'scans', scans, 'loss', round(losses[-1], 5), flush=True)
     expected = sum(r['supervised'] for r in order) if full_epoch else args.train_steps
     if updates != expected or (full_epoch and scans != len(order)):
-        raise RuntimeError('Training did not consume the required valid frames')
+        raise RuntimeError('Coverage mismatch: scans %d/%d, updates %d/%d' % (scans, len(order), updates, expected))
     checkpoint = directory/'trained.pth'
     saved = {'model': model.state_dict(), 'updates': updates,
              'mode': args.mode, 'seed': args.seed}

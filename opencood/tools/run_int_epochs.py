@@ -88,6 +88,15 @@ def main():
                    python=sys.executable, torch=torch.__version__,
                    policy='Full segments, shuffled per epoch; same reset horizon as evaluation. BN statistics frozen, no augmentation, no BPTT beyond one scan.'))
         (root/'config.yaml').write_text(yaml.dump(config))
+        write_json(root/'effective_runtime.json', dict(
+            dataset='DairEgoStreamDataset', model='PointPillarINT', batch_size=1,
+            mode=a.mode, artificial_delay=False, asynchronous_fusion=False,
+            state_policy=contract['state_policy'], arguments=vars(a),
+            optimizer=dict(type='AdamW', lr=a.lr, weight_decay=1e-4),
+            scheduler=dict(type='ReduceLROnPlateau', metric='val_bev_ap70', factor=.5,
+                           patience=2, threshold=a.min_delta, min_lr=1e-6),
+            augmentation=[], bn_running_stats='frozen', tf32=False,
+            note='Legacy fusion/train_params/optimizer/lr_scheduler fields in config.yaml are not executed by this dedicated runner.'))
     if start > a.max_epochs:
         p.error('No new epochs requested; increase --max-epochs to resume')
     write_json(root/'result.json', dict(status='RUNNING', next_epoch=start,
@@ -144,4 +153,12 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as exc:
+        if '--output' in sys.argv:
+            failed_root = Path(sys.argv[sys.argv.index('--output')+1])
+            if failed_root.is_dir():
+                write_json(failed_root/'failure.json', dict(status='FAILED',
+                           exception=type(exc).__name__, message=str(exc)))
+        raise
