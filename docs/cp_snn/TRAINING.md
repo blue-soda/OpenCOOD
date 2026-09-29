@@ -18,7 +18,8 @@ OpenCOOD 分类/框回归/方向头。源代码固定于 E-3DSNN dbe5d173；保�
 这是单阶段适配版，**不包含 VoxelRCNN RoI 精修，不等于完整原论文检测器复现**。
 无跨帧膜状态、无协作模块、无预训练权重。连续检测头保留。
 3D 最后共享候选层可以通过 return_spikes 返回 [M,128] 计数及 [M,4] bzyx 坐标；
-所有计数当前仍为 float32，未实现通信打包或测量能耗。
+模型内计数仍为 float32；独立 Count4 打包已完成 64 帧审计，见 PACKET_AUDIT.md。
+尚未接入协同融合或测量实际能耗。
 
 配置：`opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_single.yaml`。
 
@@ -85,18 +86,18 @@ v2 启动代码为 `f4dfb96`，PID **947559**，60 epochs、batch=4，每轮 1,1
 
 若训练仍在运行：检查对应 PID、日志、progress.json、metrics.jsonl 和磁盘即可，避免重复启动。
 无状态变化时保持安静；完成、异常或有实质进展时更新本任务。
-训练完成后：读取 best_metrics.json，冻结 best.pth 和对应轮次元数据后严格加载，使用 `--mode eval --eval-3d` 做完整验证重放，同时归档 BEV AP、3D AP 与局限。当前训练仍按 BEV AP50 选 best，不将其称为按 3D AP 选出的最佳权重。
+训练完成后：确认 status.json 为 complete 且进程退出，再读取 best_metrics.json，冻结 best.pth 和对应轮次元数据后严格加载，使用 `--mode eval --eval-3d --save-predictions --profile` 做完整验证重放，再用 CPU 离线复算（见下节）。同时归档 BEV AP、3D AP 与局限。当前训练仍按 BEV AP50 选 best，不将其称为按 3D AP 选出的最佳权重。
 若进程失败：先定位并修复故障，按 main/push/pull 流程继续；保留失败日志。
 用户随后授权测试现有 PointPillars 并推进同结构 ANN；同一 heartbeat 需跟进 SNN 与 ANN 两条已启动运行。
 ANN：`/data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_ann_relu_v1`，PID 1058885，GPU 5，
 配置 `opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_ann.yaml`，60 轮。
 PointPillars 评估：`/data0/chen/gzc/workspace/diagnostics/pointpillar_best57_vehicle_eval_20260929`，GPU 6。
 新增关键进展同步至 `C:\Workspace\OpenCOOD\agent-doc\snn-plans\cp-snn-plan\04_单端基线与实验进展_20260929.md`，
-其仓库镜像为 [RESEARCH_LOG.md](RESEARCH_LOG.md)。两条训练、最佳权重验证及下述最终共享层审计均完成后停止跟进。
+其仓库镜像为 [RESEARCH_LOG.md](RESEARCH_LOG.md)。两条训练、最终最佳权重验证、逐帧归档和 CPU 精确复算均完成后停止本轮跟进。
 该跟进不授权启动除此之外的新消融或协同模型长训练。
 
 2026-09-29 用户要求继续推进研究后，已新增并完成第 19 轮 SNN 的 64 帧共享层 codec 审计，
-详见 [PACKET_AUDIT.md](PACKET_AUDIT.md)。最终 SNN 最佳权重冻结后，使用同一清单再运行
+详见 [PACKET_AUDIT.md](PACKET_AUDIT.md)。**用户随后要求先完善单车检测、后续再转入协同改造；以下最终共享层审计延后至协同阶段，不再作为当前单车阶段的完成条件。**届时在最终 SNN 最佳权重冻结后，使用同一清单再运行
 `python -m opencood.tools.audit_e3dsnn_packet --checkpoint <固定权重> --output <新目录>`，
 检验训练后期的通道稀疏度、实际特征包字节和无损检测输出是否仍成立。
 该审计默认 64 帧、内部 1,200 秒上限；启动前确认空闲 GPU，保存进程日志并跟踪退出状态。
@@ -122,3 +123,32 @@ CUDA 的 check_in_box2d 使用 1 厘米边界容差，补算使用精确多边�
 快照：PointPillars best@57、SNN last@19、ANN last@2；SNN/ANN 是阶段结果，不能用于最终优劣判断。
 PointPillars 和 SNN 分别使用 GPU6/7；ANN 等 PointPillars 完成后复用 GPU6。
 各模型输出子目录中 `evaluation.json` 的 `ap` 是 BEV，`ap_3d` 是三维体积 IoU AP。
+
+## 单车推理归档与离线复算
+
+评估必须使用固定权重文件和全新的输出目录。正在训练时，使用一次读取的原子 `last.pt`，
+从同一对象提取 epoch、模型和配置哈希；不要将训练中分别更新的 best.pth/best_metrics.json 拼成未经验证的快照。
+最终比较等待两条原定 60 轮训练结束，各自按验证 BEV AP50 选 best；不据中途结果调参或更换协议。
+
+```bash
+CUDA_VISIBLE_DEVICES=<空闲GPU> /data0/chen/miniconda3/envs/opencood/bin/python -u \
+  -m opencood.tools.train_e3dsnn_single --mode eval --workers 2 \
+  --config <对应模型yaml> --checkpoint <冻结的pth> --output <全新目录> \
+  --eval-3d --save-predictions --profile
+CUDA_VISIBLE_DEVICES='' /data0/chen/miniconda3/envs/opencood/bin/python -u \
+  -m opencood.tools.replay_e3dsnn_predictions --evaluation-dir <同一目录>
+```
+
+保留每帧 NPZ（frame_id、预测角点、置信度、GT）、index.json 的顺序和逐文件 SHA256；
+evaluation.json 固定索引哈希。离线工具在 CPU 上校验全部文件并按原 dtype、原帧序重算 AP，
+要求 BEV / 3D AP、预测框总数、GT 总数与在线评估完全相同，生成 offline_replay.json。
+该精确性指同一份已保存预测的复算；独立 GPU 推理仍可能受稀疏算子及体素内点顺序影响。
+原始大文件保留在服务器，Git 和用户 evidence 目录归档指标、来源、哈希及复算报告。
+
+计时采用 batch=1、CUDA 同步；剔除前 20 帧后汇报 H2D、模型前向、后处理及三者合计的均值/中位数/p95。
+后处理包含仓库 decode/NMS/GT 整理。合计不含数据读取与预处理、AP 计算、NPZ 写盘；
+另列的 batch_wait 来自预取 loader，不能当作完整数据预处理成本。
+服务器上其他训练并行，当前浮点 CUDA 实现的这些计时不代表独占设备延迟或脉冲硬件能耗。
+
+CPU 正确性回归：`python -m unittest opencood.tools.test_e3dsnn_prediction_replay -v`，
+覆盖 BEV/3D 区别、重复框、漏检/空帧、NPZ/索引篡改和错误汇总 AP。
