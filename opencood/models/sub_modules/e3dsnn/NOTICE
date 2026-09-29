@@ -1,0 +1,8 @@
+E-3DSNN detection backbone adaptation
+Upstream: https://github.com/bollossom/E-3DSNN
+Commit: dbe5d1731d3204850bd591a18f7255ca2d1b6712
+Sources: det/pcdet/models/backbones_3d/spconv_backbone_spike.py and det/pcdet/models/backbones_2d/base_bev_backbone.py
+Upstream detection project inherits OpenPCDet, licensed under Apache-2.0.
+Retained network topology, parameter names, BN settings and count activation.
+Removed unused code/dependencies and debug output; made sparse residual addition explicit.
+No pretrained weights included.
