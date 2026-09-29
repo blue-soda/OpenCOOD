@@ -1,0 +1,23 @@
+{
+  "strict_reload": true,
+  "vehicle_only": true,
+  "frame_ids": [
+    "000010",
+    "000011",
+    "000013",
+    "000015"
+  ],
+  "prediction_shape": [
+    4,
+    2,
+    50,
+    126
+  ],
+  "raw_box_shape": [
+    4,
+    12600,
+    7
+  ],
+  "finite_positive_box_sizes": true,
+  "peak_allocated_bytes": 451303424
+}

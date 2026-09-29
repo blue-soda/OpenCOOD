@@ -44,7 +44,7 @@ OpenCOOD 分类/框回归/方向头。源代码固定于 E-3DSNN dbe5d173；保�
 cd /data0/chen/gzc/workspace/OpenCOOD
 export PYTHONPATH="$PWD"
 export NUMPY_MADVISE_HUGEPAGE=0 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
-CUDA_VISIBLE_DEVICES=1 /data0/chen/miniconda3/envs/opencood/bin/python -u \
+CUDA_VISIBLE_DEVICES=4 /data0/chen/miniconda3/envs/opencood/bin/python -u \
   -m opencood.tools.train_e3dsnn_single --mode train --workers 4 \
   --output /data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_single_v1
 ```
@@ -55,6 +55,11 @@ CUDA_VISIBLE_DEVICES=1 /data0/chen/miniconda3/envs/opencood/bin/python -u \
 避免服务器有限磁盘被每轮 checkpoint 占满。last.pt 在完整验证后写入。
 续训用相同命令加 `--resume`；必须先确认旧进程已结束，不能重复启动。
 独立评估使用 --mode eval --checkpoint best.pth 和一个新的 output 目录。
+
+4 样本 batch 与严格权重重载已通过，输出 [4,2,50,126]，原始解码框 [4,12600,7]，
+全部有限且尺寸为正：[原始报告](results/batch_decode_20260929.json)。
+首次正式运行代码为 `12a5db0`，GPU 4；GPU 1 启动前检查发现已有其他任务，未在该卡启动。
+代码快照为结果目录同路径加 `_source.tar.gz`。60 轮训练从随机初始化开始。
 
 训练中不因读到新 main 提交自动重启，不改动运行中的模型/配置。每次执行保存配置、Git 提交和划分哈希。
 数据异常或 NaN 会留下 status.json 并退出，修复后本地提交 push，再服务器 pull 并恢复。
