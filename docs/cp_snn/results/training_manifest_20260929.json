@@ -1,0 +1,28 @@
+{
+  "git_commit": "f4dfb96a8afee89c6519bcc40e65e6f15967b246",
+  "arguments": {
+    "mode": "train",
+    "config": "opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_single.yaml",
+    "output": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_single_v2",
+    "seed": 20260929,
+    "workers": 4,
+    "steps": 200,
+    "sample_index": 0,
+    "epochs": 0,
+    "checkpoint": null,
+    "resume": false
+  },
+  "config_sha256": "8872a065ce4a01e5d3f10ced1100e4fa3f8571691288649ce1040ecdbd0aad63",
+  "split_sha256": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+  },
+  "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+  "torch": "1.10.0+cu113",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "gpu_visible": "4",
+  "parameters": 3020564,
+  "train_samples": 4678,
+  "val_samples": 1738,
+  "protocol": "vehicle-only point cloud and local GT; no history/infra; one-stage E3DSNN adaptation"
+}
