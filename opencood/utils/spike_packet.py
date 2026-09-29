@@ -12,7 +12,7 @@ HEADER = struct.Struct('<4sBBHIII')
 
 
 def _pack3(values):
-    bits = ((values.reshape(-1, 1).astype(np.uint8) >> np.arange(3)) & 1).astype(np.uint8)
+    bits = (values.reshape(-1, 1).astype(np.uint8) >> np.arange(3, dtype=np.uint8)) & 1
     return np.packbits(bits.ravel(), bitorder='little').tobytes()
 
 
@@ -47,8 +47,15 @@ def encode(coords, features, metadata, mode='auto'):
     keep = np.any(features != 0, axis=1)
     coords = coords[keep].astype('<u2')
     values = features[keep].astype(np.uint8)
+    # Both packet lengths are known before packing. Avoid constructing the
+    # much larger dense candidate when channel sparsity favors mask3.
+    kind = 0 if mode == 'dense3' else 1
+    if mode == 'auto':
+        dense_size = (values.size * 3 + 7) // 8
+        mask_size = (values.size + 7) // 8 + (np.count_nonzero(values) * 3 + 7) // 8
+        kind = 0 if dense_size <= mask_size else 1
     candidates = []
-    for kind in ([0, 1] if mode == 'auto' else [0 if mode == 'dense3' else 1]):
+    for kind in [kind]:
         if kind == 0:
             payload = coords.tobytes() + _pack3(values)
         else:
