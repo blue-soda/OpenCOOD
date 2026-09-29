@@ -1,0 +1,103 @@
+{
+  "samples": 64,
+  "checkpoint_sha256": "09e776473aae77d3051837a04820fe6ccd2862483cc2bed600858cf3958c5051",
+  "layers": {
+    "early_spike": {
+      "spatial_shape_zyx": [
+        51,
+        400,
+        1008
+      ],
+      "channels": 16,
+      "count4": true,
+      "dense_fp32_bytes": 1316044800,
+      "rows_mean": 27495.859375,
+      "feature_bytes_mean": 1759735.0,
+      "coordinate_storage_bytes_mean": 439933.75,
+      "packet_bytes_mean": 202502.9375,
+      "nonzero_rows_mean": 22572.984375
+    },
+    "conv2": {
+      "spatial_shape_zyx": [
+        26,
+        200,
+        504
+      ],
+      "channels": 32,
+      "count4": false,
+      "dense_fp32_bytes": 335462400,
+      "rows_mean": 37424.046875,
+      "feature_bytes_mean": 4790278.0,
+      "coordinate_storage_bytes_mean": 598784.75
+    },
+    "conv3": {
+      "spatial_shape_zyx": [
+        13,
+        100,
+        252
+      ],
+      "channels": 64,
+      "count4": false,
+      "dense_fp32_bytes": 83865600,
+      "rows_mean": 21819.984375,
+      "feature_bytes_mean": 5585916.0,
+      "coordinate_storage_bytes_mean": 349119.75
+    },
+    "conv4": {
+      "spatial_shape_zyx": [
+        7,
+        50,
+        126
+      ],
+      "channels": 64,
+      "count4": false,
+      "dense_fp32_bytes": 11289600,
+      "rows_mean": 9007.8125,
+      "feature_bytes_mean": 2306000.0,
+      "coordinate_storage_bytes_mean": 144125.0
+    },
+    "conv_out": {
+      "spatial_shape_zyx": [
+        3,
+        50,
+        126
+      ],
+      "channels": 128,
+      "count4": true,
+      "dense_fp32_bytes": 9676800,
+      "rows_mean": 6846.234375,
+      "feature_bytes_mean": 3505272.0,
+      "coordinate_storage_bytes_mean": 109539.75,
+      "packet_bytes_mean": 155302.578125,
+      "nonzero_rows_mean": 6036.171875
+    },
+    "height_compressed": {
+      "spatial_shape_zyx": [
+        1,
+        50,
+        126
+      ],
+      "channels": 384,
+      "count4": true,
+      "dense_fp32_bytes": 9676800,
+      "rows_mean": 6300.0,
+      "feature_bytes_mean": 9676800.0,
+      "coordinate_storage_bytes_mean": 0.0,
+      "packet_bytes_mean": 188468.578125,
+      "nonzero_rows_mean": 3073.421875
+    },
+    "bev_neck": {
+      "spatial_shape_zyx": [
+        1,
+        50,
+        126
+      ],
+      "channels": 256,
+      "count4": false,
+      "dense_fp32_bytes": 6451200,
+      "rows_mean": 6300.0,
+      "feature_bytes_mean": 6451200.0,
+      "coordinate_storage_bytes_mean": 0.0
+    }
+  }
+}
