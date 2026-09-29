@@ -4,7 +4,6 @@ Writes bounded checkpoints (last resume state + best bare state_dict), explicit
 sample counts and full-validation BEV AP. Never silently skips bad samples.
 """
 import argparse
-import copy
 import hashlib
 import json
 import os
@@ -58,7 +57,8 @@ def validate(model, dataset, workers, limit=0):
     model.eval()
     stat = {threshold: {'tp': [], 'fp': [], 'gt': 0, 'score': []} for threshold in (.3, .5, .7)}
     loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=workers,
-                        collate_fn=dataset.collate_batch_test, worker_init_fn=seed_worker)
+                        collate_fn=dataset.collate_batch_test, worker_init_fn=seed_worker,
+                        **({'multiprocessing_context': 'spawn'} if workers else {}))
     evaluated, predicted, ground_truth = 0, 0, 0
     with torch.no_grad():
         for index, batch in enumerate(loader):
@@ -173,7 +173,8 @@ def execute(args, output_dir):
         generator.set_state(state['loader_state'])
     loader = DataLoader(train_data, batch_size=cfg['train_params']['batch_size'], shuffle=True,
         num_workers=args.workers, collate_fn=train_data.collate_batch_train, pin_memory=True,
-        drop_last=False, worker_init_fn=seed_worker, generator=generator)
+        drop_last=False, worker_init_fn=seed_worker, generator=generator,
+        **({'multiprocessing_context': 'spawn'} if args.workers else {}))
     epochs = args.epochs or cfg['train_params']['epoches']
     for epoch in range(start_epoch, epochs):
         model.train()
