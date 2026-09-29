@@ -1,5 +1,15 @@
 # INT full-epoch baseline protocol (2026-09-29)
 
+**Final acceptance, 2026-09-30 07:18 CST:** all training, selected-checkpoint
+replays and six fixed-weight evaluations completed. See
+`int_ego_results/final_baseline_report.json`. AP70 aligned/reset/no-align:
+Concat 75.5047/73.9038/72.3967%, GRU 75.9669/74.0782/70.9888%.
+All replay AP differences are below 1e-6; frame orders, input/model hashes,
+GT counts and reset/warp behavior were verified. These one-seed, validation-
+selected results support learned use of aligned history, not an SNN result or
+complete original INT reproduction. All previously listed jobs have completed;
+do not relaunch them. The baseline-follow-up heartbeat can now be paused.
+
 2026-09-30 06:18 CST: all three repaired full runs completed 23 epochs and met
 the predefined validation plateau stopping condition. Each selected epoch 13.
 Best BEV AP70: single 74.2956%, Concat 75.5047%, GRU 75.9669%. This is one seed

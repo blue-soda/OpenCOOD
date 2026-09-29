@@ -1,0 +1,185 @@
+{
+  "status": "COMPLETED",
+  "utc": "2026-09-29T23:19:42.404084Z",
+  "training": {
+    "status": "TRAINING_COMPLETED",
+    "runs": {
+      "single": {
+        "status": "PLATEAU_REACHED",
+        "epochs": 23,
+        "best": {
+          "bev_ap70": 0.742955707718537,
+          "checkpoint": "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/full_segments_v3_single/epoch_013/trained.pth",
+          "epoch": 13,
+          "sha256": "76c59c4091dd959a7c901aa54c16fd8409d874929b0c6071c92fc9ecdfd1862b"
+        },
+        "metrics": {
+          "bev_ap30": 0.8522252074549838,
+          "bev_ap50": 0.8285770962348896,
+          "bev_ap70": 0.742955707718537
+        },
+        "updates_total": 107594,
+        "last_lr": 1.25e-05,
+        "checkpoint_verified": true
+      },
+      "concat": {
+        "status": "PLATEAU_REACHED",
+        "epochs": 23,
+        "best": {
+          "bev_ap70": 0.7550469555907243,
+          "checkpoint": "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/full_segments_v3_concat/epoch_013/trained.pth",
+          "epoch": 13,
+          "sha256": "d4619c8ee44925fcdb2db9976ed16f096b7ef11ef77b739436bc100a1967144a"
+        },
+        "metrics": {
+          "bev_ap30": 0.8513260145530925,
+          "bev_ap50": 0.8329553117134084,
+          "bev_ap70": 0.7550469555907243
+        },
+        "updates_total": 107594,
+        "last_lr": 3.125e-06,
+        "checkpoint_verified": true
+      },
+      "gru": {
+        "status": "PLATEAU_REACHED",
+        "epochs": 23,
+        "best": {
+          "bev_ap70": 0.7596687959185395,
+          "checkpoint": "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/full_segments_v3_gru/epoch_013/trained.pth",
+          "epoch": 13,
+          "sha256": "377dba863bb8c64651cad608514b793b1fd6e82977cf60c3a7391ce377f289dd"
+        },
+        "metrics": {
+          "bev_ap30": 0.8543913258768788,
+          "bev_ap50": 0.8360472084335238,
+          "bev_ap70": 0.7596687959185395
+        },
+        "updates_total": 107594,
+        "last_lr": 6.25e-06,
+        "checkpoint_verified": true
+      }
+    },
+    "single_replay_absolute_ap_difference": {
+      "bev_ap30": 2.5292946181920684e-08,
+      "bev_ap50": 2.778175900441937e-08,
+      "bev_ap70": 2.2198924809480047e-08
+    },
+    "scope": "Single seed, validation-selected weights, FM-only; full-history ablations pending"
+  },
+  "ablations": {
+    "concat": {
+      "policies": {
+        "aligned": {
+          "metrics": {
+            "bev_ap30": 0.8513260093453044,
+            "bev_ap50": 0.832955295400827,
+            "bev_ap70": 0.7550469377515402
+          },
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "warp_frames": 5580,
+          "checkpoint_sha256": "d4619c8ee44925fcdb2db9976ed16f096b7ef11ef77b739436bc100a1967144a",
+          "manifest_sha256": "18886ad3a55df76621b61cea67e1d352203e8cdf4cd8c36fec36ff72fe27951a"
+        },
+        "reset": {
+          "metrics": {
+            "bev_ap30": 0.8389556388547056,
+            "bev_ap50": 0.8193676051897365,
+            "bev_ap70": 0.7390378401015493
+          },
+          "resets": {
+            "explicit": 5794
+          },
+          "warp_frames": 0,
+          "checkpoint_sha256": "d4619c8ee44925fcdb2db9976ed16f096b7ef11ef77b739436bc100a1967144a",
+          "manifest_sha256": "18886ad3a55df76621b61cea67e1d352203e8cdf4cd8c36fec36ff72fe27951a"
+        },
+        "no_align": {
+          "metrics": {
+            "bev_ap30": 0.8244394991661215,
+            "bev_ap50": 0.8043906127054865,
+            "bev_ap70": 0.7239672022836157
+          },
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "warp_frames": 0,
+          "checkpoint_sha256": "d4619c8ee44925fcdb2db9976ed16f096b7ef11ef77b739436bc100a1967144a",
+          "manifest_sha256": "18886ad3a55df76621b61cea67e1d352203e8cdf4cd8c36fec36ff72fe27951a"
+        }
+      },
+      "replay_absolute_ap_difference": {
+        "bev_ap30": 5.207788089656162e-09,
+        "bev_ap50": 1.6312581396782377e-08,
+        "bev_ap70": 1.783918412989749e-08
+      },
+      "history_gain_pp": 1.6009097649990922,
+      "alignment_gain_pp": 3.107973546792453,
+      "vs_single_pp": 1.2091230033003164
+    },
+    "gru": {
+      "policies": {
+        "aligned": {
+          "metrics": {
+            "bev_ap30": 0.8543913316327445,
+            "bev_ap50": 0.8360472175293743,
+            "bev_ap70": 0.7596688024379291
+          },
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "warp_frames": 5580,
+          "checkpoint_sha256": "377dba863bb8c64651cad608514b793b1fd6e82977cf60c3a7391ce377f289dd",
+          "manifest_sha256": "18886ad3a55df76621b61cea67e1d352203e8cdf4cd8c36fec36ff72fe27951a"
+        },
+        "reset": {
+          "metrics": {
+            "bev_ap30": 0.8379112238708857,
+            "bev_ap50": 0.8180759619535168,
+            "bev_ap70": 0.7407818258787247
+          },
+          "resets": {
+            "explicit": 5794
+          },
+          "warp_frames": 0,
+          "checkpoint_sha256": "377dba863bb8c64651cad608514b793b1fd6e82977cf60c3a7391ce377f289dd",
+          "manifest_sha256": "18886ad3a55df76621b61cea67e1d352203e8cdf4cd8c36fec36ff72fe27951a"
+        },
+        "no_align": {
+          "metrics": {
+            "bev_ap30": 0.8084151324624486,
+            "bev_ap50": 0.7874165148268929,
+            "bev_ap70": 0.709888058329431
+          },
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "warp_frames": 0,
+          "checkpoint_sha256": "377dba863bb8c64651cad608514b793b1fd6e82977cf60c3a7391ce377f289dd",
+          "manifest_sha256": "18886ad3a55df76621b61cea67e1d352203e8cdf4cd8c36fec36ff72fe27951a"
+        }
+      },
+      "replay_absolute_ap_difference": {
+        "bev_ap30": 5.7558656729739255e-09,
+        "bev_ap50": 9.095850517226722e-09,
+        "bev_ap70": 6.519389583736768e-09
+      },
+      "history_gain_pp": 1.888697655920446,
+      "alignment_gain_pp": 4.978074410849809,
+      "vs_single_pp": 1.6713094719392085
+    }
+  },
+  "verification": "Identical input manifests, fixed model hashes, frame order, label/GT counts, and requested state policies verified",
+  "limitations": [
+    "FM-only, not complete original INT",
+    "One seed; validation-selected checkpoints",
+    "No untouched-test or statistical significance claim",
+    "No SNN implemented",
+    "Parallel-run timings are not isolated latency benchmarks"
+  ]
+}
