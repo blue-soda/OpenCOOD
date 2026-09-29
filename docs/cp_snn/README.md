@@ -2,6 +2,8 @@
 
 **后续进展：** 已移植 E-3DSNN 3D/BEV 主干并接入单阶段车端检测头，完成真实单帧过拟合和批量解码验证。
 正式训练与定时跟进入口见 [单端基线训练记录](TRAINING.md)。下文保留前一阶段的数据/算子准备证据。
+已有 PointPillars 的新协议评估、同结构 ANN 启动和证据索引见 [研究关键记录](RESEARCH_LOG.md)，
+该记录同步至用户指定的 `agent-doc/snn-plans/cp-snn-plan`。
 
 工作方式：本地 `C:\Workspace\OpenCOOD\OpenCOOD` 的 **main** 修改、提交并 push；
 服务器 `mindspore-184:/data0/chen/gzc/workspace/OpenCOOD` 的 **main** pull 后运行。

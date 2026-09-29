@@ -1,0 +1,8 @@
+{
+  "config_equivalence_except_activation": true,
+  "identical_initial_state": true,
+  "state_items": 246,
+  "replaced_count_modules": 39,
+  "parameters": 3020564,
+  "control": "Count4 versus unbounded ReLU; not a rounding-only ablation"
+}

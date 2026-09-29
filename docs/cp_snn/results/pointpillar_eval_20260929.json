@@ -1,0 +1,13 @@
+{
+  "samples": 1738,
+  "indexed_samples": 1738,
+  "full_split": true,
+  "predicted_boxes": 26714,
+  "gt_boxes": 22971,
+  "metric": "BEV AP, vehicle-local GT, no fusion",
+  "ap": {
+    "0.3": 0.8502822246709921,
+    "0.5": 0.827999605755343,
+    "0.7": 0.7365249199567104
+  }
+}

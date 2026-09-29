@@ -1,0 +1,31 @@
+{
+  "git_commit": "89a344685d3ec7b6b9e147f67ea13b2c8c2df4ee",
+  "arguments": {
+    "mode": "eval",
+    "config": "opencood/hypes_yaml/dair-v2x/snn/pointpillar_best57_vehicle_eval.yaml",
+    "output": "/data0/chen/gzc/workspace/diagnostics/pointpillar_best57_vehicle_eval_20260929",
+    "seed": 20260929,
+    "workers": 4,
+    "steps": 200,
+    "sample_index": 0,
+    "epochs": 0,
+    "checkpoint": "/data0/chen/gzc/workspace/logs/logs/dairv2x/repro_dair_single_pointpillar_wide_for_codyntrust_cobevflow_2026_09_11_02_51_02/net_epoch_bestval_at57.pth",
+    "resume": false
+  },
+  "config_sha256": "55edf4f96c4120cfdd4c1cfe654fd2cb65a89a16431ce4bc9def1e03f667601e",
+  "split_sha256": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+  },
+  "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+  "torch": "1.10.0+cu113",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "gpu_visible": "6",
+  "parameters": 30516500,
+  "architecture": "point_pillar_codyntrust_single",
+  "activation": "relu",
+  "checkpoint_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+  "train_samples": 4678,
+  "val_samples": 1738,
+  "protocol": "vehicle-only point cloud and local GT; no history/infra; see architecture for model"
+}

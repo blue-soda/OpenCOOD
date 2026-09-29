@@ -84,4 +84,10 @@ v2 启动代码为 `f4dfb96`，PID **947559**，60 epochs、batch=4，每轮 1,1
 无状态变化时保持安静；完成、异常或有实质进展时更新本任务。
 训练完成后：读取 best_metrics.json，严格加载 best.pth 做完整验证重放，归档实际结果与局限。
 若进程失败：先定位并修复故障，按 main/push/pull 流程继续；保留失败日志。
-完成训练和验证后停止本次定时跟进。该跟进不授权启动额外消融或协同模型长训练。
+用户随后授权测试现有 PointPillars 并推进同结构 ANN；同一 heartbeat 需跟进 SNN 与 ANN 两条已启动运行。
+ANN：`/data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_ann_relu_v1`，PID 1058885，GPU 5，
+配置 `opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_ann.yaml`，60 轮。
+PointPillars 评估：`/data0/chen/gzc/workspace/diagnostics/pointpillar_best57_vehicle_eval_20260929`，GPU 6。
+新增关键进展同步至 `C:\Workspace\OpenCOOD\agent-doc\snn-plans\cp-snn-plan\04_单端基线与实验进展_20260929.md`，
+其仓库镜像为 [RESEARCH_LOG.md](RESEARCH_LOG.md)。两条训练及最佳权重验证均完成后停止跟进。
+该跟进不授权启动除此之外的新消融或协同模型长训练。
