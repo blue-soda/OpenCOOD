@@ -1,0 +1,134 @@
+{
+  "evaluation": {
+    "gt_boxes": 22971,
+    "history_diagnostics": [
+      {
+        "frame": "011181",
+        "noalign_psm_l1": 0.11018175631761551,
+        "reset_psm_l1": 0.5750319957733154,
+        "reset_rm_l1": 0.08677193522453308
+      },
+      {
+        "frame": "011194",
+        "noalign_psm_l1": 0.09795398265123367,
+        "reset_psm_l1": 0.5758673548698425,
+        "reset_rm_l1": 0.09350720047950745
+      },
+      {
+        "frame": "011203",
+        "noalign_psm_l1": 0.10261426866054535,
+        "reset_psm_l1": 0.29415324330329895,
+        "reset_rm_l1": 0.04775885492563248
+      },
+      {
+        "frame": "011226",
+        "noalign_psm_l1": 0.09804270416498184,
+        "reset_psm_l1": 0.23907466232776642,
+        "reset_rm_l1": 0.03916789963841438
+      },
+      {
+        "frame": "011235",
+        "noalign_psm_l1": 0.08543180674314499,
+        "reset_psm_l1": 0.5208715796470642,
+        "reset_rm_l1": 0.06736450642347336
+      },
+      {
+        "frame": "011242",
+        "noalign_psm_l1": 0.07986453920602798,
+        "reset_psm_l1": 0.6084757447242737,
+        "reset_rm_l1": 0.07321280986070633
+      },
+      {
+        "frame": "011244",
+        "noalign_psm_l1": 0.0984921008348465,
+        "reset_psm_l1": 0.5749577283859253,
+        "reset_rm_l1": 0.07918169349431992
+      },
+      {
+        "frame": "011246",
+        "noalign_psm_l1": 0.09854218363761902,
+        "reset_psm_l1": 0.5268840193748474,
+        "reset_rm_l1": 0.0854928120970726
+      },
+      {
+        "frame": "011255",
+        "noalign_psm_l1": 0.08588029444217682,
+        "reset_psm_l1": 0.552259624004364,
+        "reset_rm_l1": 0.10772817581892014
+      },
+      {
+        "frame": "010801",
+        "noalign_psm_l1": 0.059282898902893066,
+        "reset_psm_l1": 0.12365376949310303,
+        "reset_rm_l1": 0.019875919446349144
+      },
+      {
+        "frame": "010802",
+        "noalign_psm_l1": 0.06764525920152664,
+        "reset_psm_l1": 0.16545715928077698,
+        "reset_rm_l1": 0.02754862792789936
+      },
+      {
+        "frame": "010803",
+        "noalign_psm_l1": 0.0687706395983696,
+        "reset_psm_l1": 0.19207243621349335,
+        "reset_rm_l1": 0.03326111286878586
+      },
+      {
+        "frame": "010804",
+        "noalign_psm_l1": 0.07330586761236191,
+        "reset_psm_l1": 0.22005894780158997,
+        "reset_rm_l1": 0.03960219770669937
+      },
+      {
+        "frame": "010805",
+        "noalign_psm_l1": 0.0729871541261673,
+        "reset_psm_l1": 0.24219341576099396,
+        "reset_rm_l1": 0.0435311421751976
+      },
+      {
+        "frame": "010806",
+        "noalign_psm_l1": 0.0708211362361908,
+        "reset_psm_l1": 0.2837305963039398,
+        "reset_rm_l1": 0.04961070790886879
+      },
+      {
+        "frame": "010807",
+        "noalign_psm_l1": 0.07047587633132935,
+        "reset_psm_l1": 0.3233485221862793,
+        "reset_rm_l1": 0.05260642617940903
+      }
+    ],
+    "labels": 1738,
+    "metrics": {
+      "bev_ap30": 0.5180293755952339,
+      "bev_ap50": 0.5091011284479827,
+      "bev_ap70": 0.435494716534235
+    },
+    "model_step_ms_p50": 23.858318978454918,
+    "model_step_ms_p95": 31.495832127984603,
+    "peak_allocated_bytes": 462853120,
+    "predicted_boxes": 17876,
+    "resets": {
+      "initial": 1,
+      "scene": 213
+    },
+    "scans": 5794,
+    "seconds": 361.7562715380918,
+    "state_bytes": 26208000,
+    "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+  },
+  "status": "COMPLETED",
+  "training": {
+    "checkpoint_sha256": "36aed264e941561e593773d53c7899678487d2cc9ecb7ca49a037103dd7120f8",
+    "first32_loss_mean": 2.4899108028730765,
+    "last32_loss_mean": 0.787702808983251,
+    "protocol": "Per-frame detach, clip resets, all weights trainable; BN running statistics frozen; no augmentation",
+    "resets": {
+      "explicit": 82
+    },
+    "scans": 311,
+    "seconds": 31.01344779797364,
+    "updates": 256
+  }
+}

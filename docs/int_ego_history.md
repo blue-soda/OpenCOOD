@@ -122,13 +122,33 @@ All completed 256 updates / 311 training scans, with finite gradients.
 
 | Mode | GPU | Launch PID | First/last 32 losses | Validation status at snapshot |
 |---|---:|---:|---|---|
-| single | 1 | 934744 | 0.532737 / 0.534695 | running |
-| concat | 2 | 934745 | 0.553243 / 0.549265 | running |
-| gru | 3 | 934746 | 2.489911 / 0.787703 | running |
+| single | 1 | 934744 | 0.532737 / 0.534695 | COMPLETED |
+| concat | 2 | 934745 | 0.553243 / 0.549265 | COMPLETED |
+| gru | 3 | 934746 | 2.489911 / 0.787703 | COMPLETED |
 
 Outputs: `$RUN/bounded_{single,concat,gru}`; launch commands are recorded in
 `$RUN/bounded_*_launch.json`, console logs in `$RUN/bounded_*.log`.
-On continuation, inspect `result.json`, verify 5,794 scans / 1,738 labels and
-equal GT counts, collect history diagnostics and update this snapshot. Never
-restart an existing live run just because this document still says running.
-The thread heartbeat resumes every 60 minutes and reports completion or failure.
+At the 2026-09-29 follow-up, all three results were verified: 5,794 scans,
+1,738 labels, 22,971 GT boxes, identical train/eval frame orders and input
+manifests, finite training loss/gradients, and matching checkpoint SHA256.
+Machine-readable results and provenance are in `docs/int_ego_results/`.
+
+| Mode | BEV AP30 (%) | BEV AP50 (%) | BEV AP70 (%) |
+|---|---:|---:|---:|
+| single | 83.8002 | 81.7607 | 72.2294 |
+| concat | 83.6621 | 81.6135 | 71.8646 |
+| gru | 51.8029 | 50.9101 | 43.5495 |
+
+The engineering pipeline passes. These 256-update runs do not show an accuracy
+benefit from temporal memory; Concat AP70 is 0.365 percentage points lower than
+the matched single-frame run, and GRU needs substantial further training.
+The trained Concat and GRU do react to history reset and pose alignment in all
+16 diagnostic frames, but tensor differences alone cannot establish AP benefit.
+
+The next check is full-validation, frozen-checkpoint ablation using
+`--eval-only --checkpoint "$RUN/bounded_concat/trained.pth" --mode concat`
+with `--history-policy reset` or `--history-policy no-align` (also repeat for
+GRU). Reset discards history at every scan; no-align retains state without
+pose warping. All other inputs and thresholds remain fixed. Give each run a
+new output directory; non-default policies are rejected during training.
+The thread heartbeat remains at 60 minutes to collect these ablations.

@@ -120,7 +120,9 @@ def evaluate(model, rows, config, args, directory):
             previous = state
             torch.cuda.synchronize()
             tick = time.perf_counter()
-            prediction, state, info = model.step(ego, previous, meta)
+            prediction, state, info = model.step(
+                ego, previous, meta, reset=args.history_policy == 'reset',
+                align=args.history_policy != 'no-align')
             torch.cuda.synchronize()
             elapsed = (time.perf_counter()-tick)*1000
             if scans >= 10:
@@ -138,7 +140,7 @@ def evaluate(model, rows, config, args, directory):
                     eval_utils.caluclate_tp_fp(boxes, scores, gt, stats, threshold)
                 labels += 1
                 entry.update(gt=int(gt.shape[0]), predictions=0 if boxes is None else int(boxes.shape[0]))
-                if args.mode != 'single' and previous is not None and info['reset'] is None and diagnostic_count < 16:
+                if args.history_policy == 'aligned' and args.mode != 'single' and previous is not None and info['reset'] is None and diagnostic_count < 16:
                     reset_pred, _, _ = model.step(ego, previous, meta, reset=True)
                     noalign_pred, _, _ = model.step(ego, previous, meta, align=False)
                     diag = dict(frame=meta['frame'],
@@ -153,7 +155,8 @@ def evaluate(model, rows, config, args, directory):
     if labels == 0 or stats[.5]['gt'] == 0:
         raise RuntimeError('Evaluation produced no supervised data')
     metrics = {'bev_ap%d' % int(t*100): eval_utils.calculate_ap(stats, t)[0] for t in stats}
-    result = dict(metrics=metrics, scans=scans, labels=labels, gt_boxes=stats[.5]['gt'],
+    result = dict(metrics=metrics, history_policy=args.history_policy,
+                  scans=scans, labels=labels, gt_boxes=stats[.5]['gt'],
                   predicted_boxes=len(stats[.5]['score']), resets=dict(resets),
                   state_bytes=0 if state is None else state['value'].numel()*state['value'].element_size(),
                   seconds=time.monotonic()-started, peak_allocated_bytes=torch.cuda.max_memory_allocated(),
@@ -178,7 +181,11 @@ def main():
     parser.add_argument('--seed', type=int, default=303)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--eval-only', action='store_true')
+    parser.add_argument('--history-policy', choices=['aligned', 'reset', 'no-align'],
+                        default='aligned', help='Frozen-checkpoint evaluation ablation')
     args = parser.parse_args()
+    if args.history_policy != 'aligned' and (not args.eval_only or args.mode == 'single'):
+        parser.error('History ablations require --eval-only and a temporal model')
     # TF32 convolution can amplify identity-path rounding through the detector.
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False

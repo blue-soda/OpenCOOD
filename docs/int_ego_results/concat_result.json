@@ -1,0 +1,134 @@
+{
+  "evaluation": {
+    "gt_boxes": 22971,
+    "history_diagnostics": [
+      {
+        "frame": "011181",
+        "noalign_psm_l1": 0.036745570600032806,
+        "reset_psm_l1": 0.041194673627614975,
+        "reset_rm_l1": 0.006857584696263075
+      },
+      {
+        "frame": "011194",
+        "noalign_psm_l1": 0.04260873794555664,
+        "reset_psm_l1": 0.042296867817640305,
+        "reset_rm_l1": 0.007014715112745762
+      },
+      {
+        "frame": "011203",
+        "noalign_psm_l1": 0.03474503010511398,
+        "reset_psm_l1": 0.04283282533288002,
+        "reset_rm_l1": 0.0073565151542425156
+      },
+      {
+        "frame": "011226",
+        "noalign_psm_l1": 0.033223237842321396,
+        "reset_psm_l1": 0.04421836882829666,
+        "reset_rm_l1": 0.007485078647732735
+      },
+      {
+        "frame": "011235",
+        "noalign_psm_l1": 0.029832987114787102,
+        "reset_psm_l1": 0.03855162113904953,
+        "reset_rm_l1": 0.006754978094249964
+      },
+      {
+        "frame": "011242",
+        "noalign_psm_l1": 0.030409857630729675,
+        "reset_psm_l1": 0.04090085253119469,
+        "reset_rm_l1": 0.007548684254288673
+      },
+      {
+        "frame": "011244",
+        "noalign_psm_l1": 0.03647395223379135,
+        "reset_psm_l1": 0.036934614181518555,
+        "reset_rm_l1": 0.0062311384826898575
+      },
+      {
+        "frame": "011246",
+        "noalign_psm_l1": 0.035751208662986755,
+        "reset_psm_l1": 0.0364360436797142,
+        "reset_rm_l1": 0.006357012316584587
+      },
+      {
+        "frame": "011255",
+        "noalign_psm_l1": 0.03414318710565567,
+        "reset_psm_l1": 0.03756963089108467,
+        "reset_rm_l1": 0.00651695067062974
+      },
+      {
+        "frame": "010801",
+        "noalign_psm_l1": 0.024416480213403702,
+        "reset_psm_l1": 0.03218572959303856,
+        "reset_rm_l1": 0.006026651244610548
+      },
+      {
+        "frame": "010802",
+        "noalign_psm_l1": 0.024164220318198204,
+        "reset_psm_l1": 0.029493624344468117,
+        "reset_rm_l1": 0.005474171135574579
+      },
+      {
+        "frame": "010803",
+        "noalign_psm_l1": 0.025052018463611603,
+        "reset_psm_l1": 0.030020887032151222,
+        "reset_rm_l1": 0.00561352726072073
+      },
+      {
+        "frame": "010804",
+        "noalign_psm_l1": 0.025033265352249146,
+        "reset_psm_l1": 0.029743416234850883,
+        "reset_rm_l1": 0.005715528968721628
+      },
+      {
+        "frame": "010805",
+        "noalign_psm_l1": 0.023665230721235275,
+        "reset_psm_l1": 0.0295279398560524,
+        "reset_rm_l1": 0.005458846688270569
+      },
+      {
+        "frame": "010806",
+        "noalign_psm_l1": 0.024685634300112724,
+        "reset_psm_l1": 0.030539413914084435,
+        "reset_rm_l1": 0.005829338915646076
+      },
+      {
+        "frame": "010807",
+        "noalign_psm_l1": 0.02444019354879856,
+        "reset_psm_l1": 0.028890514746308327,
+        "reset_rm_l1": 0.0052695185877382755
+      }
+    ],
+    "labels": 1738,
+    "metrics": {
+      "bev_ap30": 0.8366205075929962,
+      "bev_ap50": 0.8161353761006102,
+      "bev_ap70": 0.7186456692239735
+    },
+    "model_step_ms_p50": 22.11531443754211,
+    "model_step_ms_p95": 29.464341100538135,
+    "peak_allocated_bytes": 433456640,
+    "predicted_boxes": 31604,
+    "resets": {
+      "initial": 1,
+      "scene": 213
+    },
+    "scans": 5794,
+    "seconds": 412.0973283930216,
+    "state_bytes": 25804800,
+    "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+  },
+  "status": "COMPLETED",
+  "training": {
+    "checkpoint_sha256": "1c8148ff5693c4db633a117805761654883e22f4109e83bb2603285cc99a8e1b",
+    "first32_loss_mean": 0.553243311671984,
+    "last32_loss_mean": 0.549265454360429,
+    "protocol": "Per-frame detach, clip resets, all weights trainable; BN running statistics frozen; no augmentation",
+    "resets": {
+      "explicit": 82
+    },
+    "scans": 311,
+    "seconds": 30.28115892095957,
+    "updates": 256
+  }
+}

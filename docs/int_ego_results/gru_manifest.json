@@ -1,0 +1,25 @@
+{
+  "arguments": {
+    "checkpoint": "/data0/chen/gzc/workspace/logs/logs/dairv2x/repro_dair_single_pointpillar_wide_for_codyntrust_cobevflow_2026_09_11_02_51_02/net_epoch_bestval_at57.pth",
+    "clip_length": 4,
+    "config": "opencood/hypes_yaml/dair-v2x/repro/dair_stage1_codyntrust_single_wide.yaml",
+    "data": "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+    "eval_only": false,
+    "lr": 0.0001,
+    "manifest": "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/manifests_v2/sequence_manifest.json",
+    "mode": "gru",
+    "output": "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/bounded_gru",
+    "seed": 303,
+    "train_steps": 256,
+    "workers": 4
+  },
+  "checkpoint_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+  "code_commit": "9bcf5f52fbbcbdaffc2511d865a6b89cb376e02e",
+  "manifest_sha256": "772a212026870253e610facd3ae7ba9a9f2a72f03b67c34ed490c350e70f7420",
+  "protocol": "FM-only; PC/PM disabled; dataset reference ego poses; BEV SE(2) nearest warp; ego labels only",
+  "python": "/data0/chen/miniconda3/envs/opencood/bin/python",
+  "strict_spatial_state_entries": 206,
+  "tf32": false,
+  "torch": "1.10.0+cu113",
+  "upstream_int": "988157ff131a0c027472bd0f00c0bda0e08cded0"
+}

@@ -1,0 +1,36 @@
+{
+  "evaluation": {
+    "gt_boxes": 22971,
+    "history_diagnostics": [],
+    "labels": 1738,
+    "metrics": {
+      "bev_ap30": 0.8380024175080893,
+      "bev_ap50": 0.8176067161163143,
+      "bev_ap70": 0.7222937331343037
+    },
+    "model_step_ms_p50": 19.428143452387303,
+    "model_step_ms_p95": 27.893537835916476,
+    "peak_allocated_bytes": 395370496,
+    "predicted_boxes": 31262,
+    "resets": {
+      "single": 5794
+    },
+    "scans": 5794,
+    "seconds": 456.1639354029903,
+    "state_bytes": 0,
+    "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+  },
+  "status": "COMPLETED",
+  "training": {
+    "checkpoint_sha256": "7e9e0e5e2c825b4de5a5ea7bdda1d4c0e3fac0f5dca09379cd5b4f6d41dd2fe4",
+    "first32_loss_mean": 0.5327371742776479,
+    "last32_loss_mean": 0.5346953766280894,
+    "protocol": "Per-frame detach, clip resets, all weights trainable; BN running statistics frozen; no augmentation",
+    "resets": {
+      "single": 311
+    },
+    "scans": 311,
+    "seconds": 30.41805076203309,
+    "updates": 256
+  }
+}
