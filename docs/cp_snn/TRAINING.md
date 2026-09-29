@@ -82,7 +82,7 @@ v2 启动代码为 `f4dfb96`，PID **947559**，60 epochs、batch=4，每轮 1,1
 
 若训练仍在运行：检查对应 PID、日志、progress.json、metrics.jsonl 和磁盘即可，避免重复启动。
 无状态变化时保持安静；完成、异常或有实质进展时更新本任务。
-训练完成后：读取 best_metrics.json，严格加载 best.pth 做完整验证重放，归档实际结果与局限。
+训练完成后：读取 best_metrics.json，冻结 best.pth 和对应轮次元数据后严格加载，使用 `--mode eval --eval-3d` 做完整验证重放，同时归档 BEV AP、3D AP 与局限。当前训练仍按 BEV AP50 选 best，不将其称为按 3D AP 选出的最佳权重。
 若进程失败：先定位并修复故障，按 main/push/pull 流程继续；保留失败日志。
 用户随后授权测试现有 PointPillars 并推进同结构 ANN；同一 heartbeat 需跟进 SNN 与 ANN 两条已启动运行。
 ANN：`/data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_ann_relu_v1`，PID 1058885，GPU 5，
@@ -91,3 +91,24 @@ PointPillars 评估：`/data0/chen/gzc/workspace/diagnostics/pointpillar_best57_
 新增关键进展同步至 `C:\Workspace\OpenCOOD\agent-doc\snn-plans\cp-snn-plan\04_单端基线与实验进展_20260929.md`，
 其仓库镜像为 [RESEARCH_LOG.md](RESEARCH_LOG.md)。两条训练及最佳权重验证均完成后停止跟进。
 该跟进不授权启动除此之外的新消融或协同模型长训练。
+
+### 2026-09-29 补算 3D AP
+
+默认推理链路 `inference.py -> eval_utils.caluclate_tp_fp -> common_utils.convert_format/compute_iou`
+只计算 xy 多边形交并比，实质是 BEV AP。函数接受 (N,8,3) 三维框不等于使用体积 IoU。
+已有 `pcdet_utils/iou3d_nms` 包不改变这一事实；默认 AP 链路没有调用其中的 3D IoU。
+
+新增 `--eval-3d` 仅用于独立 eval，在同一批输出框上同时计算两种指标。
+三维框须为无 roll/pitch 的直立框；体积交集 = 旋转矩形交集面积 × z 区间交集高度。
+保留现有全局置信度排序、逐帧贪心匹配、VOC2010 精度包络积分；这不是 KITTI R11/R40。
+默认 BEV 评估和运行中的训练均保持原协议。
+
+启动评估前运行 `python -m opencood.tools.audit_e3dsnn_3d_ap --output <audit.json>`。
+合成几何、重复匹配、空输入检查及现有 CUDA 算子交叉校验均须通过。
+CUDA 的 check_in_box2d 使用 1 厘米边界容差，补算使用精确多边形相交；审计明确记录这些边界例外。
+
+本次回放目录：`/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929`。
+`replay_manifest.json` 保存每条运行的命令、GPU、PID、源文件及快照 SHA256、轮次与历史 BEV 指标。
+快照：PointPillars best@57、SNN last@19、ANN last@2；SNN/ANN 是阶段结果，不能用于最终优劣判断。
+PointPillars 和 SNN 分别使用 GPU6/7；ANN 等 PointPillars 完成后复用 GPU6。
+各模型输出子目录中 `evaluation.json` 的 `ap` 是 BEV，`ap_3d` 是三维体积 IoU AP。

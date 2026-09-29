@@ -1,0 +1,32 @@
+{
+  "git_commit": "d5aad7690585fad21207a16fd46c12e86745549b",
+  "arguments": {
+    "mode": "eval",
+    "config": "opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_ann.yaml",
+    "output": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/ann",
+    "seed": 20260929,
+    "workers": 4,
+    "steps": 200,
+    "sample_index": 0,
+    "epochs": 0,
+    "checkpoint": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/checkpoints/ann_epoch_2.pth",
+    "eval_3d": true,
+    "resume": false
+  },
+  "config_sha256": "9e4bcd04e2354b4427e6d36ad1c7d94afafb70aa5f7dc8e2d3c5a1f63a0d181e",
+  "split_sha256": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+  },
+  "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+  "torch": "1.10.0+cu113",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "gpu_visible": "6",
+  "parameters": 3020564,
+  "architecture": "e3dsnn_single_ann",
+  "activation": "relu",
+  "checkpoint_sha256": "a1b15adba8e9c9b231ea366af3d579fde9d53f76a43f70d44c299e8fac847139",
+  "train_samples": 4678,
+  "val_samples": 1738,
+  "protocol": "vehicle-only point cloud and local GT; no history/infra; see architecture for model"
+}

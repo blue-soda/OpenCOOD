@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "synthetic_geometry": "identity, height separation, partial height, xy separation, yaw",
+  "matching": "score order, duplicate rejection, empty predictions/GT, AP integration",
+  "legacy_bev_ap": 1.0,
+  "same_boxes_3d_ap": 0.5,
+  "cuda_reference_pairs": 2304,
+  "cuda_margin_pairs": 27,
+  "cuda_non_margin_max_abs_error": 1.2956791861640227e-07,
+  "cuda_threshold_classification_equal": true,
+  "cuda_boundary_note": "Existing CUDA uses a 1 cm corner-in-box margin; exact polygon evaluator does not",
+  "cuda_max_abs_error": 0.0007123452524311485
+}

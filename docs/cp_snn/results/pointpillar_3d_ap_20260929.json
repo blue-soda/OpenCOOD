@@ -1,0 +1,20 @@
+{
+  "samples": 1738,
+  "indexed_samples": 1738,
+  "full_split": true,
+  "predicted_boxes": 26714,
+  "gt_boxes": 22971,
+  "metric": "BEV and upright 3D AP, vehicle-local GT, no fusion",
+  "ap": {
+    "0.3": 0.8502822246709921,
+    "0.5": 0.827999605755343,
+    "0.7": 0.7365249199567104
+  },
+  "ap_3d": {
+    "0.3": 0.8433732939081451,
+    "0.5": 0.7812532141965046,
+    "0.7": 0.4910211877768291
+  },
+  "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+  "iou_3d": "rotated BEV intersection area times height overlap / volume union"
+}

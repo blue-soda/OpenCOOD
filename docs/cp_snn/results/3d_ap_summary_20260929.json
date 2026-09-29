@@ -1,0 +1,84 @@
+{
+  "complete": true,
+  "metric": "upright 3D IoU AP and BEV AP, VOC2010 integral",
+  "runs": [
+    {
+      "name": "pointpillar",
+      "epoch": 57,
+      "checkpoint_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+      "git_commit": "d5aad7690585fad21207a16fd46c12e86745549b",
+      "result": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 26714,
+        "gt_boxes": 22971,
+        "metric": "BEV and upright 3D AP, vehicle-local GT, no fusion",
+        "ap": {
+          "0.3": 0.8502822246709921,
+          "0.5": 0.827999605755343,
+          "0.7": 0.7365249199567104
+        },
+        "ap_3d": {
+          "0.3": 0.8433732939081451,
+          "0.5": 0.7812532141965046,
+          "0.7": 0.4910211877768291
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union"
+      }
+    },
+    {
+      "name": "snn",
+      "epoch": 19,
+      "checkpoint_sha256": "09e776473aae77d3051837a04820fe6ccd2862483cc2bed600858cf3958c5051",
+      "git_commit": "d5aad7690585fad21207a16fd46c12e86745549b",
+      "result": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 26646,
+        "gt_boxes": 22971,
+        "metric": "BEV and upright 3D AP, vehicle-local GT, no fusion",
+        "ap": {
+          "0.3": 0.8104418056430722,
+          "0.5": 0.7803112677339619,
+          "0.7": 0.579735152679464
+        },
+        "ap_3d": {
+          "0.3": 0.8023701599360177,
+          "0.5": 0.7026780391520471,
+          "0.7": 0.24513244913128074
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union"
+      }
+    },
+    {
+      "name": "ann",
+      "epoch": 2,
+      "checkpoint_sha256": "a1b15adba8e9c9b231ea366af3d579fde9d53f76a43f70d44c299e8fac847139",
+      "git_commit": "d5aad7690585fad21207a16fd46c12e86745549b",
+      "result": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 26273,
+        "gt_boxes": 22971,
+        "metric": "BEV and upright 3D AP, vehicle-local GT, no fusion",
+        "ap": {
+          "0.3": 0.6316623386822978,
+          "0.5": 0.5511773077267954,
+          "0.7": 0.17205429532182734
+        },
+        "ap_3d": {
+          "0.3": 0.6182199231770195,
+          "0.5": 0.4332666119002022,
+          "0.7": 0.041801261668679965
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union"
+      }
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 """Reproducible vehicle-only E-3DSNN adaptation: overfit, train, evaluate.
 
 Writes bounded checkpoints (last resume state + best bare state_dict), explicit
-sample counts and full-validation BEV AP. Never silently skips bad samples.
+sample counts and full-validation BEV AP, plus optional supplemental 3D AP.
+Never silently skips bad samples.
 """
 import argparse
 import hashlib

@@ -1,0 +1,130 @@
+[
+  {
+    "name": "pointpillar",
+    "epoch": 57,
+    "checkpoint": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/checkpoints/pointpillar_best57.pth",
+    "checkpoint_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+    "source": "/data0/chen/gzc/workspace/logs/logs/dairv2x/repro_dair_single_pointpillar_wide_for_codyntrust_cobevflow_2026_09_11_02_51_02/net_epoch_bestval_at57.pth",
+    "source_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+    "reference_bev": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 26714,
+      "gt_boxes": 22971,
+      "metric": "BEV AP, vehicle-local GT, no fusion",
+      "ap": {
+        "0.3": 0.8502822246709921,
+        "0.5": 0.827999605755343,
+        "0.7": 0.7365249199567104
+      }
+    },
+    "output": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/pointpillar",
+    "gpu": 6,
+    "pid": 1081054,
+    "command": [
+      "/data0/chen/miniconda3/envs/opencood/bin/python",
+      "-m",
+      "opencood.tools.train_e3dsnn_single",
+      "--mode",
+      "eval",
+      "--eval-3d",
+      "--config",
+      "opencood/hypes_yaml/dair-v2x/snn/pointpillar_best57_vehicle_eval.yaml",
+      "--output",
+      "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/pointpillar",
+      "--checkpoint",
+      "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/checkpoints/pointpillar_best57.pth",
+      "--workers",
+      "4"
+    ]
+  },
+  {
+    "name": "snn",
+    "epoch": 19,
+    "checkpoint": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/checkpoints/snn_epoch_19.pth",
+    "checkpoint_sha256": "09e776473aae77d3051837a04820fe6ccd2862483cc2bed600858cf3958c5051",
+    "source": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_single_v2/last.pt",
+    "source_sha256": "a3eac64a4b58f447309961032b445478f39295d08a11e97c9e480ba099bedf9c",
+    "reference_bev": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 26643,
+      "gt_boxes": 22971,
+      "metric": "BEV AP, vehicle-local GT, no fusion",
+      "ap": {
+        "0.3": 0.8104847011001808,
+        "0.5": 0.7803551401138747,
+        "0.7": 0.5796884936087259
+      },
+      "epoch": 19,
+      "train_loss": 0.7525066317781965,
+      "train_samples": 4678,
+      "seconds": 361.535775213968
+    },
+    "output": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/snn",
+    "gpu": 7,
+    "pid": 1081122,
+    "command": [
+      "/data0/chen/miniconda3/envs/opencood/bin/python",
+      "-m",
+      "opencood.tools.train_e3dsnn_single",
+      "--mode",
+      "eval",
+      "--eval-3d",
+      "--config",
+      "opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_single.yaml",
+      "--output",
+      "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/snn",
+      "--checkpoint",
+      "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/checkpoints/snn_epoch_19.pth",
+      "--workers",
+      "4"
+    ]
+  },
+  {
+    "name": "ann",
+    "epoch": 2,
+    "checkpoint": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/checkpoints/ann_epoch_2.pth",
+    "checkpoint_sha256": "a1b15adba8e9c9b231ea366af3d579fde9d53f76a43f70d44c299e8fac847139",
+    "source": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_ann_relu_v1/last.pt",
+    "source_sha256": "968c1d0c45b38e8955ce9dfbd6dd091c1ddada781ea1ce17d9ce9cfa42770176",
+    "reference_bev": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 26273,
+      "gt_boxes": 22971,
+      "metric": "BEV AP, vehicle-local GT, no fusion",
+      "ap": {
+        "0.3": 0.6316621023228447,
+        "0.5": 0.5511777971867294,
+        "0.7": 0.17205622143729726
+      },
+      "epoch": 2,
+      "train_loss": 1.400397240703996,
+      "train_samples": 4678,
+      "seconds": 373.240351616987
+    },
+    "output": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/ann",
+    "gpu": 6,
+    "pid": 1081154,
+    "command": [
+      "/data0/chen/miniconda3/envs/opencood/bin/python",
+      "-m",
+      "opencood.tools.train_e3dsnn_single",
+      "--mode",
+      "eval",
+      "--eval-3d",
+      "--config",
+      "opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_ann.yaml",
+      "--output",
+      "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/ann",
+      "--checkpoint",
+      "/data0/chen/gzc/workspace/diagnostics/e3dsnn_3d_replay_20260929/checkpoints/ann_epoch_2.pth",
+      "--workers",
+      "4"
+    ]
+  }
+]
