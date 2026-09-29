@@ -1,0 +1,22 @@
+{
+  "status": "VERIFIED",
+  "excluded_train_frames": [
+    "010585"
+  ],
+  "validation_rows_unchanged": true,
+  "summary": {
+    "train": {
+      "scans": 8593,
+      "labels": 4678,
+      "scenes": 52,
+      "segments": 303
+    },
+    "val": {
+      "scans": 5794,
+      "labels": 1738,
+      "scenes": 22,
+      "segments": 214
+    }
+  },
+  "manifest_sha256": "18886ad3a55df76621b61cea67e1d352203e8cdf4cd8c36fec36ff72fe27951a"
+}

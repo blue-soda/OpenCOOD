@@ -1,5 +1,10 @@
 # INT full-epoch baseline protocol (2026-09-29)
 
+Latest recovery: the first full runs failed their coverage guard because
+`010585.pcd` is nonempty but corrupt. All train/val scans were subsequently
+decoded; only that training frame was removed, with a new segment boundary.
+Active runs are now `full_segments_v3_{single,concat,gru}`. See recovery below.
+
 The 256-update run was only 256/4679 = 0.0547 supervised epochs. It was an
 integration test, not a convergence baseline. Full-val AP70 (%) was:
 
@@ -24,7 +29,8 @@ as in the upstream INT path; this is not full backpropagation through time.
 The previous weights are not reused: all three new runs start from the same
 original P1 spatial checkpoint, with the existing Concat/GRU initialization.
 
-An epoch is exactly 8,594 valid train scans, including 4,679 supervised updates.
+After the full decode audit, an epoch is exactly 8,593 valid train scans,
+including 4,678 supervised updates (the previous counts were 8,594 / 4,679).
 Each epoch is followed by the same full validation stream: 5,794 scans and
 1,738 labeled frames. Missing decoded samples fail the coverage check instead
 of silently changing the experimental population.
@@ -51,7 +57,7 @@ of silently changing the experimental population.
 
 Use `opencood.tools.run_int_epochs` in the same environment documented in
 `int_ego_history.md`, with `--mode single|concat|gru`, original P1 `--checkpoint`,
-`--manifest .../manifests_v2/sequence_manifest.json`, and a new `--output`.
+`--manifest .../manifests_v3_decoded/sequence_manifest.json`, and a new `--output`.
 Use `--max-epochs 40 --min-epochs 20 --patience 10 --workers 4`.
 
 Each `epoch_NNN` retains frame logs, train summary, full eval summary and a
@@ -66,7 +72,7 @@ Three 40-epoch runs retain approximately 15 GB of checkpoints plus logs; each
 epoch checks a 5 GiB free-space reserve. No shared environment packages change.
 All source changes are local main commits, pushed and then pulled on the server.
 The existing 60-minute heartbeat must inspect curve/latest/result and process
-logs. It should check the first full epoch for 8,594 scans / 4,679 updates,
+logs. It should check the first full epoch for 8,593 scans / 4,678 updates,
 validation GT equality and finite gradients, then track plateau/LR behavior.
 After training, repeat the frozen-checkpoint history ablations on selected
 epochs before introducing any SNN component.
@@ -89,5 +95,38 @@ Full runs launched from main `0ea0287dcd10f92ef92fe3ecefc80cd0f0043b1d`:
 | full_segments_gru | 3 | 1051953 |
 
 Exact commands are in `int_ego_results/full_segments_*_launch.json`.
-These are the active experiments for the next heartbeat. Bounded runs and their
+These original full runs failed at epoch 1 before saving a checkpoint. Bounded runs and their
 four frozen-history ablations have already completed and must not be relaunched.
+
+## Decode failure and recovery
+
+All three original full runs encountered the same corrupt frame `010585`,
+whose 627,243-byte compressed PCD decodes empty (SHA256
+`5cf410e75d7bfbc46f06e2a69c4d6ae193e737a82412f9013272f485693657d0`).
+The nonzero-size check in the original manifest was insufficient. The coverage
+guard rejected the 4,678/4,679 updates; no checkpoint was saved. Failure logs and
+machine-readable FAILED records remain in the original directories.
+
+`audit_int_stream` decoded all 14,388 candidate scans using the training reader,
+excluding only this frame and splitting memory continuity at its position.
+Validation rows are exactly unchanged. The new manifest SHA256 is
+`18886ad3a55df76621b61cea67e1d352203e8cdf4cd8c36fec36ff72fe27951a`.
+Training has 303 segments, 8,593 scans, 4,678 labels. Decode JSONL records are
+under `manifests_v3_decoded`; summary evidence is `int_ego_results/decode_repair_audit.json`.
+Eleven unit tests pass, including bad-frame state separation and unchanged valid
+streams. Any newly invalid frozen training frame now raises immediately.
+
+Restarted from the original P1 initialization on main
+`917cdeac211ed88a0d68e1bb22578672ded4c30c`:
+
+| Current directory | GPU | PID |
+|---|---:|---:|
+| full_segments_v3_single | 1 | 1077525 |
+| full_segments_v3_concat | 2 | 1077526 |
+| full_segments_v3_gru | 3 | 1077527 |
+
+All other training/stopping options are unchanged. Use these v3 runs for the next
+heartbeat; inspect `failure.json` as well as logs and process liveness. Runtime
+exceptions now write failure metadata. Each run also saves `effective_runtime.json`
+to distinguish executed settings from unused legacy YAML fields: batch 1,
+AdamW, no artificial delay or asynchronous fusion, no augmentation, full segments.

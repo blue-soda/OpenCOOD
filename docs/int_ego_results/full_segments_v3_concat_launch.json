@@ -1,0 +1,27 @@
+{
+  "pid": 1077526,
+  "gpu": 2,
+  "command": [
+    "/data0/chen/miniconda3/envs/opencood/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.run_int_epochs",
+    "--manifest",
+    "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/manifests_v3_decoded/sequence_manifest.json",
+    "--checkpoint",
+    "/data0/chen/gzc/workspace/logs/logs/dairv2x/repro_dair_single_pointpillar_wide_for_codyntrust_cobevflow_2026_09_11_02_51_02/net_epoch_bestval_at57.pth",
+    "--max-epochs",
+    "40",
+    "--min-epochs",
+    "20",
+    "--patience",
+    "10",
+    "--workers",
+    "4",
+    "--mode",
+    "concat",
+    "--output",
+    "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/full_segments_v3_concat"
+  ],
+  "code_commit": "917cdeac211ed88a0d68e1bb22578672ded4c30c"
+}
