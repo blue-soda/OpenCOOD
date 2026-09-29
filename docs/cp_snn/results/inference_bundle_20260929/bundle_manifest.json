@@ -1,0 +1,108 @@
+{
+  "created_unix": 1790692817.2265732,
+  "git_commit": "05776abeff228d83d60c6c6db665a993f76dba54",
+  "runs": [
+    {
+      "model": "snn",
+      "epoch": 30,
+      "kind": "phase last.pt snapshot; not final best",
+      "source": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_single_v2/last.pt",
+      "source_sha256": "45b29e0cbf9d56da682ddcd7a97ebcd1fbb0c460c971d4552e9bdc5b4d2e5b4b",
+      "checkpoint": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_inference_bundle_20260929/checkpoints/snn_epoch_30.pth",
+      "checkpoint_sha256": "dea9f5d73bacef96fbca1eac1d318735a218cdb2bca6c204d360c7a02cd9bb4f",
+      "config_sha256": "8872a065ce4a01e5d3f10ced1100e4fa3f8571691288649ce1040ecdbd0aad63",
+      "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+      "historical_metrics": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 28260,
+        "gt_boxes": 22971,
+        "metric": "BEV AP, vehicle-local GT, no fusion",
+        "ap": {
+          "0.3": 0.8071023068600488,
+          "0.5": 0.7717449407830154,
+          "0.7": 0.5214548246770031
+        },
+        "epoch": 30,
+        "train_loss": 0.7116173635987652,
+        "train_samples": 4678,
+        "seconds": 369.5878017009236
+      },
+      "command": [
+        "timeout",
+        "1800",
+        "/data0/chen/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--mode",
+        "eval",
+        "--config",
+        "opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_single.yaml",
+        "--checkpoint",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_inference_bundle_20260929/checkpoints/snn_epoch_30.pth",
+        "--output",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_inference_bundle_20260929/snn",
+        "--workers",
+        "2",
+        "--eval-3d",
+        "--save-predictions",
+        "--profile"
+      ],
+      "gpu": "6",
+      "pid": 1168151
+    },
+    {
+      "model": "ann",
+      "epoch": 14,
+      "kind": "phase last.pt snapshot; not final best",
+      "source": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_ann_relu_v1/last.pt",
+      "source_sha256": "12bb9d970d1816c6c68252f326be5b869e1f544e760d8ab48a2f026e47c23693",
+      "checkpoint": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_inference_bundle_20260929/checkpoints/ann_epoch_14.pth",
+      "checkpoint_sha256": "5a292a3541f7cc5dcf9962636d2d8c81278dc2c159194007727b0d2522ee6e19",
+      "config_sha256": "9e4bcd04e2354b4427e6d36ad1c7d94afafb70aa5f7dc8e2d3c5a1f63a0d181e",
+      "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+      "historical_metrics": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 22564,
+        "gt_boxes": 22971,
+        "metric": "BEV AP, vehicle-local GT, no fusion",
+        "ap": {
+          "0.3": 0.7739770564017269,
+          "0.5": 0.7456027960772227,
+          "0.7": 0.5699620716304455
+        },
+        "epoch": 14,
+        "train_loss": 0.7411226377692516,
+        "train_samples": 4678,
+        "seconds": 339.7701343970839
+      },
+      "command": [
+        "timeout",
+        "1800",
+        "/data0/chen/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--mode",
+        "eval",
+        "--config",
+        "opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_ann.yaml",
+        "--checkpoint",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_inference_bundle_20260929/checkpoints/ann_epoch_14.pth",
+        "--output",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_inference_bundle_20260929/ann",
+        "--workers",
+        "2",
+        "--eval-3d",
+        "--save-predictions",
+        "--profile"
+      ],
+      "gpu": "7",
+      "pid": 1168181
+    }
+  ]
+}

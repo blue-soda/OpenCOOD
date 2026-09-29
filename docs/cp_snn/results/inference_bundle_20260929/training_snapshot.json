@@ -1,0 +1,96 @@
+{
+  "snn": {
+    "progress": {
+      "state": "training",
+      "epoch": 32,
+      "epochs": 60,
+      "batch": 1051,
+      "batches": 1170,
+      "loss": 0.914816989110915,
+      "gradient_norm": 1.7991693019866943,
+      "elapsed_seconds": 168.42943538399413
+    },
+    "completed_epochs": 31,
+    "latest_complete": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 25776,
+      "gt_boxes": 22971,
+      "metric": "BEV AP, vehicle-local GT, no fusion",
+      "ap": {
+        "0.3": 0.8095709638697828,
+        "0.5": 0.7830349533972639,
+        "0.7": 0.5924206400041284
+      },
+      "epoch": 31,
+      "train_loss": 0.7139797937485635,
+      "train_samples": 4678,
+      "seconds": 379.2530739639187
+    },
+    "best": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 25331,
+      "gt_boxes": 22971,
+      "metric": "BEV AP, vehicle-local GT, no fusion",
+      "ap": {
+        "0.3": 0.8202992791309954,
+        "0.5": 0.7879616683732076,
+        "0.7": 0.5790308868914087
+      },
+      "epoch": 25,
+      "train_loss": 0.7309999448817617,
+      "train_samples": 4678,
+      "seconds": 428.1653337139869
+    }
+  },
+  "ann": {
+    "progress": {
+      "state": "training",
+      "epoch": 16,
+      "epochs": 60,
+      "batch": 401,
+      "batches": 1170,
+      "loss": 1.0546139937389247,
+      "gradient_norm": 4.187385082244873,
+      "elapsed_seconds": 75.44780600396916
+    },
+    "completed_epochs": 15,
+    "latest_complete": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 30175,
+      "gt_boxes": 22971,
+      "metric": "BEV AP, vehicle-local GT, no fusion",
+      "ap": {
+        "0.3": 0.8194844688364318,
+        "0.5": 0.7855912843492999,
+        "0.7": 0.6177832621869683
+      },
+      "epoch": 15,
+      "train_loss": 0.7313889080287171,
+      "train_samples": 4678,
+      "seconds": 384.369553787983
+    },
+    "best": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 30175,
+      "gt_boxes": 22971,
+      "metric": "BEV AP, vehicle-local GT, no fusion",
+      "ap": {
+        "0.3": 0.8194844688364318,
+        "0.5": 0.7855912843492999,
+        "0.7": 0.6177832621869683
+      },
+      "epoch": 15,
+      "train_loss": 0.7313889080287171,
+      "train_samples": 4678,
+      "seconds": 384.369553787983
+    }
+  }
+}

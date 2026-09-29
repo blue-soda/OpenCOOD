@@ -4,6 +4,7 @@
 正式训练与定时跟进入口见 [单端基线训练记录](TRAINING.md)。下文保留前一阶段的数据/算子准备证据。
 已有 PointPillars 的新协议评估、同结构 ANN 启动和证据索引见 [研究关键记录](RESEARCH_LOG.md)，
 该记录同步至用户指定的 `agent-doc/snn-plans/cp-snn-plan`。
+当前优先完成单车基线；逐帧预测归档、CPU AP 复算和推理计时说明见 [单车推理核验](INFERENCE.md)。
 
 工作方式：本地 `C:\Workspace\OpenCOOD\OpenCOOD` 的 **main** 修改、提交并 push；
 服务器 `mindspore-184:/data0/chen/gzc/workspace/OpenCOOD` 的 **main** pull 后运行。

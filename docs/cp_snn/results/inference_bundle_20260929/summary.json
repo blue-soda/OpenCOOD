@@ -1,0 +1,171 @@
+{
+  "protocol": "DAIR-V2X-C vehicle-local, fixed audited validation set; AP means BEV AP",
+  "phase_only": true,
+  "runtime_commit": "05776abeff228d83d60c6c6db665a993f76dba54",
+  "cpu_tests": {
+    "count": 4,
+    "passed": true,
+    "log": "cpu_tests.txt"
+  },
+  "runs": {
+    "snn": {
+      "epoch": 30,
+      "checkpoint_sha256": "dea9f5d73bacef96fbca1eac1d318735a218cdb2bca6c204d360c7a02cd9bb4f",
+      "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+      "architecture": "e3dsnn_single",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "gpu_visible": "6",
+      "samples": 1738,
+      "gt_boxes": 22971,
+      "ap": {
+        "0.3": 0.8069887331314243,
+        "0.5": 0.7716807720304669,
+        "0.7": 0.521495817694431
+      },
+      "ap_3d": {
+        "0.3": 0.7954278083368976,
+        "0.5": 0.6746760014536315,
+        "0.7": 0.19267061217561604
+      },
+      "profile": {
+        "batch_size": 1,
+        "warmup_frames_excluded": 20,
+        "timed_frames": 1718,
+        "milliseconds": {
+          "batch_wait_ms": {
+            "mean": 8.825699625156247,
+            "median": 7.9201890039257705,
+            "p95": 14.048629539320242
+          },
+          "h2d_ms": {
+            "mean": 7.879021266102357,
+            "median": 7.537356985267252,
+            "p95": 11.238044087076558
+          },
+          "forward_ms": {
+            "mean": 29.660291761068823,
+            "median": 29.292926017660648,
+            "p95": 42.55531986709683
+          },
+          "postprocess_ms": {
+            "mean": 29.95899980749536,
+            "median": 24.967940466012806,
+            "p95": 67.45069828466512
+          },
+          "ready_batch_inference_ms": {
+            "mean": 67.49831283466654,
+            "median": 63.003157963976264,
+            "p95": 109.53562867362051
+          }
+        },
+        "peak_allocated_bytes": 136950784,
+        "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+      },
+      "offline_replay": {
+        "passed": true,
+        "samples": 1738,
+        "predicted_boxes": 28260,
+        "gt_boxes": 22971,
+        "ap": {
+          "0.3": 0.8069887331314243,
+          "0.5": 0.7716807720304669,
+          "0.7": 0.521495817694431
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7954278083368976,
+          "0.5": 0.6746760014536315,
+          "0.7": 0.19267061217561604
+        }
+      }
+    },
+    "ann": {
+      "epoch": 14,
+      "checkpoint_sha256": "5a292a3541f7cc5dcf9962636d2d8c81278dc2c159194007727b0d2522ee6e19",
+      "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+      "architecture": "e3dsnn_single_ann",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "gpu_visible": "7",
+      "samples": 1738,
+      "gt_boxes": 22971,
+      "ap": {
+        "0.3": 0.7739769573703607,
+        "0.5": 0.7455616217887254,
+        "0.7": 0.5699264835917089
+      },
+      "ap_3d": {
+        "0.3": 0.7666757215699659,
+        "0.5": 0.6880083887633933,
+        "0.7": 0.23096578330208348
+      },
+      "profile": {
+        "batch_size": 1,
+        "warmup_frames_excluded": 20,
+        "timed_frames": 1718,
+        "milliseconds": {
+          "batch_wait_ms": {
+            "mean": 8.845098641588828,
+            "median": 7.837998040486127,
+            "p95": 16.14922037115318
+          },
+          "h2d_ms": {
+            "mean": 7.662849815191573,
+            "median": 7.247434929013252,
+            "p95": 11.232308676699175
+          },
+          "forward_ms": {
+            "mean": 26.610992073335677,
+            "median": 26.64701797766611,
+            "p95": 37.65072632231749
+          },
+          "postprocess_ms": {
+            "mean": 23.862116624128475,
+            "median": 18.956347950734198,
+            "p95": 56.75800914177669
+          },
+          "ready_batch_inference_ms": {
+            "mean": 58.135958512655726,
+            "median": 53.36135200923309,
+            "p95": 95.6799488456454
+          }
+        },
+        "peak_allocated_bytes": 132314624,
+        "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+      },
+      "offline_replay": {
+        "passed": true,
+        "samples": 1738,
+        "predicted_boxes": 22565,
+        "gt_boxes": 22971,
+        "ap": {
+          "0.3": 0.7739769573703607,
+          "0.5": 0.7455616217887254,
+          "0.7": 0.5699264835917089
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7666757215699659,
+          "0.5": 0.6880083887633933,
+          "0.7": 0.23096578330208348
+        }
+      }
+    }
+  },
+  "evidence_sha256": {
+    "ann/evaluation.json": "60dae5bdc5d7b6eb4b3d1ff1f3840555e6914245b4165d18548a8601b9a8f41d",
+    "ann/manifest_1790692836.json": "7d2611d328cc61a522c7b5ddabe8ad6d5145a719c152b7b2c834095cfd48a6e6",
+    "ann/offline_replay.json": "279fe42c66aeb436e0da192ddcbfaf90d5dcb181948927a79e6d0af4d5dfa264",
+    "ann/status.json": "83db4c12c55874033205101a8f11c38066d3ae799475f519a54daef068244669",
+    "ann_training_metrics.jsonl": "29344a3cd282030ac30ed45b65783317aa0dd8c9029ed9edd0f41f09171f95db",
+    "bundle_manifest.json": "f98be28db02fb8bd347639e43c18d3fa02cd1b8e88319070aa5335ce98113d68",
+    "cpu_tests.txt": "c7bc80a4c014ed1d13ac70de47e63ab5c7fba006911263fb6cd4362311557dfc",
+    "snn/evaluation.json": "de01267d7331cc1cfe47569dd48b5b3580d1b6f8c17c5fce2832b18174c5a5d3",
+    "snn/manifest_1790692836.json": "3f72df43694117a6eb259401ba6120af607104d7dca56e9c4296705f0a330a7c",
+    "snn/offline_replay.json": "ea9307d7a692f019cb9bb1254ee1823e241ac77fb1b3d91245439a4e01d5d00e",
+    "snn/status.json": "d208878e03853066cdf9575557109eae4626115a9eaeff087e24e69ab9109fd7",
+    "snn_training_metrics.jsonl": "82e0572119b89c94d0e84d333e119c4a67922609413f0f63a9bb3f12b3e15904",
+    "training_snapshot.json": "904845969b77eb3348d62dcc420488c8f5b01792e95c0f6d6edf2022b92a622c"
+  }
+}

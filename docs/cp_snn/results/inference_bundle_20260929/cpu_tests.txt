@@ -1,0 +1,9 @@
+test_changed_index_is_rejected (opencood.tools.test_e3dsnn_prediction_replay.PredictionReplayTest) ... ok
+test_corrupted_prediction_is_rejected (opencood.tools.test_e3dsnn_prediction_replay.PredictionReplayTest) ... ok
+test_known_ap_with_empty_frames (opencood.tools.test_e3dsnn_prediction_replay.PredictionReplayTest) ... ok
+test_wrong_reported_ap_is_rejected (opencood.tools.test_e3dsnn_prediction_replay.PredictionReplayTest) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.075s
+
+OK
