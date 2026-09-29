@@ -46,19 +46,22 @@ def loader(rows, config, workers, seed):
     return dataset, stream
 
 
-def train(model, rows, config, args, directory):
-    order = training_order(rows, args.clip_length, args.seed)
+def train(model, rows, config, args, directory, optimizer=None, order=None,
+          full_epoch=False, save_optimizer=True):
+    if order is None:
+        order = training_order(rows, args.clip_length, args.seed)
     _, stream = loader(order, config, args.workers, args.seed)
     model.train()
     freeze_bn_stats(model)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
+    if optimizer is None:
+        optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
     criterion = PointPillarDirLoss(config['loss']['args']).cuda()
     state, updates, scans = None, 0, 0
     resets, losses = Counter(), []
     started = time.monotonic()
     with (directory/'train_frames.jsonl').open('w', buffering=1) as log:
         for sample in stream:
-            if updates >= args.train_steps:
+            if not full_epoch and updates >= args.train_steps:
                 break
             meta = sample['meta']
             if sample['ego'] is None:
@@ -89,15 +92,20 @@ def train(model, rows, config, args, directory):
             log.write(json.dumps(entry)+'\n')
             if updates and updates % 32 == 0 and meta['supervised']:
                 print('TRAIN', args.mode, updates, 'scans', scans, 'loss', round(losses[-1], 5), flush=True)
-    if updates < args.train_steps:
-        raise RuntimeError('Not enough supervised frames for requested bounded run')
+    expected = sum(r['supervised'] for r in order) if full_epoch else args.train_steps
+    if updates != expected or (full_epoch and scans != len(order)):
+        raise RuntimeError('Training did not consume the required valid frames')
     checkpoint = directory/'trained.pth'
-    torch.save({'model': model.state_dict(), 'optimizer': optimizer.state_dict(),
-                'updates': updates, 'mode': args.mode, 'seed': args.seed}, str(checkpoint))
+    saved = {'model': model.state_dict(), 'updates': updates,
+             'mode': args.mode, 'seed': args.seed}
+    if save_optimizer:
+        saved['optimizer'] = optimizer.state_dict()
+    torch.save(saved, str(checkpoint))
     summary = dict(updates=updates, scans=scans, resets=dict(resets),
+                   loss_mean=float(np.mean(losses)),
                    first32_loss_mean=float(np.mean(losses[:32])), last32_loss_mean=float(np.mean(losses[-32:])),
                    seconds=time.monotonic()-started, checkpoint_sha256=sha256(checkpoint),
-                   protocol='Per-frame detach, clip resets, all weights trainable; BN running statistics frozen; no augmentation')
+                   protocol='Per-frame detach, explicit segment/clip resets, all weights trainable; BN running statistics frozen; no augmentation')
     write_json(directory/'train_summary.json', summary)
     return summary
 
