@@ -24,6 +24,8 @@ def check(row):
 
 
 def filter_stream(rows, audits):
+    if len(rows) != len(audits):
+        raise ValueError('Incomplete decode audit')
     output, counts = [], {}
     for row, audit in zip(rows, audits):
         if row['frame'] != audit['frame']:
