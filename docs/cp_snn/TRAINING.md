@@ -167,3 +167,13 @@ SNN 原运行 `e3dsnn_vehicle_single_v2` 已正常完成全部 60 轮，原 PID 
 ANN 原运行 `e3dsnn_vehicle_ann_relu_v1` 继续训练。只在其 status=complete 且原进程退出后，
 冻结对应 AP50 best，按相同流程执行最终验证和 CPU 复算。两条最终结果完整后汇总单车对照并结束当前跟进，
 不自动启动协同模型训练。
+
+## 2026-09-30：单车阶段全部完成，定时跟进已暂停
+
+以上“继续跟进 ANN”现已完成。ANN 正常完成 60 轮，原 PID 1058885 已退出；按 AP50 选择 epoch55。
+固定权重和最终结果目录为 `/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_ann_20260930`。
+其 pipeline_status=complete，1,738 帧 GPU 推理、逐帧归档和 CPU 精确复算均通过。
+ANN 最终 AP30/50/70 = 85.20% / 82.96% / 72.20%；SNN 为 84.32% / 81.93% / 68.19%。
+汇总见 FINAL_BASELINE.md 和 `results/final_comparison_20260930.json`。
+两条最终验证都无需重复运行；heartbeat `e3dsnn` 已通过应用工具设为 PAUSED。
+当前单车阶段完成，不自动开始协同改造或额外长训练。

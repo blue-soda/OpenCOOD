@@ -1,0 +1,236 @@
+{
+  "complete": true,
+  "comparison": "single-seed validation, same topology/initialization/data/60-epoch training budget; Count4 versus unbounded ReLU",
+  "ap_definition": "BEV AP; 3D AP separately labeled",
+  "models": {
+    "snn": {
+      "model": "e3dsnn_single",
+      "training_epochs": 60,
+      "selected_epoch": 53,
+      "selection": "validation BEV AP50",
+      "training_complete": true,
+      "final_verified": true,
+      "checkpoint_sha256": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
+      "runtime_commit": "e2ec1780e10dc4d85e489d84bda91b4e5698a149",
+      "config_sha256": "8872a065ce4a01e5d3f10ced1100e4fa3f8571691288649ce1040ecdbd0aad63",
+      "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+      "split_sha256": {
+        "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+        "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+      },
+      "seed": 20260929,
+      "parameters": 3020564,
+      "evaluation": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 25504,
+        "gt_boxes": 22971,
+        "metric": "BEV and upright 3D AP, vehicle-local GT, no fusion",
+        "ap": {
+          "0.3": 0.8432432094252732,
+          "0.5": 0.8193232800266079,
+          "0.7": 0.6818611598513237
+        },
+        "ap_3d": {
+          "0.3": 0.8372657838888926,
+          "0.5": 0.7707139975662418,
+          "0.7": 0.42583115304042785
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 1738,
+          "index_sha256": "df099215f6debf8019481a79b48130cf916633f907984baeb8ad049ad9018ec5"
+        },
+        "profile": {
+          "batch_size": 1,
+          "warmup_frames_excluded": 20,
+          "timed_frames": 1718,
+          "milliseconds": {
+            "batch_wait_ms": {
+              "mean": 7.8125332703876795,
+              "median": 6.524330470710993,
+              "p95": 14.385739562567306
+            },
+            "h2d_ms": {
+              "mean": 6.955124499201471,
+              "median": 6.3887195428833365,
+              "p95": 11.112984328065064
+            },
+            "forward_ms": {
+              "mean": 26.877299260550824,
+              "median": 23.852336045820266,
+              "p95": 41.238635528134175
+            },
+            "postprocess_ms": {
+              "mean": 25.595808526453897,
+              "median": 20.188735506962985,
+              "p95": 62.078036629827665
+            },
+            "ready_batch_inference_ms": {
+              "mean": 59.428232286206196,
+              "median": 53.611295006703585,
+              "p95": 106.78658797405659
+            }
+          },
+          "peak_allocated_bytes": 136950784,
+          "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+        }
+      },
+      "offline_replay": {
+        "passed": true,
+        "samples": 1738,
+        "predicted_boxes": 25504,
+        "gt_boxes": 22971,
+        "ap": {
+          "0.3": 0.8432432094252732,
+          "0.5": 0.8193232800266079,
+          "0.7": 0.6818611598513237
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.8372657838888926,
+          "0.5": 0.7707139975662418,
+          "0.7": 0.42583115304042785
+        }
+      }
+    },
+    "ann": {
+      "model": "e3dsnn_single_ann",
+      "training_epochs": 60,
+      "selected_epoch": 55,
+      "selection": "validation BEV AP50",
+      "training_complete": true,
+      "final_verified": true,
+      "checkpoint_sha256": "971575638d7fa2bf8a6de4e3c7920e5499eb0ada9dfc2e9b6c6ca5cb450d3079",
+      "runtime_commit": "dbfaf859cf257830bcab07d2cadf6613bcccf4ce",
+      "config_sha256": "9e4bcd04e2354b4427e6d36ad1c7d94afafb70aa5f7dc8e2d3c5a1f63a0d181e",
+      "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+      "split_sha256": {
+        "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+        "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+      },
+      "seed": 20260929,
+      "parameters": 3020564,
+      "evaluation": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 25012,
+        "gt_boxes": 22971,
+        "metric": "BEV and upright 3D AP, vehicle-local GT, no fusion",
+        "ap": {
+          "0.3": 0.8520356119861613,
+          "0.5": 0.8296419322474383,
+          "0.7": 0.722002071109067
+        },
+        "ap_3d": {
+          "0.3": 0.846257692851053,
+          "0.5": 0.7847405840504212,
+          "0.7": 0.5059947024775693
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 1738,
+          "index_sha256": "ffb80a15b6013ffdcea5cf36d6a9c8fe944dc43ca042e66d0292abff3305203b"
+        },
+        "profile": {
+          "batch_size": 1,
+          "warmup_frames_excluded": 20,
+          "timed_frames": 1718,
+          "milliseconds": {
+            "batch_wait_ms": {
+              "mean": 10.631585647300541,
+              "median": 7.740892993751913,
+              "p95": 24.388095911126584
+            },
+            "h2d_ms": {
+              "mean": 8.933392338109408,
+              "median": 7.04871048219502,
+              "p95": 19.581869628746034
+            },
+            "forward_ms": {
+              "mean": 28.244038782832217,
+              "median": 23.826702556107193,
+              "p95": 54.416423628572375
+            },
+            "postprocess_ms": {
+              "mean": 24.737859929966543,
+              "median": 20.689557015430182,
+              "p95": 55.10953820194116
+            },
+            "ready_batch_inference_ms": {
+              "mean": 61.915291050908166,
+              "median": 55.27663748944178,
+              "p95": 112.74692180450072
+            }
+          },
+          "peak_allocated_bytes": 132314624,
+          "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+        }
+      },
+      "offline_replay": {
+        "passed": true,
+        "samples": 1738,
+        "predicted_boxes": 25012,
+        "gt_boxes": 22971,
+        "ap": {
+          "0.3": 0.8520356119861613,
+          "0.5": 0.8296419322474383,
+          "0.7": 0.722002071109067
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.846257692851053,
+          "0.5": 0.7847405840504212,
+          "0.7": 0.5059947024775693
+        }
+      }
+    }
+  },
+  "snn_minus_ann_ap_percentage_points": {
+    "0.3": -0.8792402560888091,
+    "0.5": -1.0318652220830393,
+    "0.7": -4.014091125774333
+  },
+  "snn_minus_ann_3d_ap_percentage_points": {
+    "0.3": -0.89919089621604,
+    "0.5": -1.4026586484179426,
+    "0.7": -8.016354943714143
+  },
+  "control_audit": {
+    "config_equivalence_except_activation": true,
+    "identical_initial_state": true,
+    "state_items": 246,
+    "replaced_count_modules": 39,
+    "parameters": 3020564,
+    "control": "Count4 versus unbounded ReLU; not a rounding-only ablation"
+  },
+  "pointpillar_engineering_reference": {
+    "ap": {
+      "0.3": 0.8502822246709921,
+      "0.5": 0.827999605755343,
+      "0.7": 0.7365249199567104
+    },
+    "ap_3d": {
+      "0.3": 0.8433732939081451,
+      "0.5": 0.7812532141965046,
+      "0.7": 0.4910211877768291
+    },
+    "matched_training": false,
+    "parameters": 30516500
+  },
+  "limitations": [
+    "one seed and validation split only",
+    "Count4 versus ReLU changes discretization and clipping together",
+    "profiling performed on a shared server at different times; not paired speed/energy benchmark",
+    "155 KB codec evidence used SNN epoch19, not final epoch53",
+    "cooperative detection not implemented"
+  ]
+}

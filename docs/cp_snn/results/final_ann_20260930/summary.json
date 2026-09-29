@@ -1,0 +1,107 @@
+{
+  "model": "e3dsnn_single_ann",
+  "training_epochs": 60,
+  "selected_epoch": 55,
+  "selection": "validation BEV AP50",
+  "training_complete": true,
+  "final_verified": true,
+  "checkpoint_sha256": "971575638d7fa2bf8a6de4e3c7920e5499eb0ada9dfc2e9b6c6ca5cb450d3079",
+  "runtime_commit": "dbfaf859cf257830bcab07d2cadf6613bcccf4ce",
+  "config_sha256": "9e4bcd04e2354b4427e6d36ad1c7d94afafb70aa5f7dc8e2d3c5a1f63a0d181e",
+  "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+  "split_sha256": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+  },
+  "seed": 20260929,
+  "parameters": 3020564,
+  "evaluation": {
+    "samples": 1738,
+    "indexed_samples": 1738,
+    "full_split": true,
+    "predicted_boxes": 25012,
+    "gt_boxes": 22971,
+    "metric": "BEV and upright 3D AP, vehicle-local GT, no fusion",
+    "ap": {
+      "0.3": 0.8520356119861613,
+      "0.5": 0.8296419322474383,
+      "0.7": 0.722002071109067
+    },
+    "ap_3d": {
+      "0.3": 0.846257692851053,
+      "0.5": 0.7847405840504212,
+      "0.7": 0.5059947024775693
+    },
+    "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+    "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+    "predictions": {
+      "directory": "predictions",
+      "frames": 1738,
+      "index_sha256": "ffb80a15b6013ffdcea5cf36d6a9c8fe944dc43ca042e66d0292abff3305203b"
+    },
+    "profile": {
+      "batch_size": 1,
+      "warmup_frames_excluded": 20,
+      "timed_frames": 1718,
+      "milliseconds": {
+        "batch_wait_ms": {
+          "mean": 10.631585647300541,
+          "median": 7.740892993751913,
+          "p95": 24.388095911126584
+        },
+        "h2d_ms": {
+          "mean": 8.933392338109408,
+          "median": 7.04871048219502,
+          "p95": 19.581869628746034
+        },
+        "forward_ms": {
+          "mean": 28.244038782832217,
+          "median": 23.826702556107193,
+          "p95": 54.416423628572375
+        },
+        "postprocess_ms": {
+          "mean": 24.737859929966543,
+          "median": 20.689557015430182,
+          "p95": 55.10953820194116
+        },
+        "ready_batch_inference_ms": {
+          "mean": 61.915291050908166,
+          "median": 55.27663748944178,
+          "p95": 112.74692180450072
+        }
+      },
+      "peak_allocated_bytes": 132314624,
+      "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+    }
+  },
+  "offline_replay": {
+    "passed": true,
+    "samples": 1738,
+    "predicted_boxes": 25012,
+    "gt_boxes": 22971,
+    "ap": {
+      "0.3": 0.8520356119861613,
+      "0.5": 0.8296419322474383,
+      "0.7": 0.722002071109067
+    },
+    "exact_match": true,
+    "all_file_hashes_verified": true,
+    "ap_3d": {
+      "0.3": 0.846257692851053,
+      "0.5": 0.7847405840504212,
+      "0.7": 0.5059947024775693
+    }
+  },
+  "evidence_sha256": {
+    "convergence.json": "2ca6c2e0a2ab17cf7dad0cd59602e66ea936ee7164dd7b0b11b1eae410f7775f",
+    "evaluation/evaluation.json": "5b6950bac3b881459260482619253a6ffe823352361b4d5fb8177166c597b0ba",
+    "evaluation/manifest_1790711464.json": "9167827dc1ca0b45142fd7f7340a69be431483efba4e7f22fd967b6beb655d26",
+    "evaluation/offline_replay.json": "b7ee53d3b701a55a23a3e112b6b17b1c1f124873c388a50daf6db9f58de05aaf",
+    "evaluation/status.json": "2d2a984cfc0d3ec5690ebf40eafe61830fb7d9ef2a52641fff338b3e9747e3c7",
+    "final_manifest.json": "fa957b3bf93cb203cdf6020c8d170011347ae7b6fd4653a78c3438fada28fd86",
+    "pipeline_status.json": "ab5e7183f0dbba855671c932a391c73f5e842101039e162afaebcefa1e57f2dc",
+    "training_best_metrics.json": "4ca8b27996ac8b5de23af5925f4ea6b4d0adeabe03c20651a6d05346cfe9b313",
+    "training_metrics.jsonl": "778f92ba55a419ef53400a2a3b27cb5589314f1834765ec272cd5a446e2bfb8a",
+    "training_status.json": "5cd4772d24dd668501ed5ba1ac4b6e66508f372c1d6b325d6ddcc0e12f1b63c3"
+  }
+}

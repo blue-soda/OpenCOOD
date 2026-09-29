@@ -1,0 +1,58 @@
+{
+  "created_unix": 1790711429.520016,
+  "training_directory": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_ann_relu_v1",
+  "training_complete": true,
+  "epochs": 60,
+  "selection": "maximum validation BEV AP50; first epoch in case of ties",
+  "selected_epoch": 55,
+  "checkpoint": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_ann_20260930/ann_best_epoch_55.pth",
+  "checkpoint_sha256": "971575638d7fa2bf8a6de4e3c7920e5499eb0ada9dfc2e9b6c6ca5cb450d3079",
+  "config_sha256": "9e4bcd04e2354b4427e6d36ad1c7d94afafb70aa5f7dc8e2d3c5a1f63a0d181e",
+  "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
+  "best_training_metrics": {
+    "samples": 1738,
+    "indexed_samples": 1738,
+    "full_split": true,
+    "predicted_boxes": 25012,
+    "gt_boxes": 22971,
+    "metric": "BEV AP, vehicle-local GT, no fusion",
+    "ap": {
+      "0.3": 0.8520353555046835,
+      "0.5": 0.8296823970891981,
+      "0.7": 0.7220017862583081
+    },
+    "epoch": 55,
+    "train_loss": 0.50343747577941,
+    "train_samples": 4678,
+    "seconds": 346.3081287150271
+  },
+  "runtime_commit": "dbfaf859cf257830bcab07d2cadf6613bcccf4ce",
+  "evaluation_command": [
+    "/data0/chen/miniconda3/envs/opencood/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.train_e3dsnn_single",
+    "--mode",
+    "eval",
+    "--config",
+    "/data0/chen/gzc/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_ann.yaml",
+    "--checkpoint",
+    "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_ann_20260930/ann_best_epoch_55.pth",
+    "--output",
+    "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_ann_20260930/evaluation",
+    "--workers",
+    "2",
+    "--eval-3d",
+    "--save-predictions",
+    "--profile"
+  ],
+  "replay_command": [
+    "/data0/chen/miniconda3/envs/opencood/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.replay_e3dsnn_predictions",
+    "--evaluation-dir",
+    "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_ann_20260930/evaluation"
+  ],
+  "gpu": "5"
+}

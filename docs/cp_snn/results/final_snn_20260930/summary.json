@@ -5,7 +5,7 @@
   "selection": "validation BEV AP50",
   "training_complete": true,
   "final_snn_verified": true,
-  "ann_comparison_complete": false,
+  "ann_comparison_complete": true,
   "checkpoint_sha256": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
   "runtime_commit": "e2ec1780e10dc4d85e489d84bda91b4e5698a149",
   "data_manifest_sha256": "db5ffe228aefd5e600b7dcacfc119082ded24c9edbc9baf7e34c34fbb3dafe02",
@@ -89,7 +89,7 @@
     }
   },
   "evidence_sha256": {
-    "convergence.json": "a931837427af81dfe9aa97a5dbee2b33caa478a6208ac628d250c844b6d46ecb",
+    "convergence.json": "9e03fee278c29040f6322feeab709991abf2ccde3062d408b66f75bcc06724fe",
     "evaluation/evaluation.json": "6df36fc6de73bd6361e6b33ad8bb57316b97f7e193e7bb75e1360b18ee9b652e",
     "evaluation/manifest_1790704272.json": "6124d41254349d8ea473a6e006d153b0a6f831fd30b316b7419ab7d7460d8c6e",
     "evaluation/offline_replay.json": "86f70fdf6369d9d8d93e3063bb6102898ea3672d96e41fb5cef04ba517559a53",

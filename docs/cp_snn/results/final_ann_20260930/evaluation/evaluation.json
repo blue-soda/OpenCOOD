@@ -1,0 +1,59 @@
+{
+  "samples": 1738,
+  "indexed_samples": 1738,
+  "full_split": true,
+  "predicted_boxes": 25012,
+  "gt_boxes": 22971,
+  "metric": "BEV and upright 3D AP, vehicle-local GT, no fusion",
+  "ap": {
+    "0.3": 0.8520356119861613,
+    "0.5": 0.8296419322474383,
+    "0.7": 0.722002071109067
+  },
+  "ap_3d": {
+    "0.3": 0.846257692851053,
+    "0.5": 0.7847405840504212,
+    "0.7": 0.5059947024775693
+  },
+  "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+  "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+  "predictions": {
+    "directory": "predictions",
+    "frames": 1738,
+    "index_sha256": "ffb80a15b6013ffdcea5cf36d6a9c8fe944dc43ca042e66d0292abff3305203b"
+  },
+  "profile": {
+    "batch_size": 1,
+    "warmup_frames_excluded": 20,
+    "timed_frames": 1718,
+    "milliseconds": {
+      "batch_wait_ms": {
+        "mean": 10.631585647300541,
+        "median": 7.740892993751913,
+        "p95": 24.388095911126584
+      },
+      "h2d_ms": {
+        "mean": 8.933392338109408,
+        "median": 7.04871048219502,
+        "p95": 19.581869628746034
+      },
+      "forward_ms": {
+        "mean": 28.244038782832217,
+        "median": 23.826702556107193,
+        "p95": 54.416423628572375
+      },
+      "postprocess_ms": {
+        "mean": 24.737859929966543,
+        "median": 20.689557015430182,
+        "p95": 55.10953820194116
+      },
+      "ready_batch_inference_ms": {
+        "mean": 61.915291050908166,
+        "median": 55.27663748944178,
+        "p95": 112.74692180450072
+      }
+    },
+    "peak_allocated_bytes": 132314624,
+    "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+  }
+}
