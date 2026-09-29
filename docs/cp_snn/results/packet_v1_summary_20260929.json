@@ -1,0 +1,48 @@
+{
+  "passed": true,
+  "samples": 64,
+  "checkpoint_sha256": "09e776473aae77d3051837a04820fe6ccd2862483cc2bed600858cf3958c5051",
+  "all_features_heads_boxes_scores_exact": true,
+  "count_histogram": [
+    52290366,
+    3180399,
+    454978,
+    104575,
+    54034
+  ],
+  "totals": {
+    "active_rows": 438159,
+    "nonzero_rows": 386312,
+    "spatial_cells": 1209600,
+    "packet_bytes": 9939299,
+    "raw_fp32_packet_bytes": 226984026,
+    "pruned_fp32_packet_bytes": 200127280,
+    "pruned_uint8_packet_bytes": 51783472
+  },
+  "value_zero_fraction": 0.9323521469945841,
+  "all_zero_row_fraction": 0.11832919100144013,
+  "active_spatial_fraction": 0.362234623015873,
+  "nonzero_spatial_fraction": 0.3193716931216931,
+  "compression_vs_raw_fp32": 22.837025629272244,
+  "compression_vs_pruned_fp32": 20.134949154864945,
+  "compression_vs_pruned_uint8": 5.209972252570327,
+  "packet_bytes_mean": 155301.546875,
+  "packet_bytes_p95": 186665.94999999998,
+  "codec_mode_counts": {
+    "dense3": 0,
+    "mask3": 64
+  },
+  "cpu_timing_ms": {
+    "encode_cpu_ms": {
+      "median": 53.60338598256931,
+      "p95": 97.31784571777096
+    },
+    "decode_cpu_ms": {
+      "median": 14.224546495825052,
+      "p95": 33.03125001839359
+    }
+  },
+  "timing_limit": "CPU prototype only, shared server load, excludes GPU transfers, fragmentation and transport",
+  "scope": "lossless single-agent Count4 codec; no cooperative AP, ANN superiority, hardware energy or bandwidth claim",
+  "seconds": 34.366892471094616
+}

@@ -92,8 +92,15 @@ ANN：`/data0/chen/gzc/workspace/diagnostics/e3dsnn_vehicle_ann_relu_v1`，PID 1
 配置 `opencood/hypes_yaml/dair-v2x/snn/e3dsnn_vehicle_ann.yaml`，60 轮。
 PointPillars 评估：`/data0/chen/gzc/workspace/diagnostics/pointpillar_best57_vehicle_eval_20260929`，GPU 6。
 新增关键进展同步至 `C:\Workspace\OpenCOOD\agent-doc\snn-plans\cp-snn-plan\04_单端基线与实验进展_20260929.md`，
-其仓库镜像为 [RESEARCH_LOG.md](RESEARCH_LOG.md)。两条训练及最佳权重验证均完成后停止跟进。
+其仓库镜像为 [RESEARCH_LOG.md](RESEARCH_LOG.md)。两条训练、最佳权重验证及下述最终共享层审计均完成后停止跟进。
 该跟进不授权启动除此之外的新消融或协同模型长训练。
+
+2026-09-29 用户要求继续推进研究后，已新增并完成第 19 轮 SNN 的 64 帧共享层 codec 审计，
+详见 [PACKET_AUDIT.md](PACKET_AUDIT.md)。最终 SNN 最佳权重冻结后，使用同一清单再运行
+`python -m opencood.tools.audit_e3dsnn_packet --checkpoint <固定权重> --output <新目录>`，
+检验训练后期的通道稀疏度、实际特征包字节和无损检测输出是否仍成立。
+该审计默认 64 帧、内部 1,200 秒上限；启动前确认空闲 GPU，保存进程日志并跟踪退出状态。
+不把 feature packet 的字节数当作含位姿/时间戳、网络分片/重传的完整通信成本。
 
 ### 2026-09-29 补算 3D AP
 

@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "frame_id": "000211",
+  "packet_bytes": 128189,
+  "byte_identical_to_reference": true,
+  "reference_commit": "98d7f43",
+  "git_commit": "22b85523bb3a9f35c87331580cecba308bd56e3d",
+  "repeats_per_method": 40,
+  "alternating_order": true,
+  "warmup_iterations": 3,
+  "timings_ms": {
+    "reference": {
+      "encode": {
+        "median": 26.7469470272772,
+        "p95": 39.313045027665765
+      },
+      "decode": {
+        "median": 9.304062463343143,
+        "p95": 14.043919555842868
+      }
+    },
+    "optimized": {
+      "encode": {
+        "median": 10.647143935784698,
+        "p95": 20.380245760316026
+      },
+      "decode": {
+        "median": 9.23581252573058,
+        "p95": 17.4168155528605
+      }
+    }
+  },
+  "scope": "one frozen frame on shared CPU, resident arrays, excludes GPU transfers and transport"
+}
