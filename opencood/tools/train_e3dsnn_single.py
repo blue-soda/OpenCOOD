@@ -20,7 +20,7 @@ from torch.utils.data import DataLoader
 from opencood.hypes_yaml.yaml_utils import load_yaml
 from opencood.data_utils.datasets import build_dataset
 from opencood.tools import train_utils
-from opencood.utils import eval_utils
+from opencood.utils import eval_utils, eval_3d_utils
 
 
 def write_json(path, value):
@@ -53,9 +53,10 @@ def checked_forward(model, criterion, batch):
     return output, loss
 
 
-def validate(model, dataset, workers, limit=0):
+def validate(model, dataset, workers, limit=0, include_3d=False):
     model.eval()
     stat = {threshold: {'tp': [], 'fp': [], 'gt': 0, 'score': []} for threshold in (.3, .5, .7)}
+    stat_3d = {threshold: {'tp': [], 'fp': [], 'gt': 0, 'score': []} for threshold in stat}
     loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=workers,
                         collate_fn=dataset.collate_batch_test, worker_init_fn=seed_worker,
                         **({'multiprocessing_context': 'spawn'} if workers else {}))
@@ -73,13 +74,23 @@ def validate(model, dataset, workers, limit=0):
                 raise FloatingPointError('Nonfinite decoded boxes')
             for threshold in stat:
                 eval_utils.caluclate_tp_fp(boxes, scores, gt, stat, threshold)
+            if include_3d:
+                eval_3d_utils.calculate_tp_fp_3d(boxes, scores, gt, stat_3d)
             evaluated += 1
             predicted += 0 if boxes is None else len(boxes)
             ground_truth += len(gt)
-    return {'samples': evaluated, 'indexed_samples': len(dataset),
+            if include_3d and evaluated % 250 == 0:
+                print(json.dumps({'eval_samples': evaluated, 'indexed_samples': len(dataset)}), flush=True)
+    result = {'samples': evaluated, 'indexed_samples': len(dataset),
             'full_split': evaluated == len(dataset), 'predicted_boxes': predicted,
             'gt_boxes': ground_truth, 'metric': 'BEV AP, vehicle-local GT, no fusion',
             'ap': {str(threshold): eval_utils.calculate_ap(stat, threshold)[0] for threshold in stat}}
+    if include_3d:
+        result.update({'metric': 'BEV and upright 3D AP, vehicle-local GT, no fusion',
+            'ap_3d': {str(t): eval_utils.calculate_ap(stat_3d, t)[0] for t in stat_3d},
+            'ap_convention': 'VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40',
+            'iou_3d': 'rotated BEV intersection area times height overlap / volume union'})
+    return result
 
 
 def execute(args, output_dir):
@@ -121,7 +132,7 @@ def execute(args, output_dir):
     if args.mode == 'eval':
         if not args.checkpoint:
             raise ValueError('Evaluation requires --checkpoint')
-        metrics = validate(model, val_data, args.workers)
+        metrics = validate(model, val_data, args.workers, include_3d=args.eval_3d)
         write_json(output_dir / 'evaluation.json', metrics)
         return metrics
     if args.mode == 'overfit':
@@ -241,8 +252,11 @@ def main():
     parser.add_argument('--sample-index', type=int, default=0)
     parser.add_argument('--epochs', type=int, default=0)
     parser.add_argument('--checkpoint')
+    parser.add_argument('--eval-3d', action='store_true', help='Also report volume-IoU AP in eval mode')
     parser.add_argument('--resume', action='store_true')
     args = parser.parse_args()
+    if args.eval_3d and args.mode != 'eval':
+        parser.error('--eval-3d is a supplemental evaluation option; training selection stays BEV AP50')
     output_dir = Path(args.output)
     if output_dir.exists() and any(output_dir.iterdir()) and not args.resume:
         raise FileExistsError('Use a fresh output directory or explicit --resume')
