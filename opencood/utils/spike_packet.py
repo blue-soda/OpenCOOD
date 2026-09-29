@@ -54,16 +54,13 @@ def encode(coords, features, metadata, mode='auto'):
         dense_size = (values.size * 3 + 7) // 8
         mask_size = (values.size + 7) // 8 + (np.count_nonzero(values) * 3 + 7) // 8
         kind = 0 if dense_size <= mask_size else 1
-    candidates = []
-    for kind in [kind]:
-        if kind == 0:
-            payload = coords.tobytes() + _pack3(values)
-        else:
-            mask = values != 0
-            payload = coords.tobytes() + np.packbits(mask.ravel(), bitorder='little').tobytes() + _pack3(values[mask])
-        body = HEADER.pack(b'SPK4', 1, kind, features.shape[1], len(coords), len(metadata_bytes), len(payload)) + metadata_bytes + payload
-        candidates.append(body + struct.pack('<I', zlib.crc32(body) & 0xffffffff))
-    return min(candidates, key=len)
+    if kind == 0:
+        payload = coords.tobytes() + _pack3(values)
+    else:
+        mask = values != 0
+        payload = coords.tobytes() + np.packbits(mask.ravel(), bitorder='little').tobytes() + _pack3(values[mask])
+    body = HEADER.pack(b'SPK4', 1, kind, features.shape[1], len(coords), len(metadata_bytes), len(payload)) + metadata_bytes + payload
+    return body + struct.pack('<I', zlib.crc32(body) & 0xffffffff)
 
 
 def decode(packet):
