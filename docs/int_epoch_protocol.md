@@ -1,5 +1,13 @@
 # INT full-epoch baseline protocol (2026-09-29)
 
+2026-09-30 06:18 CST: all three repaired full runs completed 23 epochs and met
+the predefined validation plateau stopping condition. Each selected epoch 13.
+Best BEV AP70: single 74.2956%, Concat 75.5047%, GRU 75.9669%. This is one seed
+with validation selection, not a held-out/multi-seed result. See
+`int_ego_results/full_training_summary.json`. Full-history ablations and temporal
+checkpoint replays are now active under `full_best_*` (launch JSONs in the same
+results directory). Training runs should not be relaunched.
+
 Latest recovery: the first full runs failed their coverage guard because
 `010585.pcd` is nonempty but corrupt. All train/val scans were subsequently
 decoded; only that training frame was removed, with a new segment boundary.
@@ -130,3 +138,27 @@ heartbeat; inspect `failure.json` as well as logs and process liveness. Runtime
 exceptions now write failure metadata. Each run also saves `effective_runtime.json`
 to distinguish executed settings from unused legacy YAML fields: batch 1,
 AdamW, no artificial delay or asynchronous fusion, no augmentation, full segments.
+
+## Full training acceptance, 2026-09-30
+
+All 69 completed epochs have the required 8,593 scans / 4,678 updates and
+5,794 validation scans / 1,738 labels / 22,971 GT. Losses and AP are finite.
+Each mode completed 107,594 optimizer updates; selected immutable checkpoint
+hashes match the saved best records. Later train loss decreased while validation
+did not improve; report validation-plateau stopping rather than claiming loss
+convergence. Single-frame checkpoint replay matched AP30/50/70 within 2.8e-8
+absolute AP. New checks hold each temporal checkpoint fixed and compare aligned,
+reset-every-scan and no-alignment policies. These comparisons remain pending.
+
+| Active evaluation | GPU | PID |
+|---|---:|---:|
+| full_best_concat_aligned | 1 | 1675126 |
+| full_best_concat_reset | 2 | 1675127 |
+| full_best_concat_no_align | 3 | 1675128 |
+| full_best_gru_aligned | 5 | 1675129 |
+| full_best_gru_reset | 6 | 1675130 |
+| full_best_gru_no_align | 7 | 1675131 |
+
+Next heartbeat: verify these six results, fixed-weight/manifest hashes, frame
+counts, reset/warp behavior and aligned replay agreement. Then summarize actual
+history benefit separately from the difference between separately trained models.

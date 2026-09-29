@@ -1,0 +1,26 @@
+{
+  "pid": 1675129,
+  "gpu": 5,
+  "command": [
+    "/data0/chen/miniconda3/envs/opencood/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.run_int_ego",
+    "--data",
+    "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+    "--manifest",
+    "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/manifests_v3_decoded/sequence_manifest.json",
+    "--checkpoint",
+    "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/full_segments_v3_gru/epoch_013/trained.pth",
+    "--mode",
+    "gru",
+    "--history-policy",
+    "aligned",
+    "--eval-only",
+    "--workers",
+    "2",
+    "--output",
+    "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/full_best_gru_aligned"
+  ],
+  "code_commit": "f83c94a1be1b276ebc27c771e006d18dc00d5fc1"
+}

@@ -1,0 +1,65 @@
+{
+  "status": "TRAINING_COMPLETED",
+  "runs": {
+    "single": {
+      "status": "PLATEAU_REACHED",
+      "epochs": 23,
+      "best": {
+        "bev_ap70": 0.742955707718537,
+        "checkpoint": "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/full_segments_v3_single/epoch_013/trained.pth",
+        "epoch": 13,
+        "sha256": "76c59c4091dd959a7c901aa54c16fd8409d874929b0c6071c92fc9ecdfd1862b"
+      },
+      "metrics": {
+        "bev_ap30": 0.8522252074549838,
+        "bev_ap50": 0.8285770962348896,
+        "bev_ap70": 0.742955707718537
+      },
+      "updates_total": 107594,
+      "last_lr": 1.25e-05,
+      "checkpoint_verified": true
+    },
+    "concat": {
+      "status": "PLATEAU_REACHED",
+      "epochs": 23,
+      "best": {
+        "bev_ap70": 0.7550469555907243,
+        "checkpoint": "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/full_segments_v3_concat/epoch_013/trained.pth",
+        "epoch": 13,
+        "sha256": "d4619c8ee44925fcdb2db9976ed16f096b7ef11ef77b739436bc100a1967144a"
+      },
+      "metrics": {
+        "bev_ap30": 0.8513260145530925,
+        "bev_ap50": 0.8329553117134084,
+        "bev_ap70": 0.7550469555907243
+      },
+      "updates_total": 107594,
+      "last_lr": 3.125e-06,
+      "checkpoint_verified": true
+    },
+    "gru": {
+      "status": "PLATEAU_REACHED",
+      "epochs": 23,
+      "best": {
+        "bev_ap70": 0.7596687959185395,
+        "checkpoint": "/data0/chen/gzc/workspace/diagnostics/int_ego_20260929/full_segments_v3_gru/epoch_013/trained.pth",
+        "epoch": 13,
+        "sha256": "377dba863bb8c64651cad608514b793b1fd6e82977cf60c3a7391ce377f289dd"
+      },
+      "metrics": {
+        "bev_ap30": 0.8543913258768788,
+        "bev_ap50": 0.8360472084335238,
+        "bev_ap70": 0.7596687959185395
+      },
+      "updates_total": 107594,
+      "last_lr": 6.25e-06,
+      "checkpoint_verified": true
+    }
+  },
+  "single_replay_absolute_ap_difference": {
+    "bev_ap30": 2.5292946181920684e-08,
+    "bev_ap50": 2.778175900441937e-08,
+    "bev_ap70": 2.2198924809480047e-08
+  },
+  "scope": "Single seed, validation-selected weights, FM-only; full-history ablations pending"
+}
