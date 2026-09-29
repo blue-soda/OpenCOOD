@@ -64,11 +64,31 @@ def run():
     actual = eval_3d_utils.pairwise_iou3d(corners[:48], corners[48:])
     expected = boxes_iou3d_gpu(torch.from_numpy(samples[:48]).cuda(),
                                torch.from_numpy(samples[48:]).cuda()).cpu().numpy()
-    np.testing.assert_allclose(actual, expected, atol=2e-5, rtol=1e-4)
+    # The existing CUDA kernel accepts corners up to 1 cm outside a rectangle
+    # (check_in_box2d MARGIN=1e-2). Exact polygon clipping does not. Identify
+    # these geometric boundary cases independently, not by observed error.
+    def in_cuda_margin(vertices, box):
+        delta = vertices[:, :2].astype(np.float64) - box[:2]
+        c, s = np.cos(float(box[6])), np.sin(float(box[6]))
+        local = np.abs(np.column_stack((delta[:, 0] * c + delta[:, 1] * s,
+                                       -delta[:, 0] * s + delta[:, 1] * c)))
+        half = box[3:5] / 2.
+        return bool(np.any(np.all(local < half + .01001, axis=1) &
+                           np.any(local > half - 1e-5, axis=1)))
+    margin_pairs = np.array([[in_cuda_margin(corners[i, :4], samples[j]) or
+                              in_cuda_margin(corners[j, :4], samples[i])
+                              for j in range(48, 96)] for i in range(48)])
+    np.testing.assert_allclose(actual[~margin_pairs], expected[~margin_pairs], atol=2e-5, rtol=1e-4)
+    for threshold in (.3, .5, .7):
+        np.testing.assert_array_equal(actual >= threshold, expected >= threshold)
     return {'passed': True, 'synthetic_geometry': 'identity, height separation, partial height, xy separation, yaw',
             'matching': 'score order, duplicate rejection, empty predictions/GT, AP integration',
             'legacy_bev_ap': 1., 'same_boxes_3d_ap': .5,
             'cuda_reference_pairs': int(actual.size),
+            'cuda_margin_pairs': int(margin_pairs.sum()),
+            'cuda_non_margin_max_abs_error': float(np.max(np.abs(actual - expected)[~margin_pairs])),
+            'cuda_threshold_classification_equal': True,
+            'cuda_boundary_note': 'Existing CUDA uses a 1 cm corner-in-box margin; exact polygon evaluator does not',
             'cuda_max_abs_error': float(np.max(np.abs(actual - expected)))}
 
 
