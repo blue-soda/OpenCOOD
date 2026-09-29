@@ -107,3 +107,28 @@ Next scientific stage after engineering acceptance: freeze an ego-only protocol,
 train ANN baselines to convergence with matched budgets and repeated seeds,
 perform reset/no-alignment/history-length AP ablations, then introduce a spiking
 state cell and compare accuracy, measured costs, and state/reset behavior.
+
+## Execution snapshot, 2026-09-29
+
+All seven tests passed. Both corrected smoke runs completed four supervised
+updates, checkpoint reload, and 227 scans / 32 validation labels. Concat identity
+head-output maximum error was 4.292e-6. Smoke GRU AP was zero after only four
+updates; a successful execution is not evidence of a usable accuracy baseline.
+
+Three full-stream runs started from main commit
+`9bcf5f52fbbcbdaffc2511d865a6b89cb376e02e` with the same manifest SHA256
+`772a212026870253e610facd3ae7ba9a9f2a72f03b67c34ed490c350e70f7420`.
+All completed 256 updates / 311 training scans, with finite gradients.
+
+| Mode | GPU | Launch PID | First/last 32 losses | Validation status at snapshot |
+|---|---:|---:|---|---|
+| single | 1 | 934744 | 0.532737 / 0.534695 | running |
+| concat | 2 | 934745 | 0.553243 / 0.549265 | running |
+| gru | 3 | 934746 | 2.489911 / 0.787703 | running |
+
+Outputs: `$RUN/bounded_{single,concat,gru}`; launch commands are recorded in
+`$RUN/bounded_*_launch.json`, console logs in `$RUN/bounded_*.log`.
+On continuation, inspect `result.json`, verify 5,794 scans / 1,738 labels and
+equal GT counts, collect history diagnostics and update this snapshot. Never
+restart an existing live run just because this document still says running.
+The thread heartbeat resumes every 60 minutes and reports completion or failure.
