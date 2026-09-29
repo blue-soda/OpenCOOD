@@ -2,6 +2,9 @@
 
 ## 模型和数据协议
 
+汇报约定（2026-09-29 用户确认）：后续 **AP 默认指仓库 BEV AP**，AP30/50/70 对应 BEV IoU 0.3/0.5/0.7。
+以此作为主指标，best 继续按 AP50 选择。体积 IoU 结果仅作为补充并明确写作 **3D AP**；不改变既有计算代码和历史结果标签。
+
 本地 main 修改 → push → mindspore-184 的 OpenCOOD/main pull → GPU 运行。
 本地路径：`C:\Workspace\OpenCOOD\OpenCOOD`。
 远端路径：`/data0/chen/gzc/workspace/OpenCOOD`。
