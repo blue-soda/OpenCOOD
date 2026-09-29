@@ -1,5 +1,9 @@
 # INT ego-history feature-memory port
 
+Latest stage: all bounded runs and frozen-history ablations completed. Full
+segment, multi-epoch training is now running; see [the frozen epoch protocol](int_epoch_protocol.md)
+for launch records, stopping criteria and recovery validation.
+
 ## Scope
 
 This implementation ports the public INT Concat and infinite-GRU feature-memory

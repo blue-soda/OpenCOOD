@@ -1,0 +1,13 @@
+{
+  "status": "VERIFIED",
+  "epoch": 2,
+  "model_max_abs_difference": 0.0,
+  "optimizer_state_equal": true,
+  "scheduler_equal": true,
+  "metrics": {
+    "bev_ap30": 0.4227961471770147,
+    "bev_ap50": 0.4035536609969133,
+    "bev_ap70": 0.30683865503856916
+  },
+  "scope": "81 train scans/32 updates per epoch; 227 val scans/32 labels; GRU continuous two epochs versus one epoch plus restart"
+}

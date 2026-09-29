@@ -70,3 +70,24 @@ logs. It should check the first full epoch for 8,594 scans / 4,679 updates,
 validation GT equality and finite gradients, then track plateau/LR behavior.
 After training, repeat the frozen-checkpoint history ablations on selected
 epochs before introducing any SNN component.
+
+## Launch and recovery validation
+
+Nine unit tests passed. The GRU smoke comparison of two continuous epochs versus
+one epoch plus process restart produced identical model tensors (maximum absolute
+difference 0), optimizer state, scheduler state and validation AP. See
+`int_ego_results/epoch_resume_audit.json`. Scope: 81 training scans / 32 supervised
+updates per epoch and 227 validation scans / 32 labels. This checks recovery,
+not full-dataset convergence.
+
+Full runs launched from main `0ea0287dcd10f92ef92fe3ecefc80cd0f0043b1d`:
+
+| Output below diagnostics/int_ego_20260929 | GPU | PID |
+|---|---:|---:|
+| full_segments_single | 1 | 1051951 |
+| full_segments_concat | 2 | 1051952 |
+| full_segments_gru | 3 | 1051953 |
+
+Exact commands are in `int_ego_results/full_segments_*_launch.json`.
+These are the active experiments for the next heartbeat. Bounded runs and their
+four frozen-history ablations have already completed and must not be relaunched.
