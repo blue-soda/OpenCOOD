@@ -88,6 +88,10 @@ def main():
                    python=sys.executable, torch=torch.__version__,
                    policy='Full segments, shuffled per epoch; same reset horizon as evaluation. BN statistics frozen, no augmentation, no BPTT beyond one scan.'))
         (root/'config.yaml').write_text(yaml.dump(config))
+    if start > a.max_epochs:
+        p.error('No new epochs requested; increase --max-epochs to resume')
+    write_json(root/'result.json', dict(status='RUNNING', next_epoch=start,
+               max_epochs=a.max_epochs))
     completed = False
     for epoch in range(start, a.max_epochs+1):
         # Sampling and all RNG restart at epoch boundaries; no stream state crosses epochs.
