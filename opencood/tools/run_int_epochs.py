@@ -43,6 +43,8 @@ def main():
     p.add_argument('--tbptt-steps', type=int, default=1)
     p.add_argument('--fm-only-epochs', type=int, default=0,
                    help='Initial epochs freezing spatial parameters; BN statistics always frozen')
+    p.add_argument('--stop-after-epoch', type=int, default=0,
+                   help='Engineering restart audit: stop cleanly after this epoch, keeping the training contract')
     a = p.parse_args()
     if not 1 <= a.min_epochs <= a.max_epochs or a.patience < 1:
         p.error('Invalid epoch or patience limits')
@@ -109,7 +111,7 @@ def main():
         p.error('No new epochs requested; increase --max-epochs to resume')
     write_json(root/'result.json', dict(status='RUNNING', next_epoch=start,
                max_epochs=a.max_epochs))
-    completed = False
+    completed, boundary_stop = False, False
     for epoch in range(start, a.max_epochs+1):
         # Sampling and all RNG restart at epoch boundaries; no stream state crosses epochs.
         random.seed(a.seed+epoch); np.random.seed(a.seed+epoch)
@@ -157,7 +159,11 @@ def main():
         if epoch >= a.min_epochs and stale >= a.patience and optimizer.param_groups[0]['lr'] <= a.lr/8:
             completed = True
             break
-    write_json(root/'result.json', dict(status='PLATEAU_REACHED' if completed else 'EPOCH_LIMIT_REACHED',
+        if a.stop_after_epoch and epoch >= a.stop_after_epoch:
+            boundary_stop = True
+            break
+    write_json(root/'result.json', dict(status='PLATEAU_REACHED' if completed else
+               ('CHECKPOINT_BOUNDARY_STOP' if boundary_stop else 'EPOCH_LIMIT_REACHED'),
                epochs=len(history), best=json.loads((root/'best.json').read_text()),
                caveat='Validation plateau is an operational stopping rule, not a proof of convergence or a held-out test result.'))
 
