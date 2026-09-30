@@ -1,0 +1,394 @@
+{
+  "count4": {
+    "controls": {
+      "state": "complete",
+      "jobs": [
+        "count4_ego_eval",
+        "count4_ego_eval_replay",
+        "count4_max_eval",
+        "count4_max_eval_replay"
+      ],
+      "supervisor_pid": 2033192,
+      "updated_unix": 1790741596.8532748
+    },
+    "training": {
+      "state": "running",
+      "job": "count4_train",
+      "child_pid": 2033201,
+      "command": [
+        "/data0/chen/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--mode",
+        "train",
+        "--workers",
+        "4",
+        "--config",
+        "opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_residual.yaml",
+        "--single-checkpoint",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_snn_20260930/snn_best_epoch_53.pth",
+        "--warmup-epochs",
+        "3",
+        "--output",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/count4_train"
+      ],
+      "supervisor_pid": 2033194,
+      "updated_unix": 1790740732.591456,
+      "process_alive": true
+    },
+    "progress.json": {
+      "state": "training",
+      "epoch": 11,
+      "epochs": 30,
+      "batch": 1801,
+      "batches": 2339,
+      "loss": 0.4086152870926384,
+      "gradient_norm": 3.545206308364868,
+      "elapsed_seconds": 260.4978884170996
+    },
+    "best_metrics.json": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 29414,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7769629675203896,
+        "0.5": 0.7207232853227163,
+        "0.7": 0.5200611338830553
+      },
+      "epoch": 10,
+      "train_loss": 0.717211119491207,
+      "train_samples": 4678,
+      "seconds": 544.0051978830015
+    },
+    "completed_epochs": 10,
+    "last_metrics": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 29414,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7769629675203896,
+        "0.5": 0.7207232853227163,
+        "0.7": 0.5200611338830553
+      },
+      "epoch": 10,
+      "train_loss": 0.717211119491207,
+      "train_samples": 4678,
+      "seconds": 544.0051978830015
+    },
+    "epochs_contiguous": true,
+    "sample_counts": [
+      [
+        4678,
+        1738,
+        28622
+      ]
+    ],
+    "ego": {
+      "status.json": {
+        "state": "complete",
+        "mode": "eval",
+        "finished_unix": 1790741095.71575
+      },
+      "evaluation.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 25504,
+        "gt_boxes": 28622,
+        "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.6982038293524416,
+          "0.5": 0.6662389849712154,
+          "0.7": 0.547727186584771
+        },
+        "ap_3d": {
+          "0.3": 0.6881822563892429,
+          "0.5": 0.6212143062637911,
+          "0.7": 0.34090504892182255
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 1738,
+          "index_sha256": "da814703d82d064e30b1a5195805d067385e97e0d457722e6cfc258afc2f17e2"
+        }
+      },
+      "offline_replay.json": {
+        "passed": true,
+        "samples": 1738,
+        "predicted_boxes": 25504,
+        "gt_boxes": 28622,
+        "ap": {
+          "0.3": 0.6982038293524416,
+          "0.5": 0.6662389849712154,
+          "0.7": 0.547727186584771
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.6881822563892429,
+          "0.5": 0.6212143062637911,
+          "0.7": 0.34090504892182255
+        }
+      }
+    },
+    "max": {
+      "status.json": {
+        "state": "complete",
+        "mode": "eval",
+        "finished_unix": 1790741515.4120536
+      },
+      "evaluation.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 25522,
+        "gt_boxes": 28622,
+        "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.690624655496083,
+          "0.5": 0.6447376670426012,
+          "0.7": 0.4922542940443502
+        },
+        "ap_3d": {
+          "0.3": 0.6741262461712422,
+          "0.5": 0.5765249656341558,
+          "0.7": 0.2337533794396764
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 1738,
+          "index_sha256": "675bd0318c5cb756ba852efdc8fb0bb1a18f40af4ae336f79e049ffe32f81f43"
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 73366.78481012658,
+          "p95_bytes": 91912.59999999999,
+          "total_bytes": 127511472,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "offline_replay.json": {
+        "passed": true,
+        "samples": 1738,
+        "predicted_boxes": 25522,
+        "gt_boxes": 28622,
+        "ap": {
+          "0.3": 0.690624655496083,
+          "0.5": 0.6447376670426012,
+          "0.7": 0.4922542940443502
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.6741262461712422,
+          "0.5": 0.5765249656341558,
+          "0.7": 0.2337533794396764
+        }
+      }
+    }
+  },
+  "relu": {
+    "controls": {
+      "state": "complete",
+      "jobs": [
+        "relu_ego_eval",
+        "relu_ego_eval_replay",
+        "relu_max_eval",
+        "relu_max_eval_replay"
+      ],
+      "supervisor_pid": 2033196,
+      "updated_unix": 1790741630.0436575
+    },
+    "training": {
+      "state": "running",
+      "job": "relu_train",
+      "child_pid": 2033199,
+      "command": [
+        "/data0/chen/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--mode",
+        "train",
+        "--workers",
+        "4",
+        "--config",
+        "opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_relu_residual.yaml",
+        "--single-checkpoint",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_ann_20260930/ann_best_epoch_55.pth",
+        "--warmup-epochs",
+        "3",
+        "--output",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/relu_train"
+      ],
+      "supervisor_pid": 2033198,
+      "updated_unix": 1790740732.5803118,
+      "process_alive": true
+    },
+    "progress.json": {
+      "state": "validating",
+      "epoch": 11
+    },
+    "best_metrics.json": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 31649,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7829288658310963,
+        "0.5": 0.729753659560449,
+        "0.7": 0.5705889093916613
+      },
+      "epoch": 10,
+      "train_loss": 0.6425120043612529,
+      "train_samples": 4678,
+      "seconds": 530.8554538460448
+    },
+    "completed_epochs": 10,
+    "last_metrics": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 31649,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7829288658310963,
+        "0.5": 0.729753659560449,
+        "0.7": 0.5705889093916613
+      },
+      "epoch": 10,
+      "train_loss": 0.6425120043612529,
+      "train_samples": 4678,
+      "seconds": 530.8554538460448
+    },
+    "epochs_contiguous": true,
+    "sample_counts": [
+      [
+        4678,
+        1738,
+        28622
+      ]
+    ],
+    "ego": {
+      "status.json": {
+        "state": "complete",
+        "mode": "eval",
+        "finished_unix": 1790741087.85029
+      },
+      "evaluation.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 25012,
+        "gt_boxes": 28622,
+        "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7044785364966335,
+          "0.5": 0.6746000720140429,
+          "0.7": 0.5798006572452141
+        },
+        "ap_3d": {
+          "0.3": 0.6947102433252226,
+          "0.5": 0.6323502336846245,
+          "0.7": 0.4049006041089028
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 1738,
+          "index_sha256": "3350b72d21243ff82a8ac4e9bc7d7da0da9def8f2eedb45777c3d8b2e81e9d7a"
+        }
+      },
+      "offline_replay.json": {
+        "passed": true,
+        "samples": 1738,
+        "predicted_boxes": 25012,
+        "gt_boxes": 28622,
+        "ap": {
+          "0.3": 0.7044785364966335,
+          "0.5": 0.6746000720140429,
+          "0.7": 0.5798006572452141
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.6947102433252226,
+          "0.5": 0.6323502336846245,
+          "0.7": 0.4049006041089028
+        }
+      }
+    },
+    "max": {
+      "status.json": {
+        "state": "complete",
+        "mode": "eval",
+        "finished_unix": 1790741558.5924144
+      },
+      "evaluation.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 21986,
+        "gt_boxes": 28622,
+        "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.6523758772767494,
+          "0.5": 0.6227255111457061,
+          "0.7": 0.5106978065636328
+        },
+        "ap_3d": {
+          "0.3": 0.6437728151617248,
+          "0.5": 0.5716821091418297,
+          "0.7": 0.2903359102838284
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 1738,
+          "index_sha256": "0c73bc212b13f1df820a4714ec6717a38cd3582bb956d385f0959f81a9047114"
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 268868.5373993096,
+          "p95_bytes": 319376.39999999997,
+          "total_bytes": 467293518,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "offline_replay.json": {
+        "passed": true,
+        "samples": 1738,
+        "predicted_boxes": 21986,
+        "gt_boxes": 28622,
+        "ap": {
+          "0.3": 0.6523758772767494,
+          "0.5": 0.6227255111457061,
+          "0.7": 0.5106978065636328
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.6437728151617248,
+          "0.5": 0.5716821091418297,
+          "0.7": 0.2903359102838284
+        }
+      }
+    }
+  }
+}
