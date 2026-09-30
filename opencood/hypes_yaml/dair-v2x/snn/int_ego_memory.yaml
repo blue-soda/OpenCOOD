@@ -1,0 +1,106 @@
+# Dedicated run_int_epochs / run_int_ego configuration. Ego-only synchronous observations.
+# No fusion dataset, artificial delay, augmentation or generic train.py settings.
+# Training policy is explicit in the command and saved effective_runtime.json.
+name: int_ego_spike_memory
+data_dir: "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure"
+root_dir: "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/train.json"
+validate_dir: "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json"
+test_dir: "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json"
+
+noise_setting:
+  add_noise: false
+
+yaml_parser: "load_point_pillar_params"
+dataset: 'dairv2x'
+
+input_source: ['lidar']
+label_type: 'lidar'
+
+comm_range: 100
+only_vis_ego: true
+
+preprocess:
+  core_method: 'SpVoxelPreprocessor'
+  args:
+    voxel_size: &voxel_size [0.4, 0.4, 5]
+    max_points_per_voxel: 32
+    max_voxel_train: 32000
+    max_voxel_test: 70000
+  cav_lidar_range: &cav_lidar [-100.8, -40, -3.5, 100.8, 40, 1.5]
+
+postprocess:
+  core_method: 'VoxelPostprocessor'
+  gt_range: *cav_lidar
+  anchor_args:
+    cav_lidar_range: *cav_lidar
+    l: 4.5
+    w: 2
+    h: 1.56
+    r: &anchor_yaw [0, 90]
+    feature_stride: 2
+    num: &anchor_num 2
+  target_args:
+    pos_threshold: 0.6
+    neg_threshold: 0.45
+    score_threshold: 0.20
+  order: 'hwl'
+  max_num: 100
+  nms_thresh: 0.15
+  dir_args: &dir_args
+    dir_offset: 0.7853
+    num_bins: 2
+    anchor_yaw: *anchor_yaw
+
+model:
+  core_method: point_pillar_int
+  args:
+    voxel_size: *voxel_size
+    lidar_range: *cav_lidar
+    anchor_number: *anchor_num
+    dir_args: *dir_args
+    int_memory:
+      memory_channels: 32
+      tau_u: 0.2
+      tau_r: 0.1
+      threshold: 1.0
+      input_gain: 0.25
+    pillar_vfe:
+      use_norm: true
+      with_distance: false
+      use_absolute_xyz: true
+      num_filters: [64]
+    point_pillar_scatter:
+      num_features: 64
+
+    base_bev_backbone:
+      resnet: true
+      layer_nums: [3, 4, 5]
+      layer_strides: [2, 2, 2]
+      num_filters: [128, 256, 512]
+      upsample_strides: [1, 2, 4]
+      num_upsample_filter: [128, 128, 128]
+      use_dropout: false
+      dropout_enable: false
+      compression: 0
+      voxel_size: *voxel_size
+
+    shrink_header:
+      use_atten: false
+      kernal_size: [3]
+      stride: [1]
+      padding: [1]
+      dim: [256]
+      input_dim: 384
+
+loss:
+  core_method: point_pillar_dir_loss
+  args:
+    cls_weight: 1.0
+    reg: 2.0
+    dir_args:
+      dir_weight: 0.2
+      args: *dir_args
+      anchor_yaw: *anchor_yaw
+
+
+data_augment: []

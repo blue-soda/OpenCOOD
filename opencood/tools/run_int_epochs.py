@@ -30,7 +30,7 @@ def main():
     p.add_argument('--manifest', required=True)
     p.add_argument('--checkpoint', required=True, help='Original P1 initialization')
     p.add_argument('--output', required=True)
-    p.add_argument('--mode', choices=['single', 'concat', 'gru'], required=True)
+    p.add_argument('--mode', choices=['single', 'concat', 'gru', 'lif', 'leaky'], required=True)
     p.add_argument('--config', default='opencood/hypes_yaml/dair-v2x/repro/dair_stage1_codyntrust_single_wide.yaml')
     p.add_argument('--seed', type=int, default=303)
     p.add_argument('--workers', type=int, default=4)
@@ -40,9 +40,14 @@ def main():
     p.add_argument('--patience', type=int, default=10)
     p.add_argument('--min-delta', type=float, default=.001)
     p.add_argument('--resume', action='store_true')
+    p.add_argument('--tbptt-steps', type=int, default=1)
+    p.add_argument('--fm-only-epochs', type=int, default=0,
+                   help='Initial epochs freezing spatial parameters; BN statistics always frozen')
     a = p.parse_args()
     if not 1 <= a.min_epochs <= a.max_epochs or a.patience < 1:
         p.error('Invalid epoch or patience limits')
+    if a.tbptt_steps < 1 or a.fm_only_epochs < 0 or (a.mode == 'single' and a.fm_only_epochs):
+        p.error('Invalid TBPTT/warmup settings')
     a.history_policy = 'aligned'
     a.train_steps = 0  # ignored by full_epoch=True
     a.clip_length = 0
@@ -60,6 +65,9 @@ def main():
                     manifest_sha256=sha256(a.manifest), config_sha256=sha256(a.config),
                     initialization_sha256=sha256(a.checkpoint),
                     state_policy='whole-segment/per-frame-detach/v1')
+    if a.tbptt_steps > 1 or a.mode in ('lif', 'leaky') or a.fm_only_epochs:
+        contract.update(state_policy='whole-segment/tbptt/v1', tbptt_steps=a.tbptt_steps,
+                        fm_only_epochs=a.fm_only_epochs)
     config = load_yaml(a.config)
     config['data_augment'] = []
     config['int_mode'] = a.mode
@@ -86,7 +94,7 @@ def main():
         write_json(root/'manifest.json', dict(contract=contract, arguments=vars(a),
                    code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                    python=sys.executable, torch=torch.__version__,
-                   policy='Full segments, shuffled per epoch; same reset horizon as evaluation. BN statistics frozen, no augmentation, no BPTT beyond one scan.'))
+                   policy='Full segments, shuffled per epoch; same reset horizon as evaluation. BN statistics frozen, no augmentation; temporal gradient policy in contract.'))
         (root/'config.yaml').write_text(yaml.dump(config))
         write_json(root/'effective_runtime.json', dict(
             dataset='DairEgoStreamDataset', model='PointPillarINT', batch_size=1,
@@ -116,6 +124,8 @@ def main():
         if shutil.disk_usage(str(root)).free < 5*1024**3:
             raise RuntimeError('Less than 5 GiB free; stop before saving another epoch')
         print('EPOCH_START', a.mode, epoch, 'lr', optimizer.param_groups[0]['lr'], flush=True)
+        for name, parameter in model.named_parameters():
+            parameter.requires_grad_(epoch > a.fm_only_epochs or name.startswith('feature_memory.'))
         order = segment_order(manifest['train'], a.seed+epoch)
         training = train(model, manifest['train'], config, a, directory,
                          optimizer=optimizer, order=order, full_epoch=True, save_optimizer=False)

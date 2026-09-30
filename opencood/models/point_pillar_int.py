@@ -2,12 +2,17 @@
 import torch
 from opencood.models.point_pillar_codyntrust_single import PointPillarCodyntrustSingle
 from opencood.models.sub_modules.int_feature_memory import INTFeatureMemory
+from opencood.models.sub_modules.int_spike_memory import INTSpikeMemory
 
 
 class PointPillarINT(PointPillarCodyntrustSingle):
     def __init__(self, args, mode='concat'):
         super().__init__(args)
-        self.feature_memory = INTFeatureMemory(mode, 64, args['lidar_range'])
+        if mode in ('lif', 'leaky'):
+            self.feature_memory = INTSpikeMemory(mode, 64, args['lidar_range'],
+                                                 **args.get('int_memory', {}))
+        else:
+            self.feature_memory = INTFeatureMemory(mode, 64, args['lidar_range'])
 
     def load_single_checkpoint(self, state):
         expected = {k for k in self.state_dict() if not k.startswith('feature_memory.')}
@@ -18,7 +23,7 @@ class PointPillarINT(PointPillarCodyntrustSingle):
             raise ValueError((missing, unexpected))
         return len(expected)
 
-    def step(self, data, state, meta, reset=False, align=True):
+    def step(self, data, state, meta, reset=False, align=True, detach_state=True):
         p = data['processed_lidar']
         if p['voxel_features'].shape[0] == 0:
             nx, ny, _ = self.scatter.model_cfg['grid_size']
@@ -27,7 +32,8 @@ class PointPillarINT(PointPillarCodyntrustSingle):
             batch = {k: p[k] for k in ['voxel_features', 'voxel_coords', 'voxel_num_points']}
             batch['batch_size'] = 1
             spatial = self.scatter(self.pillar_vfe(batch))['spatial_features']
-        temporal, next_state, stats = self.feature_memory.step(spatial, state, meta, reset, align)
+        temporal, next_state, stats = self.feature_memory.step(
+            spatial, state, meta, reset, align, detach_state=detach_state)
         batch = self.backbone({'spatial_features': temporal})
         features = batch['spatial_features_2d']
         if self.shrink_flag:

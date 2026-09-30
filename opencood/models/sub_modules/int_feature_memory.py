@@ -67,7 +67,7 @@ class INTFusionModule(nn.Module):
             layers.add(activation)
         return layers
 
-    def forward(self, x, past_x_list, delta_t=0.05):
+    def forward(self, x, past_x_list, delta_t=0.05, detach_state=True):
         if self.cur_pre_fusion_conv is not None:
             x = self.cur_pre_fusion_conv(x)
         if self.past_pre_fusion_conv is not None:
@@ -86,7 +86,7 @@ class INTFusionModule(nn.Module):
             candidate = self.candidate_conv(torch.cat([x, reset * past_feat], dim=1))
             hidden = update * past_feat + (1 - update) * candidate
             out = torch.cat([hidden, past_time.unsqueeze(1)], dim=1)
-            cached = out.detach()
+            cached = out.detach() if detach_state else out
             with torch.no_grad():
                 mask = (x.sum(dim=1) != 0).to(x.dtype).unsqueeze(1)
             out = torch.cat([out, mask], dim=1)
@@ -144,7 +144,7 @@ class INTFeatureMemory(nn.Module):
         if self.fusion is not None and identity_init:
             self.fusion.initialize_concat_identity()
 
-    def step(self, current, state, meta, reset=False, align=True):
+    def step(self, current, state, meta, reset=False, align=True, detach_state=True):
         assert current.shape[0] == 1, 'Use one explicit state per sequence, not batch slots.'
         reason = 'initial' if state is None else None
         delta_t = 0.
@@ -171,8 +171,10 @@ class INTFeatureMemory(nn.Module):
         else:
             past = state['value'].clone()
             coverage = 1.
-        output, cached = self.fusion(current, [past], delta_t=delta_t)
-        value = output.detach() if cached is None else cached
+        output, cached = self.fusion(current, [past], delta_t=delta_t, detach_state=detach_state)
+        value = output if cached is None else cached
+        if detach_state:
+            value = value.detach()
         new_state = dict(value=value, scene=meta['segment'], pose=meta['pose'],
                          timestamp_us=int(meta['timestamp_us']))
         info = dict(reset=reason, delta_t=delta_t, coverage=coverage,
