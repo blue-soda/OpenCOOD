@@ -191,3 +191,11 @@ VPN 恢复后，真实配对数据审计和两组 200 步过拟合均通过；�
 SNN / ANN 分别使用 GPU 1/2，GPU 3/4 执行各自 ego/Max 固定权重对照与复算。
 运行根目录 `/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1`，完整证据和进程入口见 FUSION.md 文末。
 后续继续这些运行，不重复启动；AP 结果只有全量推理与复算完成后才归档为对照结果。
+
+## 2026-09-30：首轮融合训练与最终验证全部完成
+
+两组均完整完成 30 轮，原进程已退出，按 AP50 选择的 best 均为 epoch27。
+固定权重在 `e3dsnn_fusion_20260930_v1/{count4,relu}_final/`，对应完整消息推理与 CPU 复算均为 complete。
+SNN 最终 AP50/70 = 72.55%/54.26%，ANN = 73.80%/58.46%；平均实际消息 76.79/321.45 kB。
+完整结果、GT 匹配和比较边界见 [FINAL_FUSION.md](FINAL_FUSION.md)。无需重训或重复最终推理。
+heartbeat e3dsnn 已暂停；同预算 ego 微调和等码率量化对照为后续实验，当前尚未启动。
