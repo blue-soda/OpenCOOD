@@ -7,7 +7,7 @@
 单车 SNN / 同结构 ANN 均已完成 60 轮及最终验证；逐帧预测归档、CPU AP 复算和推理计时说明见 [单车推理核验](INFERENCE.md)。
 训练完成后的固定最佳权重及最终结果见 [单车最终基线](FINAL_BASELINE.md)。
 用户已批准进入车路融合阶段；当前实现、验证边界与服务器恢复后的执行顺序见 [融合实验入口](FUSION.md)。
-本地 CPU 和合成 CUDA 检查通过，真实配对数据审计及训练待服务器连接恢复后执行。
+本地及真实数据检查均通过；SNN/ANN 车路融合各 30 轮训练与 ego/Max 全量对照已在服务器运行。
 
 工作方式：本地 `C:\Workspace\OpenCOOD\OpenCOOD` 的 **main** 修改、提交并 push；
 服务器 `mindspore-184:/data0/chen/gzc/workspace/OpenCOOD` 的 **main** pull 后运行。

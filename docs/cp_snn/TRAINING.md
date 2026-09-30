@@ -186,3 +186,8 @@ SNN/ANN 的三维消息、接收端 SE(3) 对齐、HeightCompression 后 BEV 融
 尚未执行新配对数据审计、真实过拟合或融合训练；当前没有协同 AP 结果。
 配对 GT、固定单车初始化、两组 30 轮预算及完整执行命令见 [FUSION.md](FUSION.md)。
 既有 60 分钟 heartbeat 将用于推进融合阶段，状态无变化时静默。
+
+VPN 恢复后，真实配对数据审计和两组 200 步过拟合均通过；正式 30 轮融合训练已启动。
+SNN / ANN 分别使用 GPU 1/2，GPU 3/4 执行各自 ego/Max 固定权重对照与复算。
+运行根目录 `/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1`，完整证据和进程入口见 FUSION.md 文末。
+后续继续这些运行，不重复启动；AP 结果只有全量推理与复算完成后才归档为对照结果。
