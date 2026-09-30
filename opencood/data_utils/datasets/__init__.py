@@ -13,6 +13,7 @@ from opencood.data_utils.datasets.intermediate_fusion_dataset_dair import Interm
 from opencood.data_utils.datasets.late_fusion_dataset_v2x import LateFusionDatasetV2X
 from opencood.data_utils.datasets.late_fusion_dataset_dair import LateFusionDatasetDAIR
 from opencood.data_utils.datasets.single_dair_vehicle import SingleDAIRVehicle
+from opencood.data_utils.datasets.paired_dair_fusion import PairedDAIRFusion
 from opencood.data_utils.datasets.intermediate_fusion_dataset_v2 import IntermediateFusionDatasetV2
 from opencood.data_utils.datasets.intermediate_fusion_dataset_v2_v2x import IntermediateFusionDatasetV2V2X
 from opencood.data_utils.datasets.intermediate_fusion_dataset_v2_dair import IntermediateFusionDatasetV2DAIR
@@ -54,6 +55,7 @@ __all__ = {
     'LateFusionDatasetV2X': LateFusionDatasetV2X,
     'LateFusionDatasetDAIR': LateFusionDatasetDAIR,
     'SingleDAIRVehicle': SingleDAIRVehicle,
+    'PairedDAIRFusion': PairedDAIRFusion,
     'IntermediateFusionDatasetV2': IntermediateFusionDatasetV2,
     'IntermediateFusionDatasetV2V2X': IntermediateFusionDatasetV2V2X,
     'IntermediateFusionDatasetV2DAIR': IntermediateFusionDatasetV2DAIR,

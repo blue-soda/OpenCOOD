@@ -1,0 +1,47 @@
+{
+  "synthetic_only": true,
+  "batch_size": 2,
+  "checks": {
+    "count4": {
+      "no_road_matches_single": true,
+      "frozen_feature_packet_exact_heads": true,
+      "packet_bytes": [
+        48867,
+        48803
+      ],
+      "max_forward_finite": true,
+      "max_uses_road_before_bev": true,
+      "packet_exact_nonzero_fused_features": true,
+      "packet_feature_source": "synthetic batch, encoder BN in train mode; not a learned communication-size estimate",
+      "gradient_l1": {
+        "backbone_3d.conv_input.0.weight": 38.273284912109375,
+        "backbone_2d.blocks.0.2.weight": 2052.6513671875,
+        "fusion_net.0.weight": 6.269658088684082,
+        "fusion_net.3.weight": 7.991247177124023,
+        "reg_head.weight": 1.4579365253448486
+      },
+      "parameters": 3094997
+    },
+    "relu": {
+      "no_road_matches_single": true,
+      "frozen_feature_packet_exact_heads": true,
+      "packet_bytes": [
+        375434,
+        371981
+      ],
+      "max_forward_finite": true,
+      "max_uses_road_before_bev": true,
+      "packet_exact_nonzero_fused_features": true,
+      "packet_feature_source": "synthetic batch, encoder BN in train mode; not a learned communication-size estimate",
+      "gradient_l1": {
+        "backbone_3d.conv_input.0.weight": 38.012908935546875,
+        "backbone_2d.blocks.0.2.weight": 1830.23291015625,
+        "fusion_net.0.weight": 10.865968704223633,
+        "fusion_net.3.weight": 14.951656341552734,
+        "reg_head.weight": 1.570325493812561
+      },
+      "parameters": 3094997
+    }
+  },
+  "passed": true
+}

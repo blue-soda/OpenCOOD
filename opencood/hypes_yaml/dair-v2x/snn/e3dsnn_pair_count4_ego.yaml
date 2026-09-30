@@ -1,0 +1,68 @@
+name: e3dsnn_pair_count4_ego
+yaml_parser: load_e3dsnn_params
+data_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure
+root_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/train.json
+validate_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json
+test_dir: /data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json
+dataset: dairv2x
+data_manifest: /data0/chen/gzc/workspace/diagnostics/e3dsnn_pair_data_v1/manifest.json
+noise_setting: {add_noise: false}
+comm_range: 100
+only_vis_ego: true
+num_sweep_frames: 1
+binomial_n: 0
+binomial_p: 0
+train_params: {batch_size: 2, epoches: 30}
+fusion:
+  core_method: PairedDAIRFusion
+  args: {proj_first: false, clip_pc: false}
+preprocess:
+  core_method: SpVoxelPreprocessor
+  voxel_backend: spconv2
+  args:
+    voxel_size: &voxel [0.2, 0.2, 0.1]
+    max_points_per_voxel: 32
+    max_voxel_train: 70000
+    max_voxel_test: 70000
+  cav_lidar_range: &range [-100.8, -40, -3.5, 100.8, 40, 1.5]
+data_augment:
+  - {NAME: random_world_flip, ALONG_AXIS_LIST: [x]}
+  - {NAME: random_world_rotation, WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]}
+  - {NAME: random_world_scaling, WORLD_SCALE_RANGE: [0.95, 1.05]}
+postprocess:
+  core_method: VoxelPostprocessor
+  gt_range: *range
+  anchor_args:
+    cav_lidar_range: *range
+    l: 4.5
+    w: 2
+    h: 1.56
+    r: &yaw [0, 90]
+    feature_stride: 8
+    num: &anchors 2
+  target_args: {pos_threshold: 0.6, neg_threshold: 0.45, score_threshold: 0.20}
+  order: hwl
+  max_num: 100
+  nms_thresh: 0.15
+  dir_args: &dir {dir_offset: 0.7853, num_bins: 2, anchor_yaw: *yaw}
+model:
+  core_method: e3dsnn_fusion
+  args:
+    voxel_size: *voxel
+    lidar_range: *range
+    activation: count4
+    fusion_mode: ego
+    message_dropout: 0.1
+    anchor_number: *anchors
+    dir_args: *dir
+loss:
+  core_method: point_pillar_dir_loss
+  args:
+    cls_weight: 1.0
+    reg: 2.0
+    dir_args: {dir_weight: 0.2, args: *dir, anchor_yaw: *yaw}
+optimizer:
+  core_method: Adam
+  lr: 0.0002
+  args: {eps: 0.00000001, weight_decay: 0.0001}
+lr_scheduler: {core_method: multistep, gamma: 0.1, step_size: [20, 27]}

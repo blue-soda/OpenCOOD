@@ -40,23 +40,27 @@ class E3dsnnSingle(nn.Module):
         nn.init.normal_(self.reg_head.weight, mean=0, std=0.001)
         nn.init.zeros_(self.reg_head.bias)
 
-    def forward(self, data_dict):
-        lidar = data_dict['processed_lidar']
+    def encode_lidar(self, lidar, batch_size):
         counts = lidar['voxel_num_points'].view(-1, 1).to(lidar['voxel_features'].dtype)
         if not len(counts):
             raise ValueError('Empty single-agent voxel batch')
         mean = lidar['voxel_features'].sum(1) / counts.clamp_min(1)
-        # Labels carry the full batch size even if an example has zero voxels.
+        batch = self.backbone_3d({'voxel_features': mean,
+            'voxel_coords': lidar['voxel_coords'], 'batch_size': int(batch_size)})
+        return batch['encoded_spconv_tensor']
+
+    def detect_bev(self, spatial):
+        bev = self.backbone_2d({'spatial_features': spatial})['spatial_features_2d']
+        return {'psm': self.cls_head(bev), 'rm': self.reg_head(bev), 'dm': self.dir_head(bev)}
+
+    def forward(self, data_dict):
         batch_size = data_dict.get('batch_size')
         if batch_size is None:
             batch_size = data_dict['object_bbx_mask'].shape[0]
-        batch = self.backbone_3d({'voxel_features': mean,
-            'voxel_coords': lidar['voxel_coords'], 'batch_size': int(batch_size)})
-        encoded = batch['encoded_spconv_tensor']
+        encoded = self.encode_lidar(data_dict['processed_lidar'], batch_size)
         dense = encoded.dense()
         b, c, d, h, w = dense.shape
-        bev = self.backbone_2d({'spatial_features': dense.view(b, c * d, h, w)})['spatial_features_2d']
-        result = {'psm': self.cls_head(bev), 'rm': self.reg_head(bev), 'dm': self.dir_head(bev)}
+        result = self.detect_bev(dense.view(b, c * d, h, w))
         if data_dict.get('return_spikes', False):
             result['spike_features'] = encoded.features
             result['spike_coords'] = encoded.indices

@@ -62,7 +62,7 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
                         collate_fn=dataset.collate_batch_test, worker_init_fn=seed_worker,
                         **({'multiprocessing_context': 'spawn'} if workers else {}))
     evaluated, predicted, ground_truth = 0, 0, 0
-    frames, timings = [], []
+    frames, timings, packets = [], [], []
     if prediction_dir is not None:
         prediction_dir = Path(prediction_dir)
         prediction_dir.mkdir(exist_ok=False)
@@ -82,6 +82,7 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
                 torch.cuda.synchronize()
             transfer_done = time.perf_counter()
             output = model(batch['ego'])
+            packets.extend(output.get('packet_bytes', []))
             if profile:
                 torch.cuda.synchronize()
             forward_done = time.perf_counter()
@@ -126,10 +127,10 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
             previous_done = time.perf_counter()
     result = {'samples': evaluated, 'indexed_samples': len(dataset),
             'full_split': evaluated == len(dataset), 'predicted_boxes': predicted,
-            'gt_boxes': ground_truth, 'metric': 'BEV AP, vehicle-local GT, no fusion',
+            'gt_boxes': ground_truth, 'metric': 'BEV AP; ' + getattr(dataset, 'protocol', 'vehicle-local GT, no fusion'),
             'ap': {str(threshold): eval_utils.calculate_ap(stat, threshold)[0] for threshold in stat}}
     if include_3d:
-        result.update({'metric': 'BEV and upright 3D AP, vehicle-local GT, no fusion',
+        result.update({'metric': 'BEV and upright 3D AP; ' + getattr(dataset, 'protocol', 'vehicle-local GT, no fusion'),
             'ap_3d': {str(t): eval_utils.calculate_ap(stat_3d, t)[0] for t in stat_3d},
             'ap_convention': 'VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40',
             'iou_3d': 'rotated BEV intersection area times height overlap / volume union'})
@@ -138,6 +139,10 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
             'order': 'validation loader order', 'metric': 'AP means BEV AP; optional 3D AP separately labeled'})
         result['predictions'] = {'directory': prediction_dir.name, 'frames': len(frames),
             'index_sha256': hashlib.sha256((prediction_dir / 'index.json').read_bytes()).hexdigest()}
+    if packets:
+        result['feature_packets'] = {'count': len(packets), 'mean_bytes': float(np.mean(packets)),
+            'p95_bytes': float(np.percentile(packets, 95)), 'total_bytes': int(sum(packets)),
+            'scope': 'serialized road feature payload and metadata; excludes network framing/retransmission'}
     if profile:
         warmup = min(20, max(0, len(timings) - 1))
         kept = timings[warmup:]
@@ -158,13 +163,19 @@ def execute(args, output_dir):
     if not torch.cuda.is_available():
         raise RuntimeError('CUDA required')
     cfg = load_yaml(args.config)
-    if cfg['fusion']['core_method'] != 'SingleDAIRVehicle':
-        raise ValueError('This runner requires the explicit vehicle-only dataset')
+    if cfg['fusion']['core_method'] not in ('SingleDAIRVehicle', 'PairedDAIRFusion'):
+        raise ValueError('This runner requires an explicitly audited single/paired dataset')
     if args.mode == 'overfit':
         cfg['data_augment'] = []
+        if cfg['model']['core_method'] == 'e3dsnn_fusion':
+            cfg['model']['args']['message_dropout'] = 0.
     train_data = build_dataset(cfg, train=True)
     val_data = build_dataset(cfg, train=False)
     model = train_utils.create_model(cfg).cuda()
+    if args.packet_roundtrip:
+        if not hasattr(model, 'packet_roundtrip'):
+            raise ValueError('Packet replay requires a fusion model')
+        model.packet_roundtrip = True
     criterion = train_utils.create_loss(cfg).cuda()
     optimizer = train_utils.setup_optimizer(cfg, model)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
@@ -181,13 +192,16 @@ def execute(args, output_dir):
         'activation': cfg['model']['args'].get('activation', 'count4'),
         'checkpoint_sha256': hashlib.sha256(Path(args.checkpoint).read_bytes()).hexdigest() if args.checkpoint else None,
         'train_samples': len(train_data), 'val_samples': len(val_data),
-        'protocol': 'vehicle-only point cloud and local GT; no history/infra; see architecture for model'}
+        'single_checkpoint_sha256': hashlib.sha256(Path(args.single_checkpoint).read_bytes()).hexdigest() if args.single_checkpoint else None,
+        'protocol': getattr(train_data, 'protocol', 'vehicle-only point cloud and local GT; no history/infra')}
     write_json(output_dir / ('manifest_{}.json'.format(int(time.time()))), manifest)
     (output_dir / 'config.yaml').write_bytes(Path(args.config).read_bytes())
     if args.checkpoint:
         model.load_state_dict(torch.load(args.checkpoint, map_location='cpu'), strict=True)
+    if args.single_checkpoint:
+        model.load_single(torch.load(args.single_checkpoint, map_location='cpu'))
     if args.mode == 'eval':
-        if not args.checkpoint:
+        if not args.checkpoint and not args.single_checkpoint:
             raise ValueError('Evaluation requires --checkpoint')
         metrics = validate(model, val_data, args.workers, include_3d=args.eval_3d,
             prediction_dir=output_dir / 'predictions' if args.save_predictions else None, profile=args.profile)
@@ -204,8 +218,11 @@ def execute(args, output_dir):
             result, loss = checked_forward(model, criterion, batch)
             loss.backward()
             if step == 0:
-                for name in ('backbone_3d.conv_input.0.weight', 'backbone_3d.conv_out.0.weight',
-                             'backbone_2d.blocks.0.2.weight', 'reg_head.weight'):
+                gradient_names = ['backbone_3d.conv_input.0.weight', 'backbone_3d.conv_out.0.weight',
+                                  'backbone_2d.blocks.0.2.weight', 'reg_head.weight']
+                if getattr(model, 'fusion_mode', None) == 'residual':
+                    gradient_names.extend(['fusion_net.0.weight', 'fusion_net.3.weight'])
+                for name in gradient_names:
                     grad = dict(model.named_parameters())[name].grad
                     if grad is None or not torch.isfinite(grad).all() or grad.abs().sum() == 0:
                         raise ValueError('Missing/nonfinite/zero gradient: ' + name)
@@ -239,6 +256,8 @@ def execute(args, output_dir):
     start_epoch, best = 0, -1.
     if args.resume:
         state = torch.load(str(output_dir / 'last.pt'), map_location='cpu')
+        if state.get('warmup_epochs', 0) != args.warmup_epochs:
+            raise ValueError('Resume requires the same fusion warmup schedule')
         if state['config_sha256'] != manifest['config_sha256'] or state['data_manifest_sha256'] != manifest['data_manifest_sha256']:
             raise ValueError('Resume requires the same config and data manifest')
         model.load_state_dict(state['model'], strict=True)
@@ -257,6 +276,15 @@ def execute(args, output_dir):
     epochs = args.epochs or cfg['train_params']['epoches']
     for epoch in range(start_epoch, epochs):
         model.train()
+        if args.warmup_epochs:
+            if not hasattr(model, 'fusion_net') or model.fusion_mode != 'residual':
+                raise ValueError('Fusion warmup requires residual fusion')
+            warmup = epoch < args.warmup_epochs
+            for name, parameter in model.named_parameters():
+                parameter.requires_grad_(not warmup or name.startswith('fusion_net.') or name == 'fusion_scale')
+            if warmup:
+                model.backbone_3d.eval()
+                model.backbone_2d.eval()
         total, samples = 0., 0
         started = time.monotonic()
         for index, batch in enumerate(loader):
@@ -287,7 +315,7 @@ def execute(args, output_dir):
             best = metrics['ap']['0.5']
             save_torch(output_dir / 'best.pth', model.state_dict())
             write_json(output_dir / 'best_metrics.json', metrics)
-        save_torch(output_dir / 'last.pt', {'epoch': epoch + 1, 'model': model.state_dict(),
+        save_torch(output_dir / 'last.pt', {'epoch': epoch + 1, 'model': model.state_dict(), 'warmup_epochs': args.warmup_epochs,
             'config_sha256': manifest['config_sha256'], 'data_manifest_sha256': manifest['data_manifest_sha256'],
             'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(), 'best_ap50': best,
             'random_state': random.getstate(), 'numpy_state': np.random.get_state(),
@@ -310,15 +338,22 @@ def main():
     parser.add_argument('--sample-index', type=int, default=0)
     parser.add_argument('--epochs', type=int, default=0)
     parser.add_argument('--checkpoint')
+    parser.add_argument('--single-checkpoint', help='Initialize fusion from the corresponding fixed single-agent state')
+    parser.add_argument('--warmup-epochs', type=int, default=0, help='Freeze pretrained parameters and BN during residual-fusion warmup')
+    parser.add_argument('--packet-roundtrip', action='store_true', help='Serialize/decode road features during eval')
     parser.add_argument('--eval-3d', action='store_true', help='Also report volume-IoU AP in eval mode')
     parser.add_argument('--save-predictions', action='store_true', help='Save per-frame boxes/scores/GT and hashes for offline AP replay')
     parser.add_argument('--profile', action='store_true', help='Profile synchronized batch=1 inference in eval mode')
     parser.add_argument('--resume', action='store_true')
     args = parser.parse_args()
-    if (args.eval_3d or args.save_predictions or args.profile) and args.mode != 'eval':
+    if (args.eval_3d or args.save_predictions or args.profile or args.packet_roundtrip) and args.mode != 'eval':
         parser.error('--eval-3d, --save-predictions and --profile require eval mode')
     if args.resume and args.mode != 'train':
         parser.error('--resume requires train mode')
+    if args.checkpoint and args.single_checkpoint:
+        parser.error('Choose a full checkpoint or a single-agent initializer, not both')
+    if args.resume and (args.checkpoint or args.single_checkpoint):
+        parser.error('Resume loads last.pt and must not also initialize weights')
     output_dir = Path(args.output)
     if output_dir.exists() and any(output_dir.iterdir()) and not args.resume:
         raise FileExistsError('Use a fresh output directory or explicit --resume')

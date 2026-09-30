@@ -269,3 +269,14 @@ ANN 原始最终目录：`/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_ann
 本地证据为 `results/final_ann_20260930/`；机器可读对照为 `results/final_comparison_20260930.json`。
 详细报告已更新 FINAL_BASELINE.md，并同步用户目录第 08 份记录。
 两条单车训练和最终推理全部完成，定时任务 e3dsnn 已暂停；当前不自动启动协同阶段。
+
+## 15. 用户批准车路融合实现（2026-09-30）
+
+按批准方案实现“3D 主干末端发送 → 接收端三维对齐 → HeightCompression → BEV 融合”。
+SNN/ANN 使用同一结构，分别 Count4/ReLU；提供 ego、Max、可学习 residual 三种模式，
+完整参数均为 3,094,997。后续使用各自冻结的单车最佳权重初始化，统一配对数据及 cooperative GT。
+路端采用基于标定的接收者相关 z 原点平移，其全量裁剪效果尚待真实数据审计。
+本地 13 项 CPU 检查、合成 CUDA 前后向及非零消息精确往返均通过；
+服务器 SSH 三次连接超时，真实审计、过拟合、全量对照和 30 轮融合训练均未启动。
+合成包大小不能当作实际通信结果。实现、限制和后续执行入口见 [FUSION.md](FUSION.md)，
+同步用户目录第 09 份记录；恢复既有 60 分钟定时跟进以推进此阶段。
