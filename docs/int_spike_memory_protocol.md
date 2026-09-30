@@ -3,7 +3,8 @@
 ## Material Passport
 
 - Task: ego-history INT FM replacement, authorized 2026-09-30.
-- Status: implementation and engineering validation; no SNN accuracy claim yet.
+- Status: 21 semantic tests and real-data engineering/restart gate passed; full
+  lif/leaky/gru training launched on 2026-09-30. No SNN accuracy claim yet.
 - Data: existing DAIR vehicle-only decoded v3 manifest; no infrastructure scans, artificial latency or asynchronous training.
 - Scope: mixed ANN spatial detector + SNN FM. Not a full spiking detector or a reproduction of full INT PC/FM/PM.
 
@@ -79,3 +80,23 @@ reset/no-align ablations. No dense-GPU efficiency claim from firing rate alone.
 All code changes: local main commit/push, server pull. Preserve concurrent research
 changes. Runtime snapshots include source/config/data hashes, effective arguments,
 checkpoint hashes, full frame logs and emission/state diagnostics.
+
+## Execution evidence
+
+The engineering pilot covered32 train scans/20 labels per epoch, seven optimizer
+updates per epoch, and two complete independent validation segments. Both epochs
+completed for all three modes. LIF had1.44%-1.51% whole-grid emissions; temporal
+gradients were finite/nonzero. Spatial parameters stayed exactly frozen in epoch1
+and changed in epoch2. Restarting LIF after epoch1 reproduced epoch2 model,
+optimizer, scheduler and AP exactly. See `int_spike_results/engineering_gate.json`.
+
+Full training was launched from code commit `e85e20d` using the original P1
+checkpoint (not the pilot weights), on the frozen decoded full manifest. Complete
+commands/PIDs/GPUs are recorded in `int_spike_results/launch_full.json`. Server
+root: `/data0/chen/gzc/workspace/diagnostics/int_spike_20260930`. All three runners
+write their own `full_{mode}/curve.json`, `best.json`, `result.json` and per-frame
+logs. Inspect those and process commands before any restart; do not duplicate jobs.
+
+Current model-step timings include diagnostic reductions/synchronizations. A
+formal latency comparison must disable diagnostics uniformly and profile anew;
+these initial timings and emission rates do not establish energy efficiency.
