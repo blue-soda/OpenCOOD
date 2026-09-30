@@ -119,6 +119,11 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
                 frame = {'index': index, 'frame_id': frame_id, 'file': path.name,
                     'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
                     'predicted_boxes': len(pred_array), 'gt_boxes': len(gt)}
+                if getattr(model, 'packet_roundtrip', False):
+                    lengths = output.get('packet_bytes', [])
+                    frame['communication'] = {
+                        'road_to_vehicle_packet_bytes': lengths,
+                        'total_bytes': sum(lengths)}
                 if profile:
                     frame['timing'] = timing
                 frames.append(frame)
@@ -141,6 +146,8 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
             'index_sha256': hashlib.sha256((prediction_dir / 'index.json').read_bytes()).hexdigest()}
     if packets:
         result['feature_packets'] = {'count': len(packets), 'mean_bytes': float(np.mean(packets)),
+            'median_bytes': float(np.median(packets)), 'min_bytes': int(min(packets)),
+            'max_bytes': int(max(packets)),
             'p95_bytes': float(np.percentile(packets, 95)), 'total_bytes': int(sum(packets)),
             'scope': 'serialized road feature payload and metadata; excludes network framing/retransmission'}
     if profile:
