@@ -2,7 +2,7 @@
 
 用户已批准进入协同阶段。单车 SNN / ANN 的 60 轮基线保持冻结；新实验从各自最佳权重初始化。
 当前状态：SNN/ANN 各 30 轮训练、ego/Max 对照、冻结最佳权重的最终消息推理与 CPU 复算全部完成。
-最终结果及通信量见 [首轮融合基线报告](FINAL_FUSION.md)，定时跟进已暂停。下文保留实施与阶段记录。
+最终结果及通信量见 [首轮融合基线报告](FINAL_FUSION.md)。用户后续要求逐帧通信明细，已补齐记录代码并恢复定时跟进，待 SSH 恢复后补跑推理。下文保留实施与阶段记录。
 下文“本地合成验证”记录保留原阶段边界；最新服务器结果见文末。
 
 ## 架构与比较协议
@@ -202,3 +202,33 @@ SNN 完整完成 23/30 轮、正在训练第 24 轮；ANN 完成 24/30 轮、正
 这是训练内阶段验证，不是最终冻结权重的独立消息推理与 CPU 复算，也不改变融合/额外微调尚未分离的边界。
 保持既定 30 轮预算与第 27 轮后再次衰减计划，不另行重训或重复完成的固定对照。
 [本次完整逐轮快照](results/fusion_progress_20260930_1530.json) 保存全部已完成指标、快照哈希与运行状态。
+
+## 用户补充要求：逐帧通信量与对齐说明（2026-09-30）
+
+既有最终评估实际计算了每个消息的 len(packet)，但仅将平均、P95、总量持久化；
+不能从这三个统计值反推每个 frame_id 对应的真实大小。
+main `4b0da2b` 在 `--packet-roundtrip --save-predictions` 下为每帧预测索引新增：
+`communication.road_to_vehicle_packet_bytes`（本帧各路端包 bytes 列表）和 `communication.total_bytes`。
+evaluation.json 的 feature_packets 同时增加 median_bytes、min_bytes、max_bytes。
+4 项现有 AP 预测归档/复算回归通过；不改变网络、权重、解码和 AP 算法。
+当前每帧只有一个路端包，因此包均值也是每帧均值；单车不发送感知特征，特征通信量为 0。
+
+当次 SSH 连续三次超时，尚未在服务器补跑，因此尚无逐帧明细、最小/最大/中位数的新实测结果。
+已恢复既有 60 分钟 heartbeat，提示词“补齐逐帧通信量，无变化静默”，无需重新训练。
+
+连接恢复后的待办：
+
+1. 先检查 `e3dsnn_fusion_20260930_v1` 下是否已有本次通信审计运行，避免重复启动；同步 main。
+2. 复用 FINAL_FUSION.md 中两份已冻结 best@27，核对 SHA256；选择空闲 GPU。
+3. 分别执行 `train_e3dsnn_single --mode eval --workers 2 --config <对应 residual YAML> --checkpoint <冻结权重> --output <全新目录> --packet-roundtrip --eval-3d --save-predictions`，随后执行 `replay_e3dsnn_predictions`。
+4. 从两组 `predictions/index.json` 按 frame_id 合并，导出逐帧 JSON/CSV：frame_id、SNN_bytes、ANN_bytes。
+   要求 1,738 帧一一对应、每帧 1 个路端包、所有值为非负整数，逐帧求和/均值/P95与各组 evaluation 一致；记录索引 SHA256 和权重来源。
+5. 将明细及汇总存入 docs/cp_snn/results 并同步用户 evidence 目录；保留原最终结果，明确补跑是新的推理快照。
+   完成后暂停该跟进，不启动额外训练。
+
+融合层实际是 BEV 级：接收端先在 `[128,3,50,126]` 三维格子内对齐，再把高度折入通道形成 `[384,50,126]`。
+相对变换由标定计算 `T_ego_from_road = inverse(T_world_from_ego) @ T_world_from_road`，包含数据集提供的系统偏移修正。
+路端局部高度归一化 q=S p 时，对应使用 `T_ego_from_road @ inverse(S)`，保持同一物理位置。
+对每个车端目标格子的物理中心，逆变换回路端三维网格并三线性采样，保留 z/roll/pitch/yaw；
+不是只旋转二维 BEV 图，也不是先平均掉高度。无源网格覆盖处保留车端特征。
+覆盖掩码表示网格定义域，不是占用/可见性。时间戳只记录，当前未做运动或时延补偿，也未实现姿态误差纠正。
