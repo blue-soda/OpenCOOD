@@ -100,3 +100,22 @@ logs. Inspect those and process commands before any restart; do not duplicate jo
 Current model-step timings include diagnostic reductions/synchronizations. A
 formal latency comparison must disable diagnostics uniformly and profile anew;
 these initial timings and emission rates do not establish energy efficiency.
+
+## Interrupted runs resumed on 2026-10-13
+
+Checkpoint inspection confirmed LIF reached the plateau rule at epoch27
+(stale10, LR6.25e-6). Leaky stopped during epoch28 after committing epoch27
+(stale6, LR1.25e-5); GRU stopped during epoch26 after committing epoch25
+(stale8, LR6.25e-6). The latter two had not reached the fixed patience10 rule.
+
+`resume_int_memory.py` verifies input hashes, rejects duplicate active training,
+skips checkpoints already satisfying the stopping rule and reuses the recorded
+original command plus `--resume`. The two interrupted runs were resumed on idle
+GPUs with complete model/optimizer/scheduler state and their unchanged contracts.
+Partial epoch evidence is preserved by the original runner. See
+`int_spike_results/resume_20261013.json` for checkpoint hashes, commands, PIDs and
+new log paths. The original `full_*.log` files no longer track resumed processes;
+use the resume record and `full_*/curve.json`. LIF was not restarted.
+Post-launch verification found both processes advancing without failure records;
+the first64 resumed scans matched their preserved interrupted prefixes in frame
+order and every comparable labelled loss exactly (maximum absolute difference0).
