@@ -8,6 +8,7 @@
 训练完成后的固定最佳权重及最终结果见 [单车最终基线](FINAL_BASELINE.md)。
 用户已批准进入车路融合阶段；当前实现、验证边界与服务器恢复后的执行顺序见 [融合实验入口](FUSION.md)。
 SNN/ANN 车路融合各 30 轮训练、ego/Max 对照及最终消息推理与复算均已完成，见 [首轮融合最终报告](FINAL_FUSION.md)。
+两组各 1,738 帧通信补算已完成，2026-10-13 核验取回，见 [逐帧通信统计及证据](FRAME_COMMUNICATION.md)。
 
 工作方式：本地 `C:\Workspace\OpenCOOD\OpenCOOD` 的 **main** 修改、提交并 push；
 服务器 `mindspore-184:/data0/chen/gzc/workspace/OpenCOOD` 的 **main** pull 后运行。
