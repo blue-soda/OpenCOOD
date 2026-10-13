@@ -57,3 +57,5 @@ LIF 对齐结果比 Leaky 高 **1.59** 个百分点，比 GRU 低 **2.77** 个�
 两组已通过两轮工程验证，证据见 [baseline_pilot_audit_20261013.json](int_spike_results/baseline_pilot_audit_20261013.json)。全量结果目录为服务器原实验根目录下的 `full_single`、`full_concat`，启动记录 `launch_full_single_concat.json`。至少训练 20 轮，连续 10 轮无 >0.001 AP70 改善且 LR 不高于初始值 1/8 才停止，最多 40 轮；达到上限仍无平台时必须单独评估，不能宣称收敛。工程验证权重不用于正式初始化。
 
 后续跟进查进程和 `curve.json`，不要重复启动；若中断，使用 `resume_int_memory.py --root <原根目录> --launch-record launch_full_single_concat.json` 检查后恢复。训练结束后对 Concat 重放 aligned/reset/no-align，对单帧只重放 aligned（无历史干预意义）；最后以 `summarize_int_memory.py --modes lif leaky gru single concat` 审计五组，输出到新的报告目录，保留第一轮证据。
+
+全量训练已从提交 `af38083` 启动：单帧 GPU0/PID2194388，Concat GPU2/PID2194389；完整命令和哈希见 [launch_full_single_concat.json](int_spike_results/launch_full_single_concat.json)。这些 PID 是启动时记录，后续需核对实际进程命令。定时跟进已恢复，间隔 60 分钟，提示词“推进基线，仅完成或异常通知”。
