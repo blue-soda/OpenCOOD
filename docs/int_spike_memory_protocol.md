@@ -128,9 +128,13 @@ LIF27 epochs (best epoch17, BEV AP70 0.7309954198), Leaky31 (best epoch21,
 8593 training scans/4678 labels and5794 validation scans/1738 labels. No failure
 records were present. Resuming Leaky/GRU did not change their selected best.
 
-Three frozen-best replay workers now run aligned, reset and no-align sequentially,
-one worker per model. Inspect server `replay_{mode}/status.json` and its process
-record before taking further action. The complete curves and launch commands are
-archived in `int_spike_results/training_complete_20261013.json`. Training is done;
-replay/ablation acceptance remains pending. These are still validation-selected,
-single-seed results, not a held-out test or a multi-seed SNN superiority claim.
+All three frozen-best workers completed aligned, reset and no-align replay.
+The independent summary audit returned AUDITED for all nine evaluations, including
+frame order, coverage, hashes, warp/reset policy and AP replay tolerance (1e-6).
+The complete curves and launch commands are archived in
+`int_spike_results/training_complete_20261013.json`; final audit evidence is in
+`int_spike_results/report.json`. See `int_spike_memory_results.md` for acceptance.
+LIF aligned BEV AP70 is 73.10%, above Leaky by 1.59 percentage points but below
+same-protocol GRU by 2.77. Resetting history reduces LIF by only 0.53 points.
+This stage is complete; it does not establish SNN superiority. Results remain
+validation-selected and single-seed, without a held-out test or uncertainty study.

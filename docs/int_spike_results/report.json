@@ -1,0 +1,618 @@
+{
+  "status": "AUDITED",
+  "scope": "Single-seed validation-selected stage 1; BEV AP, not 3D AP",
+  "modes": {
+    "lif": {
+      "epochs": 27,
+      "best": {
+        "bev_ap70": 0.7309954198332831,
+        "checkpoint": "/data0/chen/gzc/workspace/diagnostics/int_spike_20260930/full_lif/epoch_017/trained.pth",
+        "epoch": 17,
+        "sha256": "a036e3d50ca61ae5bcafbe5c9a871d7c1793de108a6f32392307f060147de651"
+      },
+      "replay": {
+        "aligned": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [
+            {
+              "frame": "011181",
+              "noalign_psm_l1": 0.319122850894928,
+              "reset_psm_l1": 0.39499789476394653,
+              "reset_rm_l1": 0.054345227777957916
+            },
+            {
+              "frame": "011194",
+              "noalign_psm_l1": 0.2936916947364807,
+              "reset_psm_l1": 0.40497854351997375,
+              "reset_rm_l1": 0.05569504201412201
+            },
+            {
+              "frame": "011203",
+              "noalign_psm_l1": 0.2621731460094452,
+              "reset_psm_l1": 0.39940574765205383,
+              "reset_rm_l1": 0.054246727377176285
+            },
+            {
+              "frame": "011226",
+              "noalign_psm_l1": 0.26709219813346863,
+              "reset_psm_l1": 0.399405300617218,
+              "reset_rm_l1": 0.05569400638341904
+            },
+            {
+              "frame": "011235",
+              "noalign_psm_l1": 0.24294964969158173,
+              "reset_psm_l1": 0.34911665320396423,
+              "reset_rm_l1": 0.05721406638622284
+            },
+            {
+              "frame": "011242",
+              "noalign_psm_l1": 0.23248158395290375,
+              "reset_psm_l1": 0.34768354892730713,
+              "reset_rm_l1": 0.05607577785849571
+            },
+            {
+              "frame": "011244",
+              "noalign_psm_l1": 0.2951982915401459,
+              "reset_psm_l1": 0.3357568085193634,
+              "reset_rm_l1": 0.05175807699561119
+            },
+            {
+              "frame": "011246",
+              "noalign_psm_l1": 0.2924368679523468,
+              "reset_psm_l1": 0.35020458698272705,
+              "reset_rm_l1": 0.05446285009384155
+            },
+            {
+              "frame": "011255",
+              "noalign_psm_l1": 0.26886504888534546,
+              "reset_psm_l1": 0.3321247100830078,
+              "reset_rm_l1": 0.05400209501385689
+            },
+            {
+              "frame": "010801",
+              "noalign_psm_l1": 0.18836268782615662,
+              "reset_psm_l1": 0.21772870421409607,
+              "reset_rm_l1": 0.03668290749192238
+            },
+            {
+              "frame": "010802",
+              "noalign_psm_l1": 0.20282460749149323,
+              "reset_psm_l1": 0.263789564371109,
+              "reset_rm_l1": 0.04457198083400726
+            },
+            {
+              "frame": "010803",
+              "noalign_psm_l1": 0.21414127945899963,
+              "reset_psm_l1": 0.297650009393692,
+              "reset_rm_l1": 0.05228322744369507
+            },
+            {
+              "frame": "010804",
+              "noalign_psm_l1": 0.21369998157024384,
+              "reset_psm_l1": 0.3140839636325836,
+              "reset_rm_l1": 0.054203398525714874
+            },
+            {
+              "frame": "010805",
+              "noalign_psm_l1": 0.2136479914188385,
+              "reset_psm_l1": 0.3133195638656616,
+              "reset_rm_l1": 0.05311049520969391
+            },
+            {
+              "frame": "010806",
+              "noalign_psm_l1": 0.20398156344890594,
+              "reset_psm_l1": 0.3100348114967346,
+              "reset_rm_l1": 0.0554736889898777
+            },
+            {
+              "frame": "010807",
+              "noalign_psm_l1": 0.19788795709609985,
+              "reset_psm_l1": 0.2925735414028168,
+              "reset_rm_l1": 0.04953751713037491
+            }
+          ],
+          "history_policy": "aligned",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.8468621678675589,
+            "bev_ap50": 0.8247173864991157,
+            "bev_ap70": 0.7309956704648193
+          },
+          "model_step_ms_p50": 21.056772500742227,
+          "model_step_ms_p95": 22.962254975573156,
+          "peak_allocated_bytes": 426663936,
+          "predicted_boxes": 25983,
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "scans": 5794,
+          "seconds": 300.35889947402757,
+          "state_bytes": 25804800,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "reset": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [],
+          "history_policy": "reset",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.8364555826124142,
+            "bev_ap50": 0.8143023399842859,
+            "bev_ap70": 0.7256880627341243
+          },
+          "model_step_ms_p50": 20.366637996630743,
+          "model_step_ms_p95": 22.08425409044139,
+          "peak_allocated_bytes": 421259264,
+          "predicted_boxes": 26647,
+          "resets": {
+            "explicit": 5794
+          },
+          "scans": 5794,
+          "seconds": 303.7348666280159,
+          "state_bytes": 25804800,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "no-align": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [],
+          "history_policy": "no-align",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.7562156951113116,
+            "bev_ap50": 0.732679070665097,
+            "bev_ap70": 0.6233601016818574
+          },
+          "model_step_ms_p50": 20.295680995332077,
+          "model_step_ms_p95": 22.09355958912056,
+          "peak_allocated_bytes": 420644864,
+          "predicted_boxes": 23593,
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "scans": 5794,
+          "seconds": 286.4267141679884,
+          "state_bytes": 25804800,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        }
+      },
+      "audits": {
+        "aligned": {
+          "warp_frames": 5580,
+          "reset_frames": 214,
+          "frames": 5794,
+          "emission_nonzero_mean": 0.06277796417130121,
+          "emission_on_observed_mean": 0.3545317785442943
+        },
+        "reset": {
+          "warp_frames": 0,
+          "reset_frames": 5794,
+          "frames": 5794,
+          "emission_nonzero_mean": 0.05311247597303541,
+          "emission_on_observed_mean": 0.3372273436967348
+        },
+        "no-align": {
+          "warp_frames": 0,
+          "reset_frames": 214,
+          "frames": 5794,
+          "emission_nonzero_mean": 0.06570132861983109,
+          "emission_on_observed_mean": 0.35383314241282987
+        }
+      },
+      "max_replay_ap_error": 3.875488507887326e-07,
+      "aligned_minus_reset_pp": 0.5307607730694941,
+      "aligned_minus_noalign_pp": 10.763556878296187
+    },
+    "leaky": {
+      "epochs": 31,
+      "best": {
+        "bev_ap70": 0.7150798448609982,
+        "checkpoint": "/data0/chen/gzc/workspace/diagnostics/int_spike_20260930/full_leaky/epoch_021/trained.pth",
+        "epoch": 21,
+        "sha256": "2a42d8b1a01b48f4668e7ec376f71e298428b36f775b6bcfc3a62a8e8bcaffaf"
+      },
+      "replay": {
+        "aligned": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [
+            {
+              "frame": "011181",
+              "noalign_psm_l1": 0.7184320688247681,
+              "reset_psm_l1": 0.971062421798706,
+              "reset_rm_l1": 0.0878216028213501
+            },
+            {
+              "frame": "011194",
+              "noalign_psm_l1": 0.7066847681999207,
+              "reset_psm_l1": 1.0593364238739014,
+              "reset_rm_l1": 0.08879975974559784
+            },
+            {
+              "frame": "011203",
+              "noalign_psm_l1": 0.6258516907691956,
+              "reset_psm_l1": 1.0586053133010864,
+              "reset_rm_l1": 0.09003980457782745
+            },
+            {
+              "frame": "011226",
+              "noalign_psm_l1": 0.6403931975364685,
+              "reset_psm_l1": 1.0381295680999756,
+              "reset_rm_l1": 0.08778072893619537
+            },
+            {
+              "frame": "011235",
+              "noalign_psm_l1": 0.6126614809036255,
+              "reset_psm_l1": 1.0251307487487793,
+              "reset_rm_l1": 0.094278484582901
+            },
+            {
+              "frame": "011242",
+              "noalign_psm_l1": 0.6165111660957336,
+              "reset_psm_l1": 1.0299785137176514,
+              "reset_rm_l1": 0.099137082695961
+            },
+            {
+              "frame": "011244",
+              "noalign_psm_l1": 0.7244833111763,
+              "reset_psm_l1": 0.9841426014900208,
+              "reset_rm_l1": 0.08786986023187637
+            },
+            {
+              "frame": "011246",
+              "noalign_psm_l1": 0.7384503483772278,
+              "reset_psm_l1": 1.0035001039505005,
+              "reset_rm_l1": 0.0900048017501831
+            },
+            {
+              "frame": "011255",
+              "noalign_psm_l1": 0.6372197270393372,
+              "reset_psm_l1": 0.9599189758300781,
+              "reset_rm_l1": 0.09271185845136642
+            },
+            {
+              "frame": "010801",
+              "noalign_psm_l1": 0.469296395778656,
+              "reset_psm_l1": 0.5426049828529358,
+              "reset_rm_l1": 0.05969350412487984
+            },
+            {
+              "frame": "010802",
+              "noalign_psm_l1": 0.5332130789756775,
+              "reset_psm_l1": 0.7044089436531067,
+              "reset_rm_l1": 0.07562000304460526
+            },
+            {
+              "frame": "010803",
+              "noalign_psm_l1": 0.5609108209609985,
+              "reset_psm_l1": 0.8170491456985474,
+              "reset_rm_l1": 0.08626136183738708
+            },
+            {
+              "frame": "010804",
+              "noalign_psm_l1": 0.5669814348220825,
+              "reset_psm_l1": 0.8655960559844971,
+              "reset_rm_l1": 0.09265004843473434
+            },
+            {
+              "frame": "010805",
+              "noalign_psm_l1": 0.5213120579719543,
+              "reset_psm_l1": 0.83907550573349,
+              "reset_rm_l1": 0.09199297428131104
+            },
+            {
+              "frame": "010806",
+              "noalign_psm_l1": 0.5341220498085022,
+              "reset_psm_l1": 0.8758822083473206,
+              "reset_rm_l1": 0.09611000120639801
+            },
+            {
+              "frame": "010807",
+              "noalign_psm_l1": 0.5337256789207458,
+              "reset_psm_l1": 0.8973946571350098,
+              "reset_rm_l1": 0.09226775169372559
+            }
+          ],
+          "history_policy": "aligned",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.8329113612863027,
+            "bev_ap50": 0.8116737691834379,
+            "bev_ap70": 0.7150798481807028
+          },
+          "model_step_ms_p50": 21.03008099948056,
+          "model_step_ms_p95": 23.24507109005935,
+          "peak_allocated_bytes": 426024448,
+          "predicted_boxes": 23284,
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "scans": 5794,
+          "seconds": 289.7627853709855,
+          "state_bytes": 25804800,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "reset": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [],
+          "history_policy": "reset",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.8178412662319511,
+            "bev_ap50": 0.7978110213776897,
+            "bev_ap70": 0.7142752204807578
+          },
+          "model_step_ms_p50": 20.03805700223893,
+          "model_step_ms_p95": 21.544717223150656,
+          "peak_allocated_bytes": 421159936,
+          "predicted_boxes": 23530,
+          "resets": {
+            "explicit": 5794
+          },
+          "scans": 5794,
+          "seconds": 287.1182038069819,
+          "state_bytes": 25804800,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "no-align": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [],
+          "history_policy": "no-align",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.6685562549540687,
+            "bev_ap50": 0.6449388592700623,
+            "bev_ap70": 0.532159290314476
+          },
+          "model_step_ms_p50": 19.958741002483293,
+          "model_step_ms_p95": 21.314742651884444,
+          "peak_allocated_bytes": 421240832,
+          "predicted_boxes": 19638,
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "scans": 5794,
+          "seconds": 263.72736054396955,
+          "state_bytes": 25804800,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        }
+      },
+      "audits": {
+        "aligned": {
+          "warp_frames": 5580,
+          "reset_frames": 214,
+          "frames": 5794,
+          "emission_nonzero_mean": 0.19879986671618358,
+          "emission_on_observed_mean": 0.48943396022852803
+        },
+        "reset": {
+          "warp_frames": 0,
+          "reset_frames": 5794,
+          "frames": 5794,
+          "emission_nonzero_mean": 0.10802729370076984,
+          "emission_on_observed_mean": 0.5297488784027569
+        },
+        "no-align": {
+          "warp_frames": 0,
+          "reset_frames": 214,
+          "frames": 5794,
+          "emission_nonzero_mean": 0.2453355559944839,
+          "emission_on_observed_mean": 0.49145145114544075
+        }
+      },
+      "max_replay_ap_error": 3.4274798554889685e-09,
+      "aligned_minus_reset_pp": 0.08046276999450486,
+      "aligned_minus_noalign_pp": 18.292055786622686
+    },
+    "gru": {
+      "epochs": 27,
+      "best": {
+        "bev_ap70": 0.758736104616861,
+        "checkpoint": "/data0/chen/gzc/workspace/diagnostics/int_spike_20260930/full_gru/epoch_017/trained.pth",
+        "epoch": 17,
+        "sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8"
+      },
+      "replay": {
+        "aligned": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [
+            {
+              "frame": "011181",
+              "noalign_psm_l1": 0.47299888730049133,
+              "reset_psm_l1": 0.40709254145622253,
+              "reset_rm_l1": 0.05477234348654747
+            },
+            {
+              "frame": "011194",
+              "noalign_psm_l1": 0.3114781975746155,
+              "reset_psm_l1": 0.45098963379859924,
+              "reset_rm_l1": 0.053240228444337845
+            },
+            {
+              "frame": "011203",
+              "noalign_psm_l1": 0.249488964676857,
+              "reset_psm_l1": 0.4050164818763733,
+              "reset_rm_l1": 0.05117320269346237
+            },
+            {
+              "frame": "011226",
+              "noalign_psm_l1": 0.24901090562343597,
+              "reset_psm_l1": 0.34924161434173584,
+              "reset_rm_l1": 0.04853895306587219
+            },
+            {
+              "frame": "011235",
+              "noalign_psm_l1": 0.20931686460971832,
+              "reset_psm_l1": 0.3757060468196869,
+              "reset_rm_l1": 0.05234116315841675
+            },
+            {
+              "frame": "011242",
+              "noalign_psm_l1": 0.2157757729291916,
+              "reset_psm_l1": 0.37130624055862427,
+              "reset_rm_l1": 0.055053289979696274
+            },
+            {
+              "frame": "011244",
+              "noalign_psm_l1": 0.25935307145118713,
+              "reset_psm_l1": 0.3656710684299469,
+              "reset_rm_l1": 0.047287262976169586
+            },
+            {
+              "frame": "011246",
+              "noalign_psm_l1": 0.266586571931839,
+              "reset_psm_l1": 0.3439331650733948,
+              "reset_rm_l1": 0.04720373824238777
+            },
+            {
+              "frame": "011255",
+              "noalign_psm_l1": 0.25460126996040344,
+              "reset_psm_l1": 0.37970274686813354,
+              "reset_rm_l1": 0.053218990564346313
+            },
+            {
+              "frame": "010801",
+              "noalign_psm_l1": 0.1745954304933548,
+              "reset_psm_l1": 0.20499511063098907,
+              "reset_rm_l1": 0.03146127611398697
+            },
+            {
+              "frame": "010802",
+              "noalign_psm_l1": 0.18578746914863586,
+              "reset_psm_l1": 0.24149587750434875,
+              "reset_rm_l1": 0.038972947746515274
+            },
+            {
+              "frame": "010803",
+              "noalign_psm_l1": 0.19127815961837769,
+              "reset_psm_l1": 0.2754323184490204,
+              "reset_rm_l1": 0.043816231191158295
+            },
+            {
+              "frame": "010804",
+              "noalign_psm_l1": 0.2041383683681488,
+              "reset_psm_l1": 0.31074321269989014,
+              "reset_rm_l1": 0.04789792001247406
+            },
+            {
+              "frame": "010805",
+              "noalign_psm_l1": 0.1995467245578766,
+              "reset_psm_l1": 0.30813756585121155,
+              "reset_rm_l1": 0.04778100922703743
+            },
+            {
+              "frame": "010806",
+              "noalign_psm_l1": 0.19829420745372772,
+              "reset_psm_l1": 0.3269677460193634,
+              "reset_rm_l1": 0.05022617056965828
+            },
+            {
+              "frame": "010807",
+              "noalign_psm_l1": 0.19510678946971893,
+              "reset_psm_l1": 0.3234919011592865,
+              "reset_rm_l1": 0.04589688032865524
+            }
+          ],
+          "history_policy": "aligned",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.8536119557067119,
+            "bev_ap50": 0.8380868051188295,
+            "bev_ap70": 0.758736118872035
+          },
+          "model_step_ms_p50": 61.01618651882745,
+          "model_step_ms_p95": 64.35106691787949,
+          "peak_allocated_bytes": 462854656,
+          "predicted_boxes": 24920,
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "scans": 5794,
+          "seconds": 643.6509990999475,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "reset": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [],
+          "history_policy": "reset",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.837614246573464,
+            "bev_ap50": 0.8202063905986734,
+            "bev_ap70": 0.7435351079264746
+          },
+          "model_step_ms_p50": 56.83583897189237,
+          "model_step_ms_p95": 57.72110395482741,
+          "peak_allocated_bytes": 446350848,
+          "predicted_boxes": 26406,
+          "resets": {
+            "explicit": 5794
+          },
+          "scans": 5794,
+          "seconds": 621.5681894030422,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "no-align": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [],
+          "history_policy": "no-align",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.8108615546433866,
+            "bev_ap50": 0.7932442039049981,
+            "bev_ap70": 0.7146492673393349
+          },
+          "model_step_ms_p50": 56.85133399674669,
+          "model_step_ms_p95": 57.65414470806718,
+          "peak_allocated_bytes": 446350848,
+          "predicted_boxes": 26489,
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "scans": 5794,
+          "seconds": 614.1705109750037,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        }
+      },
+      "audits": {
+        "aligned": {
+          "warp_frames": 5580,
+          "reset_frames": 214,
+          "frames": 5794
+        },
+        "reset": {
+          "warp_frames": 0,
+          "reset_frames": 5794,
+          "frames": 5794
+        },
+        "no-align": {
+          "warp_frames": 0,
+          "reset_frames": 214,
+          "frames": 5794
+        }
+      },
+      "max_replay_ap_error": 1.425517393016662e-08,
+      "aligned_minus_reset_pp": 1.5201010945560367,
+      "aligned_minus_noalign_pp": 4.408685153270008
+    }
+  },
+  "limitations": [
+    "No independent test split or multi-seed uncertainty estimate.",
+    "Reset/no-align are fixed-weight inference interventions, not retrained models.",
+    "LIF/leaky have equal parameters and state width; GRU differs in architecture and parameter count.",
+    "Diagnostic timings on separate GPUs are not a controlled latency/energy benchmark.",
+    "The leaky control jointly removes binary quantization and reset; their effects are not separated."
+  ],
+  "comparisons_pp": {
+    "lif_minus_leaky": 1.5915822284116476,
+    "lif_minus_gru": -2.774044840721568,
+    "lif_minus_leaky_after_reset": 1.1412842253366584
+  }
+}
