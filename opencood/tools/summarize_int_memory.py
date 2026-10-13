@@ -22,6 +22,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', required=True)
     parser.add_argument('--output', required=True)
+    parser.add_argument('--modes', nargs='+', choices=['lif', 'leaky', 'gru', 'single', 'concat'],
+                        default=['lif', 'leaky', 'gru'])
     args = parser.parse_args()
     root, output = Path(args.root), Path(args.output)
     require(not output.exists(), 'Report output exists; preserve previous evidence')
@@ -33,7 +35,7 @@ def main():
                       'Diagnostic timings on separate GPUs are not a controlled latency/energy benchmark.',
                       'The leaky control jointly removes binary quantization and reset; their effects are not separated.'])
     curves = {}
-    for mode in ('lif', 'leaky', 'gru'):
+    for mode in args.modes:
         train, replay = root/('full_'+mode), root/('replay_'+mode)
         result, curve, best = read(train/'result.json'), read(train/'curve.json'), read(train/'best.json')
         runtime = read(train/'effective_runtime.json')['arguments']
@@ -59,7 +61,8 @@ def main():
         selected = next(r for r in curve if r['epoch'] == best['epoch'])
         values, audits = {}, {}
         segments = 1 + sum(a['segment'] != b['segment'] for a, b in zip(manifest['val'], manifest['val'][1:]))
-        for policy in ('aligned', 'reset', 'no-align'):
+        policies = ('aligned',) if mode == 'single' else ('aligned', 'reset', 'no-align')
+        for policy in policies:
             directory = replay/policy
             evidence = read(directory/'result.json')
             provenance = read(directory/'manifest.json')
@@ -76,11 +79,13 @@ def main():
             require(summary['labels'] == 1738 and summary['gt_boxes'] == 22971, 'Label/GT coverage')
             warps = sum(bool(r['warp']) for r in frames)
             resets = sum(bool(r['reset']) for r in frames)
-            require(warps == (len(frames)-segments if policy == 'aligned' else 0), 'Warp policy mismatch')
-            require(resets == (len(frames) if policy == 'reset' else segments), 'Reset policy mismatch')
+            require(warps == (len(frames)-segments if policy == 'aligned' and mode != 'single' else 0), 'Warp policy mismatch')
+            require(resets == (len(frames) if policy == 'reset' or mode == 'single' else segments), 'Reset policy mismatch')
+            if mode == 'single':
+                require(all(r['state_bytes'] == 0 for r in frames), 'Single-frame model retains state')
             values[policy] = summary
             audits[policy] = dict(warp_frames=warps, reset_frames=resets, frames=len(frames))
-            if mode != 'gru':
+            if mode in ('lif', 'leaky'):
                 audits[policy].update(emission_nonzero_mean=sum(r['emission_nonzero_fraction'] for r in frames)/len(frames),
                                      emission_on_observed_mean=sum(r['emission_on_observed_fraction'] for r in frames)/len(frames))
         error = max(abs(values['aligned']['metrics'][key]-value)
@@ -89,13 +94,16 @@ def main():
         ap = {policy: value['metrics']['bev_ap70'] for policy, value in values.items()}
         report['modes'][mode] = dict(epochs=len(curve), best=best, replay=values, audits=audits,
                                     max_replay_ap_error=error,
-                                    aligned_minus_reset_pp=100*(ap['aligned']-ap['reset']),
-                                    aligned_minus_noalign_pp=100*(ap['aligned']-ap['no-align']))
+                                    aligned_minus_reset_pp=None if mode == 'single' else 100*(ap['aligned']-ap['reset']),
+                                    aligned_minus_noalign_pp=None if mode == 'single' else 100*(ap['aligned']-ap['no-align']))
         curves[mode] = curve
     score = lambda mode, policy: report['modes'][mode]['replay'][policy]['metrics']['bev_ap70']
-    report['comparisons_pp'] = dict(lif_minus_leaky=100*(score('lif','aligned')-score('leaky','aligned')),
-                                    lif_minus_gru=100*(score('lif','aligned')-score('gru','aligned')),
-                                    lif_minus_leaky_after_reset=100*(score('lif','reset')-score('leaky','reset')))
+    report['comparisons_pp'] = {}
+    for control in ('leaky', 'gru', 'single', 'concat'):
+        if 'lif' in report['modes'] and control in report['modes']:
+            report['comparisons_pp']['lif_minus_'+control] = 100*(score('lif','aligned')-score(control,'aligned'))
+    if 'lif' in report['modes'] and 'leaky' in report['modes']:
+        report['comparisons_pp']['lif_minus_leaky_after_reset'] = 100*(score('lif','reset')-score('leaky','reset'))
     output.mkdir(parents=True)
     (output/'report.json').write_text(json.dumps(report, indent=2)+'\n')
     import matplotlib

@@ -16,9 +16,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', required=True)
     parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--launch-record', default='launch_full.json',
+                        help='Launch record filename within root; baseline supplement uses launch_full_single_concat.json')
     args = parser.parse_args()
     root = Path(args.root).resolve()
-    launch = json.loads((root/'launch_full.json').read_text())
+    launch = json.loads((root/args.launch_record).read_text())
     plans, skipped = [], []
     for job in launch['jobs']:
         directory = Path(job['output'])

@@ -1,0 +1,16 @@
+{
+  "status": "PASSED",
+  "scope": "Engineering only; no pilot AP in scientific comparison",
+  "launch_commit": "c2a35f588060c04d7ceda753c68e421b295d1536",
+  "checks": ["Two complete epochs per mode", "Exact train and validation frame order", "Supervision coverage", "Finite loss and gradients", "Spatial freeze and learning", "No single-frame memory or warp"],
+  "modes": {
+    "single": [
+      {"epoch": 1, "scans": 32, "labels": 20, "updates": 7, "spatial_changed": true, "temporal_gradient_max": 0.0, "peak_allocated_bytes": 3772340224},
+      {"epoch": 2, "scans": 32, "labels": 20, "updates": 7, "spatial_changed": true, "temporal_gradient_max": 0.0, "peak_allocated_bytes": 3777319936}
+    ],
+    "concat": [
+      {"epoch": 1, "scans": 32, "labels": 20, "updates": 7, "spatial_changed": false, "temporal_gradient_max": 6.649041040274176, "peak_allocated_bytes": 3560491520},
+      {"epoch": 2, "scans": 32, "labels": 20, "updates": 7, "spatial_changed": true, "temporal_gradient_max": 3.767077032916015, "peak_allocated_bytes": 4719479808}
+    ]
+  }
+}

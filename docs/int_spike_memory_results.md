@@ -47,3 +47,13 @@ LIF 对齐结果比 Leaky 高 **1.59** 个百分点，比 GRU 低 **2.77** 个�
 ## 下一步研究判断
 
 本轮工程目标完成，脉冲状态的独立价值尚未成立。下一轮优先检验 32 通道中间表示是否限制了 LIF/Leaky：成对比较 32 与 64 通道，并同时报告参数量和状态字节；64 通道 U+R 会增加缓存预算，不能称为等预算提升。然后再分离二值发放与复位机制，并对候选方案做多种子复核。上述是后续实验建议，本次验收不额外启动新训练。
+
+## 按用户要求补齐 Concat 与单帧（2026-10-13）
+
+旧协议单帧 BEV AP70 为 74.30%，Concat 为 75.50%，但它们采用逐帧截断梯度/逐帧更新，没有本轮首轮 FM 预热，不能直接填入主表作为同协议对照。主表已增补两行，待本轮全量实验和最佳权重独立重放后填入结果；旧数值仅作历史参考。
+
+补充实验保持相同完整清单、原始 P1 初始化、seed 303、AdamW、窗口内标注损失均值、每 4 帧窗口一次更新、冻结 BN、无增强、验证选模和停止规则。Concat 首轮 FM-only、随后联合训练；单帧没有 FM，首轮直接更新空间网络，明确记录 `fm_only_epochs=0`。单帧中的四帧窗口仅用于梯度累积，输入和推理始终只有当前帧。此结构性预热差异予以披露，不将两者称为完全相同训练日程。
+
+两组已通过两轮工程验证，证据见 [baseline_pilot_audit_20261013.json](int_spike_results/baseline_pilot_audit_20261013.json)。全量结果目录为服务器原实验根目录下的 `full_single`、`full_concat`，启动记录 `launch_full_single_concat.json`。至少训练 20 轮，连续 10 轮无 >0.001 AP70 改善且 LR 不高于初始值 1/8 才停止，最多 40 轮；达到上限仍无平台时必须单独评估，不能宣称收敛。工程验证权重不用于正式初始化。
+
+后续跟进查进程和 `curve.json`，不要重复启动；若中断，使用 `resume_int_memory.py --root <原根目录> --launch-record launch_full_single_concat.json` 检查后恢复。训练结束后对 Concat 重放 aligned/reset/no-align，对单帧只重放 aligned（无历史干预意义）；最后以 `summarize_int_memory.py --modes lif leaky gru single concat` 审计五组，输出到新的报告目录，保留第一轮证据。
