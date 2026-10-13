@@ -67,7 +67,7 @@ def worker(path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root')
-    parser.add_argument('--mode', choices=['lif', 'leaky', 'gru'])
+    parser.add_argument('--mode', choices=['lif', 'leaky', 'gru', 'single', 'concat'])
     parser.add_argument('--gpu', type=int)
     parser.add_argument('--worker')
     args = parser.parse_args()
@@ -102,8 +102,9 @@ def main():
             '--mode', args.mode, '--config', runtime['config'], '--data', data_dir,
             '--manifest', runtime['manifest'], '--checkpoint', best['checkpoint'],
             '--seed', str(runtime['seed']), '--workers', str(runtime['workers'])]
+    policies = ('aligned',) if args.mode == 'single' else ('aligned', 'reset', 'no-align')
     commands = {policy: base+['--history-policy', policy, '--output', str(destination/policy)]
-                for policy in ('aligned', 'reset', 'no-align')}
+                for policy in policies}
     job = dict(mode=args.mode, gpu=args.gpu, created_unix=time.time(),
                training_status=completed['status'], training_epochs=len(curve), best_epoch=best['epoch'],
                checkpoint=best['checkpoint'], checkpoint_sha256=best['sha256'],

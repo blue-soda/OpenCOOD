@@ -25,14 +25,17 @@ def main():
     parser.add_argument('--manifest', required=True)
     parser.add_argument('--checkpoint', required=True)
     parser.add_argument('--stage', choices=['pilot', 'full'], required=True)
-    parser.add_argument('--gpus', nargs=3, type=int, required=True, help='lif, leaky, gru GPU indices')
+    parser.add_argument('--modes', nargs='+', choices=['lif', 'leaky', 'gru', 'single', 'concat'],
+                        default=['lif', 'leaky', 'gru'])
+    parser.add_argument('--gpus', nargs='+', type=int, required=True, help='GPU indices in modes order')
     parser.add_argument('--config', default='opencood/hypes_yaml/dair-v2x/snn/int_ego_memory.yaml')
     args = parser.parse_args()
-    if len(set(args.gpus)) != 3:
-        parser.error('Choose three distinct GPUs')
+    if len(set(args.gpus)) != len(args.modes) or len(args.gpus) != len(args.modes) or len(set(args.modes)) != len(args.modes):
+        parser.error('Choose one distinct GPU per distinct mode')
     root = Path(args.root).resolve()
     root.mkdir(parents=True, exist_ok=True)
-    record = root/('launch_'+args.stage+'.json')
+    suffix = '' if args.modes == ['lif', 'leaky', 'gru'] else '_'+ '_'.join(args.modes)
+    record = root/('launch_'+args.stage+suffix+'.json')
     if record.exists():
         raise ValueError('Launch record already exists; inspect existing processes instead of duplicating')
     if args.stage == 'full':
@@ -43,6 +46,23 @@ def main():
             raise ValueError('Gate configuration/initialization mismatch')
         if gate['parent_manifest_sha256'] != digest(args.manifest):
             raise ValueError('Gate data mismatch')
+        # Additional baselines must exercise their own two-epoch execution path.
+        for mode in args.modes:
+            if mode not in ('single', 'concat'):
+                continue
+            pilot = root/('pilot_'+mode)
+            result = json.loads((pilot/'result.json').read_text())
+            contract = json.loads((pilot/'manifest.json').read_text())['contract']
+            if result['status'] != 'EPOCH_LIMIT_REACHED' or result['epochs'] != 2:
+                raise ValueError('Baseline pilot incomplete: '+mode)
+            pilot_runtime = json.loads((pilot/'effective_runtime.json').read_text())['arguments']
+            pilot_manifest = json.loads(Path(pilot_runtime['manifest']).read_text())
+            if (pilot_manifest['protocol']['parent_manifest_sha256'] != digest(args.manifest) or
+                    contract['config_sha256'] != digest(args.config) or
+                    contract['initialization_sha256'] != digest(args.checkpoint) or
+                    contract.get('tbptt_steps') != 4 or
+                    contract.get('fm_only_epochs') != int(mode != 'single')):
+                raise ValueError('Baseline pilot contract mismatch: '+mode)
     report = subprocess.check_output(['nvidia-smi', '--query-gpu=index,memory.free,utilization.gpu',
                                       '--format=csv,noheader,nounits']).decode()
     available = {int(row[0]): (int(row[1]), int(row[2]))
@@ -57,13 +77,13 @@ def main():
         pilot = {split: select(original[split], 2) for split in ('train', 'val')}
         pilot['protocol'] = dict(purpose='engineering_only',
                                  parent_manifest_sha256=hashlib.sha256(source).hexdigest())
-        manifest = root/'pilot_manifest.json'
+        manifest = root/('pilot_manifest'+suffix+'.json')
         with manifest.open('x') as output:
             json.dump(pilot, output, indent=2)
     command = [sys.executable, '-m', 'opencood.tools.run_int_epochs',
                '--manifest', str(manifest), '--checkpoint', str(Path(args.checkpoint).resolve()),
                '--config', str(Path(args.config).resolve()), '--tbptt-steps', '4',
-               '--fm-only-epochs', '1', '--seed', '303', '--workers', '4', '--lr', '0.0001',
+               '--seed', '303', '--workers', '4', '--lr', '0.0001',
                '--max-epochs', '2' if args.stage == 'pilot' else '40',
                '--min-epochs', '2' if args.stage == 'pilot' else '20',
                '--patience', '10', '--min-delta', '0.001']
@@ -72,12 +92,13 @@ def main():
                     config_sha256=digest(args.config), checkpoint_sha256=digest(args.checkpoint),
                     commit=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip(),
                     gpu_snapshot=report, jobs=[])
-    for mode in ('lif', 'leaky', 'gru'):
+    for mode in args.modes:
         if (root/(args.stage+'_'+mode)).exists():
             raise ValueError('Output exists: '+mode)
-    for mode, gpu in zip(('lif', 'leaky', 'gru'), args.gpus):
+    for mode, gpu in zip(args.modes, args.gpus):
         output = root/(args.stage+'_'+mode)
-        actual = command + ['--mode', mode, '--output', str(output)]
+        actual = command + ['--mode', mode, '--output', str(output),
+                            '--fm-only-epochs', str(int(mode != 'single'))]
         env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu), PYTHONPATH=str(Path.cwd()),
                    NUMPY_MADVISE_HUGEPAGE='0', OMP_NUM_THREADS='1', MKL_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1')
         log_path = root/(args.stage+'_'+mode+'.log')
