@@ -119,3 +119,18 @@ use the resume record and `full_*/curve.json`. LIF was not restarted.
 Post-launch verification found both processes advancing without failure records;
 the first64 resumed scans matched their preserved interrupted prefixes in frame
 order and every comparable labelled loss exactly (maximum absolute difference0).
+
+## Training completed, frozen replay launched
+
+On 2026-10-13 all three runs reached the fixed validation plateau rule:
+LIF27 epochs (best epoch17, BEV AP70 0.7309954198), Leaky31 (best epoch21,
+0.7150798449), GRU27 (best epoch17, 0.7587361046). Every completed epoch covered
+8593 training scans/4678 labels and5794 validation scans/1738 labels. No failure
+records were present. Resuming Leaky/GRU did not change their selected best.
+
+Three frozen-best replay workers now run aligned, reset and no-align sequentially,
+one worker per model. Inspect server `replay_{mode}/status.json` and its process
+record before taking further action. The complete curves and launch commands are
+archived in `int_spike_results/training_complete_20261013.json`. Training is done;
+replay/ablation acceptance remains pending. These are still validation-selected,
+single-seed results, not a held-out test or a multi-seed SNN superiority claim.
