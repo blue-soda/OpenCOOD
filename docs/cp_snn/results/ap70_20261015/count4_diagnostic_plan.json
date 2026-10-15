@@ -1,0 +1,22 @@
+{
+  "name": "count4_diagnostic",
+  "git_commit": "7e02d0d72483e2313c241b21791ef00a197401a2",
+  "jobs": [
+    {
+      "name": "count4_diagnostic",
+      "command": [
+        "/data0/chen/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.diagnose_e3dsnn_ap70",
+        "--ego-dir",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/count4_ego_eval",
+        "--fusion-dir",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/count4_framebytes_20261011",
+        "--output",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_ap70_20261015/count4_diagnostic.json"
+      ],
+      "timeout_seconds": 3600
+    }
+  ]
+}

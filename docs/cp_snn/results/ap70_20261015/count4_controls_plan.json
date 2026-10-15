@@ -1,0 +1,106 @@
+{
+  "name": "count4_controls",
+  "git_commit": "7e02d0d72483e2313c241b21791ef00a197401a2",
+  "gpu": null,
+  "state": "waiting_for_free_gpu",
+  "single_checkpoint_sha256": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
+  "fusion_checkpoint_sha256": "15a33c2b8c58b066b54c6616c1ea7db5ed8dcdd699b70b328bda6f3932087f5d",
+  "jobs": [
+    {
+      "name": "count4_road_disabled",
+      "command": [
+        "/data0/chen/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--config",
+        "/data0/chen/gzc/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego.yaml",
+        "--mode",
+        "eval",
+        "--checkpoint",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/count4_final/count4_best_epoch_27.pth",
+        "--output",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_ap70_20261015/count4_road_disabled",
+        "--eval-3d",
+        "--save-predictions"
+      ],
+      "timeout_seconds": 3600
+    },
+    {
+      "name": "count4_road_disabled_replay",
+      "command": [
+        "env",
+        "CUDA_VISIBLE_DEVICES=",
+        "/data0/chen/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.replay_e3dsnn_predictions",
+        "--evaluation-dir",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_ap70_20261015/count4_road_disabled"
+      ],
+      "timeout_seconds": 3600
+    },
+    {
+      "name": "count4_ego30_train",
+      "command": [
+        "/data0/chen/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--config",
+        "/data0/chen/gzc/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego.yaml",
+        "--mode",
+        "train",
+        "--single-checkpoint",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_final_snn_20260930/snn_best_epoch_53.pth",
+        "--output",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_ap70_20261015/count4_ego30",
+        "--epochs",
+        "30",
+        "--selection-iou",
+        "0.7"
+      ],
+      "timeout_seconds": 43200
+    },
+    {
+      "name": "count4_ego30_eval",
+      "command": [
+        "/data0/chen/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--config",
+        "/data0/chen/gzc/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego.yaml",
+        "--mode",
+        "eval",
+        "--checkpoint",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_ap70_20261015/count4_ego30/best_ap70.pth",
+        "--output",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_ap70_20261015/count4_ego30_eval",
+        "--eval-3d",
+        "--save-predictions"
+      ],
+      "timeout_seconds": 3600
+    },
+    {
+      "name": "count4_ego30_replay",
+      "command": [
+        "env",
+        "CUDA_VISIBLE_DEVICES=",
+        "/data0/chen/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.replay_e3dsnn_predictions",
+        "--evaluation-dir",
+        "/data0/chen/gzc/workspace/diagnostics/e3dsnn_ap70_20261015/count4_ego30_eval"
+      ],
+      "timeout_seconds": 3600
+    }
+  ]
+}

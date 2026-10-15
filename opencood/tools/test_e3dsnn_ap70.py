@@ -1,14 +1,17 @@
 """AP70 matching and dual-checkpoint regression checks, CPU only."""
 import json
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import torch
 from opencood.tools.diagnose_e3dsnn_ap70 import diagnose, match
 from opencood.tools.test_e3dsnn_prediction_replay import PredictionReplayTest
 from opencood.tools.train_e3dsnn_single import save_best_checkpoints
+from opencood.tools.launch_e3dsnn_ap70_controls import launch
 
 
 class DiagnosticTest(PredictionReplayTest):
@@ -43,6 +46,30 @@ class CheckpointTest(unittest.TestCase):
             self.assertEqual(best_by, {'0.5': .9, '0.7': .7})
             for filename, epoch in [('best_ap50.pth', 2), ('best_ap70.pth', 4), ('best.pth', 4)]:
                 self.assertEqual(torch.load(str(folder/filename), map_location='cpu')['weight'].item(), epoch)
+
+
+class LaunchGuardTest(unittest.TestCase):
+    def test_busy_gpu_and_existing_launch_never_start_child(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ('count4', 'relu'):
+                (root/(name+'_diagnostic.json')).write_text(json.dumps(dict(passed=True)))
+            checkpoint = root/'weights.pth'
+            checkpoint.write_bytes(b'fixture')
+            digest = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
+            jobs = [dict(command=['--checkpoint', str(checkpoint)]), {},
+                    dict(command=['--single-checkpoint', str(checkpoint)])]
+            (root/'count4_controls_plan.json').write_text(json.dumps(dict(name='count4_controls',
+                single_checkpoint_sha256=digest, fusion_checkpoint_sha256=digest, jobs=jobs)))
+            with patch('opencood.tools.launch_e3dsnn_ap70_controls.subprocess.check_output', return_value=b'22000, 2000, 0'), \
+                 patch('opencood.tools.launch_e3dsnn_ap70_controls.subprocess.Popen') as spawn:
+                self.assertFalse(launch(root, 'count4', 0))
+                spawn.assert_not_called()
+                self.assertFalse((root/'count4_controls_launch.json').exists())
+                (root/'count4_controls_launch.json').write_text('{}')
+                with self.assertRaises(FileExistsError):
+                    launch(root, 'count4', 0)
+                spawn.assert_not_called()
 
 
 if __name__ == '__main__':
