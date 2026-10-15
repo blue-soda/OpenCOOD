@@ -36,6 +36,20 @@ def save_torch(path, value):
     temporary.replace(path)
 
 
+def save_best_checkpoints(model, metrics, output_dir, best_by_iou, selection_iou, best):
+    for threshold in best_by_iou:
+        if metrics['ap'][threshold] > best_by_iou[threshold]:
+            best_by_iou[threshold] = metrics['ap'][threshold]
+            label = 'best_ap{}'.format(int(float(threshold) * 100))
+            save_torch(output_dir / (label + '.pth'), model.state_dict())
+            write_json(output_dir / (label + '_metrics.json'), metrics)
+    if metrics['ap'][selection_iou] > best:
+        best = metrics['ap'][selection_iou]
+        save_torch(output_dir / 'best.pth', model.state_dict())
+        write_json(output_dir / 'best_metrics.json', metrics)
+    return best
+
+
 def seed_worker(worker_id):
     seed = torch.initial_seed() % (2 ** 32)
     random.seed(seed)
@@ -261,6 +275,8 @@ def execute(args, output_dir):
             raise RuntimeError('Single-batch loss reduction gate failed; inspect overfit.json')
         return result
     start_epoch, best = 0, -1.
+    best_by_iou = {'0.5': -1., '0.7': -1.}
+    ap70_tracking_start_epoch = 1
     if args.resume:
         state = torch.load(str(output_dir / 'last.pt'), map_location='cpu')
         if state.get('warmup_epochs', 0) != args.warmup_epochs:
@@ -270,7 +286,12 @@ def execute(args, output_dir):
         model.load_state_dict(state['model'], strict=True)
         optimizer.load_state_dict(state['optimizer'])
         scheduler.load_state_dict(state['scheduler'])
-        start_epoch, best = state['epoch'], state['best_ap50']
+        if state.get('selection_iou', '0.5') != args.selection_iou:
+            raise ValueError('Resume requires the same checkpoint selection IoU')
+        start_epoch = state['epoch']
+        best_by_iou = state.get('best_by_iou', {'0.5': state['best_ap50'], '0.7': -1.})
+        best = best_by_iou[args.selection_iou]
+        ap70_tracking_start_epoch = state.get('ap70_tracking_start_epoch', start_epoch + 1)
         random.setstate(state['random_state'])
         np.random.set_state(state['numpy_state'])
         torch.set_rng_state(state['torch_state'])
@@ -318,20 +339,21 @@ def execute(args, output_dir):
         metrics = validate(model, val_data, args.workers)
         metrics.update({'epoch': epoch + 1, 'train_loss': total / samples,
                         'train_samples': samples, 'seconds': time.monotonic() - started})
-        if metrics['ap']['0.5'] > best:
-            best = metrics['ap']['0.5']
-            save_torch(output_dir / 'best.pth', model.state_dict())
-            write_json(output_dir / 'best_metrics.json', metrics)
+        best = save_best_checkpoints(model, metrics, output_dir, best_by_iou, args.selection_iou, best)
         save_torch(output_dir / 'last.pt', {'epoch': epoch + 1, 'model': model.state_dict(), 'warmup_epochs': args.warmup_epochs,
             'config_sha256': manifest['config_sha256'], 'data_manifest_sha256': manifest['data_manifest_sha256'],
-            'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(), 'best_ap50': best,
+            'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(), 'best_ap50': best_by_iou['0.5'],
+            'best_by_iou': best_by_iou, 'selection_iou': args.selection_iou,
+            'ap70_tracking_start_epoch': ap70_tracking_start_epoch,
             'random_state': random.getstate(), 'numpy_state': np.random.get_state(),
             'torch_state': torch.get_rng_state(), 'cuda_state': torch.cuda.get_rng_state_all(),
             'loader_state': generator.get_state()})
         with (output_dir / 'metrics.jsonl').open('a') as stream:
             stream.write(json.dumps(metrics) + '\n')
         print(json.dumps(metrics), flush=True)
-    return {'epochs_completed': epochs, 'best_ap50': best}
+    return {'epochs_completed': epochs, 'best_ap50': best_by_iou['0.5'],
+            'best_ap70': best_by_iou['0.7'], 'selection_iou': args.selection_iou,
+            'ap70_tracking_start_epoch': ap70_tracking_start_epoch}
 
 
 def main():
@@ -351,6 +373,8 @@ def main():
     parser.add_argument('--eval-3d', action='store_true', help='Also report volume-IoU AP in eval mode')
     parser.add_argument('--save-predictions', action='store_true', help='Save per-frame boxes/scores/GT and hashes for offline AP replay')
     parser.add_argument('--profile', action='store_true', help='Profile synchronized batch=1 inference in eval mode')
+    parser.add_argument('--selection-iou', choices=['0.5', '0.7'], default='0.5',
+                        help='Validation BEV IoU for best.pth; retain both AP50/AP70 best snapshots')
     parser.add_argument('--resume', action='store_true')
     args = parser.parse_args()
     if (args.eval_3d or args.save_predictions or args.profile or args.packet_roundtrip) and args.mode != 'eval':
