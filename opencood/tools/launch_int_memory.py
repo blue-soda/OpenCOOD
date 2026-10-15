@@ -25,7 +25,7 @@ def main():
     parser.add_argument('--manifest', required=True)
     parser.add_argument('--checkpoint', required=True)
     parser.add_argument('--stage', choices=['pilot', 'full'], required=True)
-    parser.add_argument('--modes', nargs='+', choices=['lif', 'leaky', 'gru', 'single', 'concat'],
+    parser.add_argument('--modes', nargs='+', choices=['lif', 'leaky', 'gru', 'single', 'concat', 'spike_gru'],
                         default=['lif', 'leaky', 'gru'])
     parser.add_argument('--gpus', nargs='+', type=int, required=True, help='GPU indices in modes order')
     parser.add_argument('--config', default='opencood/hypes_yaml/dair-v2x/snn/int_ego_memory.yaml')

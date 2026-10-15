@@ -30,7 +30,7 @@ def main():
     p.add_argument('--manifest', required=True)
     p.add_argument('--checkpoint', required=True, help='Original P1 initialization')
     p.add_argument('--output', required=True)
-    p.add_argument('--mode', choices=['single', 'concat', 'gru', 'lif', 'leaky'], required=True)
+    p.add_argument('--mode', choices=['single', 'concat', 'gru', 'lif', 'leaky', 'spike_gru'], required=True)
     p.add_argument('--config', default='opencood/hypes_yaml/dair-v2x/repro/dair_stage1_codyntrust_single_wide.yaml')
     p.add_argument('--seed', type=int, default=303)
     p.add_argument('--workers', type=int, default=4)
@@ -67,7 +67,7 @@ def main():
                     manifest_sha256=sha256(a.manifest), config_sha256=sha256(a.config),
                     initialization_sha256=sha256(a.checkpoint),
                     state_policy='whole-segment/per-frame-detach/v1')
-    if a.tbptt_steps > 1 or a.mode in ('lif', 'leaky') or a.fm_only_epochs:
+    if a.tbptt_steps > 1 or a.mode in ('lif', 'leaky', 'spike_gru') or a.fm_only_epochs:
         contract.update(state_policy='whole-segment/tbptt/v1', tbptt_steps=a.tbptt_steps,
                         fm_only_epochs=a.fm_only_epochs)
     config = load_yaml(a.config)

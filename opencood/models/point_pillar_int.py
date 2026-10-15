@@ -3,12 +3,16 @@ import torch
 from opencood.models.point_pillar_codyntrust_single import PointPillarCodyntrustSingle
 from opencood.models.sub_modules.int_feature_memory import INTFeatureMemory
 from opencood.models.sub_modules.int_spike_memory import INTSpikeMemory
+from opencood.models.sub_modules.int_spiking_gru import INTSpikingGRUMemory
 
 
 class PointPillarINT(PointPillarCodyntrustSingle):
     def __init__(self, args, mode='concat'):
         super().__init__(args)
-        if mode in ('lif', 'leaky'):
+        if mode == 'spike_gru':
+            self.feature_memory = INTSpikingGRUMemory(64, args['lidar_range'],
+                                                     **args.get('int_spiking_gru', {}))
+        elif mode in ('lif', 'leaky'):
             self.feature_memory = INTSpikeMemory(mode, 64, args['lidar_range'],
                                                  **args.get('int_memory', {}))
         else:

@@ -136,11 +136,12 @@ def warp_bev(value, past_pose, current_pose, lidar_range, mode='nearest'):
 
 class INTFeatureMemory(nn.Module):
     """Explicit scene-owned state. batch=1 is deliberate for this stream runner."""
-    def __init__(self, mode, channels, lidar_range, max_gap_s=.25, identity_init=True):
+    def __init__(self, mode, channels, lidar_range, max_gap_s=.25, identity_init=True,
+                 fusion_factory=INTFusionModule):
         super().__init__()
         self.mode, self.channels = mode, channels
         self.lidar_range, self.max_gap_s = lidar_range, max_gap_s
-        self.fusion = INTFusionModule(make_fusion_config(mode, channels)) if mode != 'single' else None
+        self.fusion = fusion_factory(make_fusion_config(mode, channels)) if mode != 'single' else None
         if self.fusion is not None and identity_init:
             self.fusion.initialize_concat_identity()
 
@@ -162,7 +163,7 @@ class INTFeatureMemory(nn.Module):
         if self.mode == 'single':
             return current, None, {'reset': 'single', 'delta_t': delta_t, 'state_bytes': 0, 'warp': False}
         if reason is not None:
-            width = self.channels + int(self.mode == 'gru')
+            width = self.channels + int(self.fusion.fusion_method['type'] == 'infinite_GRU')
             past = current.new_zeros((1, width, *current.shape[2:]))
             coverage = 0.
         elif align:
