@@ -11,8 +11,8 @@ INT FM-only 的局部 SNN 改造已完成训练、最佳权重独立重放和历
 | LIF | 27 / 17 | 73.10 | 72.57 | 62.34 | +0.53 |
 | Leaky | 31 / 21 | 71.51 | 71.43 | 53.22 | +0.08 |
 | GRU | 27 / 17 | 75.87 | 74.35 | 71.46 | +1.52 |
-| Concat（本轮协议补跑） | 待完成 | 待测 | 待测 | 待测 | 待测 |
-| 单帧（本轮优化协议补跑） | 待完成 | 待测 | 不适用 | 不适用 | 不适用 |
+| Concat（训练完成，待重放） | 23 / 13 | 76.27（训练选模） | 待测 | 待测 | 待测 |
+| 单帧（训练完成，待重放） | 27 / 17 | 75.31（训练选模） | 不适用 | 不适用 | 不适用 |
 
 LIF 对齐结果比 Leaky 高 **1.59** 个百分点，比 GRU 低 **2.77** 个百分点。清空历史后，LIF 比 Leaky 仍高 **1.14** 个百分点，因此不能把全部 1.59 个百分点归因为跨帧脉冲记忆。LIF、Leaky、GRU 取消对齐分别下降 10.76、18.29、4.41 个百分点：位姿对齐对这套缓存实现很重要。
 
@@ -59,3 +59,9 @@ LIF 对齐结果比 Leaky 高 **1.59** 个百分点，比 GRU 低 **2.77** 个�
 后续跟进查进程和 `curve.json`，不要重复启动；若中断，使用 `resume_int_memory.py --root <原根目录> --launch-record launch_full_single_concat.json` 检查后恢复。训练结束后对 Concat 重放 aligned/reset/no-align，对单帧只重放 aligned（无历史干预意义）；最后以 `summarize_int_memory.py --modes lif leaky gru single concat` 审计五组，输出到新的报告目录，保留第一轮证据。
 
 全量训练已从提交 `af38083` 启动：单帧 GPU0/PID2194388，Concat GPU2/PID2194389；完整命令和哈希见 [launch_full_single_concat.json](int_spike_results/launch_full_single_concat.json)。这些 PID 是启动时记录，后续需核对实际进程命令。定时跟进已恢复，间隔 60 分钟，提示词“推进基线，仅完成或异常通知”。
+
+### 2026-10-15 训练验收完成，重放进行中
+
+单帧完成 27 轮、最佳第 17 轮（AP70 0.7531268558）；Concat 完成 23 轮、最佳第 13 轮（0.7627485189）。两组均为 PLATEAU_REACHED，实际 latest.pth 的 epoch/stale/LR 满足停止规则，全部 50 个完成轮次的训练/验证覆盖和有限数值检查通过，输入与最佳权重哈希一致，无 failure.json。表内新两行仍是训练选模值，待独立重放验收。
+
+已在空闲 GPU0/2 启动 `replay_single`（worker PID2402455）和 `replay_concat`（PID2402462）。单帧仅 aligned；Concat 顺序 aligned/reset/no-align。进度以各目录 status.json 和实际进程命令为准，不重复启动。完整训练曲线、停止状态与重放启动证据见 [baseline_training_complete_20261015.json](int_spike_results/baseline_training_complete_20261015.json)。两组重放完成后运行五模型汇总审计，输出到新的 `stage1_five_models_20261015` 目录，归档新 JSON/曲线并更新主表，旧三模型报告保留。
