@@ -138,3 +138,18 @@ LIF aligned BEV AP70 is 73.10%, above Leaky by 1.59 percentage points but below
 same-protocol GRU by 2.77. Resetting history reduces LIF by only 0.53 points.
 This stage is complete; it does not establish SNN superiority. Results remain
 validation-selected and single-seed, without a held-out test or uncertainty study.
+
+## Five-model acceptance on 2026-10-15
+
+The requested single-frame and Concat controls completed 27 and 23 epochs (best
+epochs 17 and 13), reaching the same plateau rule. Both use the frozen data,
+P1 initialization, seed 303 and four-frame update windows. Concat uses the same
+one-epoch FM warmup; single-frame has no FM and trains spatial weights from epoch1.
+This warmup difference is explicitly retained in the comparison.
+
+Single-frame frozen replay BEV AP70 is 75.31%; Concat aligned/reset/no-align are
+76.27%/74.70%/73.46%. All five models and 13 evaluations passed the summary audit,
+including all 135 completed epochs and exact evaluation frame sequence checks.
+See `int_spike_results/five_models_20261015/report.json` and the updated results
+document. Original three-model artifacts are retained. No additional training or
+replay remains pending for this baseline-completion request.
