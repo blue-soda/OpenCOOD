@@ -67,7 +67,7 @@ def worker(path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root')
-    parser.add_argument('--mode', choices=['lif', 'leaky', 'gru', 'single', 'concat'])
+    parser.add_argument('--mode', choices=['lif', 'leaky', 'gru', 'single', 'concat', 'spike_gru'])
     parser.add_argument('--gpu', type=int)
     parser.add_argument('--worker')
     args = parser.parse_args()

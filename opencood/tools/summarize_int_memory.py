@@ -22,7 +22,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', required=True)
     parser.add_argument('--output', required=True)
-    parser.add_argument('--modes', nargs='+', choices=['lif', 'leaky', 'gru', 'single', 'concat'],
+    parser.add_argument('--modes', nargs='+', choices=['lif', 'leaky', 'gru', 'single', 'concat', 'spike_gru'],
                         default=['lif', 'leaky', 'gru'])
     args = parser.parse_args()
     root, output = Path(args.root), Path(args.output)
@@ -85,7 +85,7 @@ def main():
                 require(all(r['state_bytes'] == 0 for r in frames), 'Single-frame model retains state')
             values[policy] = summary
             audits[policy] = dict(warp_frames=warps, reset_frames=resets, frames=len(frames))
-            if mode in ('lif', 'leaky'):
+            if mode in ('lif', 'leaky', 'spike_gru'):
                 audits[policy].update(emission_nonzero_mean=sum(r['emission_nonzero_fraction'] for r in frames)/len(frames),
                                      emission_on_observed_mean=sum(r['emission_on_observed_fraction'] for r in frames)/len(frames))
         error = max(abs(values['aligned']['metrics'][key]-value)
@@ -104,6 +104,10 @@ def main():
             report['comparisons_pp']['lif_minus_'+control] = 100*(score('lif','aligned')-score(control,'aligned'))
     if 'lif' in report['modes'] and 'leaky' in report['modes']:
         report['comparisons_pp']['lif_minus_leaky_after_reset'] = 100*(score('lif','reset')-score('leaky','reset'))
+    if 'spike_gru' in report['modes'] and 'gru' in report['modes']:
+        for policy in ('aligned', 'reset', 'no-align'):
+            report['comparisons_pp']['spike_gru_minus_gru_'+policy] = 100*(score('spike_gru',policy)-score('gru',policy))
+        report['limitations'].append('Spiking GRU matches GRU parameters/cache; gates and detector remain analog, threshold/reset change the computation.')
     output.mkdir(parents=True)
     (output/'report.json').write_text(json.dumps(report, indent=2)+'\n')
     import matplotlib
@@ -120,7 +124,7 @@ def main():
         ax.set_xlabel('Epoch'); ax.grid(alpha=.25); ax.legend()
     axes[0].set_ylabel('Mean labelled detection loss')
     axes[1].set_ylabel('Validation BEV AP70 (%)')
-    fig.suptitle('INT memory stage 1: seed 303, real-frame TBPTT=4')
+    fig.suptitle('INT memory comparison: seed 303, real-frame TBPTT=4')
     fig.tight_layout()
     fig.savefig(str(output/'training_curves.png'), dpi=180)
     fig.savefig(str(output/'training_curves.svg'))
