@@ -49,6 +49,8 @@ def main():
         # Additional baselines must exercise their own two-epoch execution path.
         for mode in args.modes:
             if mode not in ('single', 'concat'):
+                if mode not in gate.get('modes', {}):
+                    raise ValueError('Mode not covered by engineering gate: '+mode)
                 continue
             pilot = root/('pilot_'+mode)
             result = json.loads((pilot/'result.json').read_text())
