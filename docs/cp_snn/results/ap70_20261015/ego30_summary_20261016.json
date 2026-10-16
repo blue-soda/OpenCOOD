@@ -1,0 +1,372 @@
+{
+  "root": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181",
+  "captured_unix": 1792161406.2323742,
+  "models": {
+    "count4": {
+      "count4_controls_pipeline.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_controls_pipeline.json",
+        "sha256": "ac890e7a8515c38461d57ecf86036dcd0dc335d4d231c573b67b2610141a5f3f",
+        "content": {
+          "state": "complete",
+          "jobs": [
+            "count4_road_disabled",
+            "count4_road_disabled_replay",
+            "count4_ego30_train",
+            "count4_ego30_eval",
+            "count4_ego30_replay"
+          ],
+          "supervisor_pid": 60697,
+          "updated_unix": 1792148972.9742954
+        }
+      },
+      "count4_ego30_eval/evaluation.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30_eval/evaluation.json",
+        "sha256": "9a415ece4be3f3060f8aaf53973e0cece8d6a019d3542f6797cb6289c0d989a8",
+        "content": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 27711,
+          "gt_boxes": 28622,
+          "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.7114687789738007,
+            "0.5": 0.6697415910981817,
+            "0.7": 0.5503152180393083
+          },
+          "ap_3d": {
+            "0.3": 0.6980101148966615,
+            "0.5": 0.6205248231875435,
+            "0.7": 0.34036017456580414
+          },
+          "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+          "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+          "predictions": {
+            "directory": "predictions",
+            "frames": 1738,
+            "index_sha256": "dc67a9480861b1ffbcea3e902dca066e0d375e3fc4e408cd35e2d1ac23a6de5f"
+          }
+        }
+      },
+      "count4_ego30_eval/offline_replay.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30_eval/offline_replay.json",
+        "sha256": "e3dab5d9109241d62569f721de14eecf7d8ff990590cc622c40e46462e57a433",
+        "content": {
+          "passed": true,
+          "samples": 1738,
+          "predicted_boxes": 27711,
+          "gt_boxes": 28622,
+          "ap": {
+            "0.3": 0.7114687789738007,
+            "0.5": 0.6697415910981817,
+            "0.7": 0.5503152180393083
+          },
+          "exact_match": true,
+          "all_file_hashes_verified": true,
+          "ap_3d": {
+            "0.3": 0.6980101148966615,
+            "0.5": 0.6205248231875435,
+            "0.7": 0.34036017456580414
+          }
+        }
+      },
+      "count4_ego30_eval/predictions/index.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30_eval/predictions/index.json",
+        "sha256": "dc67a9480861b1ffbcea3e902dca066e0d375e3fc4e408cd35e2d1ac23a6de5f"
+      },
+      "count4_ego30/best_ap70.pth": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30/best_ap70.pth",
+        "sha256": "4b8de38286fc5314be3d9ba350f655cce2db4712e5682db2294fd9d1798fa162"
+      },
+      "count4_ego30/best_metrics.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30/best_metrics.json",
+        "sha256": "8b4da014e20e336c532b3b139fe8941bef37be24cc4ac5503df654656b8cafd6",
+        "content": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 27712,
+          "gt_boxes": 28622,
+          "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.7114692213841166,
+            "0.5": 0.6697413718084225,
+            "0.7": 0.5503119255979558
+          },
+          "epoch": 30,
+          "train_loss": 0.736345604662907,
+          "train_samples": 4678,
+          "seconds": 581.7978027260397
+        }
+      },
+      "count4_ego30/best_ap50_metrics.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30/best_ap50_metrics.json",
+        "sha256": "be1d04aba703ed0e4e3715a585d0fea89261cd949c0657a023676eee639ac4b2",
+        "content": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 29087,
+          "gt_boxes": 28622,
+          "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.716745563505186,
+            "0.5": 0.6697920398279672,
+            "0.7": 0.5241880658546799
+          },
+          "epoch": 11,
+          "train_loss": 0.7985033064423462,
+          "train_samples": 4678,
+          "seconds": 568.1146938960301
+        }
+      },
+      "count4_ego30/best_ap70_metrics.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30/best_ap70_metrics.json",
+        "sha256": "8b4da014e20e336c532b3b139fe8941bef37be24cc4ac5503df654656b8cafd6",
+        "content": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 27712,
+          "gt_boxes": 28622,
+          "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.7114692213841166,
+            "0.5": 0.6697413718084225,
+            "0.7": 0.5503119255979558
+          },
+          "epoch": 30,
+          "train_loss": 0.736345604662907,
+          "train_samples": 4678,
+          "seconds": 581.7978027260397
+        }
+      },
+      "count4_ego30_eval/manifest_1792148681.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30_eval/manifest_1792148681.json",
+        "sha256": "989beec612b31b7994bb61432e95f47b8692ab0de0d71348e0ed57ab8dd2a404",
+        "content": {
+          "git_commit": "23009108404ff0b46a4e85b93f9bf0b5d9c9788c",
+          "arguments": {
+            "mode": "eval",
+            "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego_181.yaml",
+            "output": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30_eval",
+            "seed": 20260929,
+            "workers": 2,
+            "steps": 200,
+            "sample_index": 0,
+            "epochs": 0,
+            "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30/best_ap70.pth",
+            "single_checkpoint": null,
+            "warmup_epochs": 0,
+            "packet_roundtrip": false,
+            "eval_3d": true,
+            "save_predictions": true,
+            "profile": false,
+            "selection_iou": "0.5",
+            "resume": false
+          },
+          "config_sha256": "c6c05ec7c1f64d6f1c16e8754f5ef35aebb9cb8c2bb96142ea67e28ee8180da3",
+          "split_sha256": {
+            "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+            "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+          },
+          "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+          "torch": "1.10.0+cu113",
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "gpu_visible": "6",
+          "parameters": 3094997,
+          "architecture": "e3dsnn_fusion",
+          "activation": "count4",
+          "checkpoint_sha256": "4b8de38286fc5314be3d9ba350f655cce2db4712e5682db2294fd9d1798fa162",
+          "train_samples": 4678,
+          "val_samples": 1738,
+          "single_checkpoint_sha256": null,
+          "protocol": "paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay"
+        }
+      }
+    },
+    "relu": {
+      "relu_controls_pipeline.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_controls_pipeline.json",
+        "sha256": "dc9e086a297825413865022ae2fd6795512f5ac7e155334a7518b862a297af90",
+        "content": {
+          "state": "complete",
+          "jobs": [
+            "relu_road_disabled",
+            "relu_road_disabled_replay",
+            "relu_ego30_train",
+            "relu_ego30_eval",
+            "relu_ego30_replay"
+          ],
+          "supervisor_pid": 60706,
+          "updated_unix": 1792149164.9646714
+        }
+      },
+      "relu_ego30_eval/evaluation.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30_eval/evaluation.json",
+        "sha256": "931eb5068d35cca5e35d056e59d263b56aa5a7a028edffd5be152b8701f61679",
+        "content": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 27657,
+          "gt_boxes": 28622,
+          "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.7178644225976171,
+            "0.5": 0.6767735338974009,
+            "0.7": 0.5784947376028665
+          },
+          "ap_3d": {
+            "0.3": 0.705554011852384,
+            "0.5": 0.6335706876428117,
+            "0.7": 0.41733908112588164
+          },
+          "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+          "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+          "predictions": {
+            "directory": "predictions",
+            "frames": 1738,
+            "index_sha256": "7a18e4966024bda5ad4f567854bde1a4cc36a30229ded1838795d7a6fb603b5e"
+          }
+        }
+      },
+      "relu_ego30_eval/offline_replay.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30_eval/offline_replay.json",
+        "sha256": "33f912aa10729e57016aa534532d6d3cb807558912ba8758208f933e3fd2ae65",
+        "content": {
+          "passed": true,
+          "samples": 1738,
+          "predicted_boxes": 27657,
+          "gt_boxes": 28622,
+          "ap": {
+            "0.3": 0.7178644225976171,
+            "0.5": 0.6767735338974009,
+            "0.7": 0.5784947376028665
+          },
+          "exact_match": true,
+          "all_file_hashes_verified": true,
+          "ap_3d": {
+            "0.3": 0.705554011852384,
+            "0.5": 0.6335706876428117,
+            "0.7": 0.41733908112588164
+          }
+        }
+      },
+      "relu_ego30_eval/predictions/index.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30_eval/predictions/index.json",
+        "sha256": "7a18e4966024bda5ad4f567854bde1a4cc36a30229ded1838795d7a6fb603b5e"
+      },
+      "relu_ego30/best_ap70.pth": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30/best_ap70.pth",
+        "sha256": "4360ec9938a4774933cfb14a9d3bdfaeb1a94787695ad38e29cd046adc7124ec"
+      },
+      "relu_ego30/best_metrics.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30/best_metrics.json",
+        "sha256": "935c7d6e098c0b4553d57e40d3d393e24c5b841dcfacf80f78bd338950cd2106",
+        "content": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 27656,
+          "gt_boxes": 28622,
+          "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.7178645699793524,
+            "0.5": 0.6768316163365605,
+            "0.7": 0.5784950409008347
+          },
+          "epoch": 30,
+          "train_loss": 0.6594035622283843,
+          "train_samples": 4678,
+          "seconds": 585.0402785389451
+        }
+      },
+      "relu_ego30/best_ap50_metrics.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30/best_ap50_metrics.json",
+        "sha256": "c0b6dc1f6366ad92794198d448eec1043d2bf4a06bd5cfa2c36e56a7e2f52e74",
+        "content": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 29111,
+          "gt_boxes": 28622,
+          "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.723632688308593,
+            "0.5": 0.680787239303357,
+            "0.7": 0.5713974861519011
+          },
+          "epoch": 3,
+          "train_loss": 0.7722933648192444,
+          "train_samples": 4678,
+          "seconds": 567.6930712569738
+        }
+      },
+      "relu_ego30/best_ap70_metrics.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30/best_ap70_metrics.json",
+        "sha256": "935c7d6e098c0b4553d57e40d3d393e24c5b841dcfacf80f78bd338950cd2106",
+        "content": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 27656,
+          "gt_boxes": 28622,
+          "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.7178645699793524,
+            "0.5": 0.6768316163365605,
+            "0.7": 0.5784950409008347
+          },
+          "epoch": 30,
+          "train_loss": 0.6594035622283843,
+          "train_samples": 4678,
+          "seconds": 585.0402785389451
+        }
+      },
+      "relu_ego30_eval/manifest_1792148899.json": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30_eval/manifest_1792148899.json",
+        "sha256": "ce3d0226fdb59eda149ca1f150968086a8f66e709d1fbadd765fd33dfa7d3556",
+        "content": {
+          "git_commit": "23009108404ff0b46a4e85b93f9bf0b5d9c9788c",
+          "arguments": {
+            "mode": "eval",
+            "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_relu_ego_181.yaml",
+            "output": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30_eval",
+            "seed": 20260929,
+            "workers": 2,
+            "steps": 200,
+            "sample_index": 0,
+            "epochs": 0,
+            "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30/best_ap70.pth",
+            "single_checkpoint": null,
+            "warmup_epochs": 0,
+            "packet_roundtrip": false,
+            "eval_3d": true,
+            "save_predictions": true,
+            "profile": false,
+            "selection_iou": "0.5",
+            "resume": false
+          },
+          "config_sha256": "a265acc27dee14a0067da92d831553f3b29f756f2f92c27d25302d51a8624cc5",
+          "split_sha256": {
+            "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+            "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+          },
+          "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+          "torch": "1.10.0+cu113",
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "gpu_visible": "7",
+          "parameters": 3094997,
+          "architecture": "e3dsnn_fusion",
+          "activation": "relu",
+          "checkpoint_sha256": "4360ec9938a4774933cfb14a9d3bdfaeb1a94787695ad38e29cd046adc7124ec",
+          "train_samples": 4678,
+          "val_samples": 1738,
+          "single_checkpoint_sha256": null,
+          "protocol": "paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay"
+        }
+      }
+    }
+  }
+}
