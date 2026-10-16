@@ -62,7 +62,9 @@ def checked_forward(model, criterion, batch):
     assert output['psm'].shape[2:] == labels['pos_equal_one'].shape[1:3], (
         'Prediction/anchor grid mismatch', output['psm'].shape, labels['pos_equal_one'].shape)
     assert all(torch.isfinite(output[key]).all() for key in ('psm', 'rm', 'dm'))
-    loss = criterion(output, labels)
+    from opencood.utils.e3dsnn_aux_loss import detection_loss
+    loss, model.last_loss_components = detection_loss(output, labels, criterion,
+        getattr(model, 'ego_aux_weight', 0.))
     if not torch.isfinite(loss):
         raise FloatingPointError('Nonfinite detection loss')
     return output, loss
@@ -220,6 +222,8 @@ def execute(args, output_dir):
         'activation': cfg['model']['args'].get('activation', 'count4'),
         'trainable_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
         'freeze_detector': getattr(model, 'freeze_detector', False),
+        'freeze_detector_bn': getattr(model, 'freeze_detector_bn', False),
+        'ego_aux_weight': getattr(model, 'ego_aux_weight', 0.),
         'checkpoint_sha256': hashlib.sha256(Path(args.checkpoint).read_bytes()).hexdigest() if args.checkpoint else None,
         'train_samples': len(train_data), 'val_samples': len(val_data),
         'single_checkpoint_sha256': hashlib.sha256(Path(args.single_checkpoint).read_bytes()).hexdigest() if args.single_checkpoint else None,
@@ -312,6 +316,10 @@ def execute(args, output_dir):
         **({'multiprocessing_context': 'spawn'} if args.workers else {}))
     epochs = args.epochs or cfg['train_params']['epoches']
     frozen_digest = None
+    fixed_bn_digest = None
+    if getattr(model, 'freeze_detector_bn', False):
+        from opencood.utils.e3dsnn_fusion_probe import bn_digest
+        fixed_bn_digest = bn_digest(model)
     if getattr(model, 'freeze_detector', False):
         if args.warmup_epochs:
             raise ValueError('Do not combine permanent detector freezing and warmup')
@@ -330,6 +338,7 @@ def execute(args, output_dir):
                 model.backbone_3d.eval()
                 model.backbone_2d.eval()
         total, samples = 0., 0
+        component_totals = {}
         started = time.monotonic()
         for index, batch in enumerate(loader):
             if batch is None:
@@ -342,6 +351,8 @@ def execute(args, output_dir):
             optimizer.step()
             n = batch['ego']['object_bbx_mask'].shape[0]
             total += float(loss.detach()) * n
+            for key, value in model.last_loss_components.items():
+                component_totals[key] = component_totals.get(key, 0.) + value * n
             samples += n
             if index % 50 == 0:
                 progress = {'state': 'training', 'epoch': epoch + 1, 'epochs': epochs,
@@ -355,6 +366,13 @@ def execute(args, output_dir):
         metrics = validate(model, val_data, args.workers)
         metrics.update({'epoch': epoch + 1, 'train_loss': total / samples,
                         'train_samples': samples, 'seconds': time.monotonic() - started})
+        metrics['train_loss_components'] = {k: v / samples for k, v in component_totals.items()}
+        if fixed_bn_digest is not None:
+            current_bn_digest = bn_digest(model)
+            if current_bn_digest != fixed_bn_digest:
+                raise RuntimeError('Fixed BN statistics changed')
+            write_json(output_dir / 'fixed_bn.json', {'initial_sha256': fixed_bn_digest,
+                'current_sha256': current_bn_digest, 'verified_through_epoch': epoch + 1, 'passed': True})
         if frozen_digest is not None:
             current_digest = detector_digest(model)
             if current_digest != frozen_digest:

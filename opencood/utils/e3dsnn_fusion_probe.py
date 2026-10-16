@@ -14,6 +14,15 @@ def detector_digest(model):
     return digest.hexdigest()
 
 
+def bn_digest(model):
+    digest = hashlib.sha256()
+    for name, value in sorted(model.named_buffers()):
+        if name.endswith(('running_mean', 'running_var', 'num_batches_tracked')):
+            digest.update(name.encode())
+            digest.update(value.detach().cpu().contiguous().numpy().tobytes())
+    return digest.hexdigest()
+
+
 def probe_maps(ego, residual, fused, supported, activation):
     before = ego + residual
     maps = {

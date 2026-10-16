@@ -19,6 +19,11 @@ class E3dsnnFusion(E3dsnnSingle):
         self.packet_roundtrip = False
         self.collect_fusion_diagnostics = False
         self.freeze_detector = args.get('freeze_detector', False)
+        self.freeze_detector_bn = args.get('freeze_detector_bn', False)
+        self.enable_ego_aux = args.get('enable_ego_aux', False)
+        self.ego_aux_weight = float(args.get('ego_aux_weight', 0.))
+        if self.ego_aux_weight < 0 or (self.enable_ego_aux and not self.freeze_detector_bn):
+            raise ValueError('Auxiliary controls require nonnegative weight and fixed BN statistics')
         self.message_dropout = args.get('message_dropout', .1)
         depth = 3
         # Current checkpoint contract is C=128,D=3,H=50,W=126.
@@ -47,6 +52,10 @@ class E3dsnnFusion(E3dsnnSingle):
             # Freeze running statistics as well as weights, on every train() call.
             for name, module in self.named_children():
                 if name not in ('fusion_net', 'fusion_activation'):
+                    module.eval()
+        elif self.freeze_detector_bn:
+            for module in self.modules():
+                if isinstance(module, nn.modules.batchnorm._BatchNorm):
                     module.eval()
         return self
 
@@ -108,6 +117,10 @@ class E3dsnnFusion(E3dsnnSingle):
             fused = self.fusion_activation(ego_bev + residual)
         fused = torch.where(supported > 0, fused, ego_bev)
         result = self.detect_bev(fused)
+        if self.training and self.enable_ego_aux:
+            # Both lambda=0 and lambda=1 controls execute the same ego branch.
+            # Fixed BN buffers prevent an extra pass from changing running stats.
+            result['ego_output'] = self.detect_bev(ego_bev)
         if self.collect_fusion_diagnostics:
             if self.fusion_mode != 'residual' or self.training:
                 raise ValueError('Fusion diagnostics require residual eval')
