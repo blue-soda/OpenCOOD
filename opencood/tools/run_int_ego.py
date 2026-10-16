@@ -206,6 +206,8 @@ def main():
     # TF32 convolution can amplify identity-path rounding through the detector.
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
+    # Match run_int_epochs: threshold crossings amplify convolution rounding.
+    torch.backends.cudnn.deterministic = True
     directory = Path(args.output)
     directory.mkdir(parents=True, exist_ok=False)
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed); torch.cuda.manual_seed_all(args.seed)
