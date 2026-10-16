@@ -50,7 +50,7 @@ def train(model, rows, config, args, directory, optimizer=None, order=None,
           full_epoch=False, save_optimizer=True):
     if order is None:
         order = training_order(rows, args.clip_length, args.seed)
-    if getattr(args, 'tbptt_steps', 1) > 1 or args.mode in ('lif', 'leaky', 'spike_gru'):
+    if getattr(args, 'tbptt_steps', 1) > 1 or args.mode in ('lif', 'leaky', 'spike_gru', 'delta_gru'):
         if not full_epoch or optimizer is None:
             raise ValueError('Use run_int_epochs for TBPTT training')
         from opencood.tools.int_tbptt_train import train_tbptt
@@ -191,7 +191,7 @@ def main():
     parser.add_argument('--output', required=True)
     parser.add_argument('--config', default='opencood/hypes_yaml/dair-v2x/repro/dair_stage1_codyntrust_single_wide.yaml')
     parser.add_argument('--manifest', required=True)
-    parser.add_argument('--mode', choices=['single','concat','gru','lif','leaky','spike_gru'], required=True)
+    parser.add_argument('--mode', choices=['single','concat','gru','lif','leaky','spike_gru', 'delta_gru'], required=True)
     parser.add_argument('--train-steps', type=int, default=256)
     parser.add_argument('--clip-length', type=int, default=4)
     parser.add_argument('--workers', type=int, default=4)

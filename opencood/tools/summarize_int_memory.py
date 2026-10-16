@@ -22,7 +22,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', required=True)
     parser.add_argument('--output', required=True)
-    parser.add_argument('--modes', nargs='+', choices=['lif', 'leaky', 'gru', 'single', 'concat', 'spike_gru'],
+    parser.add_argument('--modes', nargs='+', choices=['lif', 'leaky', 'gru', 'single', 'concat', 'spike_gru', 'delta_gru'],
                         default=['lif', 'leaky', 'gru'])
     args = parser.parse_args()
     root, output = Path(args.root), Path(args.output)
@@ -85,7 +85,7 @@ def main():
                 require(all(r['state_bytes'] == 0 for r in frames), 'Single-frame model retains state')
             values[policy] = summary
             audits[policy] = dict(warp_frames=warps, reset_frames=resets, frames=len(frames))
-            if mode in ('lif', 'leaky', 'spike_gru'):
+            if mode in ('lif', 'leaky', 'spike_gru', 'delta_gru'):
                 audits[policy].update(emission_nonzero_mean=sum(r['emission_nonzero_fraction'] for r in frames)/len(frames),
                                      emission_on_observed_mean=sum(r['emission_on_observed_fraction'] for r in frames)/len(frames))
         error = max(abs(values['aligned']['metrics'][key]-value)

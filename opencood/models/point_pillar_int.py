@@ -4,12 +4,16 @@ from opencood.models.point_pillar_codyntrust_single import PointPillarCodyntrust
 from opencood.models.sub_modules.int_feature_memory import INTFeatureMemory
 from opencood.models.sub_modules.int_spike_memory import INTSpikeMemory
 from opencood.models.sub_modules.int_spiking_gru import INTSpikingGRUMemory
+from opencood.models.sub_modules.int_delta_gru import INTDeltaGRUMemory
 
 
 class PointPillarINT(PointPillarCodyntrustSingle):
     def __init__(self, args, mode='concat'):
         super().__init__(args)
-        if mode == 'spike_gru':
+        if mode == 'delta_gru':
+            self.feature_memory = INTDeltaGRUMemory(64, args['lidar_range'],
+                                                   **args.get('int_delta_gru', {}))
+        elif mode == 'spike_gru':
             self.feature_memory = INTSpikingGRUMemory(64, args['lidar_range'],
                                                      **args.get('int_spiking_gru', {}))
         elif mode in ('lif', 'leaky'):

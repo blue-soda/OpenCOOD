@@ -19,11 +19,14 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--root', required=True)
     p.add_argument('--resume-gpu', required=True, type=int)
+    p.add_argument('--event-mode', choices=['spike_gru', 'delta_gru'], default='spike_gru')
     a = p.parse_args()
+    event_mode = a.event_mode
+    suffix = 'gru_'+event_mode
     root = Path(a.root).resolve()
     require(not (root/'engineering_gate.json').exists(), 'Gate already exists; inspect previous evidence')
-    launch = read(root/'launch_pilot_gru_spike_gru.json')
-    manifest = read(root/'pilot_manifest_gru_spike_gru.json')
+    launch = read(root/('launch_pilot_'+suffix+'.json'))
+    manifest = read(root/('pilot_manifest_'+suffix+'.json'))
     command = launch['jobs'][0]['command']
     config_path = command[command.index('--config')+1]
     checkpoint = command[command.index('--checkpoint')+1]
@@ -36,15 +39,15 @@ def main():
                   parent_manifest_sha256=launch['parent_manifest_sha256'],
                   scope='Engineering coverage/learning/restart, not scientific AP', modes={})
     initialized = {}
-    for mode in ('gru', 'spike_gru'):
+    for mode in ('gru', event_mode):
         torch.manual_seed(303)
         model = PointPillarINT(config['model']['args'], mode)
         model.load_single_checkpoint(initial)
         require(sum(p.numel() for p in model.parameters()) == 30776212, 'Full parameter budget')
         require(sum(p.numel() for p in model.feature_memory.parameters()) == 259712, 'FM parameter budget')
         initialized[mode] = model.state_dict()
-    exact(initialized['gru'], initialized['spike_gru'], 'initial_model')
-    for mode in ('gru', 'spike_gru'):
+    exact(initialized['gru'], initialized[event_mode], 'initial_model')
+    for mode in ('gru', event_mode):
         directory = root/('pilot_'+mode)
         require(not (directory/'failure.json').exists(), 'Failure evidence: '+mode)
         result = read(directory/'result.json')
@@ -52,7 +55,7 @@ def main():
         contract = read(directory/'manifest.json')['contract']
         require(contract['config_sha256'] == report['config_sha256'] and
                 contract['initialization_sha256'] == report['checkpoint_sha256'] and
-                contract['manifest_sha256'] == digest(root/'pilot_manifest_gru_spike_gru.json') and
+                contract['manifest_sha256'] == digest(root/('pilot_manifest_'+suffix+'.json')) and
                 contract['tbptt_steps'] == 4 and contract['fm_only_epochs'] == 1, 'Pilot contract mismatch')
         values, previous = [], initialized[mode]
         for epoch in (1, 2):
@@ -70,10 +73,10 @@ def main():
             require(spatial_changed == (epoch == 2), 'Spatial freeze/learning')
             require(any(not torch.equal(current[k], previous[k]) for k in current
                         if k.startswith('feature_memory.')), 'FM parameters did not change')
-            require(all(r['state_bytes'] == 26208000 for r in frames+evaluation), 'Cache budget')
+            require(all(r['state_bytes'] == (78624000 if mode == 'delta_gru' else 26208000) for r in frames+evaluation), 'Cache budget')
             info = dict(epoch=epoch, training=summary, evaluation=read(folder/'eval_summary.json'),
                         spatial_changed=spatial_changed, temporal_gradient_max=max(gradients))
-            if mode == 'spike_gru':
+            if mode == event_mode:
                 for phase, rows in (('train',frames), ('val',evaluation)):
                     rate = sum(r['emission_nonzero_fraction'] for r in rows)/len(rows)
                     require(0 < rate < 1 and all(math.isfinite(r['membrane_abs_max']) for r in rows), 'Degenerate events/state')
@@ -87,17 +90,17 @@ def main():
     memory, util = subprocess.check_output(['nvidia-smi','-i',str(a.resume_gpu),
         '--query-gpu=memory.free,utilization.gpu','--format=csv,noheader,nounits']).decode().strip().split(',')
     require(int(memory)>=18000 and int(util)<=5, 'Restart GPU is not idle')
-    command = list(next(job for job in launch['jobs'] if job['mode']=='spike_gru')['command'])
-    target = root/'pilot_spike_gru_restart'
+    command = list(next(job for job in launch['jobs'] if job['mode']==event_mode)['command'])
+    target = root/('pilot_'+event_mode+'_restart')
     require(not target.exists(), 'Preserve previous restart evidence')
     command[command.index('--output')+1] = str(target)
     env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(a.resume_gpu), PYTHONPATH=str(Path.cwd()),
                OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',NUMPY_MADVISE_HUGEPAGE='0')
-    with (root/'pilot_spike_gru_restart.log').open('x') as log:
+    with (root/('pilot_'+event_mode+'_restart.log')).open('x') as log:
         subprocess.run(command+['--stop-after-epoch','1'], env=env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=1800)
         require(read(target/'result.json')['status']=='CHECKPOINT_BOUNDARY_STOP', 'Restart boundary')
         subprocess.run(command+['--resume'], env=env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=1800)
-    reference = torch.load(str(root/'pilot_spike_gru/latest.pth'),map_location='cpu')
+    reference = torch.load(str(root/('pilot_'+event_mode)/'latest.pth'),map_location='cpu')
     resumed = torch.load(str(target/'latest.pth'),map_location='cpu')
     for key in ('model','optimizer','scheduler','contract','epoch','best','significant_best','stale'):
         exact(reference[key],resumed[key],key)

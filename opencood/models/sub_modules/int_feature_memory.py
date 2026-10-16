@@ -163,7 +163,8 @@ class INTFeatureMemory(nn.Module):
         if self.mode == 'single':
             return current, None, {'reset': 'single', 'delta_t': delta_t, 'state_bytes': 0, 'warp': False}
         if reason is not None:
-            width = self.channels + int(self.fusion.fusion_method['type'] == 'infinite_GRU')
+            width = getattr(self.fusion, 'state_channels',
+                            self.channels + int(self.fusion.fusion_method['type'] == 'infinite_GRU'))
             past = current.new_zeros((1, width, *current.shape[2:]))
             coverage = 0.
         elif align:

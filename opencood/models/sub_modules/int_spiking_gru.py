@@ -56,6 +56,10 @@ class INTSpikingGRUFusion(INTFusionModule):
                     max(1., float(observed.sum()) * spikes.shape[1]),
                 membrane_abs_max=float(next_membrane.abs().max()),
                 spike_threshold=self.threshold, signed_events=True)
+            if getattr(self, 'profile_support', False):
+                from opencood.models.sub_modules.int_delta_gru import support_rates
+                cells = emitted.any(1, keepdim=True)
+                self.last_diagnostics.update(support_rates(cells))
         # Fixed event amplitude preserves the candidate's numerical scale.
         output = self.post_fusion_conv(torch.cat(
             [self.threshold * spikes, age.unsqueeze(1), mask], dim=1))
