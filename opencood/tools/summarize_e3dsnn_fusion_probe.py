@@ -25,13 +25,14 @@ def aggregate(rows):
                  for key in valid[0] if key != 'supported_cells'})
 
 
-def summarize(root):
+def summarize(root, suffix=''):
     root = Path(root)
     report = dict(root=str(root), models={},
         scope='Same-device fixed-weight on/off comparison. Lost GT cohort is outcome-selected; '
               'ROI summaries are descriptive, not causal, and overlapping regions are not independent.')
     for activation in ('count4', 'relu'):
-        diagnostic_path = root / (activation + '_diagnostic.json')
+        prefix = activation + suffix
+        diagnostic_path = root / (prefix + '_diagnostic.json')
         diagnostic = json.loads(diagnostic_path.read_text())
         assert diagnostic['passed']
         model = dict(diagnostic=evidence(diagnostic_path, False),
@@ -39,7 +40,7 @@ def summarize(root):
                      localized_lost_geometry=diagnostic['localized_lost_geometry'])
         manifests = []
         for mode in ('on', 'off'):
-            folder = root / (activation + '_' + mode)
+            folder = root / (prefix + '_' + mode)
             ev, replay, index = [evidence(folder / name) for name in
                 ('evaluation.json', 'offline_replay.json', 'predictions/index.json')]
             e, r = ev['content'], replay['content']
@@ -57,6 +58,10 @@ def summarize(root):
                 frames = index['content']['frames']
                 by_id = {f['frame_id']: f for f in frames}
                 assert len(by_id) == len(frames)
+                byte_rows = [dict(frame_id=f['frame_id'], bytes=f['communication']['total_bytes']) for f in frames]
+                assert sum(x['bytes'] for x in byte_rows) == e['feature_packets']['total_bytes']
+                assert len(byte_rows) == e['feature_packets']['count']
+                model['communication_frames'] = byte_rows
                 for frame in frames:
                     assert len(frame['fusion_diagnostics']['gt_regions']) == frame['gt_boxes']
                 model['feature_statistics'] = dict(
@@ -79,6 +84,16 @@ def summarize(root):
                 for path in inference_files})
         assert blobs[0] == blobs[1], 'On/off inference implementation differs'
         model['verified_inference_blobs'] = blobs[0]
+        if suffix:
+            training = root / prefix
+            for name in ('best_ap70_metrics.json', 'frozen_detector.json', 'status.json'):
+                model[name] = evidence(training / name)
+            frozen = model['frozen_detector.json']['content']
+            assert frozen['passed'] and frozen['verified_through_epoch'] == 30
+            assert frozen['initial_sha256'] == frozen['current_sha256']
+            assert model['status.json']['content']['state'] == 'complete'
+            model['best_checkpoint'] = evidence(training / 'best_ap70.pth', False)
+            assert model['best_checkpoint']['sha256'] == manifests[0]['checkpoint_sha256']
         report['models'][activation] = model
     report['passed'] = True
     return report
@@ -88,8 +103,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', required=True)
     parser.add_argument('--output', required=True)
+    parser.add_argument('--suffix', default='', help='Run suffix, e.g. _frozen30')
     args = parser.parse_args()
-    result = summarize(args.root)
+    result = summarize(args.root, args.suffix)
     with Path(args.output).open('x') as stream:
         json.dump(result, stream, indent=2)
     print(json.dumps(dict(passed=result['passed'], output=args.output)), flush=True)
