@@ -1,0 +1,82 @@
+"""Export verified same-device ablations and descriptive GT-region probes."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import numpy as np
+
+
+def evidence(path, content=True):
+    result = dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+    if content:
+        result['content'] = json.loads(path.read_text())
+    return result
+
+
+def aggregate(rows):
+    valid = [row for row in rows if row['supported_cells'] > 0]
+    if not valid:
+        return dict(total_regions=len(rows), observed_regions=0)
+    cells = sum(row['supported_cells'] for row in valid)
+    return dict(total_regions=len(rows), observed_regions=len(valid), supported_cells=cells,
+        metrics={key: dict(mean_across_regions=float(np.mean([row[key] for row in valid])),
+                          cell_weighted_mean=sum(row[key] * row['supported_cells'] for row in valid) / cells)
+                 for key in valid[0] if key != 'supported_cells'})
+
+
+def summarize(root):
+    root = Path(root)
+    report = dict(root=str(root), models={},
+        scope='Same-device fixed-weight on/off comparison. Lost GT cohort is outcome-selected; '
+              'ROI summaries are descriptive, not causal, and overlapping regions are not independent.')
+    for activation in ('count4', 'relu'):
+        diagnostic_path = root / (activation + '_diagnostic.json')
+        diagnostic = json.loads(diagnostic_path.read_text())
+        assert diagnostic['passed']
+        model = dict(diagnostic=evidence(diagnostic_path, False),
+                     gt_transitions70=diagnostic['gt_transitions70'],
+                     localized_lost_geometry=diagnostic['localized_lost_geometry'])
+        manifests = []
+        for mode in ('on', 'off'):
+            folder = root / (activation + '_' + mode)
+            ev, replay, index = [evidence(folder / name) for name in
+                ('evaluation.json', 'offline_replay.json', 'predictions/index.json')]
+            e, r = ev['content'], replay['content']
+            assert r['passed'] and r['exact_match'] and r['all_file_hashes_verified']
+            assert e['ap'] == r['ap'] and e['ap_3d'] == r['ap_3d']
+            assert e['predictions']['index_sha256'] == index['sha256']
+            assert len(index['content']['frames']) == e['samples'] == 1738 and e['full_split']
+            assert diagnostic['models']['fusion' if mode == 'on' else 'ego']['index_sha256'] == index['sha256']
+            manifest_paths = list(folder.glob('manifest_*.json'))
+            assert len(manifest_paths) == 1
+            manifest = evidence(manifest_paths[0]); manifests.append(manifest['content'])
+            model[mode] = dict(evaluation=ev, replay=replay, manifest=manifest,
+                              prediction_index=evidence(folder / 'predictions/index.json', False))
+            if mode == 'on':
+                frames = index['content']['frames']
+                by_id = {f['frame_id']: f for f in frames}
+                assert len(by_id) == len(frames)
+                for frame in frames:
+                    assert len(frame['fusion_diagnostics']['gt_regions']) == frame['gt_boxes']
+                model['feature_statistics'] = dict(
+                    frames=aggregate([f['fusion_diagnostics']['frame'] for f in frames]),
+                    all_gt=aggregate([g for f in frames for g in f['fusion_diagnostics']['gt_regions']]),
+                    lost_gt=aggregate([by_id[x['frame_id']]['fusion_diagnostics']['gt_regions'][x['gt_index']]
+                                       for x in diagnostic['lost_examples']]))
+        assert manifests[0]['checkpoint_sha256'] == manifests[1]['checkpoint_sha256']
+        assert manifests[0]['gpu_visible'] == manifests[1]['gpu_visible']
+        assert manifests[0]['git_commit'] == manifests[1]['git_commit']
+        report['models'][activation] = model
+    report['passed'] = True
+    return report
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root', required=True)
+    parser.add_argument('--output', required=True)
+    args = parser.parse_args()
+    result = summarize(args.root)
+    with Path(args.output).open('x') as stream:
+        json.dump(result, stream, indent=2)
+    print(json.dumps(dict(passed=result['passed'], output=args.output)), flush=True)
