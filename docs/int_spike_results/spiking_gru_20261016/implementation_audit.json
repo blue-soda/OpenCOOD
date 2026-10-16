@@ -1,0 +1,36 @@
+{
+  "status": "IMPLEMENTATION_VERIFIED_GPU_PILOT_PENDING",
+  "verified_date": "2026-10-16",
+  "code_commit": "17af515",
+  "config": "opencood/hypes_yaml/dair-v2x/snn/int_ego_spiking_gru.yaml",
+  "unit_tests": {
+    "command": "python -m unittest discover -s opencood/test -p 'test_int*.py'",
+    "passed": 27,
+    "failures": 0,
+    "runtime": "Server opencood Python 3.7 environment"
+  },
+  "full_model_audit": {
+    "seed": 303,
+    "initialization": "Original P1 checkpoint, net_epoch_bestval_at57.pth",
+    "gru_total_parameters": 30776212,
+    "spike_gru_total_parameters": 30776212,
+    "gru_memory_parameters": 259712,
+    "spike_gru_memory_parameters": 259712,
+    "all_state_dict_keys_and_initial_tensors_exactly_equal": true,
+    "parameterized_layers_and_activations_match": true,
+    "cached_channels": 65,
+    "fp32_cache_bytes_at_200x504": 26208000
+  },
+  "gpu_blocker": {
+    "free_mib_by_gpu_index": [1668, 1666, 1668, 1668, 1668, 1666, 1668, 1667],
+    "occupant": "Existing vLLM Python workers, not this experiment",
+    "worker_pids": [2431574, 2431575, 2431576, 2431577, 2431578, 2431579, 2431580, 2431581],
+    "action": "Preserve existing service; wait for GPU availability before paired pilot"
+  },
+  "limitations": [
+    "No real-data training or AP result for spike_gru yet.",
+    "Identical parameterized layer layout does not mean identical computation: spike emission/reset and surrogate gradients are added.",
+    "Sigmoid gates, tanh candidate, spatial detector and continuous FP32 membrane remain analog.",
+    "No latency, sparse execution or energy-efficiency claim."
+  ]
+}
