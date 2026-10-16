@@ -1,0 +1,361 @@
+{
+  "status": "AUDITED",
+  "scope": "Frozen-weight interventions, not retrained candidates",
+  "checked_unix": 1792194356.2571049,
+  "launch": {
+    "scope": "Frozen best weights, aligned full stream; inference interventions, not trained variants",
+    "parent_contract": {
+      "config_sha256": "02fceae7a7ec39cfc16b80c962e68a40ae0efd0feebe8a439d24aa6c2ea78426",
+      "fm_only_epochs": 1,
+      "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+      "lr": 0.0001,
+      "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+      "min_delta": 0.001,
+      "min_epochs": 20,
+      "mode": "delta_gru",
+      "patience": 10,
+      "seed": 303,
+      "state_policy": "whole-segment/tbptt/v1",
+      "tbptt_steps": 4
+    },
+    "checkpoint": {
+      "bev_ap70": 0.7326051558623887,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/full_delta_gru/epoch_020/trained.pth",
+      "epoch": 20,
+      "sha256": "4dfe23a71090fdb14ab280329af7883e3843c9c1808d109c4284f8fd0bd37c38"
+    },
+    "created_unix": 1792193652.3005097,
+    "gpu_snapshot": "0, 24252, 0\n1, 24252, 0\n2, 24252, 0\n3, 24252, 0\n4, 19954, 53\n5, 19956, 57\n6, 20432, 50\n7, 20432, 37\n",
+    "code_commit": "492c99b529421a201b2d058d2f0a628e7015fe49",
+    "jobs": [
+      {
+        "name": "instant_residual",
+        "overrides": {
+          "residual_policy": "instant"
+        },
+        "gpu": 0,
+        "pid": 13309,
+        "config_sha256": "268fac717d46142aeddf16ce90bf7d9db18e23539fe7cccb2f706ac740056bad",
+        "output": "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/instant_residual/eval",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-m",
+          "opencood.tools.run_int_ego",
+          "--eval-only",
+          "--mode",
+          "delta_gru",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/instant_residual/config.yaml",
+          "--data",
+          "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+          "--manifest",
+          "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/inputs/sequence_manifest.json",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/full_delta_gru/epoch_020/trained.pth",
+          "--seed",
+          "303",
+          "--workers",
+          "4",
+          "--history-policy",
+          "aligned",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/instant_residual/eval"
+        ]
+      },
+      {
+        "name": "dense_readout",
+        "overrides": {
+          "readout_policy": "dense"
+        },
+        "gpu": 1,
+        "pid": 13310,
+        "config_sha256": "8cba287eae1b069f5e2a9e8888d39e68b7ce78cf25b649c0b8b9f06d8d836dcc",
+        "output": "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/dense_readout/eval",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-m",
+          "opencood.tools.run_int_ego",
+          "--eval-only",
+          "--mode",
+          "delta_gru",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/dense_readout/config.yaml",
+          "--data",
+          "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+          "--manifest",
+          "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/inputs/sequence_manifest.json",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/full_delta_gru/epoch_020/trained.pth",
+          "--seed",
+          "303",
+          "--workers",
+          "4",
+          "--history-policy",
+          "aligned",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/dense_readout/eval"
+        ]
+      }
+    ]
+  },
+  "probes": {
+    "instant_residual": {
+      "evaluation": {
+        "gt_boxes": 22971,
+        "history_diagnostics": [
+          {
+            "frame": "011181",
+            "noalign_psm_l1": 0.4743535816669464,
+            "reset_psm_l1": 0.6534824371337891,
+            "reset_rm_l1": 0.09020750224590302
+          },
+          {
+            "frame": "011194",
+            "noalign_psm_l1": 0.3952632546424866,
+            "reset_psm_l1": 0.7299261689186096,
+            "reset_rm_l1": 0.09107614308595657
+          },
+          {
+            "frame": "011203",
+            "noalign_psm_l1": 0.3449203073978424,
+            "reset_psm_l1": 0.5425149202346802,
+            "reset_rm_l1": 0.06739857792854309
+          },
+          {
+            "frame": "011226",
+            "noalign_psm_l1": 0.36483049392700195,
+            "reset_psm_l1": 0.4596506953239441,
+            "reset_rm_l1": 0.05832549184560776
+          },
+          {
+            "frame": "011235",
+            "noalign_psm_l1": 0.33927541971206665,
+            "reset_psm_l1": 0.4800141751766205,
+            "reset_rm_l1": 0.06886617839336395
+          },
+          {
+            "frame": "011242",
+            "noalign_psm_l1": 0.32252731919288635,
+            "reset_psm_l1": 0.5742145776748657,
+            "reset_rm_l1": 0.08049032837152481
+          },
+          {
+            "frame": "011244",
+            "noalign_psm_l1": 0.4372347593307495,
+            "reset_psm_l1": 0.49858877062797546,
+            "reset_rm_l1": 0.06366521120071411
+          },
+          {
+            "frame": "011246",
+            "noalign_psm_l1": 0.4245862364768982,
+            "reset_psm_l1": 0.5060543417930603,
+            "reset_rm_l1": 0.06674177199602127
+          },
+          {
+            "frame": "011255",
+            "noalign_psm_l1": 0.4098062515258789,
+            "reset_psm_l1": 0.5528139472007751,
+            "reset_rm_l1": 0.07485207170248032
+          },
+          {
+            "frame": "010801",
+            "noalign_psm_l1": 0.2632412314414978,
+            "reset_psm_l1": 0.2836981415748596,
+            "reset_rm_l1": 0.04037526994943619
+          },
+          {
+            "frame": "010802",
+            "noalign_psm_l1": 0.2723312973976135,
+            "reset_psm_l1": 0.2751125991344452,
+            "reset_rm_l1": 0.04042430967092514
+          },
+          {
+            "frame": "010803",
+            "noalign_psm_l1": 0.28476372361183167,
+            "reset_psm_l1": 0.32905784249305725,
+            "reset_rm_l1": 0.04837561771273613
+          },
+          {
+            "frame": "010804",
+            "noalign_psm_l1": 0.2857736051082611,
+            "reset_psm_l1": 0.35240551829338074,
+            "reset_rm_l1": 0.05200968682765961
+          },
+          {
+            "frame": "010805",
+            "noalign_psm_l1": 0.2916463017463684,
+            "reset_psm_l1": 0.37236684560775757,
+            "reset_rm_l1": 0.054295070469379425
+          },
+          {
+            "frame": "010806",
+            "noalign_psm_l1": 0.28478801250457764,
+            "reset_psm_l1": 0.3972202241420746,
+            "reset_rm_l1": 0.056821975857019424
+          },
+          {
+            "frame": "010807",
+            "noalign_psm_l1": 0.28254979848861694,
+            "reset_psm_l1": 0.4047473073005676,
+            "reset_rm_l1": 0.05538245290517807
+          }
+        ],
+        "history_policy": "aligned",
+        "labels": 1738,
+        "metrics": {
+          "bev_ap30": 0.8478879701530718,
+          "bev_ap50": 0.8289098612227521,
+          "bev_ap70": 0.7412841028322983
+        },
+        "model_step_ms_p50": 36.96774644777179,
+        "model_step_ms_p95": 40.52549640182406,
+        "peak_allocated_bytes": 884687872,
+        "predicted_boxes": 23775,
+        "resets": {
+          "initial": 1,
+          "scene": 213
+        },
+        "scans": 5794,
+        "seconds": 387.45717020193115,
+        "state_bytes": 78624000,
+        "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+      },
+      "diagnostics": {
+        "emission_nonzero_fraction": 0.10284448181234339,
+        "readout_refresh_fraction": 0.5565556630847123,
+        "readout_refresh_tiles8": 0.7554125174298795,
+        "membrane_abs_max": 1.75
+      },
+      "ap70_delta_pp": 0.8678946969909562
+    },
+    "dense_readout": {
+      "evaluation": {
+        "gt_boxes": 22971,
+        "history_diagnostics": [
+          {
+            "frame": "011181",
+            "noalign_psm_l1": 0.4890804588794708,
+            "reset_psm_l1": 0.5292311906814575,
+            "reset_rm_l1": 0.07030594348907471
+          },
+          {
+            "frame": "011194",
+            "noalign_psm_l1": 0.4539462924003601,
+            "reset_psm_l1": 0.5877853631973267,
+            "reset_rm_l1": 0.0692918449640274
+          },
+          {
+            "frame": "011203",
+            "noalign_psm_l1": 0.3991177976131439,
+            "reset_psm_l1": 0.5216221809387207,
+            "reset_rm_l1": 0.062233466655015945
+          },
+          {
+            "frame": "011226",
+            "noalign_psm_l1": 0.40539538860321045,
+            "reset_psm_l1": 0.4738636016845703,
+            "reset_rm_l1": 0.058438342064619064
+          },
+          {
+            "frame": "011235",
+            "noalign_psm_l1": 0.34950968623161316,
+            "reset_psm_l1": 0.4837525486946106,
+            "reset_rm_l1": 0.06464545428752899
+          },
+          {
+            "frame": "011242",
+            "noalign_psm_l1": 0.37680670619010925,
+            "reset_psm_l1": 0.5155689716339111,
+            "reset_rm_l1": 0.06894185394048691
+          },
+          {
+            "frame": "011244",
+            "noalign_psm_l1": 0.4395114779472351,
+            "reset_psm_l1": 0.45925718545913696,
+            "reset_rm_l1": 0.05522136390209198
+          },
+          {
+            "frame": "011246",
+            "noalign_psm_l1": 0.4635222852230072,
+            "reset_psm_l1": 0.44434022903442383,
+            "reset_rm_l1": 0.056145332753658295
+          },
+          {
+            "frame": "011255",
+            "noalign_psm_l1": 0.4223957657814026,
+            "reset_psm_l1": 0.47350013256073,
+            "reset_rm_l1": 0.0587124265730381
+          },
+          {
+            "frame": "010801",
+            "noalign_psm_l1": 0.2636982798576355,
+            "reset_psm_l1": 0.2840993106365204,
+            "reset_rm_l1": 0.040437109768390656
+          },
+          {
+            "frame": "010802",
+            "noalign_psm_l1": 0.2916281521320343,
+            "reset_psm_l1": 0.3069460093975067,
+            "reset_rm_l1": 0.04367637261748314
+          },
+          {
+            "frame": "010803",
+            "noalign_psm_l1": 0.3128238916397095,
+            "reset_psm_l1": 0.3663281202316284,
+            "reset_rm_l1": 0.051303304731845856
+          },
+          {
+            "frame": "010804",
+            "noalign_psm_l1": 0.3185063302516937,
+            "reset_psm_l1": 0.4014900028705597,
+            "reset_rm_l1": 0.05606105923652649
+          },
+          {
+            "frame": "010805",
+            "noalign_psm_l1": 0.30609744787216187,
+            "reset_psm_l1": 0.4102381467819214,
+            "reset_rm_l1": 0.05731403827667236
+          },
+          {
+            "frame": "010806",
+            "noalign_psm_l1": 0.2994036376476288,
+            "reset_psm_l1": 0.4410763680934906,
+            "reset_rm_l1": 0.059213850647211075
+          },
+          {
+            "frame": "010807",
+            "noalign_psm_l1": 0.3008158802986145,
+            "reset_psm_l1": 0.4356118142604828,
+            "reset_rm_l1": 0.05590864643454552
+          }
+        ],
+        "history_policy": "aligned",
+        "labels": 1738,
+        "metrics": {
+          "bev_ap30": 0.8406110608355866,
+          "bev_ap50": 0.8215825142740054,
+          "bev_ap70": 0.7322298595949557
+        },
+        "model_step_ms_p50": 37.36895555630326,
+        "model_step_ms_p95": 40.63085523666814,
+        "peak_allocated_bytes": 884687360,
+        "predicted_boxes": 23371,
+        "resets": {
+          "initial": 1,
+          "scene": 213
+        },
+        "scans": 5794,
+        "seconds": 390.89996248902753,
+        "state_bytes": 78624000,
+        "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+      },
+      "diagnostics": {
+        "emission_nonzero_fraction": 0.16390833055159967,
+        "readout_refresh_fraction": 0.9999999403953552,
+        "readout_refresh_tiles8": 0.9999999403953552,
+        "membrane_abs_max": 17.156373977661133
+      },
+      "ap70_delta_pp": -0.03752962674330451
+    }
+  }
+}
