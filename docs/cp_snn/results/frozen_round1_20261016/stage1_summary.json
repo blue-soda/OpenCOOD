@@ -1,0 +1,693 @@
+{
+  "root": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016",
+  "models": {
+    "count4": {
+      "diagnostic": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/count4_diagnostic.json",
+        "sha256": "0891a594e852fac946c2f03bfb94cd2ebb0202fb1f7b5ffe486a69c982e7f80a"
+      },
+      "gt_transitions70": {
+        "retained": 15480,
+        "lost": 1019,
+        "gained": 2255,
+        "missed_by_both": 9868
+      },
+      "localized_lost_geometry": {
+        "count": 857,
+        "scope": "GT matched by ego at IoU .7, not by fusion; fusion best IoU in [.5,.7). Compare each model best-IoU prediction, not necessarily score-greedy assignment. Outcome-selected cohort; does not estimate population-wide or causal module effects.",
+        "center_error_m": {
+          "ego_median": 0.2711192358168399,
+          "fusion_median": 0.4239001234928643,
+          "median_paired_change": 0.14961606935751032,
+          "fraction_worse": 0.9381563593932322
+        },
+        "length_error_m": {
+          "ego_median": 0.12752441359361288,
+          "fusion_median": 0.13787761228749673,
+          "median_paired_change": 0.002769136505170522,
+          "fraction_worse": 0.5169194865810969
+        },
+        "width_error_m": {
+          "ego_median": 0.06306695333907397,
+          "fusion_median": 0.0625630030079023,
+          "median_paired_change": 0.0005334308283027056,
+          "fraction_worse": 0.5134189031505251
+        },
+        "axis_error_deg": {
+          "ego_median": 2.954326815048282,
+          "fusion_median": 3.541887509901834,
+          "median_paired_change": 0.18239647404141923,
+          "fraction_worse": 0.5659276546091015
+        }
+      },
+      "on": {
+        "evaluation": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/count4_on/evaluation.json",
+          "sha256": "dfcd7d84d637cfa1d2f27e96a64da29a9a996122de403d7e95525da88a52fc81",
+          "content": {
+            "samples": 1738,
+            "indexed_samples": 1738,
+            "full_split": true,
+            "predicted_boxes": 28778,
+            "gt_boxes": 28622,
+            "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+            "ap": {
+              "0.3": 0.7768957728266186,
+              "0.5": 0.7254800540761226,
+              "0.7": 0.5425581819847676
+            },
+            "ap_3d": {
+              "0.3": 0.7631694442849608,
+              "0.5": 0.6602603914551524,
+              "0.7": 0.3106046558526163
+            },
+            "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+            "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+            "predictions": {
+              "directory": "predictions",
+              "frames": 1738,
+              "index_sha256": "c08319e1ca57cf588b39abd7df8e48db5a87ee8f96eb2e593dbe15c1b6f15aa5"
+            },
+            "feature_packets": {
+              "count": 1738,
+              "mean_bytes": 76793.51093210587,
+              "median_bytes": 76978.5,
+              "min_bytes": 31457,
+              "max_bytes": 106029,
+              "p95_bytes": 96685.24999999999,
+              "total_bytes": 133467122,
+              "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+            }
+          }
+        },
+        "replay": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/count4_on/offline_replay.json",
+          "sha256": "6d59cd2c092de3c374d83720006ce042cb31393d6d7150c8321f8ec67cc11acb",
+          "content": {
+            "passed": true,
+            "samples": 1738,
+            "predicted_boxes": 28778,
+            "gt_boxes": 28622,
+            "ap": {
+              "0.3": 0.7768957728266186,
+              "0.5": 0.7254800540761226,
+              "0.7": 0.5425581819847676
+            },
+            "exact_match": true,
+            "all_file_hashes_verified": true,
+            "ap_3d": {
+              "0.3": 0.7631694442849608,
+              "0.5": 0.6602603914551524,
+              "0.7": 0.3106046558526163
+            }
+          }
+        },
+        "manifest": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/count4_on/manifest_1792163633.json",
+          "sha256": "6d0a922b3c358eec7e0911d8b3049afef06c5130e5e8a1e1eaeb7d4627d370bd",
+          "content": {
+            "git_commit": "d5d85ec371abcc94b49981465bb95b5f2cd375df",
+            "arguments": {
+              "mode": "eval",
+              "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_residual_181.yaml",
+              "output": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/count4_on",
+              "seed": 20260929,
+              "workers": 2,
+              "steps": 200,
+              "sample_index": 0,
+              "epochs": 0,
+              "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/count4_fusion.pth",
+              "single_checkpoint": null,
+              "warmup_epochs": 0,
+              "packet_roundtrip": true,
+              "eval_3d": true,
+              "save_predictions": true,
+              "profile": false,
+              "fusion_diagnostics": true,
+              "selection_iou": "0.5",
+              "resume": false
+            },
+            "config_sha256": "87bf04155e89c01504f45fdcce0581e6ff566376550a8aaf6a089a2f76b7ce38",
+            "split_sha256": {
+              "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+              "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+            },
+            "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+            "torch": "1.10.0+cu113",
+            "gpu": "NVIDIA GeForce RTX 3090",
+            "gpu_visible": "6",
+            "parameters": 3094997,
+            "architecture": "e3dsnn_fusion",
+            "activation": "count4",
+            "trainable_parameters": 3094997,
+            "freeze_detector": false,
+            "checkpoint_sha256": "15a33c2b8c58b066b54c6616c1ea7db5ed8dcdd699b70b328bda6f3932087f5d",
+            "train_samples": 4678,
+            "val_samples": 1738,
+            "single_checkpoint_sha256": null,
+            "protocol": "paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay"
+          }
+        },
+        "prediction_index": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/count4_on/predictions/index.json",
+          "sha256": "c08319e1ca57cf588b39abd7df8e48db5a87ee8f96eb2e593dbe15c1b6f15aa5"
+        }
+      },
+      "feature_statistics": {
+        "frames": {
+          "total_regions": 1738,
+          "observed_regions": 1738,
+          "supported_cells": 5603830,
+          "metrics": {
+            "residual_abs_mean": {
+              "mean_across_regions": 0.1410142027776178,
+              "cell_weighted_mean": 0.1369277311599096
+            },
+            "changed_channel_fraction": {
+              "mean_across_regions": 0.0073686173269835965,
+              "cell_weighted_mean": 0.006686660292880203
+            },
+            "nonzero_residual_unchanged_fraction": {
+              "mean_across_regions": 0.9920777347543297,
+              "cell_weighted_mean": 0.9928754130909937
+            },
+            "above_cap_fraction": {
+              "mean_across_regions": 0.00010126602700191527,
+              "cell_weighted_mean": 9.840043073903135e-05
+            },
+            "below_zero_fraction": {
+              "mean_across_regions": 0.6282613195127393,
+              "cell_weighted_mean": 0.6282553562023464
+            },
+            "output_at_cap_fraction": {
+              "mean_across_regions": 0.0002325329969717885,
+              "cell_weighted_mean": 0.00022211558005536493
+            }
+          }
+        },
+        "all_gt": {
+          "total_regions": 28622,
+          "observed_regions": 21836,
+          "supported_cells": 109610,
+          "metrics": {
+            "residual_abs_mean": {
+              "mean_across_regions": 0.23709909428233408,
+              "cell_weighted_mean": 0.23032110721201204
+            },
+            "changed_channel_fraction": {
+              "mean_across_regions": 0.042241645395378905,
+              "cell_weighted_mean": 0.039130142603776404
+            },
+            "nonzero_residual_unchanged_fraction": {
+              "mean_across_regions": 0.9575351283164399,
+              "cell_weighted_mean": 0.960715542585351
+            },
+            "above_cap_fraction": {
+              "mean_across_regions": 0.003006637959328071,
+              "cell_weighted_mean": 0.0027863230449322713
+            },
+            "below_zero_fraction": {
+              "mean_across_regions": 0.5482331263571896,
+              "cell_weighted_mean": 0.5524090738627023
+            },
+            "output_at_cap_fraction": {
+              "mean_across_regions": 0.006748137522475192,
+              "cell_weighted_mean": 0.0062279524618502925
+            }
+          }
+        },
+        "lost_gt": {
+          "total_regions": 1019,
+          "observed_regions": 948,
+          "supported_cells": 4429,
+          "metrics": {
+            "residual_abs_mean": {
+              "mean_across_regions": 0.23013800500900639,
+              "cell_weighted_mean": 0.2279208023525952
+            },
+            "changed_channel_fraction": {
+              "mean_across_regions": 0.0408343862015081,
+              "cell_weighted_mean": 0.03907543786894025
+            },
+            "nonzero_residual_unchanged_fraction": {
+              "mean_across_regions": 0.9590612710276737,
+              "cell_weighted_mean": 0.9607976037133329
+            },
+            "above_cap_fraction": {
+              "mean_across_regions": 0.002261812321167294,
+              "cell_weighted_mean": 0.002107911028763728
+            },
+            "below_zero_fraction": {
+              "mean_across_regions": 0.5442604834394615,
+              "cell_weighted_mean": 0.5483391075808245
+            },
+            "output_at_cap_fraction": {
+              "mean_across_regions": 0.004973787880998266,
+              "cell_weighted_mean": 0.004651515821627806
+            }
+          }
+        }
+      },
+      "off": {
+        "evaluation": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/count4_off/evaluation.json",
+          "sha256": "a284be2b383b41ca3ce1812619946551c193de5a94f6390a45f85b945048d98f",
+          "content": {
+            "samples": 1738,
+            "indexed_samples": 1738,
+            "full_split": true,
+            "predicted_boxes": 25959,
+            "gt_boxes": 28622,
+            "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+            "ap": {
+              "0.3": 0.6913563872443517,
+              "0.5": 0.6541010336119721,
+              "0.7": 0.5263245671957985
+            },
+            "ap_3d": {
+              "0.3": 0.679419862775991,
+              "0.5": 0.6073536181353655,
+              "0.7": 0.3145783373035064
+            },
+            "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+            "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+            "predictions": {
+              "directory": "predictions",
+              "frames": 1738,
+              "index_sha256": "03be5d86caac7cb8a23d22574f1a798683bed0b7cc374f9becae49d4f563885a"
+            }
+          }
+        },
+        "replay": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/count4_off/offline_replay.json",
+          "sha256": "8ef7d945ac8f1e059f0b39c22d3703878ee48c04abed69479f232caad2d98cb0",
+          "content": {
+            "passed": true,
+            "samples": 1738,
+            "predicted_boxes": 25959,
+            "gt_boxes": 28622,
+            "ap": {
+              "0.3": 0.6913563872443517,
+              "0.5": 0.6541010336119721,
+              "0.7": 0.5263245671957985
+            },
+            "exact_match": true,
+            "all_file_hashes_verified": true,
+            "ap_3d": {
+              "0.3": 0.679419862775991,
+              "0.5": 0.6073536181353655,
+              "0.7": 0.3145783373035064
+            }
+          }
+        },
+        "manifest": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/count4_off/manifest_1792163985.json",
+          "sha256": "f504b8513bfa3bf29c559ae7d1df26627758aa9b72c3dce5bcd0e01a0907f17e",
+          "content": {
+            "git_commit": "3f2f377fb228bfec364835d73bc561b1f5296f9e",
+            "arguments": {
+              "mode": "eval",
+              "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego_181.yaml",
+              "output": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/count4_off",
+              "seed": 20260929,
+              "workers": 2,
+              "steps": 200,
+              "sample_index": 0,
+              "epochs": 0,
+              "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/count4_fusion.pth",
+              "single_checkpoint": null,
+              "warmup_epochs": 0,
+              "packet_roundtrip": false,
+              "eval_3d": true,
+              "save_predictions": true,
+              "profile": false,
+              "fusion_diagnostics": false,
+              "selection_iou": "0.5",
+              "resume": false
+            },
+            "config_sha256": "c6c05ec7c1f64d6f1c16e8754f5ef35aebb9cb8c2bb96142ea67e28ee8180da3",
+            "split_sha256": {
+              "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+              "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+            },
+            "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+            "torch": "1.10.0+cu113",
+            "gpu": "NVIDIA GeForce RTX 3090",
+            "gpu_visible": "6",
+            "parameters": 3094997,
+            "architecture": "e3dsnn_fusion",
+            "activation": "count4",
+            "trainable_parameters": 3094997,
+            "freeze_detector": false,
+            "checkpoint_sha256": "15a33c2b8c58b066b54c6616c1ea7db5ed8dcdd699b70b328bda6f3932087f5d",
+            "train_samples": 4678,
+            "val_samples": 1738,
+            "single_checkpoint_sha256": null,
+            "protocol": "paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay"
+          }
+        },
+        "prediction_index": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/count4_off/predictions/index.json",
+          "sha256": "03be5d86caac7cb8a23d22574f1a798683bed0b7cc374f9becae49d4f563885a"
+        }
+      },
+      "verified_inference_blobs": {
+        "opencood/models/e3dsnn_fusion.py": "7bcbde044b5307db394e3cfd0ca65b0ec9592114",
+        "opencood/models/e3dsnn_single.py": "cb397b50b0ba7965368d383d2cd33e15a333bc25",
+        "opencood/models/e3dsnn_single_ann.py": "7b998f84f7d9374ca139d0477fdfe81085c2d1d8",
+        "opencood/models/sub_modules/e3dsnn/backbone_3d.py": "716d721dd5e02215182515b8bd25f58743ea9740",
+        "opencood/models/sub_modules/e3dsnn/backbone_2d.py": "7a49cfb3a023388beb6132e1aea044668243cbc0",
+        "opencood/models/fuse_modules/e3dsnn_geometry.py": "9d51ba1045c21a6557b11a80e0841d6fe013d40b",
+        "opencood/tools/train_e3dsnn_single.py": "8b953deaac95e25f3aa63156e40097b77b4a6157",
+        "opencood/utils/e3dsnn_fusion_probe.py": "c31deb3d737db70b1a231aa6550aa8f6fee1ec9e"
+      }
+    },
+    "relu": {
+      "diagnostic": {
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/relu_diagnostic.json",
+        "sha256": "b36da07e4801c29403ead3afe2aae9ccc025f1bf40a5f1ce7c22cd609aa02156"
+      },
+      "gt_transitions70": {
+        "retained": 16565,
+        "lost": 581,
+        "gained": 1915,
+        "missed_by_both": 9561
+      },
+      "localized_lost_geometry": {
+        "count": 444,
+        "scope": "GT matched by ego at IoU .7, not by fusion; fusion best IoU in [.5,.7). Compare each model best-IoU prediction, not necessarily score-greedy assignment. Outcome-selected cohort; does not estimate population-wide or causal module effects.",
+        "center_error_m": {
+          "ego_median": 0.2819992412755863,
+          "fusion_median": 0.42947416734286853,
+          "median_paired_change": 0.1335348149748409,
+          "fraction_worse": 0.9256756756756757
+        },
+        "length_error_m": {
+          "ego_median": 0.12743377451214588,
+          "fusion_median": 0.15290243753220034,
+          "median_paired_change": 0.012333829674089358,
+          "fraction_worse": 0.5743243243243243
+        },
+        "width_error_m": {
+          "ego_median": 0.06425288373381832,
+          "fusion_median": 0.06269552010317614,
+          "median_paired_change": 4.882367536762633e-05,
+          "fraction_worse": 0.5022522522522522
+        },
+        "axis_error_deg": {
+          "ego_median": 2.8278350312032936,
+          "fusion_median": 3.033950444121865,
+          "median_paired_change": 0.2790881624573158,
+          "fraction_worse": 0.5608108108108109
+        }
+      },
+      "on": {
+        "evaluation": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/relu_on/evaluation.json",
+          "sha256": "9ea25008e91e1d90e2ddc3d7d3b5a8d07e3221f629788e8ddb7381853291be2d",
+          "content": {
+            "samples": 1738,
+            "indexed_samples": 1738,
+            "full_split": true,
+            "predicted_boxes": 29230,
+            "gt_boxes": 28622,
+            "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+            "ap": {
+              "0.3": 0.7856071183213753,
+              "0.5": 0.7380032568881454,
+              "0.7": 0.5846465130027352
+            },
+            "ap_3d": {
+              "0.3": 0.7733142343582954,
+              "0.5": 0.6771382143497408,
+              "0.7": 0.3940316108236915
+            },
+            "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+            "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+            "predictions": {
+              "directory": "predictions",
+              "frames": 1738,
+              "index_sha256": "f60430015f06123e68ed82ee5beddc5a4979863c010dbef56a470e8c52a48088"
+            },
+            "feature_packets": {
+              "count": 1738,
+              "mean_bytes": 321446.85327963176,
+              "median_bytes": 336145.0,
+              "min_bytes": 140451,
+              "max_bytes": 408237,
+              "p95_bytes": 379901.75,
+              "total_bytes": 558674631,
+              "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+            }
+          }
+        },
+        "replay": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/relu_on/offline_replay.json",
+          "sha256": "b99b9279872aa3271877b0881b82601cc0d9eab4e922843014783251040db953",
+          "content": {
+            "passed": true,
+            "samples": 1738,
+            "predicted_boxes": 29230,
+            "gt_boxes": 28622,
+            "ap": {
+              "0.3": 0.7856071183213753,
+              "0.5": 0.7380032568881454,
+              "0.7": 0.5846465130027352
+            },
+            "exact_match": true,
+            "all_file_hashes_verified": true,
+            "ap_3d": {
+              "0.3": 0.7733142343582954,
+              "0.5": 0.6771382143497408,
+              "0.7": 0.3940316108236915
+            }
+          }
+        },
+        "manifest": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/relu_on/manifest_1792163632.json",
+          "sha256": "fc36d7052381a047968eb0732c0db2133670fa86c747741ac709cdefb9201743",
+          "content": {
+            "git_commit": "d5d85ec371abcc94b49981465bb95b5f2cd375df",
+            "arguments": {
+              "mode": "eval",
+              "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_relu_residual_181.yaml",
+              "output": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/relu_on",
+              "seed": 20260929,
+              "workers": 2,
+              "steps": 200,
+              "sample_index": 0,
+              "epochs": 0,
+              "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/relu_fusion.pth",
+              "single_checkpoint": null,
+              "warmup_epochs": 0,
+              "packet_roundtrip": true,
+              "eval_3d": true,
+              "save_predictions": true,
+              "profile": false,
+              "fusion_diagnostics": true,
+              "selection_iou": "0.5",
+              "resume": false
+            },
+            "config_sha256": "d09bb85a3759213f64d5fd610c4c753ea1e18f61165dc03439fb0c98b203ee62",
+            "split_sha256": {
+              "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+              "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+            },
+            "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+            "torch": "1.10.0+cu113",
+            "gpu": "NVIDIA GeForce RTX 3090",
+            "gpu_visible": "7",
+            "parameters": 3094997,
+            "architecture": "e3dsnn_fusion",
+            "activation": "relu",
+            "trainable_parameters": 3094997,
+            "freeze_detector": false,
+            "checkpoint_sha256": "6d628fc7818ee90406ea051e8c62a288e5683356a6769d8b003484040bcaff52",
+            "train_samples": 4678,
+            "val_samples": 1738,
+            "single_checkpoint_sha256": null,
+            "protocol": "paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay"
+          }
+        },
+        "prediction_index": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/relu_on/predictions/index.json",
+          "sha256": "f60430015f06123e68ed82ee5beddc5a4979863c010dbef56a470e8c52a48088"
+        }
+      },
+      "feature_statistics": {
+        "frames": {
+          "total_regions": 1738,
+          "observed_regions": 1738,
+          "supported_cells": 5603830,
+          "metrics": {
+            "residual_abs_mean": {
+              "mean_across_regions": 0.032419219291559984,
+              "cell_weighted_mean": 0.03160630393070297
+            },
+            "changed_channel_fraction": {
+              "mean_across_regions": 0.23141950946751344,
+              "cell_weighted_mean": 0.23081834759401687
+            },
+            "nonzero_residual_unchanged_fraction": {
+              "mean_across_regions": 0.7685805308462149,
+              "cell_weighted_mean": 0.7691816935068235
+            }
+          }
+        },
+        "all_gt": {
+          "total_regions": 28622,
+          "observed_regions": 21836,
+          "supported_cells": 109610,
+          "metrics": {
+            "residual_abs_mean": {
+              "mean_across_regions": 0.05720223783727887,
+              "cell_weighted_mean": 0.053261480729257966
+            },
+            "changed_channel_fraction": {
+              "mean_across_regions": 0.27922126032476197,
+              "cell_weighted_mean": 0.2796917219997953
+            },
+            "nonzero_residual_unchanged_fraction": {
+              "mean_across_regions": 0.7207787951219429,
+              "cell_weighted_mean": 0.7203083336690451
+            }
+          }
+        },
+        "lost_gt": {
+          "total_regions": 581,
+          "observed_regions": 567,
+          "supported_cells": 2543,
+          "metrics": {
+            "residual_abs_mean": {
+              "mean_across_regions": 0.062389778247060185,
+              "cell_weighted_mean": 0.06122352818225338
+            },
+            "changed_channel_fraction": {
+              "mean_across_regions": 0.2775125424435109,
+              "cell_weighted_mean": 0.2757744057718525
+            },
+            "nonzero_residual_unchanged_fraction": {
+              "mean_across_regions": 0.7224875127196942,
+              "cell_weighted_mean": 0.724225650797479
+            }
+          }
+        }
+      },
+      "off": {
+        "evaluation": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/relu_off/evaluation.json",
+          "sha256": "450803c8116ef532216a260d16653596de354a374ebbd0d97a6101919e1d7288",
+          "content": {
+            "samples": 1738,
+            "indexed_samples": 1738,
+            "full_split": true,
+            "predicted_boxes": 26721,
+            "gt_boxes": 28622,
+            "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+            "ap": {
+              "0.3": 0.7005088502795448,
+              "0.5": 0.6628035386681008,
+              "0.7": 0.5599275280035749
+            },
+            "ap_3d": {
+              "0.3": 0.6888264942942767,
+              "0.5": 0.6198375001539528,
+              "0.7": 0.40054786983113977
+            },
+            "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+            "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+            "predictions": {
+              "directory": "predictions",
+              "frames": 1738,
+              "index_sha256": "b68029ebcdbd4a98edda9e8f0c6188b32ddd74e1815ddd4d247a91d5375ca90a"
+            }
+          }
+        },
+        "replay": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/relu_off/offline_replay.json",
+          "sha256": "6e5f2a403edf6a90a9fb9eedc45e4211bb007dccb775098d7cbe52bb63ca2c73",
+          "content": {
+            "passed": true,
+            "samples": 1738,
+            "predicted_boxes": 26721,
+            "gt_boxes": 28622,
+            "ap": {
+              "0.3": 0.7005088502795448,
+              "0.5": 0.6628035386681008,
+              "0.7": 0.5599275280035749
+            },
+            "exact_match": true,
+            "all_file_hashes_verified": true,
+            "ap_3d": {
+              "0.3": 0.6888264942942767,
+              "0.5": 0.6198375001539528,
+              "0.7": 0.40054786983113977
+            }
+          }
+        },
+        "manifest": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/relu_off/manifest_1792164034.json",
+          "sha256": "9261a3b544a9ed15a9575bb3c0b7cde45950255f6816e0adcc50cb2cd65d3c01",
+          "content": {
+            "git_commit": "3f2f377fb228bfec364835d73bc561b1f5296f9e",
+            "arguments": {
+              "mode": "eval",
+              "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_relu_ego_181.yaml",
+              "output": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/relu_off",
+              "seed": 20260929,
+              "workers": 2,
+              "steps": 200,
+              "sample_index": 0,
+              "epochs": 0,
+              "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/relu_fusion.pth",
+              "single_checkpoint": null,
+              "warmup_epochs": 0,
+              "packet_roundtrip": false,
+              "eval_3d": true,
+              "save_predictions": true,
+              "profile": false,
+              "fusion_diagnostics": false,
+              "selection_iou": "0.5",
+              "resume": false
+            },
+            "config_sha256": "a265acc27dee14a0067da92d831553f3b29f756f2f92c27d25302d51a8624cc5",
+            "split_sha256": {
+              "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+              "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+            },
+            "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+            "torch": "1.10.0+cu113",
+            "gpu": "NVIDIA GeForce RTX 3090",
+            "gpu_visible": "7",
+            "parameters": 3094997,
+            "architecture": "e3dsnn_fusion",
+            "activation": "relu",
+            "trainable_parameters": 3094997,
+            "freeze_detector": false,
+            "checkpoint_sha256": "6d628fc7818ee90406ea051e8c62a288e5683356a6769d8b003484040bcaff52",
+            "train_samples": 4678,
+            "val_samples": 1738,
+            "single_checkpoint_sha256": null,
+            "protocol": "paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay"
+          }
+        },
+        "prediction_index": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_frozen_round1_20261016/relu_off/predictions/index.json",
+          "sha256": "b68029ebcdbd4a98edda9e8f0c6188b32ddd74e1815ddd4d247a91d5375ca90a"
+        }
+      },
+      "verified_inference_blobs": {
+        "opencood/models/e3dsnn_fusion.py": "7bcbde044b5307db394e3cfd0ca65b0ec9592114",
+        "opencood/models/e3dsnn_single.py": "cb397b50b0ba7965368d383d2cd33e15a333bc25",
+        "opencood/models/e3dsnn_single_ann.py": "7b998f84f7d9374ca139d0477fdfe81085c2d1d8",
+        "opencood/models/sub_modules/e3dsnn/backbone_3d.py": "716d721dd5e02215182515b8bd25f58743ea9740",
+        "opencood/models/sub_modules/e3dsnn/backbone_2d.py": "7a49cfb3a023388beb6132e1aea044668243cbc0",
+        "opencood/models/fuse_modules/e3dsnn_geometry.py": "9d51ba1045c21a6557b11a80e0841d6fe013d40b",
+        "opencood/tools/train_e3dsnn_single.py": "8b953deaac95e25f3aa63156e40097b77b4a6157",
+        "opencood/utils/e3dsnn_fusion_probe.py": "c31deb3d737db70b1a231aa6550aa8f6fee1ec9e"
+      }
+    }
+  },
+  "scope": "Same-device fixed-weight on/off comparison. Lost GT cohort is outcome-selected; ROI summaries are descriptive, not causal, and overlapping regions are not independent.",
+  "passed": true
+}
