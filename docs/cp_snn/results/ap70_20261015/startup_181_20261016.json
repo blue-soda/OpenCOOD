@@ -1,0 +1,371 @@
+{
+  "host": "mindspore-181",
+  "root": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181",
+  "captured_unix": 1792130996.3113022,
+  "migration.json": {
+    "passed": true,
+    "host": "mindspore-181",
+    "source_manifest_sha256": "aa27c9f24571c27f91e3889be06e6ce8b3e2517b12ea5acbaabbc2335c5c19ed",
+    "relocated_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+    "only_manifest_change": {
+      "data_root": [
+        "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+        "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure"
+      ]
+    },
+    "sampled_files_verified": 41,
+    "data_hash_scope": "Split and pair/time metadata plus six frames (first/middle/last of each valid split), both point clouds, labels and calibrations; not full dataset checksum",
+    "train": 4678,
+    "val": 1738,
+    "weights": {
+      "snn_single.pth": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
+      "ann_single.pth": "971575638d7fa2bf8a6de4e3c7920e5499eb0ada9dfc2e9b6c6ca5cb450d3079",
+      "count4_fusion.pth": "15a33c2b8c58b066b54c6616c1ea7db5ed8dcdd699b70b328bda6f3932087f5d",
+      "relu_fusion.pth": "6d628fc7818ee90406ea051e8c62a288e5683356a6769d8b003484040bcaff52"
+    },
+    "label_links": {
+      "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/cooperative/label_world": "../../DAIR-V2X-C_Complemented_Anno/new_labels/cooperative_label/label_world",
+      "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/vehicle-side/label/lidar": "../../../DAIR-V2X-C_Complemented_Anno/new_labels/vehicle-side_label/lidar"
+    },
+    "link_note": "Initially broken absolute links; observed corrected to valid relative links during preparation, no links changed by this task"
+  },
+  "real_data_smoke.json": {
+    "count4": {
+      "train_samples": 4678,
+      "val_samples": 1738,
+      "smoke_validation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 31,
+        "gt_boxes": 39,
+        "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.6354376657824934,
+          "0.5": 0.6354376657824934,
+          "0.7": 0.5468142968142967
+        },
+        "ap_3d": {
+          "0.3": 0.6354376657824934,
+          "0.5": 0.604530182461217,
+          "0.7": 0.4478013644422314
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union"
+      },
+      "train_batch_loss": 0.9806296381389906,
+      "gradient_norm": 1.655825138092041,
+      "finite_backward": true
+    },
+    "relu": {
+      "train_samples": 4678,
+      "val_samples": 1738,
+      "smoke_validation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 30,
+        "gt_boxes": 39,
+        "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7162393162393162,
+          "0.5": 0.7162393162393162,
+          "0.7": 0.6336752136752136
+        },
+        "ap_3d": {
+          "0.3": 0.7162393162393162,
+          "0.5": 0.6897435897435897,
+          "0.7": 0.5524297924297924
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union"
+      },
+      "train_batch_loss": 1.0668494332138083,
+      "gradient_norm": 2.0838584899902344,
+      "finite_backward": true
+    },
+    "passed": true,
+    "git_commit": "bb0a18f3ff235f3c0f647c72c8cf2896ac1d642c"
+  },
+  "count4_controls_plan.json": {
+    "name": "count4_controls",
+    "git_commit": "bb0a18f3ff235f3c0f647c72c8cf2896ac1d642c",
+    "gpu": null,
+    "state": "waiting_for_free_gpu",
+    "single_checkpoint_sha256": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
+    "fusion_checkpoint_sha256": "15a33c2b8c58b066b54c6616c1ea7db5ed8dcdd699b70b328bda6f3932087f5d",
+    "jobs": [
+      {
+        "name": "count4_road_disabled",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego_181.yaml",
+          "--mode",
+          "eval",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/count4_fusion.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_road_disabled",
+          "--eval-3d",
+          "--save-predictions"
+        ],
+        "timeout_seconds": 3600
+      },
+      {
+        "name": "count4_road_disabled_replay",
+        "command": [
+          "env",
+          "CUDA_VISIBLE_DEVICES=",
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.replay_e3dsnn_predictions",
+          "--evaluation-dir",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_road_disabled"
+        ],
+        "timeout_seconds": 3600
+      },
+      {
+        "name": "count4_ego30_train",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego_181.yaml",
+          "--mode",
+          "train",
+          "--single-checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/snn_single.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30",
+          "--epochs",
+          "30",
+          "--selection-iou",
+          "0.7"
+        ],
+        "timeout_seconds": 43200
+      },
+      {
+        "name": "count4_ego30_eval",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego_181.yaml",
+          "--mode",
+          "eval",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30/best_ap70.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30_eval",
+          "--eval-3d",
+          "--save-predictions"
+        ],
+        "timeout_seconds": 3600
+      },
+      {
+        "name": "count4_ego30_replay",
+        "command": [
+          "env",
+          "CUDA_VISIBLE_DEVICES=",
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.replay_e3dsnn_predictions",
+          "--evaluation-dir",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30_eval"
+        ],
+        "timeout_seconds": 3600
+      }
+    ],
+    "source_plan_sha256": "07656802f7eb7934701ad00b9207e21f64732dd825245087504fdec7321e8008",
+    "host": "mindspore-181"
+  },
+  "relu_controls_plan.json": {
+    "name": "relu_controls",
+    "git_commit": "bb0a18f3ff235f3c0f647c72c8cf2896ac1d642c",
+    "gpu": null,
+    "state": "waiting_for_free_gpu",
+    "single_checkpoint_sha256": "971575638d7fa2bf8a6de4e3c7920e5499eb0ada9dfc2e9b6c6ca5cb450d3079",
+    "fusion_checkpoint_sha256": "6d628fc7818ee90406ea051e8c62a288e5683356a6769d8b003484040bcaff52",
+    "jobs": [
+      {
+        "name": "relu_road_disabled",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_relu_ego_181.yaml",
+          "--mode",
+          "eval",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/relu_fusion.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_road_disabled",
+          "--eval-3d",
+          "--save-predictions"
+        ],
+        "timeout_seconds": 3600
+      },
+      {
+        "name": "relu_road_disabled_replay",
+        "command": [
+          "env",
+          "CUDA_VISIBLE_DEVICES=",
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.replay_e3dsnn_predictions",
+          "--evaluation-dir",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_road_disabled"
+        ],
+        "timeout_seconds": 3600
+      },
+      {
+        "name": "relu_ego30_train",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_relu_ego_181.yaml",
+          "--mode",
+          "train",
+          "--single-checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/ann_single.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30",
+          "--epochs",
+          "30",
+          "--selection-iou",
+          "0.7"
+        ],
+        "timeout_seconds": 43200
+      },
+      {
+        "name": "relu_ego30_eval",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_relu_ego_181.yaml",
+          "--mode",
+          "eval",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30/best_ap70.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30_eval",
+          "--eval-3d",
+          "--save-predictions"
+        ],
+        "timeout_seconds": 3600
+      },
+      {
+        "name": "relu_ego30_replay",
+        "command": [
+          "env",
+          "CUDA_VISIBLE_DEVICES=",
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.replay_e3dsnn_predictions",
+          "--evaluation-dir",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30_eval"
+        ],
+        "timeout_seconds": 3600
+      }
+    ],
+    "source_plan_sha256": "79d6d6b646c8af7e7a6c081b6617a4d55a07e68b88eb67fff6bd71b659932b84",
+    "host": "mindspore-181"
+  },
+  "count4_controls_launch.json": {
+    "gpu": 6,
+    "started_unix": 1792130957.1564379,
+    "git_commit": "bfa6d4907b829ef54a16d426e59631457866939b",
+    "state": "launched",
+    "supervisor_pid": 60697
+  },
+  "relu_controls_launch.json": {
+    "gpu": 7,
+    "started_unix": 1792130957.3304834,
+    "git_commit": "bfa6d4907b829ef54a16d426e59631457866939b",
+    "state": "launched",
+    "supervisor_pid": 60706
+  },
+  "count4_controls_pipeline.json": {
+    "state": "running",
+    "job": "count4_road_disabled",
+    "child_pid": 60698,
+    "command": [
+      "/data1/tzm/miniconda3/envs/opencood/bin/python",
+      "-u",
+      "-m",
+      "opencood.tools.train_e3dsnn_single",
+      "--workers",
+      "2",
+      "--config",
+      "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego_181.yaml",
+      "--mode",
+      "eval",
+      "--checkpoint",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/count4_fusion.pth",
+      "--output",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_road_disabled",
+      "--eval-3d",
+      "--save-predictions"
+    ],
+    "supervisor_pid": 60697,
+    "updated_unix": 1792130957.195742
+  },
+  "relu_controls_pipeline.json": {
+    "state": "running",
+    "job": "relu_road_disabled",
+    "child_pid": 60707,
+    "command": [
+      "/data1/tzm/miniconda3/envs/opencood/bin/python",
+      "-u",
+      "-m",
+      "opencood.tools.train_e3dsnn_single",
+      "--workers",
+      "2",
+      "--config",
+      "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_relu_ego_181.yaml",
+      "--mode",
+      "eval",
+      "--checkpoint",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/relu_fusion.pth",
+      "--output",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_road_disabled",
+      "--eval-3d",
+      "--save-predictions"
+    ],
+    "supervisor_pid": 60706,
+    "updated_unix": 1792130957.371669
+  },
+  "gpu_snapshot": "0, 9323 MiB, 78 %\n1, 9451 MiB, 74 %\n2, 2 MiB, 0 %\n3, 2 MiB, 0 %\n4, 2 MiB, 0 %\n5, 2 MiB, 0 %\n6, 2349 MiB, 15 %\n7, 2341 MiB, 15 %\n"
+}
