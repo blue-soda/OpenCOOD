@@ -2,7 +2,9 @@
 import argparse
 import hashlib
 import json
+import random
 from pathlib import Path
+import numpy as np
 import torch
 from opencood.hypes_yaml.yaml_utils import load_yaml
 from opencood.data_utils.datasets import build_dataset
@@ -12,6 +14,8 @@ from opencood.utils.e3dsnn_fusion_probe import detector_digest
 
 
 def run(config, checkpoint):
+    random.seed(20260929)
+    np.random.seed(20260929)
     torch.manual_seed(20260929)
     cfg = load_yaml(config)
     dataset = build_dataset(cfg, train=True)

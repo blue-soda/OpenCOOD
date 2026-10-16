@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 import numpy as np
 
@@ -65,7 +66,19 @@ def summarize(root):
                                        for x in diagnostic['lost_examples']]))
         assert manifests[0]['checkpoint_sha256'] == manifests[1]['checkpoint_sha256']
         assert manifests[0]['gpu_visible'] == manifests[1]['gpu_visible']
-        assert manifests[0]['git_commit'] == manifests[1]['git_commit']
+        # Other research may advance main between sequential jobs. Require the
+        # actual inference implementation to match; retain both runtime commits.
+        inference_files = ['opencood/models/e3dsnn_fusion.py', 'opencood/models/e3dsnn_single.py',
+            'opencood/models/e3dsnn_single_ann.py', 'opencood/models/sub_modules/e3dsnn/backbone_3d.py',
+            'opencood/models/sub_modules/e3dsnn/backbone_2d.py', 'opencood/models/fuse_modules/e3dsnn_geometry.py',
+            'opencood/tools/train_e3dsnn_single.py', 'opencood/utils/e3dsnn_fusion_probe.py']
+        blobs = []
+        for manifest in manifests:
+            blobs.append({path: subprocess.check_output(['git', 'rev-parse',
+                manifest['git_commit'] + ':' + path], cwd=str(Path(__file__).resolve().parents[2])).decode().strip()
+                for path in inference_files})
+        assert blobs[0] == blobs[1], 'On/off inference implementation differs'
+        model['verified_inference_blobs'] = blobs[0]
         report['models'][activation] = model
     report['passed'] = True
     return report
