@@ -1,0 +1,850 @@
+{
+  "checked_unix": 1792161262.6444075,
+  "host": "181",
+  "root": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+  "scope": "Training completion; frozen replay pending",
+  "models": {
+    "gru": {
+      "result": {
+        "best": {
+          "bev_ap70": 0.758736104616861,
+          "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+          "epoch": 17,
+          "sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8"
+        },
+        "caveat": "Validation plateau is an operational stopping rule, not a proof of convergence or a held-out test result.",
+        "epochs": 27,
+        "status": "PLATEAU_REACHED"
+      },
+      "contract": {
+        "mode": "gru",
+        "seed": 303,
+        "lr": 0.0001,
+        "min_epochs": 20,
+        "patience": 10,
+        "min_delta": 0.001,
+        "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+        "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+        "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+        "state_policy": "whole-segment/tbptt/v1",
+        "tbptt_steps": 4,
+        "fm_only_epochs": 1
+      },
+      "stale": 10,
+      "final_lr": 3.125e-06,
+      "coverage_each_epoch": {
+        "train_scans": 8593,
+        "train_labels": 4678,
+        "val_scans": 5794,
+        "val_labels": 1738
+      },
+      "curve": [
+        {
+          "epoch": 1,
+          "loss_mean": 1.274745351943429,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.7785947975279096,
+            "bev_ap50": 0.7613753077344445,
+            "bev_ap70": 0.6684457341816804
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 2,
+          "loss_mean": 0.6501351688900494,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8283221730198689,
+            "bev_ap50": 0.8043232751306748,
+            "bev_ap70": 0.6932637027933284
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 3,
+          "loss_mean": 0.5518541596735279,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8191104370854859,
+            "bev_ap50": 0.7997625782936054,
+            "bev_ap70": 0.7039239402495718
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 4,
+          "loss_mean": 0.5195530782775135,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8569465571483237,
+            "bev_ap50": 0.830659479911789,
+            "bev_ap70": 0.7194872216992116
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 5,
+          "loss_mean": 0.4876044179962139,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8468852964895235,
+            "bev_ap50": 0.8232323015361083,
+            "bev_ap70": 0.7272028559282709
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 6,
+          "loss_mean": 0.4625280337001909,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8399241313261956,
+            "bev_ap50": 0.8187288961284732,
+            "bev_ap70": 0.7193955405235553
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 7,
+          "loss_mean": 0.4426489732426562,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.828983303421548,
+            "bev_ap50": 0.8129480841592375,
+            "bev_ap70": 0.7276115642951421
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 8,
+          "loss_mean": 0.4257700536251777,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.811998299801997,
+            "bev_ap50": 0.7949619660778163,
+            "bev_ap70": 0.7030983502859983
+          },
+          "lr": 0.0001,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 9,
+          "loss_mean": 0.3754454180049154,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8454038487618434,
+            "bev_ap50": 0.8275548247181523,
+            "bev_ap70": 0.7398410581440866
+          },
+          "lr": 5e-05,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 10,
+          "loss_mean": 0.3558259916724304,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8402784988459023,
+            "bev_ap50": 0.8241836780347063,
+            "bev_ap70": 0.74685607220287
+          },
+          "lr": 5e-05,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 11,
+          "loss_mean": 0.3444825507682277,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8551969218451261,
+            "bev_ap50": 0.8382455690964403,
+            "bev_ap70": 0.7572991346173216
+          },
+          "lr": 5e-05,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 12,
+          "loss_mean": 0.3263928170168712,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8537135136457337,
+            "bev_ap50": 0.8352325946366753,
+            "bev_ap70": 0.7497031483116234
+          },
+          "lr": 5e-05,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 13,
+          "loss_mean": 0.31538712402439406,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8510125522719608,
+            "bev_ap50": 0.8342641716274155,
+            "bev_ap70": 0.7539478014900117
+          },
+          "lr": 5e-05,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 14,
+          "loss_mean": 0.30486734797758874,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8320909470950627,
+            "bev_ap50": 0.8169838060532235,
+            "bev_ap70": 0.7415433309803036
+          },
+          "lr": 5e-05,
+          "next_lr": 2.5e-05
+        },
+        {
+          "epoch": 15,
+          "loss_mean": 0.28098595396688725,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8393711789861389,
+            "bev_ap50": 0.8246839359170997,
+            "bev_ap70": 0.7516721342142828
+          },
+          "lr": 2.5e-05,
+          "next_lr": 2.5e-05
+        },
+        {
+          "epoch": 16,
+          "loss_mean": 0.26738313768233124,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8459809879693918,
+            "bev_ap50": 0.8303062651701483,
+            "bev_ap70": 0.753535291800367
+          },
+          "lr": 2.5e-05,
+          "next_lr": 2.5e-05
+        },
+        {
+          "epoch": 17,
+          "loss_mean": 0.25890358094127874,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8536119501279772,
+            "bev_ap50": 0.8380867977929637,
+            "bev_ap70": 0.758736104616861
+          },
+          "lr": 2.5e-05,
+          "next_lr": 2.5e-05
+        },
+        {
+          "epoch": 18,
+          "loss_mean": 0.250941418836661,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.846197048384242,
+            "bev_ap50": 0.8294254760411336,
+            "bev_ap70": 0.7503301583712613
+          },
+          "lr": 2.5e-05,
+          "next_lr": 2.5e-05
+        },
+        {
+          "epoch": 19,
+          "loss_mean": 0.2434710058940822,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8423841611471312,
+            "bev_ap50": 0.8260391898906704,
+            "bev_ap70": 0.7517374414629491
+          },
+          "lr": 2.5e-05,
+          "next_lr": 2.5e-05
+        },
+        {
+          "epoch": 20,
+          "loss_mean": 0.23738243467980172,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8409578906087063,
+            "bev_ap50": 0.8245742154708947,
+            "bev_ap70": 0.7458109620153058
+          },
+          "lr": 2.5e-05,
+          "next_lr": 1.25e-05
+        },
+        {
+          "epoch": 21,
+          "loss_mean": 0.2226963173443819,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8363910673517995,
+            "bev_ap50": 0.8204972397041649,
+            "bev_ap70": 0.747678696273263
+          },
+          "lr": 1.25e-05,
+          "next_lr": 1.25e-05
+        },
+        {
+          "epoch": 22,
+          "loss_mean": 0.2141442580321585,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8349693384033743,
+            "bev_ap50": 0.8187814537782659,
+            "bev_ap70": 0.7436981015018738
+          },
+          "lr": 1.25e-05,
+          "next_lr": 1.25e-05
+        },
+        {
+          "epoch": 23,
+          "loss_mean": 0.2098865955167979,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8249861216194517,
+            "bev_ap50": 0.8097659413374076,
+            "bev_ap70": 0.7374699195602646
+          },
+          "lr": 1.25e-05,
+          "next_lr": 6.25e-06
+        },
+        {
+          "epoch": 24,
+          "loss_mean": 0.20140032160274401,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8258745477339167,
+            "bev_ap50": 0.8103723487288993,
+            "bev_ap70": 0.7380750553249178
+          },
+          "lr": 6.25e-06,
+          "next_lr": 6.25e-06
+        },
+        {
+          "epoch": 25,
+          "loss_mean": 0.19744017178888923,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8306093175820806,
+            "bev_ap50": 0.8140133739867249,
+            "bev_ap70": 0.7386101522407472
+          },
+          "lr": 6.25e-06,
+          "next_lr": 6.25e-06
+        },
+        {
+          "epoch": 26,
+          "loss_mean": 0.1942383143327591,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.827200273306285,
+            "bev_ap50": 0.8114577974323439,
+            "bev_ap70": 0.7385244597853753
+          },
+          "lr": 6.25e-06,
+          "next_lr": 3.125e-06
+        },
+        {
+          "epoch": 27,
+          "loss_mean": 0.18993786467291124,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8291712715956365,
+            "bev_ap50": 0.8131783422797306,
+            "bev_ap70": 0.7383694061110524
+          },
+          "lr": 3.125e-06,
+          "next_lr": 3.125e-06
+        }
+      ],
+      "replay_launch": {
+        "mode": "gru",
+        "gpu": 0,
+        "created_unix": 1792161228.441083,
+        "training_status": "PLATEAU_REACHED",
+        "training_epochs": 27,
+        "best_epoch": 17,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+        "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+        "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+        "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+        "manifest": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/sequence_manifest.json",
+        "scans": 5794,
+        "labels": 1738,
+        "reference_metrics": {
+          "bev_ap30": 0.8536119501279772,
+          "bev_ap50": 0.8380867977929637,
+          "bev_ap70": 0.758736104616861
+        },
+        "commands": {
+          "aligned": [
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-m",
+            "opencood.tools.run_int_ego",
+            "--eval-only",
+            "--mode",
+            "gru",
+            "--config",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/config.yaml",
+            "--data",
+            "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+            "--manifest",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/sequence_manifest.json",
+            "--checkpoint",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+            "--seed",
+            "303",
+            "--workers",
+            "4",
+            "--history-policy",
+            "aligned",
+            "--output",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/replay_gru/aligned"
+          ],
+          "reset": [
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-m",
+            "opencood.tools.run_int_ego",
+            "--eval-only",
+            "--mode",
+            "gru",
+            "--config",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/config.yaml",
+            "--data",
+            "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+            "--manifest",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/sequence_manifest.json",
+            "--checkpoint",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+            "--seed",
+            "303",
+            "--workers",
+            "4",
+            "--history-policy",
+            "reset",
+            "--output",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/replay_gru/reset"
+          ],
+          "no-align": [
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-m",
+            "opencood.tools.run_int_ego",
+            "--eval-only",
+            "--mode",
+            "gru",
+            "--config",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/config.yaml",
+            "--data",
+            "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+            "--manifest",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/sequence_manifest.json",
+            "--checkpoint",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+            "--seed",
+            "303",
+            "--workers",
+            "4",
+            "--history-policy",
+            "no-align",
+            "--output",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/replay_gru/no-align"
+          ]
+        },
+        "code_commit": "23009108404ff0b46a4e85b93f9bf0b5d9c9788c"
+      }
+    },
+    "spike_gru": {
+      "result": {
+        "best": {
+          "bev_ap70": 0.759872411059917,
+          "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_spike_gru/epoch_011/trained.pth",
+          "epoch": 11,
+          "sha256": "bcc8bc9339a573ac2453cfb0c84b269878f0bf5ce24749d024f75e0c7085394e"
+        },
+        "caveat": "Validation plateau is an operational stopping rule, not a proof of convergence or a held-out test result.",
+        "epochs": 21,
+        "status": "PLATEAU_REACHED"
+      },
+      "contract": {
+        "mode": "spike_gru",
+        "seed": 303,
+        "lr": 0.0001,
+        "min_epochs": 20,
+        "patience": 10,
+        "min_delta": 0.001,
+        "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+        "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+        "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+        "state_policy": "whole-segment/tbptt/v1",
+        "tbptt_steps": 4,
+        "fm_only_epochs": 1
+      },
+      "stale": 10,
+      "final_lr": 6.25e-06,
+      "coverage_each_epoch": {
+        "train_scans": 8593,
+        "train_labels": 4678,
+        "val_scans": 5794,
+        "val_labels": 1738
+      },
+      "curve": [
+        {
+          "epoch": 1,
+          "loss_mean": 1.5352959141486375,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.6940302091732188,
+            "bev_ap50": 0.6746812138441728,
+            "bev_ap70": 0.5679067541866468
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 2,
+          "loss_mean": 0.7204415226403725,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8008172041927248,
+            "bev_ap50": 0.7744745368493342,
+            "bev_ap70": 0.6707188709498024
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 3,
+          "loss_mean": 0.5913752831048469,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8092734378988028,
+            "bev_ap50": 0.7857739143197493,
+            "bev_ap70": 0.6803332222522936
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 4,
+          "loss_mean": 0.5494816052216575,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8477110502909335,
+            "bev_ap50": 0.8197343722496023,
+            "bev_ap70": 0.7101204010987457
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 5,
+          "loss_mean": 0.5106513471047739,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8411109142463778,
+            "bev_ap50": 0.8152190063017623,
+            "bev_ap70": 0.7187451638918858
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 6,
+          "loss_mean": 0.48324690228308187,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8341256382591041,
+            "bev_ap50": 0.8123421456192031,
+            "bev_ap70": 0.7188961832270585
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 7,
+          "loss_mean": 0.46066747094319493,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.7972948980668818,
+            "bev_ap50": 0.7829228853207955,
+            "bev_ap70": 0.7082500340086229
+          },
+          "lr": 0.0001,
+          "next_lr": 0.0001
+        },
+        {
+          "epoch": 8,
+          "loss_mean": 0.443861254180428,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.792074555290122,
+            "bev_ap50": 0.7762393051647364,
+            "bev_ap70": 0.6994326861711434
+          },
+          "lr": 0.0001,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 9,
+          "loss_mean": 0.39142120390600776,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8442374357793431,
+            "bev_ap50": 0.8234397278975303,
+            "bev_ap70": 0.7346808190023617
+          },
+          "lr": 5e-05,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 10,
+          "loss_mean": 0.37203306371746797,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8370835352742279,
+            "bev_ap50": 0.8209702959270319,
+            "bev_ap70": 0.7427235257610789
+          },
+          "lr": 5e-05,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 11,
+          "loss_mean": 0.3572164934149299,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8586813223474896,
+            "bev_ap50": 0.8404365973398011,
+            "bev_ap70": 0.759872411059917
+          },
+          "lr": 5e-05,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 12,
+          "loss_mean": 0.3404404279609699,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8508307000197538,
+            "bev_ap50": 0.8310461245611847,
+            "bev_ap70": 0.7496140454423844
+          },
+          "lr": 5e-05,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 13,
+          "loss_mean": 0.3295617486957154,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8511861312140974,
+            "bev_ap50": 0.8332882055046867,
+            "bev_ap70": 0.7512663019341153
+          },
+          "lr": 5e-05,
+          "next_lr": 5e-05
+        },
+        {
+          "epoch": 14,
+          "loss_mean": 0.3175604390772001,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8442453280939666,
+            "bev_ap50": 0.8265262768529839,
+            "bev_ap70": 0.7493643246160638
+          },
+          "lr": 5e-05,
+          "next_lr": 2.5e-05
+        },
+        {
+          "epoch": 15,
+          "loss_mean": 0.2926694860101794,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8368794714614922,
+            "bev_ap50": 0.8210033379457263,
+            "bev_ap70": 0.7474266387548363
+          },
+          "lr": 2.5e-05,
+          "next_lr": 2.5e-05
+        },
+        {
+          "epoch": 16,
+          "loss_mean": 0.27817557529453535,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8503033487022322,
+            "bev_ap50": 0.8329788598492442,
+            "bev_ap70": 0.7551651903314778
+          },
+          "lr": 2.5e-05,
+          "next_lr": 2.5e-05
+        },
+        {
+          "epoch": 17,
+          "loss_mean": 0.26892906616766954,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8562095628488787,
+            "bev_ap50": 0.8381071578925494,
+            "bev_ap70": 0.7578680164555395
+          },
+          "lr": 2.5e-05,
+          "next_lr": 1.25e-05
+        },
+        {
+          "epoch": 18,
+          "loss_mean": 0.25426474665678983,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8445081574085384,
+            "bev_ap50": 0.8269200449151272,
+            "bev_ap70": 0.7487774529030479
+          },
+          "lr": 1.25e-05,
+          "next_lr": 1.25e-05
+        },
+        {
+          "epoch": 19,
+          "loss_mean": 0.2458055914715117,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8382209997981718,
+            "bev_ap50": 0.8212391104464575,
+            "bev_ap70": 0.7467172939290114
+          },
+          "lr": 1.25e-05,
+          "next_lr": 1.25e-05
+        },
+        {
+          "epoch": 20,
+          "loss_mean": 0.24057453163176465,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8451866876275733,
+            "bev_ap50": 0.8272313120727257,
+            "bev_ap70": 0.7487362902509558
+          },
+          "lr": 1.25e-05,
+          "next_lr": 6.25e-06
+        },
+        {
+          "epoch": 21,
+          "loss_mean": 0.23138118879501604,
+          "updates": 1490,
+          "metrics": {
+            "bev_ap30": 0.8422266388155636,
+            "bev_ap50": 0.8250688196345923,
+            "bev_ap70": 0.7484311254498321
+          },
+          "lr": 6.25e-06,
+          "next_lr": 6.25e-06
+        }
+      ],
+      "replay_launch": {
+        "mode": "spike_gru",
+        "gpu": 1,
+        "created_unix": 1792161229.0252542,
+        "training_status": "PLATEAU_REACHED",
+        "training_epochs": 21,
+        "best_epoch": 11,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_spike_gru/epoch_011/trained.pth",
+        "checkpoint_sha256": "bcc8bc9339a573ac2453cfb0c84b269878f0bf5ce24749d024f75e0c7085394e",
+        "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+        "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+        "manifest": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/sequence_manifest.json",
+        "scans": 5794,
+        "labels": 1738,
+        "reference_metrics": {
+          "bev_ap30": 0.8586813223474896,
+          "bev_ap50": 0.8404365973398011,
+          "bev_ap70": 0.759872411059917
+        },
+        "commands": {
+          "aligned": [
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-m",
+            "opencood.tools.run_int_ego",
+            "--eval-only",
+            "--mode",
+            "spike_gru",
+            "--config",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/config.yaml",
+            "--data",
+            "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+            "--manifest",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/sequence_manifest.json",
+            "--checkpoint",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_spike_gru/epoch_011/trained.pth",
+            "--seed",
+            "303",
+            "--workers",
+            "4",
+            "--history-policy",
+            "aligned",
+            "--output",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/replay_spike_gru/aligned"
+          ],
+          "reset": [
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-m",
+            "opencood.tools.run_int_ego",
+            "--eval-only",
+            "--mode",
+            "spike_gru",
+            "--config",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/config.yaml",
+            "--data",
+            "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+            "--manifest",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/sequence_manifest.json",
+            "--checkpoint",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_spike_gru/epoch_011/trained.pth",
+            "--seed",
+            "303",
+            "--workers",
+            "4",
+            "--history-policy",
+            "reset",
+            "--output",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/replay_spike_gru/reset"
+          ],
+          "no-align": [
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-m",
+            "opencood.tools.run_int_ego",
+            "--eval-only",
+            "--mode",
+            "spike_gru",
+            "--config",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/config.yaml",
+            "--data",
+            "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+            "--manifest",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/sequence_manifest.json",
+            "--checkpoint",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_spike_gru/epoch_011/trained.pth",
+            "--seed",
+            "303",
+            "--workers",
+            "4",
+            "--history-policy",
+            "no-align",
+            "--output",
+            "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/replay_spike_gru/no-align"
+          ]
+        },
+        "code_commit": "23009108404ff0b46a4e85b93f9bf0b5d9c9788c"
+      }
+    }
+  },
+  "training_audit": "PASSED",
+  "spike_gru_minus_gru_ap70_pp": 0.11363064430559566
+}

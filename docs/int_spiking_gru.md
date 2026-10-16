@@ -5,7 +5,7 @@
 - 任务：2026-10-15 用户要求构造与当前 GRU 架构、参数量匹配的 SNN 记忆模块。
 - 范围：实现 `spike_gru`，通过两轮工程验收后开展配对全量训练；尚无精度改善结论。
 - 数据：既有 DAIR 自车完整片段；与第一轮相同的冻结清单及 P1 初始化，无异步融合。
-- 状态：181 上 27 项测试、配对两轮试跑及精确断点恢复检查通过，GRU/spike_gru 正式训练已启动。当前执行信息以文末“181 正式训练”节为准。
+- 状态：181 上 GRU/spike_gru 正式训练分别在 27/21 轮达到预设平台期；训练完成审计通过，最佳权重历史消融回放进行中。当前执行信息以文末最新记录为准。
 
 ## 匹配范围
 
@@ -78,3 +78,16 @@ logs: <root>/full_gru.log, <root>/full_spike_gru.log
 启动与审计原始证据存于 [spiking_gru_20261016](int_spike_results/spiking_gru_20261016/launch_full_gru_spike_gru.json)，同目录含 engineering_gate、relocation_audit、dataset_symlink_repair 和 pilot 启动记录。配置仅重定位数据路径；实际执行参数与无异步声明见两组输出下的 `effective_runtime.json`。
 
 后续每 60 分钟检查这两个输出的活动进程、日志、failure/result/curve 和磁盘；启动时 `/data1` 剩余约 28 GiB，训练器在每轮开始前检查 5 GiB 下限。不要重复启动。仅在进程中断且未达平台期时，使用原环境运行 `opencood.tools.resume_int_memory --root <root> --launch-record launch_full_gru_spike_gru.json`，先查明中断原因并确认 GPU 空闲。两组完成后对最佳权重做 aligned/reset/no-align 冻结回放；严格比较本轮配对 GRU，旧结果保留为历史参照。只在完成或异常时通知。
+
+## 2026-10-16 22:35 训练完成与消融接续
+
+两组正常结束，无 failure 文件，均满足至少 20 轮、连续 10 轮无显著改善、学习率不高于初始值 1/8 的停止规则。核验 latest.pth 中的 epoch/stale/学习率与结果记录相符，最佳权重哈希正确；48 个 epoch 的训练和验证覆盖全部符合冻结清单，loss/AP 均有限。除 mode 外两组训练契约完全一致。证据：[training_completion.json](int_spike_results/spiking_gru_20261016/training_completion.json)。
+
+| 模型 | 完成 epoch | 最佳 epoch | 最佳验证 BEV AP70 | 最终学习率 |
+|---|---:|---:|---:|---:|
+| GRU | 27 | 17 | 75.8736% | 3.125e-6 |
+| spike_gru | 21 | 11 | 75.9872% | 6.25e-6 |
+
+脉冲 GRU 比配对 GRU 高 0.1136 个百分点。这是单 seed、验证集选择最佳权重的结果，不足以证明稳定或统计显著优势。两者最后一轮 AP 均低于最佳轮，应使用冻结的最佳权重进行后续比较。
+
+已在 GPU 0/1 分别启动 `replay_gru`（worker PID 4599）和 `replay_spike_gru`（worker PID 4608），顺序执行 aligned/reset/no-align，每项完整覆盖 5,794 扫描与 1,738 标注。下一次跟进检查这两个目录的 `status.json`、`process.json` 和各策略日志；不得重新训练或重复创建回放目录。回放器要求 aligned AP 与训练最佳轮相差不超过 1e-6，并验证权重哈希和逐帧顺序。待两组回放全部完成，再用 `summarize_int_memory --modes gru spike_gru` 生成配对报告；本次尚无清空历史或不对齐结果。磁盘约剩 20.76 GiB，定时任务继续有效。
