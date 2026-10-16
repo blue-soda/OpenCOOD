@@ -31,9 +31,10 @@ def main():
                   modes={}, limitations=[
                       'No independent test split or multi-seed uncertainty estimate.',
                       'Reset/no-align are fixed-weight inference interventions, not retrained models.',
-                      'LIF/leaky have equal parameters and state width; GRU differs in architecture and parameter count.',
                       'Diagnostic timings on separate GPUs are not a controlled latency/energy benchmark.',
-                      'The leaky control jointly removes binary quantization and reset; their effects are not separated.'])
+                      'Inference interventions do not replace retrained controls.'])
+    if 'lif' in args.modes and 'leaky' in args.modes:
+        report['limitations'].append('LIF/leaky match each other in parameters/cache; leaky jointly removes quantization and reset. GRU has a different budget.')
     curves = {}
     for mode in args.modes:
         train, replay = root/('full_'+mode), root/('replay_'+mode)
