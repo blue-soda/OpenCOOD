@@ -47,3 +47,14 @@ GRU 历史回放完成。spike_gru 首次 aligned 回放与训练最佳轮 AP �
 4. 已从原始 P1 启动 **delta_gru 正式训练**，181 GPU 2，初始 PID 17813，根目录如上，启动记录 `launch_full_delta_gru.json`，输出 `full_delta_gru`，日志 `full_delta_gru.log`。已确认首轮至少 384 帧、78 次更新，loss 有限。未重复训练完整 GRU。记录见 [delta_gru_20261016](int_spike_results/delta_gru_20261016/launch_full_delta_gru.json)。
 
 每小时任务现在同时跟进：旧根目录的 `replay_spike_gru/status.json`，以及新根目录的 `full_delta_gru/{result,curve,failure}.json`、日志、GPU 和磁盘。旧回放完成后运行 `summarize_int_memory --root <旧根目录> --modes gru spike_gru --output <旧根目录>/paired_report` 并归档报告。delta_gru 中断时先检查原因、进程及空闲 GPU，再使用 `resume_int_memory --root <新根目录> --launch-record launch_full_delta_gru.json`；达到平台期后对最佳权重做完整 aligned/reset/no-align 回放及同卡 profile，再判断是否值得实现块级稀疏执行。暂不承诺实际加速，不进行多种子扩张。仅完成或异常通知。
+
+最新接续：用户授权根据实测耗时将检查间隔缩至一小时以内。delta_gru 首轮训练 560.47 秒、验证 369.27 秒，合计约 15.5 分钟，当前进入第 2 轮；任务已改为每 **30 分钟**检查（后续可按剩余事件耗时调整），继续仅完成或异常通知。上段每小时设置由此替代。
+
+旧 GRU/spike_gru 的六项回放现已全部完成且通过 `summarize_int_memory` 审计，报告见 [paired_report/report.json](int_spike_results/spiking_gru_20261016/paired_report/report.json)。不再重复启动旧回放，主要跟进 delta_gru 训练。
+
+| 模型 | 对齐 AP70 | 清空历史 AP70 | 不对齐 AP70 |
+|---|---:|---:|---:|
+| GRU | 75.8736% | 74.3535% | 71.4649% |
+| spike_gru | 75.9872% | 74.2929% | 71.5460% |
+
+脉冲 GRU 的对齐历史收益约 +1.6944 个百分点，GRU 为 +1.5201 个百分点；本阶段支持继续研究脉冲记忆和创新更新，不需要先追加多种子精密消融。

@@ -1,0 +1,416 @@
+{
+  "status": "AUDITED",
+  "scope": "Single-seed validation-selected stage 1; BEV AP, not 3D AP",
+  "modes": {
+    "gru": {
+      "epochs": 27,
+      "best": {
+        "bev_ap70": 0.758736104616861,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+        "epoch": 17,
+        "sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8"
+      },
+      "replay": {
+        "aligned": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [
+            {
+              "frame": "011181",
+              "noalign_psm_l1": 0.47299888730049133,
+              "reset_psm_l1": 0.40709254145622253,
+              "reset_rm_l1": 0.05477234348654747
+            },
+            {
+              "frame": "011194",
+              "noalign_psm_l1": 0.3114781975746155,
+              "reset_psm_l1": 0.45098963379859924,
+              "reset_rm_l1": 0.053240228444337845
+            },
+            {
+              "frame": "011203",
+              "noalign_psm_l1": 0.249488964676857,
+              "reset_psm_l1": 0.4050164818763733,
+              "reset_rm_l1": 0.05117320269346237
+            },
+            {
+              "frame": "011226",
+              "noalign_psm_l1": 0.24901090562343597,
+              "reset_psm_l1": 0.34924161434173584,
+              "reset_rm_l1": 0.04853895306587219
+            },
+            {
+              "frame": "011235",
+              "noalign_psm_l1": 0.20931686460971832,
+              "reset_psm_l1": 0.3757060468196869,
+              "reset_rm_l1": 0.05234116315841675
+            },
+            {
+              "frame": "011242",
+              "noalign_psm_l1": 0.2157757729291916,
+              "reset_psm_l1": 0.37130624055862427,
+              "reset_rm_l1": 0.055053289979696274
+            },
+            {
+              "frame": "011244",
+              "noalign_psm_l1": 0.25935307145118713,
+              "reset_psm_l1": 0.3656710684299469,
+              "reset_rm_l1": 0.047287262976169586
+            },
+            {
+              "frame": "011246",
+              "noalign_psm_l1": 0.266586571931839,
+              "reset_psm_l1": 0.3439331650733948,
+              "reset_rm_l1": 0.04720373824238777
+            },
+            {
+              "frame": "011255",
+              "noalign_psm_l1": 0.25460126996040344,
+              "reset_psm_l1": 0.37970274686813354,
+              "reset_rm_l1": 0.053218990564346313
+            },
+            {
+              "frame": "010801",
+              "noalign_psm_l1": 0.1745954304933548,
+              "reset_psm_l1": 0.20499511063098907,
+              "reset_rm_l1": 0.03146127611398697
+            },
+            {
+              "frame": "010802",
+              "noalign_psm_l1": 0.18578746914863586,
+              "reset_psm_l1": 0.24149587750434875,
+              "reset_rm_l1": 0.038972947746515274
+            },
+            {
+              "frame": "010803",
+              "noalign_psm_l1": 0.19127815961837769,
+              "reset_psm_l1": 0.2754323184490204,
+              "reset_rm_l1": 0.043816231191158295
+            },
+            {
+              "frame": "010804",
+              "noalign_psm_l1": 0.2041383683681488,
+              "reset_psm_l1": 0.31074321269989014,
+              "reset_rm_l1": 0.04789792001247406
+            },
+            {
+              "frame": "010805",
+              "noalign_psm_l1": 0.1995467245578766,
+              "reset_psm_l1": 0.30813756585121155,
+              "reset_rm_l1": 0.04778100922703743
+            },
+            {
+              "frame": "010806",
+              "noalign_psm_l1": 0.19829420745372772,
+              "reset_psm_l1": 0.3269677460193634,
+              "reset_rm_l1": 0.05022617056965828
+            },
+            {
+              "frame": "010807",
+              "noalign_psm_l1": 0.19510678946971893,
+              "reset_psm_l1": 0.3234919011592865,
+              "reset_rm_l1": 0.04589688032865524
+            }
+          ],
+          "history_policy": "aligned",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.8536119557067119,
+            "bev_ap50": 0.8380868051188295,
+            "bev_ap70": 0.758736118872035
+          },
+          "model_step_ms_p50": 23.1023405212909,
+          "model_step_ms_p95": 24.577625549864024,
+          "peak_allocated_bytes": 462854656,
+          "predicted_boxes": 24920,
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "scans": 5794,
+          "seconds": 285.2536894399673,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "reset": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [],
+          "history_policy": "reset",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.837614246573464,
+            "bev_ap50": 0.8202063905986734,
+            "bev_ap70": 0.7435351079264746
+          },
+          "model_step_ms_p50": 22.24482607562095,
+          "model_step_ms_p95": 23.447355488315225,
+          "peak_allocated_bytes": 446350848,
+          "predicted_boxes": 26406,
+          "resets": {
+            "explicit": 5794
+          },
+          "scans": 5794,
+          "seconds": 277.3277413949836,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "no-align": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [],
+          "history_policy": "no-align",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.8108615546433866,
+            "bev_ap50": 0.7932442039049981,
+            "bev_ap70": 0.7146492673393349
+          },
+          "model_step_ms_p50": 22.309772088192403,
+          "model_step_ms_p95": 23.42132917838171,
+          "peak_allocated_bytes": 446350848,
+          "predicted_boxes": 26489,
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "scans": 5794,
+          "seconds": 275.14201900805347,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        }
+      },
+      "audits": {
+        "aligned": {
+          "warp_frames": 5580,
+          "reset_frames": 214,
+          "frames": 5794
+        },
+        "reset": {
+          "warp_frames": 0,
+          "reset_frames": 5794,
+          "frames": 5794
+        },
+        "no-align": {
+          "warp_frames": 0,
+          "reset_frames": 214,
+          "frames": 5794
+        }
+      },
+      "max_replay_ap_error": 1.425517393016662e-08,
+      "aligned_minus_reset_pp": 1.5201010945560367,
+      "aligned_minus_noalign_pp": 4.408685153270008
+    },
+    "spike_gru": {
+      "epochs": 21,
+      "best": {
+        "bev_ap70": 0.759872411059917,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_spike_gru/epoch_011/trained.pth",
+        "epoch": 11,
+        "sha256": "bcc8bc9339a573ac2453cfb0c84b269878f0bf5ce24749d024f75e0c7085394e"
+      },
+      "replay": {
+        "aligned": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [
+            {
+              "frame": "011181",
+              "noalign_psm_l1": 0.19280989468097687,
+              "reset_psm_l1": 0.21567538380622864,
+              "reset_rm_l1": 0.03595966473221779
+            },
+            {
+              "frame": "011194",
+              "noalign_psm_l1": 0.1938963234424591,
+              "reset_psm_l1": 0.23305729031562805,
+              "reset_rm_l1": 0.03952455520629883
+            },
+            {
+              "frame": "011203",
+              "noalign_psm_l1": 0.1781475692987442,
+              "reset_psm_l1": 0.21316055953502655,
+              "reset_rm_l1": 0.0375983752310276
+            },
+            {
+              "frame": "011226",
+              "noalign_psm_l1": 0.1682373732328415,
+              "reset_psm_l1": 0.2067137062549591,
+              "reset_rm_l1": 0.03679695352911949
+            },
+            {
+              "frame": "011235",
+              "noalign_psm_l1": 0.1532803177833557,
+              "reset_psm_l1": 0.20005203783512115,
+              "reset_rm_l1": 0.03889519348740578
+            },
+            {
+              "frame": "011242",
+              "noalign_psm_l1": 0.14921200275421143,
+              "reset_psm_l1": 0.19310414791107178,
+              "reset_rm_l1": 0.03705243021249771
+            },
+            {
+              "frame": "011244",
+              "noalign_psm_l1": 0.17381948232650757,
+              "reset_psm_l1": 0.1932842880487442,
+              "reset_rm_l1": 0.037058405578136444
+            },
+            {
+              "frame": "011246",
+              "noalign_psm_l1": 0.17905476689338684,
+              "reset_psm_l1": 0.19335158169269562,
+              "reset_rm_l1": 0.03772740438580513
+            },
+            {
+              "frame": "011255",
+              "noalign_psm_l1": 0.172748863697052,
+              "reset_psm_l1": 0.21986199915409088,
+              "reset_rm_l1": 0.04313341900706291
+            },
+            {
+              "frame": "010801",
+              "noalign_psm_l1": 0.12001774460077286,
+              "reset_psm_l1": 0.13300861418247223,
+              "reset_rm_l1": 0.025893094018101692
+            },
+            {
+              "frame": "010802",
+              "noalign_psm_l1": 0.12973831593990326,
+              "reset_psm_l1": 0.14093440771102905,
+              "reset_rm_l1": 0.02770244888961315
+            },
+            {
+              "frame": "010803",
+              "noalign_psm_l1": 0.13178622722625732,
+              "reset_psm_l1": 0.15464644134044647,
+              "reset_rm_l1": 0.031095581129193306
+            },
+            {
+              "frame": "010804",
+              "noalign_psm_l1": 0.14321812987327576,
+              "reset_psm_l1": 0.17332039773464203,
+              "reset_rm_l1": 0.03252058103680611
+            },
+            {
+              "frame": "010805",
+              "noalign_psm_l1": 0.14171847701072693,
+              "reset_psm_l1": 0.16698063910007477,
+              "reset_rm_l1": 0.03301265090703964
+            },
+            {
+              "frame": "010806",
+              "noalign_psm_l1": 0.13695400953292847,
+              "reset_psm_l1": 0.17677202820777893,
+              "reset_rm_l1": 0.03359846770763397
+            },
+            {
+              "frame": "010807",
+              "noalign_psm_l1": 0.13859055936336517,
+              "reset_psm_l1": 0.17130804061889648,
+              "reset_rm_l1": 0.03145353123545647
+            }
+          ],
+          "history_policy": "aligned",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.8586813223474896,
+            "bev_ap50": 0.8404365973398011,
+            "bev_ap70": 0.759872411059917
+          },
+          "model_step_ms_p50": 34.04041600879282,
+          "model_step_ms_p95": 36.19160752277821,
+          "peak_allocated_bytes": 522728960,
+          "predicted_boxes": 24954,
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "scans": 5794,
+          "seconds": 333.4097974949982,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "reset": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [],
+          "history_policy": "reset",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.8420952750264239,
+            "bev_ap50": 0.8229326766891601,
+            "bev_ap70": 0.7429285452999683
+          },
+          "model_step_ms_p50": 33.5675390670076,
+          "model_step_ms_p95": 35.652941127773374,
+          "peak_allocated_bytes": 506609664,
+          "predicted_boxes": 25267,
+          "resets": {
+            "explicit": 5794
+          },
+          "scans": 5794,
+          "seconds": 339.42951167793944,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "no-align": {
+          "gt_boxes": 22971,
+          "history_diagnostics": [],
+          "history_policy": "no-align",
+          "labels": 1738,
+          "metrics": {
+            "bev_ap30": 0.8155798999059168,
+            "bev_ap50": 0.7962745329548162,
+            "bev_ap70": 0.7154599727502431
+          },
+          "model_step_ms_p50": 33.69724948424846,
+          "model_step_ms_p95": 35.608404816593975,
+          "peak_allocated_bytes": 506609664,
+          "predicted_boxes": 25138,
+          "resets": {
+            "initial": 1,
+            "scene": 213
+          },
+          "scans": 5794,
+          "seconds": 334.05653142090887,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        }
+      },
+      "audits": {
+        "aligned": {
+          "warp_frames": 5580,
+          "reset_frames": 214,
+          "frames": 5794,
+          "emission_nonzero_mean": 0.2263363886664438,
+          "emission_on_observed_mean": 0.7858098677356543
+        },
+        "reset": {
+          "warp_frames": 0,
+          "reset_frames": 5794,
+          "frames": 5794,
+          "emission_nonzero_mean": 0.17393061723386496,
+          "emission_on_observed_mean": 0.7299466512714412
+        },
+        "no-align": {
+          "warp_frames": 0,
+          "reset_frames": 214,
+          "frames": 5794,
+          "emission_nonzero_mean": 0.2387889827484915,
+          "emission_on_observed_mean": 0.7837724789341982
+        }
+      },
+      "max_replay_ap_error": 0.0,
+      "aligned_minus_reset_pp": 1.6943865759948662,
+      "aligned_minus_noalign_pp": 4.441243830967389
+    }
+  },
+  "limitations": [
+    "No independent test split or multi-seed uncertainty estimate.",
+    "Reset/no-align are fixed-weight inference interventions, not retrained models.",
+    "Diagnostic timings on separate GPUs are not a controlled latency/energy benchmark.",
+    "Inference interventions do not replace retrained controls.",
+    "Spiking GRU matches GRU parameters/cache; gates and detector remain analog, threshold/reset change the computation."
+  ],
+  "comparisons_pp": {
+    "spike_gru_minus_gru_aligned": 0.11362921878820265,
+    "spike_gru_minus_gru_reset": -0.060656262650626847,
+    "spike_gru_minus_gru_no-align": 0.0810705410908219
+  }
+}
