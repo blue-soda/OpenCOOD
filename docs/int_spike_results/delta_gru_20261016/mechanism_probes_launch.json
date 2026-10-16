@@ -1,0 +1,96 @@
+{
+  "scope": "Frozen best weights, aligned full stream; inference interventions, not trained variants",
+  "parent_contract": {
+    "config_sha256": "02fceae7a7ec39cfc16b80c962e68a40ae0efd0feebe8a439d24aa6c2ea78426",
+    "fm_only_epochs": 1,
+    "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+    "lr": 0.0001,
+    "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+    "min_delta": 0.001,
+    "min_epochs": 20,
+    "mode": "delta_gru",
+    "patience": 10,
+    "seed": 303,
+    "state_policy": "whole-segment/tbptt/v1",
+    "tbptt_steps": 4
+  },
+  "checkpoint": {
+    "bev_ap70": 0.7326051558623887,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/full_delta_gru/epoch_020/trained.pth",
+    "epoch": 20,
+    "sha256": "4dfe23a71090fdb14ab280329af7883e3843c9c1808d109c4284f8fd0bd37c38"
+  },
+  "created_unix": 1792193652.3005097,
+  "gpu_snapshot": "0, 24252, 0\n1, 24252, 0\n2, 24252, 0\n3, 24252, 0\n4, 19954, 53\n5, 19956, 57\n6, 20432, 50\n7, 20432, 37\n",
+  "code_commit": "492c99b529421a201b2d058d2f0a628e7015fe49",
+  "jobs": [
+    {
+      "name": "instant_residual",
+      "overrides": {
+        "residual_policy": "instant"
+      },
+      "gpu": 0,
+      "pid": 13309,
+      "config_sha256": "268fac717d46142aeddf16ce90bf7d9db18e23539fe7cccb2f706ac740056bad",
+      "output": "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/instant_residual/eval",
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-m",
+        "opencood.tools.run_int_ego",
+        "--eval-only",
+        "--mode",
+        "delta_gru",
+        "--config",
+        "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/instant_residual/config.yaml",
+        "--data",
+        "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+        "--manifest",
+        "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/inputs/sequence_manifest.json",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/full_delta_gru/epoch_020/trained.pth",
+        "--seed",
+        "303",
+        "--workers",
+        "4",
+        "--history-policy",
+        "aligned",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/instant_residual/eval"
+      ]
+    },
+    {
+      "name": "dense_readout",
+      "overrides": {
+        "readout_policy": "dense"
+      },
+      "gpu": 1,
+      "pid": 13310,
+      "config_sha256": "8cba287eae1b069f5e2a9e8888d39e68b7ce78cf25b649c0b8b9f06d8d836dcc",
+      "output": "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/dense_readout/eval",
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-m",
+        "opencood.tools.run_int_ego",
+        "--eval-only",
+        "--mode",
+        "delta_gru",
+        "--config",
+        "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/dense_readout/config.yaml",
+        "--data",
+        "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+        "--manifest",
+        "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/inputs/sequence_manifest.json",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/full_delta_gru/epoch_020/trained.pth",
+        "--seed",
+        "303",
+        "--workers",
+        "4",
+        "--history-policy",
+        "aligned",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/int_delta_gru_20261016/mechanism_probes/dense_readout/eval"
+      ]
+    }
+  ]
+}

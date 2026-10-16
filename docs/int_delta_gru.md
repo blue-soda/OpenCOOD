@@ -70,3 +70,22 @@ delta_gru 在第 26 轮达到平台期，最佳第 20 轮 AP70 **73.2605%**，�
 已启动最佳权重 `replay_delta_gru` 的 aligned/reset/no-align 完整回放（GPU 2，初始 worker PID 6900），并在 GPU 0 对同一固定 256 帧运行 `profile_int_memory --modes delta_gru`。每 20 分钟跟进这两个后处理事件，替代训练期 30 分钟间隔；仅完成或异常通知。回放结束后运行 `summarize_int_memory --root /data1/tzm/workspace/diagnostics/int_delta_gru_20261016 --modes delta_gru --output /data1/tzm/workspace/diagnostics/int_delta_gru_20261016/final_report`，归档报告后再决定最小机制改动。
 
 256 帧 profile 已完成：模型墙钟中位数 39.74 ms，FM 均值 9.02 ms，backbone 均值 21.81 ms，shrink 4.87 ms；该样本读出刷新位置 66.25%、8×8 刷新块 82.27%。证据：[profile_256.json](int_spike_results/delta_gru_20261016/profile_256.json)。此次依然是含插桩的稠密参考实现，不将不同时段的 profile 差值解释为受控加速对比。后续只需继续检查历史回放，无需重跑 profile。
+
+## 2026-10-17 完整历史回放完成，进入固定权重机制诊断
+
+三项回放全部通过逐帧顺序、覆盖、权重哈希及 aligned AP 一致性检查，报告为 [final_report/report.json](int_spike_results/delta_gru_20261016/final_report/report.json)。
+
+| 模型 | 对齐 AP70 | 清空历史 AP70 | 不对齐 AP70 | 对齐历史收益 |
+|---|---:|---:|---:|---:|
+| GRU | 75.8736% | 74.3535% | 71.4649% | +1.5201 pp |
+| spike_gru | 75.9872% | 74.2929% | 71.5460% | +1.6944 pp |
+| delta_gru | 73.2605% | 72.7762% | 57.4270% | +0.4843 pp |
+
+delta_gru 的历史收益明显较小且不对齐下降更大。这里 reset 同时改变膜、证据和读出缓存，不能将差异单独归因于一种状态。为选择下一版机制，已在固定第 20 轮最佳权重上启动两项完整验证干预，不重新训练：
+
+- `instant_residual`：只将 V=U+(H-R) 改为 V=H-R，不再把先前误差重复积分；仍保存相同状态结构并执行脉冲更新与缓存读出。
+- `dense_readout`：保持原误差积累和证据更新，每帧读取完整 post_fusion 输出，关闭 Y 的跨帧复用。
+
+原默认行为保持不变，35 项 INT 语义/回归测试通过。两项不是重新训练的候选模型，AP 变化只能提供机制敏感性线索，不作为新模型能力结论。启动代码 `492c99b`，记录 [mechanism_probes_launch.json](int_spike_results/delta_gru_20261016/mechanism_probes_launch.json)。服务器根目录下 `mechanism_probes/{instant_residual,dense_readout}`，GPU 0/1，初始 PID 13309/13310，分别查看 `run.log`、`eval/result.json`、`eval/manifest.json`、`eval/eval_frames.jsonl`。完成后核验同一权重哈希与 5,794 扫描/1,738 标注/22,971 GT、顺序和配置干预，再比较 AP、残差最大值及刷新比例。
+
+完整训练与历史消融已收尾，后续只跟进这两项机制诊断；每项预计约 6 分钟，检查间隔改为 **10 分钟**，替代前述 20 分钟。仅完成或异常通知；不重复训练已达平台期的旧模型，也暂不投入稀疏算子实现。
