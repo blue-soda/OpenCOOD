@@ -1,0 +1,270 @@
+{
+  "captured_unix": 1792131383.5823722,
+  "root": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181",
+  "models": {
+    "count4": {
+      "evaluation.json": {
+        "sha256": "c54e8c889a6e1cae2d488421e9363bc69aca5a03ab24fda12da2d1e6d3586ba8",
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_road_disabled/evaluation.json",
+        "content": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 25959,
+          "gt_boxes": 28622,
+          "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.6913525238313887,
+            "0.5": 0.6540979177391424,
+            "0.7": 0.5263238381520429
+          },
+          "ap_3d": {
+            "0.3": 0.6794162353861818,
+            "0.5": 0.6073515010935662,
+            "0.7": 0.3146301529969285
+          },
+          "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+          "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+          "predictions": {
+            "directory": "predictions",
+            "frames": 1738,
+            "index_sha256": "89fc4aad71e8c9a3b8c15d5ea4f37f7a232d60ae5b991d4e2709b6e2ce535cae"
+          }
+        }
+      },
+      "offline_replay.json": {
+        "sha256": "6caa899defb1f380f3e85b7f33827b5161b297a6fddaab006d36ee3171abe51a",
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_road_disabled/offline_replay.json",
+        "content": {
+          "passed": true,
+          "samples": 1738,
+          "predicted_boxes": 25959,
+          "gt_boxes": 28622,
+          "ap": {
+            "0.3": 0.6913525238313887,
+            "0.5": 0.6540979177391424,
+            "0.7": 0.5263238381520429
+          },
+          "exact_match": true,
+          "all_file_hashes_verified": true,
+          "ap_3d": {
+            "0.3": 0.6794162353861818,
+            "0.5": 0.6073515010935662,
+            "0.7": 0.3146301529969285
+          }
+        }
+      },
+      "config.yaml": {
+        "sha256": "c6c05ec7c1f64d6f1c16e8754f5ef35aebb9cb8c2bb96142ea67e28ee8180da3",
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_road_disabled/config.yaml"
+      },
+      "index.json": {
+        "sha256": "89fc4aad71e8c9a3b8c15d5ea4f37f7a232d60ae5b991d4e2709b6e2ce535cae",
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_road_disabled/predictions/index.json"
+      },
+      "manifest_1792130972.json": {
+        "sha256": "ba52156f957d97a07df6c18fc9e9d49b3101d3bb337688b7c1626af45c21a259",
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_road_disabled/manifest_1792130972.json",
+        "content": {
+          "git_commit": "bfa6d4907b829ef54a16d426e59631457866939b",
+          "arguments": {
+            "mode": "eval",
+            "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego_181.yaml",
+            "output": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_road_disabled",
+            "seed": 20260929,
+            "workers": 2,
+            "steps": 200,
+            "sample_index": 0,
+            "epochs": 0,
+            "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/count4_fusion.pth",
+            "single_checkpoint": null,
+            "warmup_epochs": 0,
+            "packet_roundtrip": false,
+            "eval_3d": true,
+            "save_predictions": true,
+            "profile": false,
+            "selection_iou": "0.5",
+            "resume": false
+          },
+          "config_sha256": "c6c05ec7c1f64d6f1c16e8754f5ef35aebb9cb8c2bb96142ea67e28ee8180da3",
+          "split_sha256": {
+            "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+            "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+          },
+          "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+          "torch": "1.10.0+cu113",
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "gpu_visible": "6",
+          "parameters": 3094997,
+          "architecture": "e3dsnn_fusion",
+          "activation": "count4",
+          "checkpoint_sha256": "15a33c2b8c58b066b54c6616c1ea7db5ed8dcdd699b70b328bda6f3932087f5d",
+          "train_samples": 4678,
+          "val_samples": 1738,
+          "single_checkpoint_sha256": null,
+          "protocol": "paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay"
+        }
+      },
+      "pipeline": {
+        "state": "running",
+        "job": "count4_ego30_train",
+        "child_pid": 62613,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego_181.yaml",
+          "--mode",
+          "train",
+          "--single-checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/snn_single.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/count4_ego30",
+          "--epochs",
+          "30",
+          "--selection-iou",
+          "0.7"
+        ],
+        "supervisor_pid": 60697,
+        "updated_unix": 1792131239.8094735
+      },
+      "latest_training_log": "{\"state\": \"training\", \"epoch\": 1, \"epochs\": 30, \"batch\": 701, \"batches\": 2339, \"loss\": 0.7028247863799901, \"gradient_norm\": 3.0129175186157227, \"elapsed_seconds\": 127.0540715410607}"
+    },
+    "relu": {
+      "evaluation.json": {
+        "sha256": "450803c8116ef532216a260d16653596de354a374ebbd0d97a6101919e1d7288",
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_road_disabled/evaluation.json",
+        "content": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 26721,
+          "gt_boxes": 28622,
+          "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.7005088502795448,
+            "0.5": 0.6628035386681008,
+            "0.7": 0.5599275280035749
+          },
+          "ap_3d": {
+            "0.3": 0.6888264942942767,
+            "0.5": 0.6198375001539528,
+            "0.7": 0.40054786983113977
+          },
+          "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+          "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+          "predictions": {
+            "directory": "predictions",
+            "frames": 1738,
+            "index_sha256": "b68029ebcdbd4a98edda9e8f0c6188b32ddd74e1815ddd4d247a91d5375ca90a"
+          }
+        }
+      },
+      "offline_replay.json": {
+        "sha256": "6e5f2a403edf6a90a9fb9eedc45e4211bb007dccb775098d7cbe52bb63ca2c73",
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_road_disabled/offline_replay.json",
+        "content": {
+          "passed": true,
+          "samples": 1738,
+          "predicted_boxes": 26721,
+          "gt_boxes": 28622,
+          "ap": {
+            "0.3": 0.7005088502795448,
+            "0.5": 0.6628035386681008,
+            "0.7": 0.5599275280035749
+          },
+          "exact_match": true,
+          "all_file_hashes_verified": true,
+          "ap_3d": {
+            "0.3": 0.6888264942942767,
+            "0.5": 0.6198375001539528,
+            "0.7": 0.40054786983113977
+          }
+        }
+      },
+      "config.yaml": {
+        "sha256": "a265acc27dee14a0067da92d831553f3b29f756f2f92c27d25302d51a8624cc5",
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_road_disabled/config.yaml"
+      },
+      "index.json": {
+        "sha256": "b68029ebcdbd4a98edda9e8f0c6188b32ddd74e1815ddd4d247a91d5375ca90a",
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_road_disabled/predictions/index.json"
+      },
+      "manifest_1792130971.json": {
+        "sha256": "429f0b040613f1b080ae7ec974fb2d9cc47f56a3155bce6d5b8b83bd21c8438c",
+        "path": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_road_disabled/manifest_1792130971.json",
+        "content": {
+          "git_commit": "bfa6d4907b829ef54a16d426e59631457866939b",
+          "arguments": {
+            "mode": "eval",
+            "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_relu_ego_181.yaml",
+            "output": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_road_disabled",
+            "seed": 20260929,
+            "workers": 2,
+            "steps": 200,
+            "sample_index": 0,
+            "epochs": 0,
+            "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/relu_fusion.pth",
+            "single_checkpoint": null,
+            "warmup_epochs": 0,
+            "packet_roundtrip": false,
+            "eval_3d": true,
+            "save_predictions": true,
+            "profile": false,
+            "selection_iou": "0.5",
+            "resume": false
+          },
+          "config_sha256": "a265acc27dee14a0067da92d831553f3b29f756f2f92c27d25302d51a8624cc5",
+          "split_sha256": {
+            "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+            "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+          },
+          "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+          "torch": "1.10.0+cu113",
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "gpu_visible": "7",
+          "parameters": 3094997,
+          "architecture": "e3dsnn_fusion",
+          "activation": "relu",
+          "checkpoint_sha256": "6d628fc7818ee90406ea051e8c62a288e5683356a6769d8b003484040bcaff52",
+          "train_samples": 4678,
+          "val_samples": 1738,
+          "single_checkpoint_sha256": null,
+          "protocol": "paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay"
+        }
+      },
+      "pipeline": {
+        "state": "running",
+        "job": "relu_ego30_train",
+        "child_pid": 62606,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_relu_ego_181.yaml",
+          "--mode",
+          "train",
+          "--single-checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/ann_single.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/relu_ego30",
+          "--epochs",
+          "30",
+          "--selection-iou",
+          "0.7"
+        ],
+        "supervisor_pid": 60706,
+        "updated_unix": 1792131237.6031542
+      },
+      "latest_training_log": "{\"state\": \"training\", \"epoch\": 1, \"epochs\": 30, \"batch\": 751, \"batches\": 2339, \"loss\": 0.626368463369655, \"gradient_norm\": 2.93402099609375, \"elapsed_seconds\": 125.04252667899709}"
+    }
+  }
+}
