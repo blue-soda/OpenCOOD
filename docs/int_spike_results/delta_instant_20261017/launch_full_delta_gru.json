@@ -1,0 +1,51 @@
+{
+  "stage": "full",
+  "created_unix": 1792194493.6574728,
+  "parent_manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+  "config_sha256": "91cf9670b3c57dd52c0d7b9edfc7894b2ca9769aad53c0253389f216033f0aba",
+  "checkpoint_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+  "commit": "fa55f17375c1eeef7d1b1896668df0078af22ed8",
+  "gpu_snapshot": "0, 24252, 0\n1, 24252, 0\n2, 24252, 0\n3, 24252, 0\n4, 19954, 19\n5, 19956, 12\n6, 20432, 22\n7, 20432, 16\n",
+  "jobs": [
+    {
+      "mode": "delta_gru",
+      "gpu": 0,
+      "pid": 21490,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-m",
+        "opencood.tools.run_int_epochs",
+        "--manifest",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/inputs/sequence_manifest.json",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/source/net_epoch_bestval_at57.pth",
+        "--config",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/inputs/config.yaml",
+        "--tbptt-steps",
+        "4",
+        "--seed",
+        "303",
+        "--workers",
+        "4",
+        "--lr",
+        "0.0001",
+        "--max-epochs",
+        "40",
+        "--min-epochs",
+        "20",
+        "--patience",
+        "10",
+        "--min-delta",
+        "0.001",
+        "--mode",
+        "delta_gru",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/full_delta_gru",
+        "--fm-only-epochs",
+        "1"
+      ],
+      "output": "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/full_delta_gru",
+      "log": "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/full_delta_gru.log"
+    }
+  ]
+}

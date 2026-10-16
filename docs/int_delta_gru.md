@@ -89,3 +89,23 @@ delta_gru 的历史收益明显较小且不对齐下降更大。这里 reset 同
 原默认行为保持不变，35 项 INT 语义/回归测试通过。两项不是重新训练的候选模型，AP 变化只能提供机制敏感性线索，不作为新模型能力结论。启动代码 `492c99b`，记录 [mechanism_probes_launch.json](int_spike_results/delta_gru_20261016/mechanism_probes_launch.json)。服务器根目录下 `mechanism_probes/{instant_residual,dense_readout}`，GPU 0/1，初始 PID 13309/13310，分别查看 `run.log`、`eval/result.json`、`eval/manifest.json`、`eval/eval_frames.jsonl`。完成后核验同一权重哈希与 5,794 扫描/1,738 标注/22,971 GT、顺序和配置干预，再比较 AP、残差最大值及刷新比例。
 
 完整训练与历史消融已收尾，后续只跟进这两项机制诊断；每项预计约 6 分钟，检查间隔改为 **10 分钟**，替代前述 20 分钟。仅完成或异常通知；不重复训练已达平台期的旧模型，也暂不投入稀疏算子实现。
+
+## 2026-10-17 机制诊断完成，选择即时状态差原型
+
+两项固定权重诊断均已完成，对相同最佳权重、清单、逐帧顺序、5,794 扫描/1,738 标注/22,971 GT 和实际策略配置的检查通过。证据：[mechanism_probes_report.json](int_spike_results/delta_gru_20261016/mechanism_probes_report.json)。
+
+| 固定权重策略 | AP70 | 相对原策略 | 读出刷新位置 | 8×8 刷新块 | 最大残差绝对值 |
+|---|---:|---:|---:|---:|---:|
+| 原误差积累＋缓存读出 | 73.2605% | — | 67.05% | 82.23% | 17.1564 |
+| 即时状态差＋缓存读出 | 74.1284% | +0.8679 pp | 55.66% | 75.54% | 1.7500 |
+| 原误差积累＋完整读出 | 73.2230% | -0.0375 pp | 100% | 100% | 17.1564 |
+
+结果支持优先去除重复积分，不能据此证明全部误差来自它；关闭读出复用在这组权重上没有改善。下一步只训练一个候选：`residual_policy: instant`，保留 `readout_policy: cached`、阈值 0.25、1 秒强制刷新及所有其他协议。
+
+即时状态差 V=H-R 仍通过 R 保留历史证据，但不再通过 U 积分误差；旧 U 通道暂时保留为诊断记录，不参与下一帧电压。为隔离机制，本轮仍保存 195 通道缓存，不能宣称内存优化或仍具有原版 U 的积分语义。若新训练有效，再考虑删去无用缓存及实际跳算。
+
+新配置：`opencood/hypes_yaml/dair-v2x/snn/int_ego_delta_instant.yaml`。新根目录：`/data1/tzm/workspace/diagnostics/int_delta_instant_20261017`，模式名仍为 `delta_gru`，必须通过配置和根目录区分。先配对工程试跑并核验精确恢复，再从原始 P1 启动全量候选训练；不使用刚完成诊断的第 20 轮权重进行初始化。只沿用已有完整 GRU 对照，不再重复完整 GRU 训练。
+
+**当前接续：** 即时状态差版本的两轮工程试跑与精确断点恢复均已通过，正式训练已在 181 GPU 0 启动（初始 PID 21490）。实际配置 `<新根目录>/inputs/config.yaml`，输出 `full_delta_gru`，日志 `full_delta_gru.log`，启动记录 `launch_full_delta_gru.json`。seed303、TBPTT4、首轮 FM 预热、原始 P1、至少 20/最多 40 轮及既有平台期规则保持不变。证据存于 [delta_instant_20261017](int_spike_results/delta_instant_20261017/launch_full_delta_gru.json)。
+
+定时任务回到每 **30 分钟**检查新根目录，替代短诊断阶段 10 分钟；旧两项诊断已完成，不要重复启动。启动时磁盘约剩 14 GiB，继续监控每轮 5 GiB 安全下限。若新训练中断，查明原因后以 `resume_int_memory --root <新根目录> --launch-record launch_full_delta_gru.json` 接续；平台期后才选择最佳权重执行回放和 profile。当前 74.1284% 是旧权重干预结果，不是本次新训练的成绩。
