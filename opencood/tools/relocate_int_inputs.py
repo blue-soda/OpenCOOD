@@ -2,11 +2,45 @@
 import argparse
 import copy
 import json
+import os
 from pathlib import Path
 
 import yaml
 
 from opencood.tools.launch_int_memory import digest
+
+
+def repair_links(old_extracted, new_extracted, audit_path):
+    """Repair only dangling links into the copied tree; never replace real files."""
+    plans = []
+    for parent, dirs, files in os.walk(str(new_extracted), followlinks=False):
+        for name in dirs+files:
+            link = Path(parent)/name
+            if not link.is_symlink() or link.exists():
+                continue
+            original = os.readlink(str(link))
+            try:
+                relative = Path(original).relative_to(old_extracted)
+            except ValueError:
+                continue
+            target = (new_extracted/relative).resolve()
+            target.relative_to(new_extracted.resolve())
+            if not target.exists():
+                raise FileNotFoundError(str(target))
+            plans.append(dict(link=str(link), original=original,
+                              replacement=os.path.relpath(str(target), str(link.parent))))
+    if not plans:
+        return
+    with Path(audit_path).open('x') as stream:
+        json.dump(dict(status='PLANNED', links=plans), stream, indent=2)
+    for item in plans:
+        link = Path(item['link'])
+        if not link.is_symlink() or os.readlink(str(link)) != item['original']:
+            raise ValueError('Link changed since inspection')
+        temporary = link.parent/(link.name+'.int_relocate_tmp')
+        os.symlink(item['replacement'], str(temporary))
+        os.replace(str(temporary), str(link))
+    Path(audit_path).write_text(json.dumps(dict(status='REPAIRED',links=plans),indent=2)+'\n')
 
 
 def main():
@@ -16,6 +50,7 @@ def main():
     p.add_argument('--checkpoint', required=True)
     p.add_argument('--data-root', required=True)
     p.add_argument('--output', required=True)
+    p.add_argument('--repair-links', action='store_true', help='Repair copied dangling absolute links inside extracted tree')
     a = p.parse_args()
     expected_manifest = '18886ad3a55df76621b61cea67e1d352203e8cdf4cd8c36fec36ff72fe27951a'
     expected_checkpoint = 'c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9'
@@ -24,6 +59,10 @@ def main():
     source = json.loads(Path(a.manifest).read_text())
     config = yaml.safe_load(Path(a.config).read_text())
     old_root, new_root = Path(config['data_dir']), Path(a.data_root).resolve()
+    if Path(a.output).exists():
+        raise ValueError('Relocation output already exists; preserve it')
+    if a.repair_links:
+        repair_links(old_root.parent, new_root.parent, Path(a.output).parent/'dataset_symlink_repair.json')
     relocated = copy.deepcopy(source)
     report = dict(source_manifest_sha256=expected_manifest,
                   checkpoint_sha256=expected_checkpoint, source_config_sha256=digest(a.config),
