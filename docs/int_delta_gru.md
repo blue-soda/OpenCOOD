@@ -58,3 +58,15 @@ GRU 历史回放完成。spike_gru 首次 aligned 回放与训练最佳轮 AP �
 | spike_gru | 75.9872% | 74.2929% | 71.5460% |
 
 脉冲 GRU 的对齐历史收益约 +1.6944 个百分点，GRU 为 +1.5201 个百分点；本阶段支持继续研究脉冲记忆和创新更新，不需要先追加多种子精密消融。
+
+## 2026-10-17 训练完成与诊断
+
+delta_gru 在第 26 轮达到平台期，最佳第 20 轮 AP70 **73.2605%**，相比 GRU 低 2.6131 个百分点、相比 spike_gru 低 2.7267 个百分点。最后一次超过 0.001 AP 的显著改善在第 16 轮，因此第 26 轮 stale=10；第 20 轮刷新绝对最佳但不足以重置显著改善计数，这符合预设规则。最终学习率 1.25e-5。26 轮训练/验证覆盖、有限 loss/AP、停止条件及最佳权重哈希审计通过，见 [training_completion.json](int_spike_results/delta_gru_20261016/training_completion.json)。无需恢复训练。
+
+最佳轮完整 5,794 帧验证中，通道发放率 16.39%，事件位置比例 46.55%，含邻域的读出刷新位置 67.05%，8×8 刷新块 82.23%，强制刷新位置 11.71%。缓存增至 3 倍且块刷新仍较密集，当前原型尚未呈现值得投入稀疏算子工程的精度—更新范围折中。
+
+膜残差最大绝对值为 17.1564，明显高于 0.25 阈值。它仍有限且程序正常，但提示单步最多一次脉冲可能无法及时释放累积误差；这是后续诊断线索，尚未证明它是精度下降原因。后续优先检查持续偏差积累及读出陈旧误差，避免立即扩大训练或修改原实验。
+
+已启动最佳权重 `replay_delta_gru` 的 aligned/reset/no-align 完整回放（GPU 2，初始 worker PID 6900），并在 GPU 0 对同一固定 256 帧运行 `profile_int_memory --modes delta_gru`。每 20 分钟跟进这两个后处理事件，替代训练期 30 分钟间隔；仅完成或异常通知。回放结束后运行 `summarize_int_memory --root /data1/tzm/workspace/diagnostics/int_delta_gru_20261016 --modes delta_gru --output /data1/tzm/workspace/diagnostics/int_delta_gru_20261016/final_report`，归档报告后再决定最小机制改动。
+
+256 帧 profile 已完成：模型墙钟中位数 39.74 ms，FM 均值 9.02 ms，backbone 均值 21.81 ms，shrink 4.87 ms；该样本读出刷新位置 66.25%、8×8 刷新块 82.27%。证据：[profile_256.json](int_spike_results/delta_gru_20261016/profile_256.json)。此次依然是含插桩的稠密参考实现，不将不同时段的 profile 差值解释为受控加速对比。后续只需继续检查历史回放，无需重跑 profile。
