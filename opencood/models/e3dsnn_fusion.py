@@ -17,6 +17,8 @@ class E3dsnnFusion(E3dsnnSingle):
             raise ValueError('Unknown fusion mode')
         self.origin, self.step = encoded_grid(args['voxel_size'], args['lidar_range'])
         self.packet_roundtrip = False
+        self.collect_fusion_diagnostics = False
+        self.freeze_detector = args.get('freeze_detector', False)
         self.message_dropout = args.get('message_dropout', .1)
         depth = 3
         # Current checkpoint contract is C=128,D=3,H=50,W=126.
@@ -25,12 +27,28 @@ class E3dsnnFusion(E3dsnnSingle):
             nn.GroupNorm(8, 64), Multispike(), nn.Conv2d(64, channels, 1))
         nn.init.normal_(self.fusion_net[-1].weight, std=.01)
         nn.init.zeros_(self.fusion_net[-1].bias)
+        if args.get('identity_fusion_init', False):
+            nn.init.zeros_(self.fusion_net[-1].weight)
         self.fusion_scale = nn.Parameter(torch.tensor(.1))
         self.fusion_activation = Multispike()
         if self.activation == 'relu':
             replace_counts(self)
         elif self.activation != 'count4':
             raise ValueError('Unknown activation')
+        if self.freeze_detector:
+            if self.fusion_mode != 'residual':
+                raise ValueError('Frozen detector requires residual fusion')
+            for name, parameter in self.named_parameters():
+                parameter.requires_grad_(name.startswith('fusion_net.') or name == 'fusion_scale')
+
+    def train(self, mode=True):
+        super().train(mode)
+        if self.freeze_detector:
+            # Freeze running statistics as well as weights, on every train() call.
+            for name, module in self.named_children():
+                if name not in ('fusion_net', 'fusion_activation'):
+                    module.eval()
+        return self
 
     def load_single(self, state):
         missing, extra = self.load_state_dict(state, strict=False)
@@ -86,9 +104,15 @@ class E3dsnnFusion(E3dsnnSingle):
             fused = self.fusion_activation(torch.maximum(ego_bev, road_bev))
         else:
             delta = self.fusion_net(torch.cat((ego_bev, road_bev, mask), 1))
-            fused = self.fusion_activation(ego_bev + self.fusion_scale * supported * delta)
+            residual = self.fusion_scale * supported * delta
+            fused = self.fusion_activation(ego_bev + residual)
         fused = torch.where(supported > 0, fused, ego_bev)
         result = self.detect_bev(fused)
+        if self.collect_fusion_diagnostics:
+            if self.fusion_mode != 'residual' or self.training:
+                raise ValueError('Fusion diagnostics require residual eval')
+            from opencood.utils.e3dsnn_fusion_probe import probe_maps
+            result['fusion_probe'] = probe_maps(ego_bev, residual, fused, supported, self.activation)
         if data.get('return_spikes', False):
             result['spike_features'] = ego_sparse.features
         if packet_bytes:

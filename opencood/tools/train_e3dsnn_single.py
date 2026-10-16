@@ -133,6 +133,9 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
                 frame = {'index': index, 'frame_id': frame_id, 'file': path.name,
                     'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
                     'predicted_boxes': len(pred_array), 'gt_boxes': len(gt)}
+                if 'fusion_probe' in output:
+                    from opencood.utils.e3dsnn_fusion_probe import summarize_probe
+                    frame['fusion_diagnostics'] = summarize_probe(output['fusion_probe'], gt, model.origin, model.step)
                 if getattr(model, 'packet_roundtrip', False):
                     lengths = output.get('packet_bytes', [])
                     frame['communication'] = {
@@ -193,6 +196,10 @@ def execute(args, output_dir):
     train_data = build_dataset(cfg, train=True)
     val_data = build_dataset(cfg, train=False)
     model = train_utils.create_model(cfg).cuda()
+    if args.fusion_diagnostics:
+        if getattr(model, 'fusion_mode', None) != 'residual' or not args.save_predictions:
+            raise ValueError('Fusion diagnostics require residual model and saved predictions')
+        model.collect_fusion_diagnostics = True
     if args.packet_roundtrip:
         if not hasattr(model, 'packet_roundtrip'):
             raise ValueError('Packet replay requires a fusion model')
@@ -211,6 +218,8 @@ def execute(args, output_dir):
         'gpu_visible': os.getenv('CUDA_VISIBLE_DEVICES'), 'parameters': sum(p.numel() for p in model.parameters()),
         'architecture': cfg['model']['core_method'],
         'activation': cfg['model']['args'].get('activation', 'count4'),
+        'trainable_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
+        'freeze_detector': getattr(model, 'freeze_detector', False),
         'checkpoint_sha256': hashlib.sha256(Path(args.checkpoint).read_bytes()).hexdigest() if args.checkpoint else None,
         'train_samples': len(train_data), 'val_samples': len(val_data),
         'single_checkpoint_sha256': hashlib.sha256(Path(args.single_checkpoint).read_bytes()).hexdigest() if args.single_checkpoint else None,
@@ -302,6 +311,13 @@ def execute(args, output_dir):
         drop_last=False, worker_init_fn=seed_worker, generator=generator,
         **({'multiprocessing_context': 'spawn'} if args.workers else {}))
     epochs = args.epochs or cfg['train_params']['epoches']
+    frozen_digest = None
+    if getattr(model, 'freeze_detector', False):
+        if args.warmup_epochs:
+            raise ValueError('Do not combine permanent detector freezing and warmup')
+        from opencood.utils.e3dsnn_fusion_probe import detector_digest
+        frozen_digest = detector_digest(model)
+        write_json(output_dir / 'frozen_detector.json', {'initial_sha256': frozen_digest})
     for epoch in range(start_epoch, epochs):
         model.train()
         if args.warmup_epochs:
@@ -339,6 +355,12 @@ def execute(args, output_dir):
         metrics = validate(model, val_data, args.workers)
         metrics.update({'epoch': epoch + 1, 'train_loss': total / samples,
                         'train_samples': samples, 'seconds': time.monotonic() - started})
+        if frozen_digest is not None:
+            current_digest = detector_digest(model)
+            if current_digest != frozen_digest:
+                raise RuntimeError('Frozen detector weights or buffers changed')
+            write_json(output_dir / 'frozen_detector.json', {'initial_sha256': frozen_digest,
+                'current_sha256': current_digest, 'verified_through_epoch': epoch + 1, 'passed': True})
         best = save_best_checkpoints(model, metrics, output_dir, best_by_iou, args.selection_iou, best)
         save_torch(output_dir / 'last.pt', {'epoch': epoch + 1, 'model': model.state_dict(), 'warmup_epochs': args.warmup_epochs,
             'config_sha256': manifest['config_sha256'], 'data_manifest_sha256': manifest['data_manifest_sha256'],
@@ -373,11 +395,12 @@ def main():
     parser.add_argument('--eval-3d', action='store_true', help='Also report volume-IoU AP in eval mode')
     parser.add_argument('--save-predictions', action='store_true', help='Save per-frame boxes/scores/GT and hashes for offline AP replay')
     parser.add_argument('--profile', action='store_true', help='Profile synchronized batch=1 inference in eval mode')
+    parser.add_argument('--fusion-diagnostics', action='store_true', help='Export residual statistics per frame and GT region')
     parser.add_argument('--selection-iou', choices=['0.5', '0.7'], default='0.5',
                         help='Validation BEV IoU for best.pth; retain both AP50/AP70 best snapshots')
     parser.add_argument('--resume', action='store_true')
     args = parser.parse_args()
-    if (args.eval_3d or args.save_predictions or args.profile or args.packet_roundtrip) and args.mode != 'eval':
+    if (args.eval_3d or args.save_predictions or args.profile or args.packet_roundtrip or args.fusion_diagnostics) and args.mode != 'eval':
         parser.error('--eval-3d, --save-predictions and --profile require eval mode')
     if args.resume and args.mode != 'train':
         parser.error('--resume requires train mode')
