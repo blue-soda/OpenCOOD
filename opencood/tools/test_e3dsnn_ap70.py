@@ -8,13 +8,31 @@ from unittest.mock import patch
 
 import numpy as np
 import torch
-from opencood.tools.diagnose_e3dsnn_ap70 import diagnose, match
+from opencood.tools.diagnose_e3dsnn_ap70 import diagnose, match, bev_error, pr_summary
 from opencood.tools.test_e3dsnn_prediction_replay import PredictionReplayTest
 from opencood.tools.train_e3dsnn_single import save_best_checkpoints
 from opencood.tools.launch_e3dsnn_ap70_controls import launch
 
 
 class DiagnosticTest(PredictionReplayTest):
+    def test_geometry_translation_and_heading_wrap(self):
+        box = np.asarray([[-2, -1, 0], [2, -1, 0], [2, 1, 0], [-2, 1, 0]] * 2, dtype=float)
+        moved = box + [0.3, 0.4, 0]
+        self.assertAlmostEqual(bev_error(moved, box)['center_error_m'], .5)
+        flipped = box.copy()
+        flipped[:, :2] *= -1
+        self.assertAlmostEqual(bev_error(flipped, box)['axis_error_deg'], 0.)
+        turned = box.copy()
+        turned[:, 0], turned[:, 1] = -box[:, 1], box[:, 0]
+        self.assertAlmostEqual(bev_error(turned, box)['axis_error_deg'], 90.)
+
+    def test_pr_area_split_and_unreached_recall(self):
+        report = pr_summary(dict(tp=[1, 0], fp=[0, 1], score=[.9, .8], gt=2))
+        self.assertAlmostEqual(report['ap70'], .5)
+        self.assertAlmostEqual(report['ap70_by_recall_interval']['0.0:0.3'], .3)
+        self.assertAlmostEqual(report['ap70_by_recall_interval']['0.3:0.5'], .2)
+        self.assertEqual(report['precision_envelope_at_recall']['0.6'], 0.)
+
     def test_identical_bundles_and_empty_frames(self):
         result = diagnose(self.folder, self.folder, expected_frames=3)
         self.assertTrue(result['passed'])

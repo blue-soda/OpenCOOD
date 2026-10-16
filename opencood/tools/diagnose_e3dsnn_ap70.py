@@ -8,6 +8,38 @@ import numpy as np
 from opencood.utils import common_utils, eval_utils
 
 
+def bev_error(pred, gt):
+    """Corner-derived BEV geometry; long-axis heading modulo pi, not direction."""
+    def geometry(box):
+        xy = box[:4, :2].astype(np.float64)
+        edges = np.asarray([xy[1] - xy[0], xy[2] - xy[1]])
+        lengths = np.linalg.norm(edges, axis=1)
+        major = int(np.argmax(lengths))
+        return xy.mean(axis=0), np.sort(lengths), np.arctan2(edges[major, 1], edges[major, 0])
+    pc, ps, py = geometry(pred)
+    gc, gs, gy = geometry(gt)
+    yaw = abs((py - gy + np.pi / 2) % np.pi - np.pi / 2)
+    return dict(center_error_m=float(np.linalg.norm(pc - gc)),
+                length_error_m=float(abs(ps[1] - gs[1])),
+                width_error_m=float(abs(ps[0] - gs[0])),
+                axis_error_deg=float(np.degrees(yaw)))
+
+
+def pr_summary(stats):
+    ap, recall, precision = eval_utils.calculate_ap({.7: stats}, .7)
+    recall, precision = np.asarray(recall), np.asarray(precision)
+    intervals = {}
+    for low, high in ((0., .3), (.3, .5), (.5, 1.)):
+        width = np.maximum(0., np.minimum(recall[1:], high) - np.maximum(recall[:-1], low))
+        intervals['{}:{}'.format(low, high)] = float(np.sum(width * precision[1:]))
+    if not np.isclose(sum(intervals.values()), ap, atol=1e-12, rtol=0):
+        raise ValueError('PR interval integration differs from AP')
+    at_recall = {}
+    for target in (.1, .2, .3, .4, .5, .55, .6, .62, .64):
+        at_recall[str(target)] = float(precision[recall >= target].max())
+    return dict(ap70=ap, precision_envelope_at_recall=at_recall, ap70_by_recall_interval=intervals)
+
+
 def match(iou, scores, threshold):
     """Score-ordered greedy matching to remaining GT, as in eval_utils."""
     order = np.argsort(-scores)
@@ -73,7 +105,7 @@ def diagnose(ego_dir, fusion_dir, expected_frames=1738):
         frames = {n: read_frame(folders[n], rows[n]) for n in folders}
         if not np.array_equal(frames['ego'][2], frames['fusion'][2]):
             raise ValueError('GT arrays differ')
-        matched, best_gt = {}, {}
+        matched, best_gt, best_pred = {}, {}, {}
         for name, (pred, scores, gt) in frames.items():
             polys = list(common_utils.convert_format(gt))
             matrix = np.asarray([common_utils.compute_iou(p, polys)
@@ -82,6 +114,7 @@ def diagnose(ego_dir, fusion_dir, expected_frames=1738):
             c['predicted'] += len(pred)
             c['gt'] += len(gt)
             best_gt[name] = matrix.max(axis=0) if len(pred) else np.zeros(len(gt))
+            best_pred[name] = matrix.argmax(axis=0) if len(pred) else np.full(len(gt), -1)
             c['gt_any_iou50'] += int((best_gt[name] >= .5).sum())
             c['gt_any_iou70'] += int((best_gt[name] >= .7).sum())
             for threshold in (.5, .7):
@@ -108,9 +141,14 @@ def diagnose(ego_dir, fusion_dir, expected_frames=1738):
             transitions[key] += row[key]
         details.append(row)
         for gt_id in sorted(a - b):
-            lost_examples.append(dict(frame_id=row['frame_id'], gt_index=gt_id,
-                                      ego_best_iou=float(best_gt['ego'][gt_id]),
-                                      fusion_best_iou=float(best_gt['fusion'][gt_id])))
+            item = dict(frame_id=row['frame_id'], gt_index=gt_id,
+                        ego_best_iou=float(best_gt['ego'][gt_id]),
+                        fusion_best_iou=float(best_gt['fusion'][gt_id]))
+            if .5 <= best_gt['fusion'][gt_id] < .7:
+                item['geometry'] = {n: bev_error(frames[n][0][best_pred[n][gt_id]], frames[n][2][gt_id])
+                                    for n in folders}
+                item['gt_range_m'] = float(np.linalg.norm(frames['ego'][2][gt_id, :4, :2].mean(axis=0)))
+            lost_examples.append(item)
         if (position + 1) % 250 == 0:
             print(json.dumps(dict(diagnosed=position + 1)), flush=True)
     models = {}
@@ -131,10 +169,22 @@ def diagnose(ego_dir, fusion_dir, expected_frames=1738):
         models[name] = dict(directory=str(folders[name]), index_sha256=bundles[name][2],
                             ap=ap, counts=c, recall70=c['tp70']/c['gt'],
                             precision70=c['tp70']/max(c['predicted'], 1),
-                            score_thresholds=operating_points)
+                            score_thresholds=operating_points, pr70=pr_summary(s))
     lost_examples.sort(key=lambda x: x['fusion_best_iou'])
+    localized_lost = [x for x in lost_examples if 'geometry' in x]
+    geometry = dict(count=len(localized_lost),
+        scope='GT matched by ego at IoU .7, not by fusion; fusion best IoU in [.5,.7). '
+              'Compare each model best-IoU prediction, not necessarily score-greedy assignment. '
+              'Outcome-selected cohort; does not estimate population-wide or causal module effects.')
+    if localized_lost:
+        for key in ('center_error_m', 'length_error_m', 'width_error_m', 'axis_error_deg'):
+            a = np.asarray([x['geometry']['ego'][key] for x in localized_lost])
+            b = np.asarray([x['geometry']['fusion'][key] for x in localized_lost])
+            geometry[key] = dict(ego_median=float(np.median(a)), fusion_median=float(np.median(b)),
+                                 median_paired_change=float(np.median(b - a)),
+                                 fraction_worse=float(np.mean(b > a)))
     return dict(passed=True, frames=expected_frames, models=models, gt_transitions70=transitions,
-                per_frame=details, lost_examples=lost_examples,
+                per_frame=details, lost_examples=lost_examples, localized_lost_geometry=geometry,
                 scope='Post-NMS saved predictions only; exact repository score-greedy BEV matching. '
                       'Any-IoU counts ignore score/one-to-one assignment. FP categories are descriptive, '
                       'not causal attribution to quantization, alignment, score calibration or NMS.')
