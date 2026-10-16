@@ -1,0 +1,47 @@
+{
+  "arguments": {
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/source/net_epoch_bestval_at57.pth",
+    "clip_length": 0,
+    "config": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/config.yaml",
+    "fm_only_epochs": 1,
+    "history_policy": "aligned",
+    "lr": 0.0001,
+    "manifest": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/inputs/sequence_manifest.json",
+    "max_epochs": 40,
+    "min_delta": 0.001,
+    "min_epochs": 20,
+    "mode": "gru",
+    "output": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru",
+    "patience": 10,
+    "resume": false,
+    "seed": 303,
+    "stop_after_epoch": 0,
+    "tbptt_steps": 4,
+    "train_steps": 0,
+    "workers": 4
+  },
+  "artificial_delay": false,
+  "asynchronous_fusion": false,
+  "augmentation": [],
+  "batch_size": 1,
+  "bn_running_stats": "frozen",
+  "dataset": "DairEgoStreamDataset",
+  "mode": "gru",
+  "model": "PointPillarINT",
+  "note": "Legacy fusion/train_params/optimizer/lr_scheduler fields in config.yaml are not executed by this dedicated runner.",
+  "optimizer": {
+    "lr": 0.0001,
+    "type": "AdamW",
+    "weight_decay": 0.0001
+  },
+  "scheduler": {
+    "factor": 0.5,
+    "metric": "val_bev_ap70",
+    "min_lr": 1e-06,
+    "patience": 2,
+    "threshold": 0.001,
+    "type": "ReduceLROnPlateau"
+  },
+  "state_policy": "whole-segment/tbptt/v1",
+  "tf32": false
+}

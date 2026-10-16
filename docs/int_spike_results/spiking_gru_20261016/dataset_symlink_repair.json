@@ -1,0 +1,35 @@
+{
+  "status": "REPAIRED",
+  "links": [
+    {
+      "link": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json",
+      "original": "/data0/chen/gzc/dataset/dair-v2x-c/extracted/DAIR-V2X-C_Complemented_Anno/val.json",
+      "replacement": "../DAIR-V2X-C_Complemented_Anno/val.json"
+    },
+    {
+      "link": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/train.json",
+      "original": "/data0/chen/gzc/dataset/dair-v2x-c/extracted/DAIR-V2X-C_Complemented_Anno/train.json",
+      "replacement": "../DAIR-V2X-C_Complemented_Anno/train.json"
+    },
+    {
+      "link": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/infrastructure-side/velodyne",
+      "original": "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure-infrastructure-side-velodyne",
+      "replacement": "../../cooperative-vehicle-infrastructure-infrastructure-side-velodyne"
+    },
+    {
+      "link": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/vehicle-side/velodyne",
+      "original": "/data0/chen/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure-vehicle-side-velodyne",
+      "replacement": "../../cooperative-vehicle-infrastructure-vehicle-side-velodyne"
+    },
+    {
+      "link": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/vehicle-side/label/lidar",
+      "original": "/data0/chen/gzc/dataset/dair-v2x-c/extracted/DAIR-V2X-C_Complemented_Anno/new_labels/vehicle-side_label/lidar",
+      "replacement": "../../../DAIR-V2X-C_Complemented_Anno/new_labels/vehicle-side_label/lidar"
+    },
+    {
+      "link": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/cooperative/label_world",
+      "original": "/data0/chen/gzc/dataset/dair-v2x-c/extracted/DAIR-V2X-C_Complemented_Anno/new_labels/cooperative_label/label_world",
+      "replacement": "../../DAIR-V2X-C_Complemented_Anno/new_labels/cooperative_label/label_world"
+    }
+  ]
+}

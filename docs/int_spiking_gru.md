@@ -3,9 +3,9 @@
 ## Material Passport
 
 - 任务：2026-10-15 用户要求构造与当前 GRU 架构、参数量匹配的 SNN 记忆模块。
-- 范围：实现 `spike_gru`，验证语义及真实数据两轮工程试跑；本文件不是精度改善报告。
+- 范围：实现 `spike_gru`，通过两轮工程验收后开展配对全量训练；尚无精度改善结论。
 - 数据：既有 DAIR 自车完整片段；与第一轮相同的冻结清单及 P1 初始化，无异步融合。
-- 状态：27 项语义/回归测试通过，整模型参数与初始化逐张量一致；真实数据试跑等待空闲 GPU。
+- 状态：181 上 27 项测试、配对两轮试跑及精确断点恢复检查通过，GRU/spike_gru 正式训练已启动。当前执行信息以文末“181 正式训练”节为准。
 
 ## 匹配范围
 
@@ -37,9 +37,9 @@ S∈{-1,0,+1} 是正、负两种二值脉冲的紧凑表示，每个真实扫描
 
 语义测试 `opencood/test/test_int_spiking_gru.py` 覆盖：参数/层/初始化逐项匹配，双极脉冲，亚阈值积累与复位，无膜电位读出，跨帧代理梯度及 detach 边界，位姿对齐/场景重置/状态不变性和阈值合法性。同时重跑原 INT 上游等价性和 LIF 测试，防止基础状态接口回归。
 
-配置：`opencood/hypes_yaml/dair-v2x/snn/int_ego_spiking_gru.yaml`；训练入口 `run_int_epochs --mode spike_gru --tbptt-steps 4 --fm-only-epochs 1`。原配置和历史实验不改动。真实数据试跑与新 GRU 对照使用同一新 YAML、同一 P1 初始化、seed303、相同两段 train/val，跑两轮以覆盖 FM 预热和联合训练；试跑 AP 不进入科学比较。尚不启动全量训练。
+配置：`opencood/hypes_yaml/dair-v2x/snn/int_ego_spiking_gru.yaml`；训练入口 `run_int_epochs --mode spike_gru --tbptt-steps 4 --fm-only-epochs 1`。原配置和历史实验不改动。真实数据试跑与新 GRU 对照使用同一新 YAML、同一 P1 初始化、seed303、相同两段 train/val，跑两轮以覆盖 FM 预热和联合训练；试跑 AP 不进入科学比较。用户随后指定使用 181 训练，正式训练如下。
 
-## 2026-10-16 实施核验与接续
+## 2026-10-16 早期实施记录（184 阻塞，已由下节接续）
 
 代码 `17af515` 已经本地 main push、服务器 pull。服务器使用 `python -m unittest discover -s opencood/test -p 'test_int*.py'`，27 项全部通过。必须用 discover：仓库另有 `opencood/test.py`，按 `opencood.test.<模块>` 导入会错误触发旧数据脚本。
 
@@ -53,3 +53,28 @@ S∈{-1,0,+1} 是正、负两种二值脉冲的紧凑表示，每个真实扫描
 2. 在服务器仓库用原 opencood Python 环境运行 `opencood.tools.launch_int_memory --stage pilot --modes gru spike_gru --gpus <两张实际空闲卡> --root /data0/chen/gzc/workspace/diagnostics/int_spiking_gru_20261016 --config opencood/hypes_yaml/dair-v2x/snn/int_ego_spiking_gru.yaml --manifest /data0/chen/gzc/workspace/diagnostics/int_ego_20260929/manifests_v3_decoded/sequence_manifest.json --checkpoint /data0/chen/gzc/workspace/logs/logs/dairv2x/repro_dair_single_pointpillar_wide_for_codyntrust_cobevflow_2026_09_11_02_51_02/net_epoch_bestval_at57.pth`。设置 `PYTHONPATH=.` 以及 OMP/MKL/OPENBLAS 线程数为 1。启动记录为 `launch_pilot_gru_spike_gru.json`。
 3. 核验两轮完整 train/val 顺序及覆盖、有限 loss/梯度、FM 首轮空间权重冻结、第二轮空间权重改变；核验 spike_gru 正负发放率、状态大小与膜电位有限性，避免全静默/饱和。汇总观察到的实际结果，保留失败证据。
 4. 完成原型工程验收后报告，不将小样本 AP 作为精度结论，不自动扩大为全量训练。未通过自身工程验收之前，不复用旧 LIF 的 engineering_gate.json 启动全量 spike_gru。
+
+## 2026-10-16 181 正式训练（当前接续入口）
+
+用户指定优先 181、故障时用 187 后，已迁移原冻结清单和 P1。181 的六处 DAIR 绝对符号链接仍指向 184，已仅对目标存在的悬空链接改为本机相对链接，保留修复审计；数据内容、清单顺序、位姿、时间和监督标志未改变。完整训练 8,593 扫描/4,678 标注，验证 5,794 扫描/1,738 标注，路径重定位后全数校验通过。187 未使用，也未修复其链接。
+
+27 项 INT 测试在 181 通过。GRU/spike_gru 两轮试跑均通过覆盖、有限梯度、首轮空间冻结/次轮联合更新检查；spike_gru 第 1/2 轮训练非零发放率为 8.23%/9.17%，验证为 8.16%/8.94%。重启试跑与连续训练的模型、优化器、调度器、契约和 AP 精确一致。小样本 AP70 为 0，不作为准确率证据。
+
+正式训练从原始 P1 重新初始化，启动代码 `125e3f9`，GPU 0 为 GRU（初始 PID 59597），GPU 1 为 spike_gru（初始 PID 59598）。两组同 seed303、AdamW 1e-4、TBPTT4、首轮只训练 FM、之后联合训练、冻结 BN、无增强，无人工延迟或异步融合。至少 20 轮，连续 10 轮无超过 0.001 AP 的改善且学习率降到初值 1/8 以下时停止，上限 40 轮；到上限而未达到平台期不能直接称收敛。
+
+```text
+host: mindspore-181
+repo: /data1/tzm/workspace/OpenCOOD
+python: /data1/tzm/miniconda3/envs/opencood/bin/python
+root: /data1/tzm/workspace/diagnostics/int_spiking_gru_20261016
+runtime config: <root>/inputs/config.yaml
+manifest: <root>/inputs/sequence_manifest.json
+P1: <root>/source/net_epoch_bestval_at57.pth
+launch: <root>/launch_full_gru_spike_gru.json
+outputs: <root>/full_gru, <root>/full_spike_gru
+logs: <root>/full_gru.log, <root>/full_spike_gru.log
+```
+
+启动与审计原始证据存于 [spiking_gru_20261016](int_spike_results/spiking_gru_20261016/launch_full_gru_spike_gru.json)，同目录含 engineering_gate、relocation_audit、dataset_symlink_repair 和 pilot 启动记录。配置仅重定位数据路径；实际执行参数与无异步声明见两组输出下的 `effective_runtime.json`。
+
+后续每 60 分钟检查这两个输出的活动进程、日志、failure/result/curve 和磁盘；启动时 `/data1` 剩余约 28 GiB，训练器在每轮开始前检查 5 GiB 下限。不要重复启动。仅在进程中断且未达平台期时，使用原环境运行 `opencood.tools.resume_int_memory --root <root> --launch-record launch_full_gru_spike_gru.json`，先查明中断原因并确认 GPU 空闲。两组完成后对最佳权重做 aligned/reset/no-align 冻结回放；严格比较本轮配对 GRU，旧结果保留为历史参照。只在完成或异常时通知。

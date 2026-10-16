@@ -1,0 +1,483 @@
+{
+  "status": "PASSED",
+  "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+  "checkpoint_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+  "parent_manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+  "scope": "Engineering coverage/learning/restart, not scientific AP",
+  "modes": {
+    "gru": [
+      {
+        "epoch": 1,
+        "training": {
+          "checkpoint_sha256": "8d14efcb13589bc73e979e0e755899adc5c72a9c4d7f4d8814b4aa4444631e3a",
+          "first32_loss_mean": 5.260766156509599,
+          "last32_loss_mean": 5.260766156509599,
+          "loss_mean": 5.260766156509599,
+          "peak_allocated_bytes": 4397768192,
+          "protocol": "Whole-segment state; detach at window boundary; mean labelled loss per window; one optimizer update after backward; unlabelled context differentiable; frozen BN statistics",
+          "resets": {
+            "explicit": 2
+          },
+          "scans": 32,
+          "seconds": 2.87404558097478,
+          "supervised_frames": 20,
+          "tbptt_steps": 4,
+          "updates": 7,
+          "windows": 9
+        },
+        "evaluation": {
+          "gt_boxes": 233,
+          "history_diagnostics": [
+            {
+              "frame": "011203",
+              "noalign_psm_l1": 0.07037542015314102,
+              "reset_psm_l1": 0.5021070241928101,
+              "reset_rm_l1": 0.33205607533454895
+            },
+            {
+              "frame": "017775",
+              "noalign_psm_l1": 0.07785235345363617,
+              "reset_psm_l1": 0.3928055763244629,
+              "reset_rm_l1": 0.2627217471599579
+            },
+            {
+              "frame": "017776",
+              "noalign_psm_l1": 0.07098349928855896,
+              "reset_psm_l1": 0.6218206286430359,
+              "reset_rm_l1": 0.42102882266044617
+            },
+            {
+              "frame": "017777",
+              "noalign_psm_l1": 0.07496046274900436,
+              "reset_psm_l1": 0.6239981651306152,
+              "reset_rm_l1": 0.44432076811790466
+            },
+            {
+              "frame": "017778",
+              "noalign_psm_l1": 0.06751982122659683,
+              "reset_psm_l1": 0.6038177013397217,
+              "reset_rm_l1": 0.4535582363605499
+            },
+            {
+              "frame": "017779",
+              "noalign_psm_l1": 0.06557139754295349,
+              "reset_psm_l1": 0.6105816960334778,
+              "reset_rm_l1": 0.454527348279953
+            },
+            {
+              "frame": "017780",
+              "noalign_psm_l1": 0.06303464621305466,
+              "reset_psm_l1": 0.6148948073387146,
+              "reset_rm_l1": 0.4451597332954407
+            },
+            {
+              "frame": "017781",
+              "noalign_psm_l1": 0.06028961390256882,
+              "reset_psm_l1": 0.5920990109443665,
+              "reset_rm_l1": 0.44208386540412903
+            },
+            {
+              "frame": "017782",
+              "noalign_psm_l1": 0.056956950575113297,
+              "reset_psm_l1": 0.574895977973938,
+              "reset_rm_l1": 0.44403794407844543
+            },
+            {
+              "frame": "017793",
+              "noalign_psm_l1": 0.028497766703367233,
+              "reset_psm_l1": 0.5234417915344238,
+              "reset_rm_l1": 0.48308709263801575
+            },
+            {
+              "frame": "017794",
+              "noalign_psm_l1": 0.026809968054294586,
+              "reset_psm_l1": 0.5117450952529907,
+              "reset_rm_l1": 0.48989492654800415
+            }
+          ],
+          "history_policy": "aligned",
+          "labels": 12,
+          "metrics": {
+            "bev_ap30": 0.0,
+            "bev_ap50": 0.0,
+            "bev_ap70": 0.0
+          },
+          "model_step_ms_p50": 31.806309008970857,
+          "model_step_ms_p95": 32.64614847721532,
+          "peak_allocated_bytes": 462742528,
+          "predicted_boxes": 0,
+          "resets": {
+            "initial": 1,
+            "scene": 1
+          },
+          "scans": 45,
+          "seconds": 3.1099720540223643,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "spatial_changed": false,
+        "temporal_gradient_max": 10.000000598620465
+      },
+      {
+        "epoch": 2,
+        "training": {
+          "checkpoint_sha256": "a1362091a7d753e361c5b8c4ec404e6768590ce88dfdd519527ef8d5c0aaa915",
+          "first32_loss_mean": 2.7375090685574572,
+          "last32_loss_mean": 2.7375090685574572,
+          "loss_mean": 2.7375090685574572,
+          "peak_allocated_bytes": 5556454912,
+          "protocol": "Whole-segment state; detach at window boundary; mean labelled loss per window; one optimizer update after backward; unlabelled context differentiable; frozen BN statistics",
+          "resets": {
+            "explicit": 2
+          },
+          "scans": 32,
+          "seconds": 3.4431654419749975,
+          "supervised_frames": 20,
+          "tbptt_steps": 4,
+          "updates": 7,
+          "windows": 9
+        },
+        "evaluation": {
+          "gt_boxes": 233,
+          "history_diagnostics": [
+            {
+              "frame": "011203",
+              "noalign_psm_l1": 0.0727805644273758,
+              "reset_psm_l1": 0.35404303669929504,
+              "reset_rm_l1": 0.05250278860330582
+            },
+            {
+              "frame": "017775",
+              "noalign_psm_l1": 0.05695608630776405,
+              "reset_psm_l1": 0.1485440731048584,
+              "reset_rm_l1": 0.017008239403367043
+            },
+            {
+              "frame": "017776",
+              "noalign_psm_l1": 0.0646888017654419,
+              "reset_psm_l1": 0.2405228614807129,
+              "reset_rm_l1": 0.029465870931744576
+            },
+            {
+              "frame": "017777",
+              "noalign_psm_l1": 0.06668447703123093,
+              "reset_psm_l1": 0.2779177129268646,
+              "reset_rm_l1": 0.03706299886107445
+            },
+            {
+              "frame": "017778",
+              "noalign_psm_l1": 0.0655062273144722,
+              "reset_psm_l1": 0.3071029782295227,
+              "reset_rm_l1": 0.04275568947196007
+            },
+            {
+              "frame": "017779",
+              "noalign_psm_l1": 0.06288811564445496,
+              "reset_psm_l1": 0.3300783932209015,
+              "reset_rm_l1": 0.04881422221660614
+            },
+            {
+              "frame": "017780",
+              "noalign_psm_l1": 0.061328668147325516,
+              "reset_psm_l1": 0.3424355089664459,
+              "reset_rm_l1": 0.05382823944091797
+            },
+            {
+              "frame": "017781",
+              "noalign_psm_l1": 0.058955587446689606,
+              "reset_psm_l1": 0.3815447986125946,
+              "reset_rm_l1": 0.05752567574381828
+            },
+            {
+              "frame": "017782",
+              "noalign_psm_l1": 0.05848865956068039,
+              "reset_psm_l1": 0.39709195494651794,
+              "reset_rm_l1": 0.06276686489582062
+            },
+            {
+              "frame": "017793",
+              "noalign_psm_l1": 0.04194088280200958,
+              "reset_psm_l1": 0.9584580063819885,
+              "reset_rm_l1": 0.16367098689079285
+            },
+            {
+              "frame": "017794",
+              "noalign_psm_l1": 0.04114463925361633,
+              "reset_psm_l1": 1.0149493217468262,
+              "reset_rm_l1": 0.16802223026752472
+            }
+          ],
+          "history_policy": "aligned",
+          "labels": 12,
+          "metrics": {
+            "bev_ap30": 0.020291997558336022,
+            "bev_ap50": 0.00246352308304165,
+            "bev_ap70": 0.0
+          },
+          "model_step_ms_p50": 31.748773995786905,
+          "model_step_ms_p95": 32.52421100623906,
+          "peak_allocated_bytes": 714448384,
+          "predicted_boxes": 89,
+          "resets": {
+            "initial": 1,
+            "scene": 1
+          },
+          "scans": 45,
+          "seconds": 3.393092153011821,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "spatial_changed": true,
+        "temporal_gradient_max": 7.128534247118376
+      }
+    ],
+    "spike_gru": [
+      {
+        "epoch": 1,
+        "training": {
+          "checkpoint_sha256": "90bd1b8e04ba575442f0c48fec9301df89a90dfd865143b99931609475529fa0",
+          "first32_loss_mean": 6.5516272336889205,
+          "last32_loss_mean": 6.5516272336889205,
+          "loss_mean": 6.5516272336889205,
+          "peak_allocated_bytes": 4608637440,
+          "protocol": "Whole-segment state; detach at window boundary; mean labelled loss per window; one optimizer update after backward; unlabelled context differentiable; frozen BN statistics",
+          "resets": {
+            "explicit": 2
+          },
+          "scans": 32,
+          "seconds": 2.861563620972447,
+          "supervised_frames": 20,
+          "tbptt_steps": 4,
+          "updates": 7,
+          "windows": 9
+        },
+        "evaluation": {
+          "gt_boxes": 233,
+          "history_diagnostics": [
+            {
+              "frame": "011203",
+              "noalign_psm_l1": 0.033775415271520615,
+              "reset_psm_l1": 0.47102630138397217,
+              "reset_rm_l1": 0.36728042364120483
+            },
+            {
+              "frame": "017775",
+              "noalign_psm_l1": 0.04794343188405037,
+              "reset_psm_l1": 0.4216834604740143,
+              "reset_rm_l1": 0.3165290355682373
+            },
+            {
+              "frame": "017776",
+              "noalign_psm_l1": 0.03912165015935898,
+              "reset_psm_l1": 0.6648085117340088,
+              "reset_rm_l1": 0.4529602825641632
+            },
+            {
+              "frame": "017777",
+              "noalign_psm_l1": 0.0326346717774868,
+              "reset_psm_l1": 0.6215671896934509,
+              "reset_rm_l1": 0.47724416851997375
+            },
+            {
+              "frame": "017778",
+              "noalign_psm_l1": 0.027867035940289497,
+              "reset_psm_l1": 0.5894486308097839,
+              "reset_rm_l1": 0.48280563950538635
+            },
+            {
+              "frame": "017779",
+              "noalign_psm_l1": 0.029689734801650047,
+              "reset_psm_l1": 0.6013032793998718,
+              "reset_rm_l1": 0.4833833575248718
+            },
+            {
+              "frame": "017780",
+              "noalign_psm_l1": 0.02915349043905735,
+              "reset_psm_l1": 0.6078864932060242,
+              "reset_rm_l1": 0.47273507714271545
+            },
+            {
+              "frame": "017781",
+              "noalign_psm_l1": 0.023333216086030006,
+              "reset_psm_l1": 0.5862575173377991,
+              "reset_rm_l1": 0.4748035669326782
+            },
+            {
+              "frame": "017782",
+              "noalign_psm_l1": 0.02184627391397953,
+              "reset_psm_l1": 0.5650445818901062,
+              "reset_rm_l1": 0.4784228801727295
+            },
+            {
+              "frame": "017793",
+              "noalign_psm_l1": 0.011494854465126991,
+              "reset_psm_l1": 0.5346803665161133,
+              "reset_rm_l1": 0.5197036862373352
+            },
+            {
+              "frame": "017794",
+              "noalign_psm_l1": 0.011243883520364761,
+              "reset_psm_l1": 0.5357383489608765,
+              "reset_rm_l1": 0.5233884453773499
+            }
+          ],
+          "history_policy": "aligned",
+          "labels": 12,
+          "metrics": {
+            "bev_ap30": 0.0,
+            "bev_ap50": 0.0,
+            "bev_ap70": 0.0
+          },
+          "model_step_ms_p50": 33.8244279846549,
+          "model_step_ms_p95": 34.76292607374489,
+          "peak_allocated_bytes": 520904192,
+          "predicted_boxes": 0,
+          "resets": {
+            "initial": 1,
+            "scene": 1
+          },
+          "scans": 45,
+          "seconds": 3.1381546150660142,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "spatial_changed": false,
+        "temporal_gradient_max": 10.000001030092292,
+        "train_events": {
+          "nonzero_mean": 0.0822606177534908,
+          "positive_mean": 0.03821809176588431,
+          "negative_mean": 0.04404252604581416
+        },
+        "val_events": {
+          "nonzero_mean": 0.08159721501999431,
+          "positive_mean": 0.03955762775407897,
+          "negative_mean": 0.04203958809375763
+        }
+      },
+      {
+        "epoch": 2,
+        "training": {
+          "checkpoint_sha256": "2b7348128e33f8d0056f5ff46bc80d9eea1bb7f8abed8cdc592ab3797f5b36b3",
+          "first32_loss_mean": 2.829527380491797,
+          "last32_loss_mean": 2.829527380491797,
+          "loss_mean": 2.829527380491797,
+          "peak_allocated_bytes": 5763269632,
+          "protocol": "Whole-segment state; detach at window boundary; mean labelled loss per window; one optimizer update after backward; unlabelled context differentiable; frozen BN statistics",
+          "resets": {
+            "explicit": 2
+          },
+          "scans": 32,
+          "seconds": 3.367164249997586,
+          "supervised_frames": 20,
+          "tbptt_steps": 4,
+          "updates": 7,
+          "windows": 9
+        },
+        "evaluation": {
+          "gt_boxes": 233,
+          "history_diagnostics": [
+            {
+              "frame": "011203",
+              "noalign_psm_l1": 0.02175876870751381,
+              "reset_psm_l1": 0.25459766387939453,
+              "reset_rm_l1": 0.04582687094807625
+            },
+            {
+              "frame": "017775",
+              "noalign_psm_l1": 0.02093084156513214,
+              "reset_psm_l1": 0.13300499320030212,
+              "reset_rm_l1": 0.01654256507754326
+            },
+            {
+              "frame": "017776",
+              "noalign_psm_l1": 0.02095407247543335,
+              "reset_psm_l1": 0.20861873030662537,
+              "reset_rm_l1": 0.02842375822365284
+            },
+            {
+              "frame": "017777",
+              "noalign_psm_l1": 0.019903864711523056,
+              "reset_psm_l1": 0.22293508052825928,
+              "reset_rm_l1": 0.03618265688419342
+            },
+            {
+              "frame": "017778",
+              "noalign_psm_l1": 0.018696865066885948,
+              "reset_psm_l1": 0.2526342272758484,
+              "reset_rm_l1": 0.04164211452007294
+            },
+            {
+              "frame": "017779",
+              "noalign_psm_l1": 0.018504684790968895,
+              "reset_psm_l1": 0.29097506403923035,
+              "reset_rm_l1": 0.047155339270830154
+            },
+            {
+              "frame": "017780",
+              "noalign_psm_l1": 0.019043074920773506,
+              "reset_psm_l1": 0.2883342206478119,
+              "reset_rm_l1": 0.05262664332985878
+            },
+            {
+              "frame": "017781",
+              "noalign_psm_l1": 0.017857370898127556,
+              "reset_psm_l1": 0.2877628803253174,
+              "reset_rm_l1": 0.05767987295985222
+            },
+            {
+              "frame": "017782",
+              "noalign_psm_l1": 0.017707685008645058,
+              "reset_psm_l1": 0.29083430767059326,
+              "reset_rm_l1": 0.06107684224843979
+            },
+            {
+              "frame": "017793",
+              "noalign_psm_l1": 0.01533498801290989,
+              "reset_psm_l1": 0.6017016768455505,
+              "reset_rm_l1": 0.05577671900391579
+            },
+            {
+              "frame": "017794",
+              "noalign_psm_l1": 0.015984004363417625,
+              "reset_psm_l1": 0.6467785835266113,
+              "reset_rm_l1": 0.05561606213450432
+            }
+          ],
+          "history_policy": "aligned",
+          "labels": 12,
+          "metrics": {
+            "bev_ap30": 0.0,
+            "bev_ap50": 0.0,
+            "bev_ap70": 0.0
+          },
+          "model_step_ms_p50": 34.02982803527266,
+          "model_step_ms_p95": 34.67499077087268,
+          "peak_allocated_bytes": 770113024,
+          "predicted_boxes": 0,
+          "resets": {
+            "initial": 1,
+            "scene": 1
+          },
+          "scans": 45,
+          "seconds": 3.148213900043629,
+          "state_bytes": 26208000,
+          "timing_scope": "Model only: pillar encoder + warp/FM + backbone + head, excludes IO/voxelization/postprocess; diagnostic replays excluded"
+        },
+        "spatial_changed": true,
+        "temporal_gradient_max": 4.752606044292709,
+        "train_events": {
+          "nonzero_mean": 0.09169611940160394,
+          "positive_mean": 0.04508411034476012,
+          "negative_mean": 0.04661200917325914
+        },
+        "val_events": {
+          "nonzero_mean": 0.0893737393948767,
+          "positive_mean": 0.04491611727409893,
+          "negative_mean": 0.04445762199660142
+        }
+      }
+    ]
+  },
+  "restart": "Exact model/optimizer/scheduler/contract/AP",
+  "code_commit": "bb0a18f3ff235f3c0f647c72c8cf2896ac1d642c"
+}
