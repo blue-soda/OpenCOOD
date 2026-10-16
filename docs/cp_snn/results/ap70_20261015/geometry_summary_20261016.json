@@ -1,0 +1,412 @@
+{
+  "count4": {
+    "passed": true,
+    "frames": 1738,
+    "models": {
+      "ego": {
+        "directory": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/count4_ego_eval",
+        "index_sha256": "da814703d82d064e30b1a5195805d067385e97e0d457722e6cfc258afc2f17e2",
+        "ap": {
+          "0.5": 0.6662389849712154,
+          "0.7": 0.547727186584771
+        },
+        "counts": {
+          "predicted": 25504,
+          "gt": 28622,
+          "tp70": 17065,
+          "fp70": 8439,
+          "fp_best_iou_below_03": 4887,
+          "fp_best_iou_03_to_07": 3552,
+          "fp_best_iou_at_least_07": 0,
+          "gt_any_iou50": 19882,
+          "gt_any_iou70": 17118
+        },
+        "recall70": 0.5962196911466704,
+        "precision70": 0.6691107277289837,
+        "score_thresholds": {
+          "0.2": {
+            "tp": 17065,
+            "fp": 8439,
+            "recall": 0.5962196911466704,
+            "precision": 0.6691107277289837
+          },
+          "0.5": {
+            "tp": 11783,
+            "fp": 1302,
+            "recall": 0.4116763328907833,
+            "precision": 0.9004967520061139
+          },
+          "0.7": {
+            "tp": 3973,
+            "fp": 136,
+            "recall": 0.13880930752567955,
+            "precision": 0.9669019226089073
+          },
+          "0.9": {
+            "tp": 0,
+            "fp": 0,
+            "recall": 0.0,
+            "precision": 0.0
+          }
+        },
+        "pr70": {
+          "ap70": 0.547727186584771,
+          "precision_envelope_at_recall": {
+            "0.1": 0.9730794484569928,
+            "0.2": 0.9556511666390866,
+            "0.3": 0.937547767223496,
+            "0.4": 0.9053530481537123,
+            "0.5": 0.8609673926122007,
+            "0.55": 0.8172662617453148,
+            "0.6": 0.0,
+            "0.62": 0.0,
+            "0.64": 0.0
+          },
+          "ap70_by_recall_interval": {
+            "0.0:0.3": 0.2894443295144763,
+            "0.3:0.5": 0.18069470677958668,
+            "0.5:1.0": 0.07758815029071088
+          }
+        }
+      },
+      "fusion": {
+        "directory": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/count4_framebytes_20261011",
+        "index_sha256": "4d2c245b42e31a44285792468b53624bb1cac9bfc9d5b2b686ed426c0cc3256c",
+        "ap": {
+          "0.5": 0.7254800540761226,
+          "0.7": 0.5425581819847676
+        },
+        "counts": {
+          "predicted": 28778,
+          "gt": 28622,
+          "tp70": 17735,
+          "fp70": 11043,
+          "fp_best_iou_below_03": 5536,
+          "fp_best_iou_03_to_07": 5507,
+          "fp_best_iou_at_least_07": 0,
+          "gt_any_iou50": 22059,
+          "gt_any_iou70": 17788
+        },
+        "recall70": 0.6196282579833694,
+        "precision70": 0.6162693724372785,
+        "score_thresholds": {
+          "0.2": {
+            "tp": 17735,
+            "fp": 11043,
+            "recall": 0.6196282579833694,
+            "precision": 0.6162693724372785
+          },
+          "0.5": {
+            "tp": 10814,
+            "fp": 1728,
+            "recall": 0.3778212563762141,
+            "precision": 0.8622229309520013
+          },
+          "0.7": {
+            "tp": 2465,
+            "fp": 80,
+            "recall": 0.08612256306337782,
+            "precision": 0.9685658153241651
+          },
+          "0.9": {
+            "tp": 0,
+            "fp": 0,
+            "recall": 0.0,
+            "precision": 0.0
+          }
+        },
+        "pr70": {
+          "ap70": 0.5425581819847676,
+          "precision_envelope_at_recall": {
+            "0.1": 0.9650302622730329,
+            "0.2": 0.9348852352270878,
+            "0.3": 0.8957855205508033,
+            "0.4": 0.8527662105889352,
+            "0.5": 0.7972370766488414,
+            "0.55": 0.7576034648700674,
+            "0.6": 0.6906188427359363,
+            "0.62": 0.0,
+            "0.64": 0.0
+          },
+          "ap70_by_recall_interval": {
+            "0.0:0.3": 0.28424139280391025,
+            "0.3:0.5": 0.16992916063892644,
+            "0.5:1.0": 0.0883876285419342
+          }
+        }
+      }
+    },
+    "gt_transitions70": {
+      "retained": 15186,
+      "lost": 1879,
+      "gained": 2549,
+      "missed_by_both": 9008
+    },
+    "localized_lost_geometry": {
+      "count": 1411,
+      "scope": "GT matched by ego at IoU .7, not by fusion; fusion best IoU in [.5,.7). Compare each model best-IoU prediction, not necessarily score-greedy assignment. Outcome-selected cohort; does not estimate population-wide or causal module effects.",
+      "center_error_m": {
+        "ego_median": 0.24770830732451854,
+        "fusion_median": 0.42931474643263373,
+        "median_paired_change": 0.18728941684451172,
+        "fraction_worse": 0.9149539333805812
+      },
+      "length_error_m": {
+        "ego_median": 0.12995294959640713,
+        "fusion_median": 0.13026419429403546,
+        "median_paired_change": 0.0031894508679268796,
+        "fraction_worse": 0.520198440822112
+      },
+      "width_error_m": {
+        "ego_median": 0.06269305069799413,
+        "fusion_median": 0.06348219012921574,
+        "median_paired_change": 0.0004555314995895454,
+        "fraction_worse": 0.5074415308291992
+      },
+      "axis_error_deg": {
+        "ego_median": 3.146162329245598,
+        "fusion_median": 3.625005434646064,
+        "median_paired_change": 0.6591512332382541,
+        "fraction_worse": 0.5754783841247342
+      }
+    },
+    "scope": "Post-NMS saved predictions only; exact repository score-greedy BEV matching. Any-IoU counts ignore score/one-to-one assignment. FP categories are descriptive, not causal attribution to quantization, alignment, score calibration or NMS.",
+    "full_report": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_ap70_20261015/count4_geometry_20261016.json",
+    "full_report_sha256": "25ec0a50f8e616f760fd85a3edcb97e7aa91c223a6aeaaa762ca1db1fceb29dc",
+    "pipeline": {
+      "state": "complete",
+      "jobs": [
+        "count4_geometry_20261016"
+      ],
+      "supervisor_pid": 2446869,
+      "updated_unix": 1792126494.6753666
+    },
+    "plan": {
+      "name": "count4_geometry_20261016",
+      "git_commit": "deace035b415c331451ad354b6c1547103931e9d",
+      "jobs": [
+        {
+          "name": "count4_geometry_20261016",
+          "command": [
+            "/data0/chen/miniconda3/envs/opencood/bin/python",
+            "-u",
+            "-m",
+            "opencood.tools.diagnose_e3dsnn_ap70",
+            "--ego-dir",
+            "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/count4_ego_eval",
+            "--fusion-dir",
+            "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/count4_framebytes_20261011",
+            "--output",
+            "/data0/chen/gzc/workspace/diagnostics/e3dsnn_ap70_20261015/count4_geometry_20261016.json"
+          ],
+          "timeout_seconds": 3600
+        }
+      ]
+    }
+  },
+  "relu": {
+    "passed": true,
+    "frames": 1738,
+    "models": {
+      "ego": {
+        "directory": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/relu_ego_eval",
+        "index_sha256": "3350b72d21243ff82a8ac4e9bc7d7da0da9def8f2eedb45777c3d8b2e81e9d7a",
+        "ap": {
+          "0.5": 0.6746000720140429,
+          "0.7": 0.5798006572452141
+        },
+        "counts": {
+          "predicted": 25012,
+          "gt": 28622,
+          "tp70": 17644,
+          "fp70": 7368,
+          "fp_best_iou_below_03": 4276,
+          "fp_best_iou_03_to_07": 3092,
+          "fp_best_iou_at_least_07": 0,
+          "gt_any_iou50": 20039,
+          "gt_any_iou70": 17698
+        },
+        "recall70": 0.6164488854727133,
+        "precision70": 0.7054213977290901,
+        "score_thresholds": {
+          "0.2": {
+            "tp": 17644,
+            "fp": 7368,
+            "recall": 0.6164488854727133,
+            "precision": 0.7054213977290901
+          },
+          "0.5": {
+            "tp": 12173,
+            "fp": 925,
+            "recall": 0.4253022150793096,
+            "precision": 0.9293785310734464
+          },
+          "0.7": {
+            "tp": 4532,
+            "fp": 99,
+            "recall": 0.15833973866256726,
+            "precision": 0.9786223277909739
+          },
+          "0.9": {
+            "tp": 0,
+            "fp": 0,
+            "recall": 0.0,
+            "precision": 0.0
+          }
+        },
+        "pr70": {
+          "ap70": 0.5798006572452141,
+          "precision_envelope_at_recall": {
+            "0.1": 0.9855286473715298,
+            "0.2": 0.9743632707774799,
+            "0.3": 0.9612975391498881,
+            "0.4": 0.9378734550216911,
+            "0.5": 0.9005159828844702,
+            "0.55": 0.8694019548290906,
+            "0.6": 0.7886664217487142,
+            "0.62": 0.0,
+            "0.64": 0.0
+          },
+          "ap70_by_recall_interval": {
+            "0.0:0.3": 0.29398007437082124,
+            "0.3:0.5": 0.18713340835360726,
+            "0.5:1.0": 0.09868717452078792
+          }
+        }
+      },
+      "fusion": {
+        "directory": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/relu_framebytes_20261011",
+        "index_sha256": "89f7cfa999aa88ee406462cc41f1011a07caa5c9b8f27355e648a99cbdb3d9be",
+        "ap": {
+          "0.5": 0.7380032568881454,
+          "0.7": 0.5846465130027352
+        },
+        "counts": {
+          "predicted": 29230,
+          "gt": 28622,
+          "tp70": 18480,
+          "fp70": 10750,
+          "fp_best_iou_below_03": 5799,
+          "fp_best_iou_03_to_07": 4951,
+          "fp_best_iou_at_least_07": 0,
+          "gt_any_iou50": 22288,
+          "gt_any_iou70": 18533
+        },
+        "recall70": 0.6456571867794004,
+        "precision70": 0.6322271638727335,
+        "score_thresholds": {
+          "0.2": {
+            "tp": 18480,
+            "fp": 10750,
+            "recall": 0.6456571867794004,
+            "precision": 0.6322271638727335
+          },
+          "0.5": {
+            "tp": 11523,
+            "fp": 1345,
+            "recall": 0.4025924114317658,
+            "precision": 0.8954771526266708
+          },
+          "0.7": {
+            "tp": 3071,
+            "fp": 58,
+            "recall": 0.10729508769478024,
+            "precision": 0.9814637264301694
+          },
+          "0.9": {
+            "tp": 0,
+            "fp": 0,
+            "recall": 0.0,
+            "precision": 0.0
+          }
+        },
+        "pr70": {
+          "ap70": 0.5846465130027352,
+          "precision_envelope_at_recall": {
+            "0.1": 0.9833954591663843,
+            "0.2": 0.9656160458452722,
+            "0.3": 0.9360130363932645,
+            "0.4": 0.8960581886438291,
+            "0.5": 0.8466134279798876,
+            "0.55": 0.815887656751995,
+            "0.6": 0.7643760014242478,
+            "0.62": 0.7287585725432221,
+            "0.64": 0.6648882113821138
+          },
+          "ap70_by_recall_interval": {
+            "0.0:0.3": 0.29184566683043994,
+            "0.3:0.5": 0.1788584304650755,
+            "0.5:1.0": 0.11394241570721687
+          }
+        }
+      }
+    },
+    "gt_transitions70": {
+      "retained": 16199,
+      "lost": 1445,
+      "gained": 2281,
+      "missed_by_both": 8697
+    },
+    "localized_lost_geometry": {
+      "count": 943,
+      "scope": "GT matched by ego at IoU .7, not by fusion; fusion best IoU in [.5,.7). Compare each model best-IoU prediction, not necessarily score-greedy assignment. Outcome-selected cohort; does not estimate population-wide or causal module effects.",
+      "center_error_m": {
+        "ego_median": 0.2652801069742132,
+        "fusion_median": 0.43068509904687396,
+        "median_paired_change": 0.15906379791451117,
+        "fraction_worse": 0.9406150583244963
+      },
+      "length_error_m": {
+        "ego_median": 0.13535861230773705,
+        "fusion_median": 0.14606733490413415,
+        "median_paired_change": 0.0042312338672827465,
+        "fraction_worse": 0.5185577942735949
+      },
+      "width_error_m": {
+        "ego_median": 0.06249779272840783,
+        "fusion_median": 0.06374491768212853,
+        "median_paired_change": 0.0002660810880663611,
+        "fraction_worse": 0.503711558854719
+      },
+      "axis_error_deg": {
+        "ego_median": 2.8939813076773073,
+        "fusion_median": 3.0840082028342337,
+        "median_paired_change": 0.23092801697575638,
+        "fraction_worse": 0.5440084835630965
+      }
+    },
+    "scope": "Post-NMS saved predictions only; exact repository score-greedy BEV matching. Any-IoU counts ignore score/one-to-one assignment. FP categories are descriptive, not causal attribution to quantization, alignment, score calibration or NMS.",
+    "full_report": "/data0/chen/gzc/workspace/diagnostics/e3dsnn_ap70_20261015/relu_geometry_20261016.json",
+    "full_report_sha256": "aa5bc3bd8cf244ad2c80aafe66d3a32fff83edeb2a6ba5f0903ae1e443844ea3",
+    "pipeline": {
+      "state": "complete",
+      "jobs": [
+        "relu_geometry_20261016"
+      ],
+      "supervisor_pid": 2446871,
+      "updated_unix": 1792126487.608852
+    },
+    "plan": {
+      "name": "relu_geometry_20261016",
+      "git_commit": "deace035b415c331451ad354b6c1547103931e9d",
+      "jobs": [
+        {
+          "name": "relu_geometry_20261016",
+          "command": [
+            "/data0/chen/miniconda3/envs/opencood/bin/python",
+            "-u",
+            "-m",
+            "opencood.tools.diagnose_e3dsnn_ap70",
+            "--ego-dir",
+            "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/relu_ego_eval",
+            "--fusion-dir",
+            "/data0/chen/gzc/workspace/diagnostics/e3dsnn_fusion_20260930_v1/relu_framebytes_20261011",
+            "--output",
+            "/data0/chen/gzc/workspace/diagnostics/e3dsnn_ap70_20261015/relu_geometry_20261016.json"
+          ],
+          "timeout_seconds": 3600
+        }
+      ]
+    }
+  }
+}
