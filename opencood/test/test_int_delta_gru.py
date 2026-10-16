@@ -81,5 +81,30 @@ class DeltaGRUTests(unittest.TestCase):
             y,_,_=m.step(x,s,meta(t,scene=scene));fresh,_,_=m.step(x,None,meta(t,scene=scene))
             self.assertTrue(torch.equal(y,fresh))
 
+    def test_instant_residual_ignores_old_accumulator(self):
+        f=self.fusion();f.residual_policy='instant'
+        state=torch.zeros(1,6,4,8);state[:,-1]=1;state[:,0]=17.
+        out,new=f(torch.zeros(1,1,4,8),[state],.05)
+        self.assertEqual(float(out.abs().sum()),0.)
+        self.assertTrue(torch.allclose(new[:,:1],torch.full_like(out,.1)))
+        self.assertEqual(f.last_diagnostics['residual_policy'],'instant')
+
+    def test_dense_readout_bypasses_cache_only(self):
+        f=self.fusion();f.readout_policy='dense'
+        state=torch.zeros(1,6,4,8);state[:,-1]=1;state[:,1]=.1;state[:,2]=.7
+        out,new=f(torch.zeros(1,1,4,8),[state],.05)
+        self.assertTrue(torch.allclose(out,torch.full_like(out,.1)))
+        self.assertTrue(torch.equal(new[:,1:2],state[:,1:2]))
+        self.assertEqual(f.last_diagnostics['readout_refresh_fraction'],1.)
+
+    def test_default_policy_retains_forward_and_state(self):
+        cfg=make_fusion_config('gru',4)
+        torch.manual_seed(3);a=INTDeltaGRUFusion(cfg).eval()
+        torch.manual_seed(3);b=INTDeltaGRUFusion(cfg,residual_policy='accumulate',readout_policy='cached').eval()
+        x=torch.randn(1,4,4,8);past=torch.zeros(1,15,4,8)
+        for _ in range(3):
+            y,s=a(x,[past],.1);z,t=b(x,[past],.1)
+            self.assertTrue(torch.equal(y,z));self.assertTrue(torch.equal(s,t));past=s
+
 
 if __name__=='__main__':unittest.main()

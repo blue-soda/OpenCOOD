@@ -18,8 +18,12 @@ def support_rates(mask):
 
 
 class INTDeltaGRUFusion(INTFusionModule):
-    def __init__(self, config, threshold=.25, refresh_s=1.):
+    def __init__(self, config, threshold=.25, refresh_s=1.,
+                 residual_policy='accumulate', readout_policy='cached'):
         super().__init__(config)
+        if residual_policy not in ('accumulate', 'instant') or readout_policy not in ('cached', 'dense'):
+            raise ValueError('Unknown innovation diagnostic policy')
+        self.residual_policy, self.readout_policy = residual_policy, readout_policy
         if not math.isfinite(threshold) or threshold <= 0:
             raise ValueError('threshold must be positive and finite')
         if not math.isfinite(refresh_s) or refresh_s <= 0:
@@ -39,7 +43,7 @@ class INTDeltaGRUFusion(INTFusionModule):
         update = self.update_gate_conv(torch.cat([x, memory], 1))
         candidate = self.candidate_conv(torch.cat([x, reset*memory], 1))
         target = update*memory + (1-update)*candidate
-        voltage = u + (target-memory)
+        voltage = u + (target-memory) if self.residual_policy == 'accumulate' else target-memory
         spikes = signed_event(voltage, self.threshold)
         # Bootstrap and periodic refresh are explicitly analog, not spikes.
         spikes = torch.where(force, torch.zeros_like(spikes), spikes)
@@ -49,6 +53,8 @@ class INTDeltaGRUFusion(INTFusionModule):
         dirty = force | (spikes != 0).any(1, keepdim=True) | (mask != old_mask)
         # A 3x3 readout convolution needs a one-cell output halo.
         refresh = F.max_pool2d(dirty.to(x.dtype), 3, 1, 1) > 0
+        if self.readout_policy == 'dense':
+            refresh = torch.ones_like(refresh)
         dense = self.post_fusion_conv(torch.cat([memory_next, age_next, mask], 1))
         output = torch.where(refresh, dense, readout)
         cached = torch.cat([u_next, memory_next, output, age_next, mask,
@@ -68,14 +74,17 @@ class INTDeltaGRUFusion(INTFusionModule):
                 readout_refresh_fraction=float(refresh.float().mean()),
                 readout_refresh_tiles8=support_rates(refresh)['active_tiles8'],
                 event_cells_fraction=float(emitted.any(1,keepdim=True).float().mean()),
-                dense_execution=True)
+                dense_execution=True, residual_policy=self.residual_policy,
+                readout_policy=self.readout_policy)
         return output, cached.detach() if detach_state else cached
 
 
 class INTDeltaGRUMemory(INTFeatureMemory):
-    def __init__(self, channels, lidar_range, threshold=.25, refresh_s=1., max_gap_s=.25):
+    def __init__(self, channels, lidar_range, threshold=.25, refresh_s=1., max_gap_s=.25,
+                 residual_policy='accumulate', readout_policy='cached'):
         super().__init__('gru', channels, lidar_range, max_gap_s=max_gap_s,
-                         fusion_factory=lambda cfg: INTDeltaGRUFusion(cfg, threshold, refresh_s))
+                         fusion_factory=lambda cfg: INTDeltaGRUFusion(
+                             cfg, threshold, refresh_s, residual_policy, readout_policy))
         self.mode = 'delta_gru'
 
     def step(self, current, state, meta, reset=False, align=True, detach_state=True):
