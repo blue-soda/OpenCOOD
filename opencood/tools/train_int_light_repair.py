@@ -3,6 +3,7 @@ import json
 import subprocess
 import sys
 import time
+from pathlib import Path
 import numpy as np
 import torch
 from torch.nn import functional as F
@@ -14,6 +15,41 @@ from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.tools.run_int_cache_repair import evaluate
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
+
+
+def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
+    """Post-training full evaluation; independently reload immutable repair weights."""
+    checkpoint=Path(a.repair_checkpoint)
+    run=checkpoint.parent.parent
+    assert json.loads((run/'status.json').read_text())['status']=='COMPLETED', 'Finish training before paired benchmarking'
+    original=json.loads((run/'provenance.json').read_text())
+    assert original['contract']==provenance['contract']
+    assert original['checkpoint']['sha256']==provenance['checkpoint']['sha256']
+    saved=torch.load(str(checkpoint),map_location='cpu');contract=saved['contract']
+    assert contract['source_policy']==policy
+    assert contract['teacher_checkpoint_sha256']==provenance['checkpoint']['sha256']
+    assert contract['repair_policy']==a.repair_policy
+    repairs=make_repairs().cuda().eval();repairs.load_state_dict(saved['repairs'],strict=True)
+    assert sum(p.numel() for p in repairs.parameters())==contract['trainable_parameters']
+    engineering=json.loads((run/'engineering.json').read_text())
+    assert engineering['status']=='PASSED'
+    a.stage='full';a.engineering=str(run/'engineering.json')
+    wrapper=LocalCacheDetector(model,cfg,policy['selected']['threshold'],period=a.repair_period,
+                              repair_modules=repairs,repair_dense=a.repair_policy=='dense')
+    torch.cuda.reset_peak_memory_stats()
+    report=evaluate(a,model,cfg,rows,out,wrapper)
+    frames=[json.loads(s) for s in (out/'frames.jsonl').read_text().splitlines()]
+    partial=[r for r in frames if r['local_partial']]
+    report.update(repair_policy=a.repair_policy,repair_period=a.repair_period,repair_checkpoint=str(checkpoint),
+        repair_checkpoint_sha256=digest(checkpoint),repair_epoch=saved['epoch'],
+        partial_frames=len(partial),partial_labeled_frames=sum(r['supervised'] for r in partial),
+        original_deep_stage_call_fraction=1-len(partial)/len(frames),
+        caveats=['Reloaded frozen detector and repair checkpoint; period1 is paired all-original-stage control.',
+                 'Period2 skips original deep stages on every partial frame; local=actual tile crops, dense=whole small repair modules.',
+                 'stage_means combines different module input areas, not backbone MAC reduction.',
+                 'Timing includes model/gate/warp/cache/repair/decoder/head but excludes IO/voxelization/postprocess.',
+                 'Use sequential runs on the same GPU after both training jobs finish; one timing pair is not a stability study.'])
+    return report
 
 
 def training_pair(first,targets,teacher,cache,meta,repairs,bounds,threshold,dense=False):

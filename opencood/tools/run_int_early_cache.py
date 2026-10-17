@@ -180,7 +180,16 @@ def worker(a):
     a.stage = 'calibrate' if requested == 'local-profile' else 'pilot'
     model,cfg,val,provenance = setup(a)
     write_json(out/'provenance.json',provenance)
-    if requested == 'learned-repair':
+    if requested == 'learned-eval':
+        from opencood.tools.train_int_light_repair import evaluate_saved
+        source=Path(a.source_suite)
+        original=json.loads((source/'provenance.json').read_text())
+        assert original['checkpoint']['sha256']==provenance['checkpoint']['sha256']
+        assert original['contract']==provenance['contract']
+        policy=json.loads((source/'frozen_policies.json').read_text())['stage1_stages']
+        assert policy['version']==VERSION and policy['split']=='train'
+        write_json(out/'report.json',evaluate_saved(a,model,cfg,val,out,policy,provenance))
+    elif requested == 'learned-repair':
         from opencood.tools.train_int_light_repair import train
         source=Path(a.source_suite)
         original=json.loads((source/'provenance.json').read_text())
@@ -273,15 +282,18 @@ def worker(a):
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--root',required=True);p.add_argument('--output',required=True)
-    p.add_argument('--gpu',type=int,required=True);p.add_argument('--stage',choices=['suite','full','local-profile','local-suite','learned-repair'],default='suite')
+    p.add_argument('--gpu',type=int,required=True);p.add_argument('--stage',choices=['suite','full','local-profile','local-suite','learned-repair','learned-eval'],default='suite')
     p.add_argument('--source-suite');p.add_argument('--gate',choices=['gru','stage1'],default='gru')
     p.add_argument('--cache-kind',choices=['stages','decoded'],default='stages')
     p.add_argument('--mode',choices=['gru'],default='gru')
     p.add_argument('--repair-policy',choices=['local','dense'],default='local')
+    p.add_argument('--repair-checkpoint');p.add_argument('--repair-period',type=int,choices=[1,2],default=2)
     p.add_argument('--train-frames',type=int,default=1024);p.add_argument('--frames',type=int,default=256)
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
-    if a.stage in ('full','local-profile','local-suite','learned-repair') and not a.source_suite:
+    if a.stage in ('full','local-profile','local-suite','learned-repair','learned-eval') and not a.source_suite:
         p.error('Full evaluation requires the original suite with frozen policies and passed checks')
+    if a.stage=='learned-eval' and not a.repair_checkpoint:
+        p.error('learned-eval requires a completed training checkpoint')
     if a.worker:
         try:
             worker(a)
