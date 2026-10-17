@@ -1,0 +1,14 @@
+{
+  "status": "PASSED",
+  "scans": 5794,
+  "labels": 1738,
+  "resets": 214,
+  "checks": [
+    "Complete manifest order/frame/segment/label coverage",
+    "Independent stage summary recomputation",
+    "Checkpoint/config/manifest hashes"
+  ],
+  "report_sha256": "51f0378a7d9dfcfd9c0e9c13982aa1898f99f3a9f26302c33e356321e96afacd",
+  "frames_sha256": "994059dd7921ce948ac0b35d4c83187389b993c36d69017272c89ba8c4242691",
+  "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8"
+}

@@ -2,7 +2,7 @@ import unittest
 import torch
 from torch import nn
 from opencood.models.sub_modules.codyntrust_resblock import BasicBlock
-from opencood.models.sub_modules.int_cache_repair import refresh_tiles, select_updates, rectangles
+from opencood.models.sub_modules.int_cache_repair import refresh_tiles, select_updates, rectangles, stage_dependency_work
 
 
 class CacheRepairTests(unittest.TestCase):
@@ -80,6 +80,26 @@ class CacheRepairTests(unittest.TestCase):
         x=torch.ones(1,3,16,16);mask=torch.ones_like(x[:,:1],dtype=torch.bool)
         with self.assertRaises(ValueError):refresh_tiles(nn.Identity(),x,x,mask,1,0)
         with self.assertRaises(ValueError):select_updates(x,x,mask,1.1)
+
+    def test_dependency_support_matches_autograd_and_full_empty_work(self):
+        for stride in [1,2]:
+            layer=self.block(stride,3)
+            for m in layer.modules():
+                if isinstance(m,nn.Conv2d):m.weight.data.fill_(.01)
+                if isinstance(m,nn.BatchNorm2d):
+                    m.weight.data.fill_(1);m.bias.data.fill_(.1);m.running_mean.zero_()
+            x=torch.ones(1,3,37,45,requires_grad=True)
+            y=layer(x);mask=torch.zeros_like(y[:,:1],dtype=torch.bool)
+            mask[...,0,0]=True;mask[...,y.shape[-2]//2,y.shape[-1]//2]=True
+            (y*mask).sum().backward()
+            stats,required=stage_dependency_work(layer,mask,x.shape[-2:])
+            self.assertTrue(torch.equal(required,x.grad.abs().sum(1,keepdim=True)>0))
+            self.assertGreater(stats['ideal_conv_mac_fraction'],0)
+            self.assertLess(stats['ideal_conv_mac_fraction'],1)
+            full,_=stage_dependency_work(layer,torch.ones_like(mask),x.shape[-2:])
+            empty,_=stage_dependency_work(layer,torch.zeros_like(mask),x.shape[-2:])
+            self.assertEqual(full['ideal_conv_mac_fraction'],1)
+            self.assertEqual(empty['ideal_conv_mac_fraction'],0)
 
 
 if __name__=='__main__':unittest.main()

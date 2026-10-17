@@ -62,6 +62,46 @@ def rectangles(active):
     return result
 
 
+def stage_dependency_work(module, output_mask, input_shape):
+    """Ideal deduplicated convolution work for the frozen BasicBlock stack.
+
+Counts MACs only; this is NOT an implemented sparse kernel or latency estimate.
+Backward dependency propagation includes both main and residual branches.
+"""
+    required = output_mask
+    needed_macs = dense_macs = 0.
+    blocks = list(module)
+    for index in reversed(range(len(blocks))):
+        block = blocks[index]
+        conv1, conv2 = block.conv1, block.conv2
+        assert conv1.kernel_size == conv2.kernel_size == (3,3)
+        assert conv2.stride == (1,1) and conv1.dilation == conv2.dilation == (1,1)
+        assert conv1.groups == conv2.groups == 1
+        n = float(required.sum());total = required.numel()
+        per_pixel = 9*conv2.in_channels*conv2.out_channels
+        needed_macs += n*per_pixel;dense_macs += total*per_pixel
+        # conv2 needs all conv1 outputs in its 3x3 neighborhood.
+        intermediate = F.max_pool2d(required.float(),3,1,1)>0
+        per_pixel = 9*conv1.in_channels*conv1.out_channels
+        needed_macs += float(intermediate.sum())*per_pixel;dense_macs += total*per_pixel
+        if block.downsample is not None:
+            down = block.downsample[0]
+            assert down.kernel_size == (1,1)
+            per_pixel = down.in_channels*down.out_channels
+            needed_macs += n*per_pixel;dense_macs += total*per_pixel
+        stride = conv1.stride[0]
+        shape = input_shape if index==0 else output_mask.shape[-2:]
+        base = [(intermediate.shape[-2+j]-1)*stride+1 for j in range(2)]
+        padding = tuple(int(shape[j]-base[j]) for j in range(2))
+        required = F.conv_transpose2d(intermediate.float(),intermediate.new_ones((1,1,3,3),dtype=torch.float),
+                                      stride=stride,padding=1,output_padding=padding)>0
+        # The residual input locations are a subset of the expanded main path.
+    stats = dict(ideal_required_conv_macs=needed_macs,dense_conv_macs=dense_macs,
+                 ideal_conv_mac_fraction=needed_macs/dense_macs,
+                 unique_input_support_fraction=float(required.float().mean()))
+    return stats, required
+
+
 def refresh_tiles(module, x, cached, requested, stride, radius, tile=8,
                   fallback_fraction=.8, allow_fallback=True):
     """Run only selected stage-output tiles, batching equal-shaped input crops.
@@ -116,11 +156,12 @@ intermediate BN offsets would then produce a different boundary condition.
 
 class CacheRepairDetector:
     """Fixed existing detector; full FM, cached ResNet stages, dense decoder/head."""
-    def __init__(self, model, config, fraction=.5, tile=8, max_age=1., dense=False, occupancy_policy='cell', oracle_stage0=False):
+    def __init__(self, model, config, fraction=.5, tile=8, max_age=1., dense=False, occupancy_policy='cell', oracle_stage0=False, support_profile=False):
         self.model, self.config = model, config
         self.fraction, self.tile, self.max_age, self.dense = fraction, tile, max_age, dense
         self.occupancy_policy = occupancy_policy
         self.oracle_stage0 = oracle_stage0
+        self.support_profile = support_profile
         args = config['model']['args']
         self.lidar_range = args['lidar_range']
         self.layers = args['base_bev_backbone']['layer_nums']
@@ -151,6 +192,7 @@ class CacheRepairDetector:
         first_written = None
         for i, n in enumerate(self.layers):
             module = getattr(m.backbone.resnet, 'layer%d' % i)
+            input_shape = x.shape[-2:]
             if fresh or self.dense or (self.oracle_stage0 and i>0):
                 x = module(x)
                 age = torch.zeros_like(x[:,:1])
@@ -180,6 +222,9 @@ class CacheRepairDetector:
                 if self.oracle_stage0:
                     st['executed_input_area_ratio'] += 1.  # Include dense oracle work.
                 age = torch.where(written, torch.zeros_like(age), age)
+            if self.support_profile:
+                work, _ = stage_dependency_work(module,written,input_shape)
+                st.update(work)
             if i == 0:
                 first_written = written.repeat_interleave(2,-2).repeat_interleave(2,-1)[...,:spatial.shape[-2],:spatial.shape[-1]]
             stages.append(x); ages.append(age); stats.append(st)
