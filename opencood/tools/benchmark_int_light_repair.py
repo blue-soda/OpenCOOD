@@ -35,6 +35,19 @@ def audit_frames(directory, rows):
     assert report['partial_labeled_frames'] == sum(r['supervised'] for r in partial)
     assert all(not r['local_verification_errors'] for r in records), 'No inference teacher allowed'
     assert all(math.isfinite(r['ms']) and r['ms'] > 0 for r in records)
+    if records and 'cache_anchor_stamp' in records[0]:
+        anchor=None;count=0
+        for r,row in zip(records,rows):
+            if r['local_partial']:
+                count+=1
+                assert not r['reset'] and anchor is not None
+                assert r['cache_anchor_stamp']==anchor
+                assert r['cache_frames_since_refresh']==count < report.get('repair_period',2)
+                assert 0 < r['cache_age_seconds'] < .25
+                assert abs(r['cache_age_seconds']-(int(row['timestamp_us'])-anchor)/1e6)<1e-10
+            else:
+                anchor=int(row['timestamp_us']);count=0
+                assert r['cache_anchor_stamp']==anchor and r['cache_frames_since_refresh']==0
     measured = sum(r['ms'] for r in records[10:])/(len(records)-10)
     assert abs(measured-report['model_step_ms_mean']) < 1e-8
     return dict(scans=len(records), labels=report['labels'], partial_frames=len(partial),
@@ -71,6 +84,8 @@ def worker(a):
     if a.suite == 'mechanism':
         cases = [('original', 'dense', 1, 'original'), ('dense', 'dense', 2, 'none'),
                  ('zero_residual', 'dense', 2, 'zero-residual')]
+    if a.suite == 'longer':
+        cases = [('original', 'dense', 1, 'original'), ('dense_period3', 'dense', 3, 'none')]
     for name, policy, period, ablation in cases:
         free = int(subprocess.check_output(['nvidia-smi', '-i', str(a.gpu),
                    '--query-gpu=memory.free', '--format=csv,noheader,nounits']).decode().strip())
@@ -91,9 +106,9 @@ def worker(a):
         exposure = audit_frames(target, rows)
         report = read(target/'report.json')
         expected = read(Path(a.root)/'full_gru'/'best.json')['bev_ap70'] if period == 1 else bests[policy]['ap70']
-        if ablation != 'zero-residual':
+        if ablation != 'zero-residual' and period <= 2:
             assert abs(report['metrics']['bev_ap70']-expected) < 1e-10, 'Reloaded AP mismatch'
-        else:
+        elif ablation == 'zero-residual':
             assert exposure == results['dense']['audit'], 'Intervention changed cache schedule'
         assert report['repair_checkpoint_sha256'] == bests[policy]['sha256']
         results[name] = dict(report=report, audit=exposure)
@@ -106,7 +121,7 @@ def main():
     for key in ('root', 'training-root', 'output'):
         p.add_argument('--'+key, required=True)
     p.add_argument('--gpu', type=int, required=True)
-    p.add_argument('--suite', choices=['standard', 'mechanism'], default='standard')
+    p.add_argument('--suite', choices=['standard', 'mechanism', 'longer'], default='standard')
     p.add_argument('--worker', action='store_true')
     a = p.parse_args()
     out = Path(a.output)

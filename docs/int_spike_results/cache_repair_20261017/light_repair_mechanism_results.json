@@ -1,0 +1,222 @@
+{
+  "dense": {
+    "audit": {
+      "labels": 1738,
+      "partial_frames": 2843,
+      "partial_labeled_frames": 852,
+      "scans": 5794
+    },
+    "report": {
+      "caveats": [
+        "Reloaded frozen detector and repair checkpoint; period1 is paired all-original-stage control.",
+        "Period2 skips original deep stages on every partial frame; local=actual tile crops, dense=whole small repair modules.",
+        "stage_means combines different module input areas, not backbone MAC reduction.",
+        "Timing includes model/gate/warp/cache/repair/decoder/head but excludes IO/voxelization/postprocess.",
+        "Use sequential runs on the same GPU after both training jobs finish; one timing pair is not a stability study."
+      ],
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "labels": 1738,
+      "metrics": {
+        "bev_ap30": 0.8523071280369124,
+        "bev_ap50": 0.8365246140975862,
+        "bev_ap70": 0.7579115347856362
+      },
+      "model_step_ms_mean": 27.851758281680024,
+      "model_step_ms_p50": 30.566390021704137,
+      "model_step_ms_p95": 33.276942116208375,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "original_deep_stage_call_fraction": 0.509319986192613,
+      "partial_frames": 2843,
+      "partial_labeled_frames": 852,
+      "peak_gpu_bytes": 458878976,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "repair_ablation": "none",
+      "repair_checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_dense/epoch_005/repairs.pth",
+      "repair_checkpoint_sha256": "f25dcac44f35527732857aa1642271d033e893ab0915568f127be333a1b53007",
+      "repair_epoch": 5,
+      "repair_period": 2,
+      "repair_policy": "dense",
+      "reset_frames": 214,
+      "scans": 5794,
+      "scope": "Fixed-weight inference intervention; full validation",
+      "seconds": 294.9183212018106,
+      "stage_means": [
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "crop_area_ratio_before_fallback": 1.0,
+          "executed_input_area_ratio": 1.0,
+          "fallback": 0.0,
+          "requested_fraction": 1.0,
+          "selected_fraction": 1.0,
+          "tiles": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "crop_area_ratio_before_fallback": 1.0,
+          "executed_input_area_ratio": 1.0,
+          "fallback": 0.0,
+          "requested_fraction": 1.0,
+          "selected_fraction": 1.0,
+          "tiles": 1.0
+        }
+      ],
+      "state_bytes": 35884800,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    }
+  },
+  "original": {
+    "audit": {
+      "labels": 1738,
+      "partial_frames": 0,
+      "partial_labeled_frames": 0,
+      "scans": 5794
+    },
+    "report": {
+      "caveats": [
+        "Reloaded frozen detector and repair checkpoint; period1 is paired all-original-stage control.",
+        "Period2 skips original deep stages on every partial frame; local=actual tile crops, dense=whole small repair modules.",
+        "stage_means combines different module input areas, not backbone MAC reduction.",
+        "Timing includes model/gate/warp/cache/repair/decoder/head but excludes IO/voxelization/postprocess.",
+        "Use sequential runs on the same GPU after both training jobs finish; one timing pair is not a stability study.",
+        "Direct original model.step; no deep cache or repair execution. Only existing FM state is retained. Loaded repair modules are unused."
+      ],
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "labels": 1738,
+      "metrics": {
+        "bev_ap30": 0.8536119501279772,
+        "bev_ap50": 0.8380867977929637,
+        "bev_ap70": 0.758736104616861
+      },
+      "model_step_ms_mean": 31.993046909893373,
+      "model_step_ms_p50": 31.950208474881947,
+      "model_step_ms_p95": 33.662441407795995,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "original_deep_stage_call_fraction": 1.0,
+      "partial_frames": 0,
+      "partial_labeled_frames": 0,
+      "peak_gpu_bytes": 447595008,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "repair_ablation": "original",
+      "repair_checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_dense/epoch_005/repairs.pth",
+      "repair_checkpoint_sha256": "f25dcac44f35527732857aa1642271d033e893ab0915568f127be333a1b53007",
+      "repair_epoch": 5,
+      "repair_period": 1,
+      "repair_policy": "dense",
+      "reset_frames": 214,
+      "scans": 5794,
+      "scope": "Fixed-weight inference intervention; full validation",
+      "seconds": 323.1249793069437,
+      "stage_means": [
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        }
+      ],
+      "state_bytes": 26208000,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    }
+  },
+  "zero_residual": {
+    "audit": {
+      "labels": 1738,
+      "partial_frames": 2843,
+      "partial_labeled_frames": 852,
+      "scans": 5794
+    },
+    "report": {
+      "caveats": [
+        "Reloaded frozen detector and repair checkpoint; period1 is paired all-original-stage control.",
+        "Period2 skips original deep stages on every partial frame; local=actual tile crops, dense=whole small repair modules.",
+        "stage_means combines different module input areas, not backbone MAC reduction.",
+        "Timing includes model/gate/warp/cache/repair/decoder/head but excludes IO/voxelization/postprocess.",
+        "Use sequential runs on the same GPU after both training jobs finish; one timing pair is not a stability study.",
+        "Loaded checkpoint hash is unchanged provenance; final residual weights/bias are zeroed in memory. Small-module compute remains, so this is an accuracy intervention, not an optimized warp-only speed baseline. New-view deep features remain zero."
+      ],
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "labels": 1738,
+      "metrics": {
+        "bev_ap30": 0.8500482618975664,
+        "bev_ap50": 0.8340689410963993,
+        "bev_ap70": 0.7557621376308937
+      },
+      "model_step_ms_mean": 27.830992083886077,
+      "model_step_ms_p50": 30.551792471669614,
+      "model_step_ms_p95": 32.88514198502524,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "original_deep_stage_call_fraction": 0.509319986192613,
+      "partial_frames": 2843,
+      "partial_labeled_frames": 852,
+      "peak_gpu_bytes": 458878976,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "repair_ablation": "zero-residual",
+      "repair_checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_dense/epoch_005/repairs.pth",
+      "repair_checkpoint_sha256": "f25dcac44f35527732857aa1642271d033e893ab0915568f127be333a1b53007",
+      "repair_epoch": 5,
+      "repair_period": 2,
+      "repair_policy": "dense",
+      "reset_frames": 214,
+      "scans": 5794,
+      "scope": "Fixed-weight inference intervention; full validation",
+      "seconds": 296.51576716802083,
+      "stage_means": [
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "crop_area_ratio_before_fallback": 1.0,
+          "executed_input_area_ratio": 1.0,
+          "fallback": 0.0,
+          "requested_fraction": 1.0,
+          "selected_fraction": 1.0,
+          "tiles": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "crop_area_ratio_before_fallback": 1.0,
+          "executed_input_area_ratio": 1.0,
+          "fallback": 0.0,
+          "requested_fraction": 1.0,
+          "selected_fraction": 1.0,
+          "tiles": 1.0
+        }
+      ],
+      "state_bytes": 35884800,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    }
+  }
+}

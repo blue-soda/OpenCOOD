@@ -40,8 +40,11 @@ def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
             for repair in repairs:
                 repair.net[-1].weight.zero_();repair.net[-1].bias.zero_()
     if ablation=='original':assert a.repair_period==1
-    engineering=json.loads((run/'engineering.json').read_text())
-    assert engineering['status']=='PASSED'
+    engineering_report=json.loads((run/'engineering.json').read_text())
+    assert engineering_report['status']=='PASSED'
+    if a.repair_period==3:
+        assert a.repair_policy=='dense' and ablation=='none'
+        engineering(model,cfg,rows,repairs,policy['selected']['threshold'],out,True,period=3)
     a.stage='full';a.engineering=str(run/'engineering.json')
     wrapper=LocalCacheDetector(model,cfg,policy['selected']['threshold'],period=a.repair_period,
                               repair_modules=repairs,repair_dense=a.repair_policy=='dense')
@@ -64,6 +67,8 @@ def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
         report['caveats'].append('Loaded checkpoint hash is unchanged provenance; final residual weights/bias are zeroed in memory. Small-module compute remains, so this is an accuracy intervention, not an optimized warp-only speed baseline. New-view deep features remain zero.')
     if ablation=='original':
         report['caveats'].append('Direct original model.step; no deep cache or repair execution. Only existing FM state is retained. Loaded repair modules are unused.')
+    if a.repair_period==3:
+        report['caveats'].append('Zero-shot period3 diagnostic with period2-trained weights. Up to two partial frames use the same full anchor, age below 0.25s; repaired outputs are never written into the anchor. Not a matched-training final result.')
     return report
 
 
@@ -88,14 +93,14 @@ def training_pair(first,targets,teacher,cache,meta,repairs,bounds,threshold,dens
     return outputs,loss
 
 
-def engineering(model,cfg,rows,repairs,threshold,out,dense=False):
+def engineering(model,cfg,rows,repairs,threshold,out,dense=False,period=2):
     test=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],
                         stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     (out/'unit_tests.log').write_bytes(test.stdout)
     if test.returncode:raise RuntimeError('INT tests failed')
     full=LocalCacheDetector(model,cfg,threshold,period=1,repair_modules=repairs,repair_dense=dense)
-    partial=LocalCacheDetector(model,cfg,threshold,verify=True,repair_modules=repairs,repair_dense=dense)
-    states=[None,None,None];errors=[];crop_errors=[];deep_calls=[0,0];opportunities=0
+    partial=LocalCacheDetector(model,cfg,threshold,period=period,verify=True,repair_modules=repairs,repair_dense=dense)
+    states=[None,None,None];errors=[];crop_errors=[];deep_calls=[0,0];opportunities=0;max_partial_depth=0
     def hit(i):
         def callback(module,inputs,output):deep_calls[i]+=1
         return callback
@@ -110,14 +115,22 @@ def engineering(model,cfg,rows,repairs,threshold,out,dense=False):
                 error=max(float((actual[k]-expected[k]).abs().max()) for k in actual)
                 assert error<=1e-5;errors.append(error)
                 before=list(deep_calls)
+                previous=None if states[2] is None else states[2]['cache']
                 actual,states[2],info=partial.step(ego,states[2],meta)
                 calls=[a-b for a,b in zip(deep_calls,before)]
                 assert calls==([0,0] if info['local_partial'] else [1,1])
+                if info['local_partial']:
+                    assert states[2]['cache']['stamp']==previous['stamp']
+                    assert all(x is y for x,y in zip(states[2]['cache']['values'],previous['values']))
+                    assert 0 < info['cache_age_seconds'] < .25
+                    assert info['cache_frames_since_refresh'] < period
+                    max_partial_depth=max(max_partial_depth,info['cache_frames_since_refresh'])
                 assert all(torch.isfinite(v).all() for v in actual.values())
                 opportunities+=int(info['local_partial']);crop_errors.extend(info['local_verification_errors'])
     finally:
         for hook in hooks:hook.remove()
-    report=dict(status='PASSED',full_refresh_errors=errors,crop_errors=crop_errors,
+    if period==3:assert max_partial_depth==2, 'Engineering prefix must exercise two repairs from one anchor'
+    report=dict(status='PASSED',period=period,max_partial_depth=max_partial_depth,full_refresh_errors=errors,crop_errors=crop_errors,
                 partial_frames_with_zero_original_deep_stage_calls=opportunities)
     write_json(out/'engineering.json',report)
 

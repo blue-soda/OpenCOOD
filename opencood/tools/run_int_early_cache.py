@@ -287,7 +287,7 @@ def main():
     p.add_argument('--cache-kind',choices=['stages','decoded'],default='stages')
     p.add_argument('--mode',choices=['gru'],default='gru')
     p.add_argument('--repair-policy',choices=['local','dense'],default='local')
-    p.add_argument('--repair-checkpoint');p.add_argument('--repair-period',type=int,choices=[1,2],default=2)
+    p.add_argument('--repair-checkpoint');p.add_argument('--repair-period',type=int,choices=[1,2,3],default=2)
     p.add_argument('--repair-ablation',choices=['none','zero-residual','original'],default='none')
     p.add_argument('--train-frames',type=int,default=1024);p.add_argument('--frames',type=int,default=256)
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
@@ -295,6 +295,8 @@ def main():
         p.error('Full evaluation requires the original suite with frozen policies and passed checks')
     if a.stage=='learned-eval' and not a.repair_checkpoint:
         p.error('learned-eval requires a completed training checkpoint')
+    if a.stage=='learned-repair' and a.repair_period!=2:
+        p.error('Training currently supports only period2; period3 is an evaluation diagnostic')
     if a.worker:
         try:
             worker(a)

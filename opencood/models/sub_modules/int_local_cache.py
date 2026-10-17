@@ -45,15 +45,17 @@ class OriginalDetectorControl:
 
 
 class LocalCacheDetector:
-    """Actual frozen-stage crop execution, one partial frame per full refresh.
+    """Actual frozen-stage crop execution with bounded full-refresh anchors.
 
 Keep the full-frame anchor until the next mandatory full refresh. Do not blend
 different pose/time anchors into the saved reference. Stage3 requests use the
 ACTUAL stage2 write mask, including a possible full-stage fallback.
 """
     def __init__(self,model,config,threshold,period=2,verify=False,repair_modules=None,repair_dense=False):
-        if model.training or model.feature_memory.mode!='gru' or period not in (1,2):
-            raise ValueError('Frozen GRU and period 1/2 required')
+        if model.training or model.feature_memory.mode!='gru' or period not in (1,2,3):
+            raise ValueError('Frozen GRU and period 1/2/3 required')
+        if period==3 and (repair_modules is None or not repair_dense):
+            raise ValueError('Period3 is a dense learned-repair extrapolation diagnostic')
         self.model=model;self.bounds=config['model']['args']['lidar_range']
         assert config['model']['args']['base_bev_backbone']['layer_nums']==[3,4,5]
         self.threshold=threshold;self.period=period;self.verify=verify
@@ -134,6 +136,8 @@ ACTUAL stage2 write mask, including a possible full-stage fallback.
         tensors=cache['values']+[fm['value']]
         if cache['desc'] is not None:tensors.append(cache['desc'])
         info.update(cache_stages=stats,cache_bytes=sum(t.numel()*t.element_size() for t in tensors),
+            cache_anchor_stamp=cache['stamp'],cache_age_seconds=(int(meta['timestamp_us'])-cache['stamp'])/1e6,
+            cache_frames_since_refresh=cache['frames'],
             local_refresh_reason=reason,local_partial=reason is None,local_changed_fraction=changed_fraction,
             local_boundary_fractions=boundary,local_verification_errors=errors)
         return pred,dict(fm=fm,cache=cache),info
