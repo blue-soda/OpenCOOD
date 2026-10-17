@@ -66,6 +66,12 @@ def run(config, checkpoint):
             cached = {id(data[key]): original_encoder(data[key], size)
                       for key in ('processed_lidar', 'road_lidar')}
             model.encode_lidar = lambda lidar, batch_size: cached[id(lidar)]
+            original_detect = model.detect_bev
+            readout_inputs = []
+            def capture_readout(features):
+                readout_inputs.append(features.detach().clone())
+                return original_detect(features)
+            model.detect_bev = capture_readout
             model.packet_roundtrip = True
             model.collect_fusion_diagnostics = True
             continuous = model(data)
@@ -73,12 +79,14 @@ def run(config, checkpoint):
             discrete = model(data)
             assert continuous['packet_bytes'] == discrete['packet_bytes']
             assert torch.isfinite(continuous['psm']).all() and torch.isfinite(continuous['rm']).all()
-            assert not torch.equal(continuous['psm'], discrete['psm'])
+            assert not torch.equal(readout_inputs[0], readout_inputs[1])
             assert 'above_cap_fraction' not in continuous['fusion_probe']
             report['readout_audit'] = dict(sender_packets_identical=True,
-                packet_bytes=continuous['packet_bytes'], distinct_detector_output=True,
+                packet_bytes=continuous['packet_bytes'], distinct_bev_input=True,
+                distinct_detector_output=not torch.equal(continuous['psm'], discrete['psm']),
                 cached_encoder_features=True, continuous_probe_omits_count_cap=True)
             model.encode_lidar = original_encoder
+            model.detect_bev = original_detect
             model.fusion_readout = 'continuous'
     report.update(passed=True, inference_has_no_auxiliary_branch=True,
                   scope='Two real train frames; one warmup and one joint optimizer step; weights discarded')

@@ -77,6 +77,8 @@ def summarize(root, suffix='', audit_name='frozen_detector.json', activations=('
             'opencood/models/e3dsnn_single_ann.py', 'opencood/models/sub_modules/e3dsnn/backbone_3d.py',
             'opencood/models/sub_modules/e3dsnn/backbone_2d.py', 'opencood/models/fuse_modules/e3dsnn_geometry.py',
             'opencood/tools/train_e3dsnn_single.py', 'opencood/utils/e3dsnn_fusion_probe.py']
+        if any('fusion_readout' in manifest for manifest in manifests):
+            inference_files.append('opencood/models/fuse_modules/e3dsnn_readout.py')
         blobs = []
         for manifest in manifests:
             blobs.append({path: subprocess.check_output(['git', 'rev-parse',
@@ -105,8 +107,9 @@ if __name__ == '__main__':
     parser.add_argument('--output', required=True)
     parser.add_argument('--suffix', default='', help='Run suffix, e.g. _frozen30')
     parser.add_argument('--audit-name', choices=['frozen_detector.json', 'fixed_bn.json'], default='frozen_detector.json')
+    parser.add_argument('--activations', nargs='+', choices=['count4', 'relu'], default=['count4', 'relu'])
     args = parser.parse_args()
-    result = summarize(args.root, args.suffix, args.audit_name)
+    result = summarize(args.root, args.suffix, args.audit_name, args.activations)
     with Path(args.output).open('x') as stream:
         json.dump(result, stream, indent=2)
     print(json.dumps(dict(passed=result['passed'], output=args.output)), flush=True)
