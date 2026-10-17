@@ -7,6 +7,7 @@ import math
 import torch
 import torch.nn.functional as F
 from opencood.models.sub_modules.int_feature_memory import warp_bev
+from opencood.models.sub_modules.int_cache_gate import content_stage_step
 
 
 def tile_mask(mask, tile):
@@ -275,9 +276,10 @@ class CacheRepairDetector:
 
 class PeriodicStageDetector(CacheRepairDetector):
     """Full FM/stages 0,1; periodically execute stage 2; dense decoder/head."""
-    def __init__(self,model,config,period=2,max_age=1.):
+    def __init__(self,model,config,period=2,max_age=1.,content_threshold=None):
         super().__init__(model,config,max_age=max_age)
         self.period=period
+        self.content_threshold=content_threshold
 
     def step(self,data,state,meta):
         m=self.model;p=data['processed_lidar']
@@ -290,14 +292,18 @@ class PeriodicStageDetector(CacheRepairDetector):
             spatial=m.cls_head.weight.new_zeros(1,64,int(ny),int(nx))
         x,fm,info=m.feature_memory.step(spatial,None if state is None else state['fm'],meta)
         cache=None if state is None or bool(info['reset']) else state['stage_cache']
-        stages=[];stats=[]
+        stages=[];stats=[];score=None
         for i in range(3):
             module=getattr(m.backbone.resnet,'layer%d'%i)
             if i<2:
                 x=module(x);executed=1.
             else:
-                x,cache,reason=periodic_stage_step(module,x,cache,meta['pose'],meta['timestamp_us'],
-                                                 self.lidar_range,self.period,self.max_age)
+                if self.content_threshold is None:
+                    x,cache,reason=periodic_stage_step(module,x,cache,meta['pose'],meta['timestamp_us'],
+                                                     self.lidar_range,self.period,self.max_age)
+                else:
+                    x,cache,reason,score=content_stage_step(module,x,cache,meta['pose'],meta['timestamp_us'],
+                        self.lidar_range,self.period,self.max_age,self.content_threshold)
                 executed=float(reason is not None)
             stages.append(x)
             stats.append(dict(actual_write_fraction=executed,executed_input_area_ratio=executed))
@@ -306,6 +312,8 @@ class PeriodicStageDetector(CacheRepairDetector):
         pred=dict(psm=m.cls_head(features),rm=m.reg_head(features))
         if m.use_dir:pred['dm']=m.dir_head(features)
         new=dict(fm=fm,stage_cache=cache)
-        info.update(cache_stages=stats,periodic_refresh_reason=reason,
-                    cache_bytes=sum(t.numel()*t.element_size() for t in [cache['value'],fm['value']]))
+        tensors=[cache['value'],fm['value']]
+        if self.content_threshold is not None:tensors.append(cache['descriptor'])
+        info.update(cache_stages=stats,periodic_refresh_reason=reason,content_score=score,
+                    cache_bytes=sum(t.numel()*t.element_size() for t in tensors))
         return pred,new,info

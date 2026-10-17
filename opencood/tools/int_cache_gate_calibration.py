@@ -1,29 +1,11 @@
 """Training-only descriptor calibration; dense targets are diagnostic, not inference."""
 import json
-import math
 import time
 import numpy as np
 import torch
-import torch.nn.functional as F
 from opencood.models.sub_modules.int_feature_memory import warp_bev
+from opencood.models.sub_modules.int_cache_gate import cache_descriptor, descriptor_change
 from opencood.tools.run_int_ego import loader, to_device
-
-
-def cache_descriptor(stage_input):
-    """256 channels -> 16 group means, then 2x spatial pooling to stage-2 grid."""
-    b,c,h,w=stage_input.shape
-    assert c%16==0
-    return F.avg_pool2d(stage_input.reshape(b,16,c//16,h,w).mean(2),2,2,ceil_mode=True,
-                        count_include_pad=False)
-
-
-def descriptor_change(current, aligned):
-    pool=lambda t:F.avg_pool2d(t,4,4,ceil_mode=True,count_include_pad=False)
-    error=pool((current-aligned).square().mean(1,keepdim=True))
-    energy=torch.maximum(pool(current.square().mean(1,keepdim=True)),
-                         pool(aligned.square().mean(1,keepdim=True)))
-    scores=(error/energy.clamp_min(1e-6)).sqrt().flatten()
-    return float(scores.kthvalue(int(math.ceil(.9*scores.numel()))).values)
 
 
 def replay_gate(records, threshold, max_period=3, max_age=.25):
