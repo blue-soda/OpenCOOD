@@ -1,0 +1,379 @@
+{
+  "root": "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017",
+  "runs": {
+    "count4_aux1_seed20260930_joint30": {
+      "launch": {
+        "state": "launched",
+        "seed": 20260930,
+        "gpu": 4,
+        "git_commit": "d9996b90520e8ff0042492da27c77c2390b9a52a",
+        "started_unix": 1792226262.2410345,
+        "supervisor_pid": 50272
+      },
+      "plan": {
+        "name": "count4_aux1_seed20260930_joint30",
+        "jobs": [
+          {
+            "name": "count4_aux1_seed20260930_joint30_train",
+            "timeout_seconds": 43200,
+            "command": [
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.train_e3dsnn_single",
+              "--workers",
+              "2",
+              "--mode",
+              "train",
+              "--config",
+              "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_aux1_181.yaml",
+              "--single-checkpoint",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/snn_single.pth",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20260930_joint30",
+              "--epochs",
+              "30",
+              "--warmup-epochs",
+              "3",
+              "--selection-iou",
+              "0.7",
+              "--seed",
+              "20260930"
+            ]
+          },
+          {
+            "name": "count4_aux1_seed20260930_joint30_on",
+            "command": [
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.train_e3dsnn_single",
+              "--workers",
+              "2",
+              "--mode",
+              "eval",
+              "--config",
+              "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_aux1_181.yaml",
+              "--checkpoint",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20260930_joint30/best_ap70.pth",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20260930_joint30_on",
+              "--eval-3d",
+              "--save-predictions",
+              "--packet-roundtrip",
+              "--fusion-diagnostics",
+              "--seed",
+              "20260930"
+            ],
+            "timeout_seconds": 3600
+          },
+          {
+            "name": "count4_aux1_seed20260930_joint30_on_replay",
+            "timeout_seconds": 3600,
+            "command": [
+              "env",
+              "CUDA_VISIBLE_DEVICES=",
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.replay_e3dsnn_predictions",
+              "--evaluation-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20260930_joint30_on"
+            ]
+          },
+          {
+            "name": "count4_aux1_seed20260930_joint30_off",
+            "command": [
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.train_e3dsnn_single",
+              "--workers",
+              "2",
+              "--mode",
+              "eval",
+              "--config",
+              "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego_181.yaml",
+              "--checkpoint",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20260930_joint30/best_ap70.pth",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20260930_joint30_off",
+              "--eval-3d",
+              "--save-predictions",
+              "--seed",
+              "20260930"
+            ],
+            "timeout_seconds": 3600
+          },
+          {
+            "name": "count4_aux1_seed20260930_joint30_off_replay",
+            "timeout_seconds": 3600,
+            "command": [
+              "env",
+              "CUDA_VISIBLE_DEVICES=",
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.replay_e3dsnn_predictions",
+              "--evaluation-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20260930_joint30_off"
+            ]
+          },
+          {
+            "name": "count4_aux1_seed20260930_joint30_diagnostic",
+            "timeout_seconds": 3600,
+            "command": [
+              "env",
+              "CUDA_VISIBLE_DEVICES=",
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.diagnose_e3dsnn_ap70",
+              "--ego-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20260930_joint30_off",
+              "--fusion-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20260930_joint30_on",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20260930_joint30_diagnostic.json"
+            ]
+          }
+        ],
+        "seed": 20260930,
+        "gpu": 4,
+        "git_commit": "d9996b90520e8ff0042492da27c77c2390b9a52a",
+        "config_sha256": "d89c248a768b3dc6050f6abfdc25dae2098cbb0b3321b08b9c4c26df851b4e29",
+        "initializer_sha256": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
+        "source_plan_sha256": "e4cfa436985c16da2f245673e572acff4305aca6fd726cc68599b4567ddff5c9",
+        "report_policy": "Report all three seeds (20260929,20260930,20261001) and mean/sample SD; no best-seed selection. Fixed original single-agent initializer; only fine-tuning randomness is repeated."
+      },
+      "pipeline": {
+        "state": "running",
+        "job": "count4_aux1_seed20260930_joint30_train",
+        "child_pid": 50274,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--mode",
+          "train",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_aux1_181.yaml",
+          "--single-checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/snn_single.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20260930_joint30",
+          "--epochs",
+          "30",
+          "--warmup-epochs",
+          "3",
+          "--selection-iou",
+          "0.7",
+          "--seed",
+          "20260930"
+        ],
+        "supervisor_pid": 50272,
+        "updated_unix": 1792226262.2769642
+      },
+      "progress": {
+        "state": "training",
+        "epoch": 1,
+        "epochs": 30,
+        "batch": 401,
+        "batches": 2339,
+        "loss": 1.735755572419125,
+        "gradient_norm": 0.1220906525850296,
+        "elapsed_seconds": 62.48320550005883
+      }
+    },
+    "count4_aux1_seed20261001_joint30": {
+      "launch": {
+        "state": "launched",
+        "seed": 20261001,
+        "gpu": 5,
+        "git_commit": "d9996b90520e8ff0042492da27c77c2390b9a52a",
+        "started_unix": 1792226262.3431535,
+        "supervisor_pid": 50281
+      },
+      "plan": {
+        "name": "count4_aux1_seed20261001_joint30",
+        "jobs": [
+          {
+            "name": "count4_aux1_seed20261001_joint30_train",
+            "timeout_seconds": 43200,
+            "command": [
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.train_e3dsnn_single",
+              "--workers",
+              "2",
+              "--mode",
+              "train",
+              "--config",
+              "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_aux1_181.yaml",
+              "--single-checkpoint",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/snn_single.pth",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20261001_joint30",
+              "--epochs",
+              "30",
+              "--warmup-epochs",
+              "3",
+              "--selection-iou",
+              "0.7",
+              "--seed",
+              "20261001"
+            ]
+          },
+          {
+            "name": "count4_aux1_seed20261001_joint30_on",
+            "command": [
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.train_e3dsnn_single",
+              "--workers",
+              "2",
+              "--mode",
+              "eval",
+              "--config",
+              "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_aux1_181.yaml",
+              "--checkpoint",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20261001_joint30/best_ap70.pth",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20261001_joint30_on",
+              "--eval-3d",
+              "--save-predictions",
+              "--packet-roundtrip",
+              "--fusion-diagnostics",
+              "--seed",
+              "20261001"
+            ],
+            "timeout_seconds": 3600
+          },
+          {
+            "name": "count4_aux1_seed20261001_joint30_on_replay",
+            "timeout_seconds": 3600,
+            "command": [
+              "env",
+              "CUDA_VISIBLE_DEVICES=",
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.replay_e3dsnn_predictions",
+              "--evaluation-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20261001_joint30_on"
+            ]
+          },
+          {
+            "name": "count4_aux1_seed20261001_joint30_off",
+            "command": [
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.train_e3dsnn_single",
+              "--workers",
+              "2",
+              "--mode",
+              "eval",
+              "--config",
+              "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego_181.yaml",
+              "--checkpoint",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20261001_joint30/best_ap70.pth",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20261001_joint30_off",
+              "--eval-3d",
+              "--save-predictions",
+              "--seed",
+              "20261001"
+            ],
+            "timeout_seconds": 3600
+          },
+          {
+            "name": "count4_aux1_seed20261001_joint30_off_replay",
+            "timeout_seconds": 3600,
+            "command": [
+              "env",
+              "CUDA_VISIBLE_DEVICES=",
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.replay_e3dsnn_predictions",
+              "--evaluation-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20261001_joint30_off"
+            ]
+          },
+          {
+            "name": "count4_aux1_seed20261001_joint30_diagnostic",
+            "timeout_seconds": 3600,
+            "command": [
+              "env",
+              "CUDA_VISIBLE_DEVICES=",
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.diagnose_e3dsnn_ap70",
+              "--ego-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20261001_joint30_off",
+              "--fusion-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20261001_joint30_on",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20261001_joint30_diagnostic.json"
+            ]
+          }
+        ],
+        "seed": 20261001,
+        "gpu": 5,
+        "git_commit": "d9996b90520e8ff0042492da27c77c2390b9a52a",
+        "config_sha256": "d89c248a768b3dc6050f6abfdc25dae2098cbb0b3321b08b9c4c26df851b4e29",
+        "initializer_sha256": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
+        "source_plan_sha256": "e4cfa436985c16da2f245673e572acff4305aca6fd726cc68599b4567ddff5c9",
+        "report_policy": "Report all three seeds (20260929,20260930,20261001) and mean/sample SD; no best-seed selection. Fixed original single-agent initializer; only fine-tuning randomness is repeated."
+      },
+      "pipeline": {
+        "state": "running",
+        "job": "count4_aux1_seed20261001_joint30_train",
+        "child_pid": 50282,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--mode",
+          "train",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_aux1_181.yaml",
+          "--single-checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/snn_single.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_seed_repeats_20261017/count4_aux1_seed20261001_joint30",
+          "--epochs",
+          "30",
+          "--warmup-epochs",
+          "3",
+          "--selection-iou",
+          "0.7",
+          "--seed",
+          "20261001"
+        ],
+        "supervisor_pid": 50281,
+        "updated_unix": 1792226262.3768723
+      },
+      "progress": {
+        "state": "training",
+        "epoch": 1,
+        "epochs": 30,
+        "batch": 401,
+        "batches": 2339,
+        "loss": 3.0519947296797243,
+        "gradient_norm": 0.6451850533485413,
+        "elapsed_seconds": 59.96839405200444
+      }
+    }
+  }
+}

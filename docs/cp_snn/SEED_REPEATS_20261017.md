@@ -3,7 +3,7 @@
 ## Material Passport
 
 来源：已核验辅助监督与连续读出对照；用户持续推进AP70的授权。academic-research-suite / experiment-agent执行与核验。
-当前状态：重复实验启动工具已实现，等待通过检查后启动。不会把待运行计划写成结果。
+当前状态：两组均已启动，源提交d9996b90520e8ff0042492da27c77c2390b9a52a；种子20260930使用GPU4（监督PID50272），20261001使用GPU5（监督PID50281）。
 
 ## 选择与边界
 
@@ -25,3 +25,7 @@
 每次自动30轮→开路端评估/消息/探针→CPU复算→关路端评估→CPU复算→GT诊断；训练12h、每个后处理阶段1h超时，失败不自动重试。
 自动任务保持90分钟、无变化静默。
 完成后分别使用summarize_e3dsnn_fusion_probe，suffix为_aux1_seed20260930_joint30或_aux1_seed20261001_joint30，audit-name=fixed_bn.json，activations=count4。
+
+两项种子/路径隔离检查在本地和181通过；运行配置与原单车初始化哈希完全匹配，30轮预热/联合预算不变。未修改模型或损失代码。
+
+已确认两组第1轮超过250批，loss和梯度有限。启动证据 [startup_20261017.json](results/seed_repeats_20261017/startup_20261017.json)，SHA256 `e5a8c88c0460b54e83ce39cc4dfb1cdc0e50a14c39d596e51fce32e51a196168`。

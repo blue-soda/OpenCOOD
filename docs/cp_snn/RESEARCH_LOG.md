@@ -479,3 +479,5 @@ AP单位为%，通信为十进制kB/帧，包含消息元数据、不含网络�
 配对证据 [discrete_vs_continuous.json](results/continuous_round1_20261017/discrete_vs_continuous.json) 中通用字段ego=离散融合、fusion=连续融合，均不是独立单车模型。
 
 后继为固定Count4+λ1的两个微调种子重复，见SEED_REPEATS_20261017.md。
+
+两组微调重复已在181 GPU4/5启动，seed20260930/20261001，监督PID50272/50281；源提交d9996b9。保留90分钟静默跟进。
