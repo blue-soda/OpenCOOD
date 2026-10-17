@@ -156,11 +156,15 @@ intermediate BN offsets would then produce a different boundary condition.
 
 class CacheRepairDetector:
     """Fixed existing detector; full FM, cached ResNet stages, dense decoder/head."""
-    def __init__(self, model, config, fraction=.5, tile=8, max_age=1., dense=False, occupancy_policy='cell', oracle_stage0=False, support_profile=False):
+    def __init__(self, model, config, fraction=.5, tile=8, max_age=1., dense=False, occupancy_policy='cell', oracle_stage0=False, support_profile=False, oracle_index=0):
         self.model, self.config = model, config
         self.fraction, self.tile, self.max_age, self.dense = fraction, tile, max_age, dense
         self.occupancy_policy = occupancy_policy
         self.oracle_stage0 = oracle_stage0
+        # Legacy flag name retained; oracle_index selects the sole cached stage.
+        if oracle_index not in (0,1,2):
+            raise ValueError('oracle_index must be 0, 1 or 2')
+        self.oracle_index = oracle_index
         self.support_profile = support_profile
         args = config['model']['args']
         self.lidar_range = args['lidar_range']
@@ -193,7 +197,7 @@ class CacheRepairDetector:
         for i, n in enumerate(self.layers):
             module = getattr(m.backbone.resnet, 'layer%d' % i)
             input_shape = x.shape[-2:]
-            if fresh or self.dense or (self.oracle_stage0 and i>0):
+            if fresh or self.dense or (self.oracle_stage0 and i!=self.oracle_index):
                 x = module(x)
                 age = torch.zeros_like(x[:,:1])
                 written = torch.ones_like(age, dtype=torch.bool)
@@ -204,7 +208,7 @@ class CacheRepairDetector:
                 age, _ = warp_bev(state['ages'][i], state['pose'], meta['pose'], self.lidar_range)
                 age = age + info['delta_t']
                 req = F.max_pool2d(requests.float(), 2**(i+1), 2**(i+1), ceil_mode=True)>0
-                if self.oracle_stage0 and i==0:
+                if self.oracle_stage0 and i==self.oracle_index:
                     # Diagnostic upper-information selector, NOT deployable inference.
                     # Dense output is used only for ranking; skipped outputs still
                     # come from recursively warped cache, never this dense tensor.

@@ -1,0 +1,69 @@
+{
+  "caveats": [
+    "Oracle stage0, when enabled, computes dense current stage0 solely to rank error; its extra work is counted; not a deployable selector or a formal optimal AP bound.",
+    "Ideal required convolution MACs, when profiled, exclude oracle, warp, selector, decoder, memory traffic and launch overhead; no sparse kernel or speedup is established.",
+    "Stage input-area ratios include repeated halo work, are not measured FLOPs.",
+    "Current FM and decoder/head remain dense; no dynamic-object motion prediction.",
+    "Upstream reused features can alter even refreshed downstream outputs.",
+    "Concurrent GPU experiments are not a controlled latency comparison."
+  ],
+  "labels": 61,
+  "metrics": {
+    "bev_ap30": 0.9559494551889091,
+    "bev_ap50": 0.9296875125369761,
+    "bev_ap70": 0.8563326568564885
+  },
+  "model_step_ms_p50": 91.75542846787721,
+  "model_step_ms_p95": 103.25889056548476,
+  "oracle_stage0": true,
+  "peak_gpu_bytes": 494831104,
+  "reset_frames": 10,
+  "scans": 256,
+  "scope": "Engineering prefix only; not a full validation result",
+  "seconds": 28.78626222908497,
+  "stage_means": [
+    {
+      "actual_write_fraction": 0.5577281547011808,
+      "crop_area_ratio_before_fallback": 1.624007316468254,
+      "dense_conv_macs": 20643840000.0,
+      "executed_input_area_ratio": 2.584944816468254,
+      "fallback": 0.0390625,
+      "ideal_conv_mac_fraction": 0.7144946986607144,
+      "ideal_required_conv_macs": 14749914240.0,
+      "requested_fraction": 0.5351081779226661,
+      "selected_fraction": 0.5577281547011808,
+      "tiles": 56.96875,
+      "unique_input_support_fraction": 0.868412506300956
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "crop_area_ratio_before_fallback": 1.0,
+      "dense_conv_macs": 28075622400.0,
+      "executed_input_area_ratio": 1.0,
+      "fallback": 1.0,
+      "ideal_conv_mac_fraction": 1.0,
+      "ideal_required_conv_macs": 28075622400.0,
+      "requested_fraction": 1.0,
+      "selected_fraction": 1.0,
+      "tiles": 0.0,
+      "unique_input_support_fraction": 0.9999999403953552
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "crop_area_ratio_before_fallback": 1.0,
+      "dense_conv_macs": 35507404800.0,
+      "executed_input_area_ratio": 1.0,
+      "fallback": 1.0,
+      "ideal_conv_mac_fraction": 1.0,
+      "ideal_required_conv_macs": 35507404800.0,
+      "requested_fraction": 1.0,
+      "selected_fraction": 1.0,
+      "tiles": 0.0,
+      "unique_input_support_fraction": 0.9999999403953552
+    }
+  ],
+  "state_bytes": 74724300,
+  "status": "COMPLETED",
+  "support_profile": true,
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included"
+}
