@@ -221,6 +221,9 @@ def execute(args, output_dir):
         'architecture': cfg['model']['core_method'],
         'activation': cfg['model']['args'].get('activation', 'count4'),
         'fusion_readout': getattr(model, 'fusion_readout', 'activated'),
+        'encoder_activation': getattr(model, 'encoder_activation', cfg['model']['args'].get('activation', 'count4')),
+        'receiver_activation': getattr(model, 'receiver_activation', cfg['model']['args'].get('activation', 'count4')),
+        'freeze_encoder': getattr(model, 'freeze_encoder', False),
         'trainable_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
         'freeze_detector': getattr(model, 'freeze_detector', False),
         'freeze_detector_bn': getattr(model, 'freeze_detector_bn', False),
@@ -318,6 +321,12 @@ def execute(args, output_dir):
     epochs = args.epochs or cfg['train_params']['epoches']
     frozen_digest = None
     fixed_bn_digest = None
+    frozen_encoder_digest = None
+    if getattr(model, 'freeze_encoder', False):
+        if args.warmup_epochs:
+            raise ValueError('Encoder freezing cannot be combined with parameter-resetting fusion warmup')
+        from opencood.utils.e3dsnn_transplant import encoder_digest
+        frozen_encoder_digest = encoder_digest(model)
     if getattr(model, 'freeze_detector_bn', False):
         from opencood.utils.e3dsnn_fusion_probe import bn_digest
         fixed_bn_digest = bn_digest(model)
@@ -368,6 +377,12 @@ def execute(args, output_dir):
         metrics.update({'epoch': epoch + 1, 'train_loss': total / samples,
                         'train_samples': samples, 'seconds': time.monotonic() - started})
         metrics['train_loss_components'] = {k: v / samples for k, v in component_totals.items()}
+        if frozen_encoder_digest is not None:
+            current_encoder_digest = encoder_digest(model)
+            if current_encoder_digest != frozen_encoder_digest:
+                raise RuntimeError('Frozen encoder weights or buffers changed')
+            write_json(output_dir / 'frozen_encoder.json', {'initial_sha256': frozen_encoder_digest,
+                'current_sha256': current_encoder_digest, 'verified_through_epoch': epoch + 1, 'passed': True})
         if fixed_bn_digest is not None:
             current_bn_digest = bn_digest(model)
             if current_bn_digest != fixed_bn_digest:
