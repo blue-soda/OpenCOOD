@@ -91,5 +91,22 @@ class EarlyCacheTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             EarlyCacheDetector(Tiny().eval(),{'model':{'args':{'lidar_range':[-8,-8,-1,8,8,1]}}},period=3)
 
+    def test_coverage_protects_reused_grid_not_recomputed_hidden_grid(self):
+        m=Tiny().eval();cfg={'model':{'args':{'lidar_range':[-8,-8,-1,8,8,1]}}}
+        wrapper=EarlyCacheDetector(m,cfg,'gru','stages',threshold=100.)
+        data={'processed_lidar':{'voxel_features':torch.randn(1,64,16,16),
+               'voxel_coords':torch.zeros(1,4),'voxel_num_points':torch.ones(1)}}
+        meta=dict(segment='s',timestamp_us=0,pose=np.eye(4))
+        with torch.no_grad():
+            _,state,_=wrapper.step(data,None,meta)
+            moved=np.eye(4);moved[0,3]=.75
+            _,_,info=wrapper.step(data,state,dict(meta,timestamp_us=100000,pose=moved))
+            self.assertLess(info['coverage'],1.)
+            self.assertIsNone(info['early_refresh_reason'])
+            # A larger shift uncovers an actual reused stage1 cell: must refresh.
+            moved=np.eye(4);moved[0,3]=1.25
+            _,_,info=wrapper.step(data,state,dict(meta,timestamp_us=100000,pose=moved))
+            self.assertEqual(info['early_refresh_reason'],'coverage')
+
 
 if __name__=='__main__':unittest.main()
