@@ -1,0 +1,13 @@
+{
+  "status": "PASSED",
+  "scans": 5794,
+  "labels": 1738,
+  "segments": 214,
+  "checks": [
+    "Frame, segment, label and order match full validation manifest",
+    "Counts and finite summary statistics independently recomputed",
+    "Config, manifest and checkpoint SHA256 match contract"
+  ],
+  "report_sha256": "6ae54814be62ca6f9867dd77a86665406c0e1c054c496b0066800f20df67789e",
+  "frames_sha256": "d065323e910959e241abd89c671417c2c13eeb0988f67d5f2be8cd559237d422"
+}
