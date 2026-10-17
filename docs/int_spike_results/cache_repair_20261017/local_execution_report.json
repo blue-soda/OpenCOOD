@@ -1,0 +1,253 @@
+{
+  "engineering": {
+    "full_refresh_prediction_errors": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "selected_crop_errors": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "status": "PASSED",
+    "teacher_scope": "Engineering only. Production LocalCacheDetector.verify=False."
+  },
+  "results": {
+    "dense_control": {
+      "actual_reuse_frames": 0,
+      "actual_reuse_labeled_frames": 0,
+      "caveats": [
+        "Actual cropped execution with tile4 and crop-area>=0.8 full-stage fallback; no inference teacher.",
+        "Stage3 dependencies include actual stage2 writes, including fallback; current stage1/FM/decoder/head stay dense.",
+        "Selected crop outputs are exact relative to possibly approximate upstream inputs, not the original dense teacher.",
+        "State stays anchored at last full refresh; one partial frame maximum, age0.25s.",
+        "Input-area ratios are not MACs or measured latency; timed model includes warp/selection/cache/crops.",
+        "Prefix only, single sequential comparison; no full-validation accuracy conclusion."
+      ],
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "labels": 61,
+      "metrics": {
+        "bev_ap30": 0.9549927266869173,
+        "bev_ap50": 0.9316390259497906,
+        "bev_ap70": 0.8616458207993445
+      },
+      "model_step_ms_mean": 32.96771214619975,
+      "model_step_ms_p50": 32.60053601115942,
+      "model_step_ms_p95": 35.272411652840674,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "partial_frames": 0,
+      "partial_labeled_frames": 0,
+      "partial_mean_write_fraction": [
+        1.0,
+        1.0
+      ],
+      "partial_stage_fallbacks": [
+        0,
+        0
+      ],
+      "peak_gpu_bytes": 565622784,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "reset_frames": 10,
+      "scans": 256,
+      "scope": "Engineering prefix only; not a full validation result",
+      "seconds": 15.344287012936547,
+      "source_policy": {
+        "cache_kind": "stages",
+        "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+        "contract": {
+          "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+          "fm_only_epochs": 1,
+          "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+          "lr": 0.0001,
+          "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+          "min_delta": 0.001,
+          "min_epochs": 20,
+          "mode": "gru",
+          "patience": 10,
+          "seed": 303,
+          "state_policy": "whole-segment/tbptt/v1",
+          "tbptt_steps": 4
+        },
+        "eligible_pairs": 130,
+        "gate": "stage1",
+        "max_achievable_reuse": 0.0751953125,
+        "max_age": 0.25,
+        "period": 2,
+        "scans": 1024,
+        "selected": {
+          "counts": {
+            "change": 537,
+            "coverage": 284,
+            "initial": 50,
+            "period": 76,
+            "reuse": 77
+          },
+          "reuse_fraction": 0.0751953125,
+          "threshold": 0.26467612385749817
+        },
+        "selection": "Closest training reuse budget 40%, ties lower threshold; no labels or target features used",
+        "split": "train",
+        "status": "COMPLETED",
+        "target_reuse_fraction": 0.4,
+        "trace_sha256": "d245880290d2c8c352e137cb49143a2b63ace9dd136122a26291e5fe8eb8d40e",
+        "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+      },
+      "stage_means": [
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "crop_area_ratio_before_fallback": 1.0,
+          "executed_input_area_ratio": 1.0,
+          "fallback": 0.0,
+          "requested_fraction": 1.0,
+          "selected_fraction": 1.0,
+          "tiles": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "crop_area_ratio_before_fallback": 1.0,
+          "executed_input_area_ratio": 1.0,
+          "fallback": 0.0,
+          "requested_fraction": 1.0,
+          "selected_fraction": 1.0,
+          "tiles": 1.0
+        }
+      ],
+      "state_bytes": 35985600,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    },
+    "local_repair": {
+      "actual_reuse_frames": 46,
+      "actual_reuse_labeled_frames": 11,
+      "caveats": [
+        "Actual cropped execution with tile4 and crop-area>=0.8 full-stage fallback; no inference teacher.",
+        "Stage3 dependencies include actual stage2 writes, including fallback; current stage1/FM/decoder/head stay dense.",
+        "Selected crop outputs are exact relative to possibly approximate upstream inputs, not the original dense teacher.",
+        "State stays anchored at last full refresh; one partial frame maximum, age0.25s.",
+        "Input-area ratios are not MACs or measured latency; timed model includes warp/selection/cache/crops.",
+        "Prefix only, single sequential comparison; no full-validation accuracy conclusion."
+      ],
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "labels": 61,
+      "metrics": {
+        "bev_ap30": 0.9549920962386782,
+        "bev_ap50": 0.9330208113708488,
+        "bev_ap70": 0.8628658022439935
+      },
+      "model_step_ms_mean": 36.429313213064724,
+      "model_step_ms_p50": 35.6557120103389,
+      "model_step_ms_p95": 46.29202070645988,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "partial_frames": 126,
+      "partial_labeled_frames": 29,
+      "partial_mean_write_fraction": [
+        0.7120534101175884,
+        0.9684807241909088
+      ],
+      "partial_stage_fallbacks": [
+        80,
+        119
+      ],
+      "peak_gpu_bytes": 567165952,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "reset_frames": 10,
+      "scans": 256,
+      "scope": "Engineering prefix only; not a full validation result",
+      "seconds": 16.34584794100374,
+      "source_policy": {
+        "cache_kind": "stages",
+        "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+        "contract": {
+          "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+          "fm_only_epochs": 1,
+          "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+          "lr": 0.0001,
+          "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+          "min_delta": 0.001,
+          "min_epochs": 20,
+          "mode": "gru",
+          "patience": 10,
+          "seed": 303,
+          "state_policy": "whole-segment/tbptt/v1",
+          "tbptt_steps": 4
+        },
+        "eligible_pairs": 130,
+        "gate": "stage1",
+        "max_achievable_reuse": 0.0751953125,
+        "max_age": 0.25,
+        "period": 2,
+        "scans": 1024,
+        "selected": {
+          "counts": {
+            "change": 537,
+            "coverage": 284,
+            "initial": 50,
+            "period": 76,
+            "reuse": 77
+          },
+          "reuse_fraction": 0.0751953125,
+          "threshold": 0.26467612385749817
+        },
+        "selection": "Closest training reuse budget 40%, ties lower threshold; no labels or target features used",
+        "split": "train",
+        "status": "COMPLETED",
+        "target_reuse_fraction": 0.4,
+        "trace_sha256": "d245880290d2c8c352e137cb49143a2b63ace9dd136122a26291e5fe8eb8d40e",
+        "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+      },
+      "stage_means": [
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 0.8582762877922505,
+          "crop_area_ratio_before_fallback": 0.9798766121031746,
+          "executed_input_area_ratio": 0.9138975694444444,
+          "fallback": 0.3125,
+          "requested_fraction": 0.6941455778287491,
+          "selected_fraction": 0.7055456257658079,
+          "tiles": 3.3984375
+        },
+        {
+          "actual_write_fraction": 0.9844866064377129,
+          "crop_area_ratio_before_fallback": 1.0380580357142857,
+          "executed_input_area_ratio": 0.9889632936507937,
+          "fallback": 0.46484375,
+          "requested_fraction": 0.9384027534397319,
+          "selected_fraction": 0.9534573161508888,
+          "tiles": 1.21484375
+        }
+      ],
+      "state_bytes": 35985600,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    }
+  },
+  "status": "COMPLETED"
+}

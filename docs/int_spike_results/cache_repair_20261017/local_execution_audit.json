@@ -1,0 +1,18 @@
+{
+  "status": "PASSED",
+  "runs": {
+    "dense_control": {
+      "frames_sha256": "67987199f0ef99539b350f93214d961861e0a827f5a1bdf634208a2aa6507221",
+      "partial_frames": 0,
+      "actual_reuse_frames": 0,
+      "reused_labeled_frames": 0
+    },
+    "local_repair": {
+      "frames_sha256": "f95a02e928d211a2eae3e138051db2f41e30afb828b36e18d82bdd46f22ee316",
+      "partial_frames": 126,
+      "actual_reuse_frames": 46,
+      "reused_labeled_frames": 11
+    }
+  },
+  "caveat": "AP not independently recomputed; crop verification compares selected outputs to dense execution on the same possibly approximate input."
+}

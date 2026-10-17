@@ -39,12 +39,13 @@ Keep the full-frame anchor until the next mandatory full refresh. Do not blend
 different pose/time anchors into the saved reference. Stage3 requests use the
 ACTUAL stage2 write mask, including a possible full-stage fallback.
 """
-    def __init__(self,model,config,threshold,period=2,verify=False):
+    def __init__(self,model,config,threshold,period=2,verify=False,repair_modules=None):
         if model.training or model.feature_memory.mode!='gru' or period not in (1,2):
             raise ValueError('Frozen GRU and period 1/2 required')
         self.model=model;self.bounds=config['model']['args']['lidar_range']
         assert config['model']['args']['base_bev_backbone']['layer_nums']==[3,4,5]
         self.threshold=threshold;self.period=period;self.verify=verify
+        self.repair_modules=repair_modules
 
     def step(self,data,state,meta):
         m=self.model;p=data['processed_lidar']
@@ -83,12 +84,21 @@ ACTUAL stage2 write mask, including a possible full-stage fallback.
             for index,radius in [(1,15),(2,19)]:
                 old,valid=warp_bev(cache['values'][index-1],cache['pose'],meta['pose'],self.bounds)
                 boundary[index-1]=float((~valid).float().mean())
-                request=affected_outputs(changed if index==1 else written,2,radius) | ~valid
-                module=getattr(m.backbone.resnet,'layer%d'%index)
-                result,written,stat=refresh_tiles(module,x,old,request,2,radius,tile=4)
+                if self.repair_modules is None:
+                    request=affected_outputs(changed if index==1 else written,2,radius) | ~valid
+                    module=getattr(m.backbone.resnet,'layer%d'%index)
+                    stage_input=x
+                    result,written,stat=refresh_tiles(module,stage_input,old,request,2,radius,tile=4)
+                else:
+                    from opencood.models.sub_modules.int_light_repair import repair_input_request
+                    stage_input,request=repair_input_request(first,old,valid,changed,index)
+                    module=self.repair_modules[index-1]
+                    # Each repair depends directly on current stage1 and its own
+                    # historical feature, not on the other repair's output.
+                    result,written,stat=refresh_tiles(module,stage_input,old,request,1,1,tile=4,allow_fallback=False)
                 if self.verify:
                     # Engineering only; never enabled in measured inference.
-                    reference=module(x)
+                    reference=module(stage_input)
                     error=(result-reference).abs().masked_select(written.expand_as(result))
                     maximum=float(error.max()) if error.numel() else 0.
                     assert torch.allclose(result[written.expand_as(result)],reference[written.expand_as(reference)],atol=1e-4,rtol=1e-4)
