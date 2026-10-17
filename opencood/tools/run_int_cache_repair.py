@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from opencood.hypes_yaml.yaml_utils import load_yaml
 from opencood.models.point_pillar_int import PointPillarINT
-from opencood.models.sub_modules.int_cache_repair import CacheRepairDetector, refresh_tiles
+from opencood.models.sub_modules.int_cache_repair import CacheRepairDetector, PeriodicStageDetector, refresh_tiles
 from opencood.tools.run_int_ego import loader, to_device, write_json
 from opencood.tools.launch_int_memory import digest
 from opencood.utils import eval_utils
@@ -41,7 +41,8 @@ def engineering(a,model,cfg,rows,out):
     if result.returncode:raise RuntimeError('INT unit tests failed; see unit_tests.log')
     _,stream=loader(rows[:8],cfg,2,303)
     wrapper=CacheRepairDetector(model,cfg,dense=True)
-    original_state=cache_state=None;errors=[];crop_errors=[]
+    original_state=cache_state=periodic_state=None;errors=[];crop_errors=[];periodic_errors=[]
+    periodic=PeriodicStageDetector(model,cfg,period=1)
     captured=[]
     hook=model.backbone.resnet.layer0.register_forward_pre_hook(lambda m,x:captured.append(x[0].detach()))
     with torch.no_grad():
@@ -49,6 +50,10 @@ def engineering(a,model,cfg,rows,out):
             ego=to_device(sample['ego'],torch.device('cuda'));meta=sample['meta']
             expected,original_state,_=model.step(ego,original_state,meta)
             actual,cache_state,_=wrapper.step(ego,cache_state,meta)
+            periodic_pred,periodic_state,_=periodic.step(ego,periodic_state,meta)
+            periodic_error=max(float((expected[k]-periodic_pred[k]).abs().max()) for k in expected)
+            if periodic_error>1e-5:raise RuntimeError('Periodic full-refresh mismatch')
+            periodic_errors.append(periodic_error)
             error=max(float((expected[k]-actual[k]).abs().max()) for k in expected)
             if error>1e-5:raise RuntimeError('Dense integration mismatch %s'%error)
             errors.append(error)
@@ -66,6 +71,7 @@ def engineering(a,model,cfg,rows,out):
                 raise RuntimeError('Real-weight crop integration mismatch %s'%error)
             x=reference
     return dict(status='PASSED',dense_prediction_max_errors=errors,real_weight_stage_crop_max_errors=crop_errors,
+                periodic_full_refresh_max_errors=periodic_errors,
                 tests='All test_int*.py; synthetic boundaries/phase/nonzero BN; eight real frames and three real-weight crop checks')
 
 
@@ -73,11 +79,13 @@ def evaluate(a,model,cfg,rows,out):
     if a.stage=='full':
         gate=json.loads(Path(a.engineering).read_text())
         assert gate['status']=='PASSED'
+        if a.periodic_last:assert 'periodic_full_refresh_max_errors' in gate
         provenance=json.loads((Path(a.engineering).parent/'provenance.json').read_text())
         assert provenance['checkpoint']['sha256']==digest(json.loads((Path(a.root)/('full_'+a.mode)/'best.json').read_text())['checkpoint'])
     chosen=rows if a.stage=='full' else rows[:a.frames]
     dataset,stream=loader(chosen,cfg,4,303)
     wrapper=CacheRepairDetector(model,cfg,a.fraction,a.tile,a.max_age,a.dense,a.occupancy_policy,a.oracle_stage0,a.support_profile,a.oracle_index)
+    if a.periodic_last:wrapper=PeriodicStageDetector(model,cfg,a.periodic_last,a.max_age)
     state=None;records=[];times=[]
     ap={t:dict(tp=[],fp=[],gt=0,score=[]) for t in [.3,.5,.7]}
     started=time.monotonic()
@@ -106,11 +114,15 @@ def evaluate(a,model,cfg,rows,out):
         scans=len(records),labels=sum(r['supervised'] for r in records),reset_frames=sum(bool(r['reset']) for r in records),
         metrics={'bev_ap%d'%int(t*100):eval_utils.calculate_ap(ap,t)[0] for t in ap},stage_means=stages,
         model_step_ms_p50=float(np.median(times)),model_step_ms_p95=float(np.percentile(times,95)),
+        model_step_ms_mean=float(np.mean(times)),
         timing_scope='Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included',
         state_bytes=records[-1]['cache_bytes'],peak_gpu_bytes=torch.cuda.max_memory_allocated(),seconds=time.monotonic()-started,
         oracle_stage0=a.oracle_stage0,
         oracle_index=a.oracle_index if a.oracle_stage0 else None,
         support_profile=a.support_profile,
+        periodic_last=a.periodic_last,
+        periodic_refresh_counts={reason:sum(r.get('periodic_refresh_reason')==reason for r in records)
+                                 for reason in ['initial','period','age','coverage',None]} if a.periodic_last else None,
         caveats=['Oracle, when enabled, caches only oracle_index and computes that full current stage solely to rank error; extra work is counted; not deployable or a formal optimal AP bound.',
                  'Ideal required convolution MACs, when profiled, exclude oracle, warp, selector, decoder, memory traffic and launch overhead; no sparse kernel or speedup is established.',
                  'Stage input-area ratios include repeated halo work, are not measured FLOPs.',
@@ -138,9 +150,13 @@ def main():
     p.add_argument('--oracle-index',type=int,choices=[0,1,2],default=0,
                    help='Cached stage for the legacy --oracle-stage0 diagnostic flag; all other stages execute densely')
     p.add_argument('--support-profile',action='store_true')
+    p.add_argument('--periodic-last',type=int,default=0,help='Positive period for whole last-stage refresh; 1 is paired dense control')
     p.add_argument('--dense',action='store_true');p.add_argument('--engineering')
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.oracle_index and not a.oracle_stage0:p.error('--oracle-index requires --oracle-stage0')
+    if a.periodic_last<0:p.error('--periodic-last must be nonnegative')
+    if a.periodic_last and (a.oracle_stage0 or a.support_profile or a.dense):
+        p.error('Periodic mode cannot combine with oracle/profile/dense flags')
     if a.stage=='full' and not a.engineering:p.error('Full evaluation requires engineering report')
     if a.worker:
         try:worker(a)

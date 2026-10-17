@@ -154,6 +154,33 @@ intermediate BN offsets would then produce a different boundary condition.
     return output, written, stats
 
 
+def periodic_stage_step(module, x, cache, pose, timestamp_us, lidar_range, period, max_age):
+    """Whole-stage refresh; skipped frames never call module or read its output.
+
+The cache stays in the pose of its last computation, avoiding repeated resampling.
+Any uncovered output cell forces refresh; no approximate coverage threshold.
+"""
+    if period < 1 or max_age <= 0 or module.training:
+        raise ValueError('Positive period/age and eval mode required')
+    count = 0 if cache is None else cache['frames']+1
+    reason = 'initial' if cache is None else None
+    if cache is not None:
+        age = (int(timestamp_us)-cache['timestamp_us'])/1e6
+        if age <= 0:
+            raise ValueError('Non-causal periodic cache')
+        if count >= period:reason = 'period'
+        elif age >= max_age:reason = 'age'
+        else:
+            output, valid = warp_bev(cache['value'],cache['pose'],pose,lidar_range)
+            if not bool(valid.all()):reason = 'coverage'
+    if reason is not None:
+        output = module(x)
+        new = dict(value=output,pose=pose,timestamp_us=int(timestamp_us),frames=0)
+    else:
+        new = dict(cache,frames=count)
+    return output,new,reason
+
+
 class CacheRepairDetector:
     """Fixed existing detector; full FM, cached ResNet stages, dense decoder/head."""
     def __init__(self, model, config, fraction=.5, tile=8, max_age=1., dense=False, occupancy_policy='cell', oracle_stage0=False, support_profile=False, oracle_index=0):
@@ -244,3 +271,41 @@ class CacheRepairDetector:
         info.update(cache_stages=stats, cache_bytes=sum(t.numel()*t.element_size() for t in
                     stages+ages+[new['shallow']])+fm['value'].numel()*fm['value'].element_size())
         return pred, new, info
+
+
+class PeriodicStageDetector(CacheRepairDetector):
+    """Full FM/stages 0,1; periodically execute stage 2; dense decoder/head."""
+    def __init__(self,model,config,period=2,max_age=1.):
+        super().__init__(model,config,max_age=max_age)
+        self.period=period
+
+    def step(self,data,state,meta):
+        m=self.model;p=data['processed_lidar']
+        if p['voxel_features'].shape[0]:
+            batch={k:p[k] for k in ['voxel_features','voxel_coords','voxel_num_points']}
+            batch['batch_size']=1
+            spatial=m.scatter(m.pillar_vfe(batch))['spatial_features']
+        else:
+            nx,ny,_=m.scatter.model_cfg['grid_size']
+            spatial=m.cls_head.weight.new_zeros(1,64,int(ny),int(nx))
+        x,fm,info=m.feature_memory.step(spatial,None if state is None else state['fm'],meta)
+        cache=None if state is None or bool(info['reset']) else state['stage_cache']
+        stages=[];stats=[]
+        for i in range(3):
+            module=getattr(m.backbone.resnet,'layer%d'%i)
+            if i<2:
+                x=module(x);executed=1.
+            else:
+                x,cache,reason=periodic_stage_step(module,x,cache,meta['pose'],meta['timestamp_us'],
+                                                 self.lidar_range,self.period,self.max_age)
+                executed=float(reason is not None)
+            stages.append(x)
+            stats.append(dict(actual_write_fraction=executed,executed_input_area_ratio=executed))
+        features=m.backbone.decode_multiscale_feature(stages)
+        if m.shrink_flag:features=m.shrink_conv(features)
+        pred=dict(psm=m.cls_head(features),rm=m.reg_head(features))
+        if m.use_dir:pred['dm']=m.dir_head(features)
+        new=dict(fm=fm,stage_cache=cache)
+        info.update(cache_stages=stats,periodic_refresh_reason=reason,
+                    cache_bytes=sum(t.numel()*t.element_size() for t in [cache['value'],fm['value']]))
+        return pred,new,info

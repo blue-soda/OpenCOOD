@@ -2,7 +2,7 @@ import unittest
 import torch
 from torch import nn
 from opencood.models.sub_modules.codyntrust_resblock import BasicBlock
-from opencood.models.sub_modules.int_cache_repair import refresh_tiles, select_updates, rectangles, stage_dependency_work
+from opencood.models.sub_modules.int_cache_repair import refresh_tiles, select_updates, rectangles, stage_dependency_work, periodic_stage_step
 
 
 class CacheRepairTests(unittest.TestCase):
@@ -100,6 +100,26 @@ class CacheRepairTests(unittest.TestCase):
             empty,_=stage_dependency_work(layer,torch.zeros_like(mask),x.shape[-2:])
             self.assertEqual(full['ideal_conv_mac_fraction'],1)
             self.assertEqual(empty['ideal_conv_mac_fraction'],0)
+
+    def test_periodic_skip_has_no_module_call_and_preserves_refresh_anchor(self):
+        class Counter(nn.Module):
+            def __init__(self):super().__init__();self.calls=0
+            def forward(self,x):self.calls+=1;return x*2
+        layer=Counter().eval();x=torch.randn(1,3,8,8)
+        pose=[0,0,0,0,0,0];bounds=[-4,-4,-1,4,4,1]
+        first,cache,_=periodic_stage_step(layer,x,None,pose,0,bounds,2,1.)
+        skipped,next_cache,reason=periodic_stage_step(layer,x+9,cache,pose,100000,bounds,2,1.)
+        self.assertIsNone(reason);self.assertEqual(layer.calls,1)
+        self.assertTrue(torch.equal(first,skipped));self.assertIs(next_cache['value'],cache['value'])
+        self.assertEqual(next_cache['timestamp_us'],0)
+        refreshed,_,reason=periodic_stage_step(layer,x+9,next_cache,pose,200000,bounds,2,1.)
+        self.assertEqual(reason,'period');self.assertEqual(layer.calls,2)
+        self.assertTrue(torch.equal(refreshed,(x+9)*2))
+        _,_,reason=periodic_stage_step(layer,x,cache,[2,0,0,0,0,0],100000,bounds,4,1.)
+        self.assertEqual(reason,'coverage')
+        _,_,reason=periodic_stage_step(layer,x,cache,pose,200000,bounds,4,.15)
+        self.assertEqual(reason,'age')
+        with self.assertRaises(ValueError):periodic_stage_step(layer,x,cache,pose,0,bounds,2,1.)
 
 
 if __name__=='__main__':unittest.main()

@@ -1,0 +1,15 @@
+{
+  "status": "PASSED",
+  "scans": 5794,
+  "labels": 1738,
+  "resets": 214,
+  "checks": [
+    "Complete manifest order/frame/segment/label coverage",
+    "Independent stage summary recomputation",
+    "Checkpoint/config/manifest hashes"
+  ],
+  "report_sha256": "b78aa90b48afb19d4e2bed5dabc8386ba912ffd75ee4079d07671a12c1521593",
+  "frames_sha256": "535c6d3a5feff9772f35082e1bba8230e307b8c77d58065aa54415adb8583e84",
+  "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+  "caveat": "AP was not independently recomputed from detection boxes"
+}
