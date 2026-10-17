@@ -37,6 +37,30 @@ class Tiny(nn.Module):
 
 
 class EarlyCacheTests(unittest.TestCase):
+    def test_local_execution_skips_stable_regions_and_propagates_fallback(self):
+        from opencood.models.sub_modules.int_local_cache import LocalCacheDetector
+        m=Tiny().eval()
+        cfg={'model':{'args':{'lidar_range':[-8,-8,-1,8,8,1],
+                             'base_bev_backbone':{'layer_nums':[3,4,5]}}}}
+        wrapper=LocalCacheDetector(m,cfg,threshold=100.)
+        data={'processed_lidar':{'voxel_features':torch.randn(1,64,16,16),
+               'voxel_coords':torch.zeros(1,4),'voxel_num_points':torch.ones(1)}}
+        meta=dict(segment='s',timestamp_us=0,pose=np.eye(4))
+        with torch.no_grad():
+            _,anchor,_=wrapper.step(data,None,meta)
+            before=[getattr(m.backbone.resnet,'layer%d'%i).calls for i in [1,2]]
+            _,state,info=wrapper.step(data,anchor,dict(meta,timestamp_us=100000))
+            self.assertTrue(info['local_partial'])
+            self.assertEqual([getattr(m.backbone.resnet,'layer%d'%i).calls for i in [1,2]],before)
+            self.assertIs(state['cache']['values'],anchor['cache']['values'])
+            _,_,info=wrapper.step(data,state,dict(meta,timestamp_us=200000))
+            self.assertEqual(info['local_refresh_reason'],'period')
+            moved=np.eye(4);moved[0,3]=3.
+            _,_,info=wrapper.step(data,anchor,dict(meta,timestamp_us=100000,pose=moved))
+            self.assertTrue(info['cache_stages'][1]['fallback'])
+            self.assertTrue(info['cache_stages'][2]['fallback'])
+            self.assertEqual(info['cache_stages'][2]['actual_write_fraction'],1.)
+
     def test_gru_observer_consumes_existing_warp_and_preserves_predictions(self):
         torch.manual_seed(3)
         fm=INTFeatureMemory('gru',16,[-8,-8,-1,8,8,1]).eval()
