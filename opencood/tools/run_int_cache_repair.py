@@ -77,7 +77,7 @@ def evaluate(a,model,cfg,rows,out):
         assert provenance['checkpoint']['sha256']==digest(json.loads((Path(a.root)/('full_'+a.mode)/'best.json').read_text())['checkpoint'])
     chosen=rows if a.stage=='full' else rows[:a.frames]
     dataset,stream=loader(chosen,cfg,4,303)
-    wrapper=CacheRepairDetector(model,cfg,a.fraction,a.tile,a.max_age,a.dense)
+    wrapper=CacheRepairDetector(model,cfg,a.fraction,a.tile,a.max_age,a.dense,a.occupancy_policy)
     state=None;records=[];times=[]
     ap={t:dict(tp=[],fp=[],gt=0,score=[]) for t in [.3,.5,.7]}
     started=time.monotonic()
@@ -128,6 +128,7 @@ def main():
     p.add_argument('--stage',choices=['engineering','pilot','full'],required=True)
     p.add_argument('--fraction',type=float,default=.5);p.add_argument('--tile',type=int,default=8)
     p.add_argument('--max-age',type=float,default=1.);p.add_argument('--frames',type=int,default=256)
+    p.add_argument('--occupancy-policy',choices=['cell','tile'],default='cell')
     p.add_argument('--dense',action='store_true');p.add_argument('--engineering')
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.stage=='full' and not a.engineering:p.error('Full evaluation requires engineering report')

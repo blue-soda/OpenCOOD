@@ -17,7 +17,7 @@ def expand_tiles(mask, tile, shape):
     return mask.repeat_interleave(tile, -2).repeat_interleave(tile, -1)[..., :shape[0], :shape[1]]
 
 
-def select_updates(current, previous, valid, fraction, tile=32):
+def select_updates(current, previous, valid, fraction, tile=32, occupancy_policy='cell'):
     """Cheap heuristic only: relative difference plus occupancy/coverage safety."""
     if not 0 <= fraction <= 1:
         raise ValueError('fraction must be in [0,1]')
@@ -32,7 +32,34 @@ def select_updates(current, previous, valid, fraction, tile=32):
         indices = score.flatten().topk(count, sorted=False).indices
         selected.view(-1)[indices] = score.flatten()[indices] > 0
     changed_occupancy = (current.abs().sum(1, keepdim=True)>0) != (previous.abs().sum(1, keepdim=True)>0)
+    if occupancy_policy == 'tile':
+        changed_occupancy = expand_tiles(
+            tile_mask(current.abs().sum(1,keepdim=True)>0,tile) !=
+            tile_mask(previous.abs().sum(1,keepdim=True)>0,tile),tile,current.shape[-2:])
+    elif occupancy_policy != 'cell':
+        raise ValueError('Unknown occupancy policy')
     return expand_tiles(selected, tile, current.shape[-2:]) | changed_occupancy | ~valid
+
+
+def rectangles(active):
+    """Merge horizontal tile runs and identical runs on consecutive rows."""
+    rows=active[0,0].cpu().tolist()
+    result=[];previous={}
+    for y,row in enumerate(rows):
+        current={};x=0
+        while x<len(row):
+            if not row[x]:
+                x+=1;continue
+            start=x
+            while x<len(row) and row[x]:x+=1
+            key=(start,x)
+            if key in previous:
+                index=previous[key];result[index][2]=y+1
+            else:
+                index=len(result);result.append([y,start,y+1,x])
+            current[key]=index
+        previous=current
+    return result
 
 
 def refresh_tiles(module, x, cached, requested, stride, radius, tile=8,
@@ -52,12 +79,12 @@ intermediate BN offsets would then produce a different boundary condition.
     assert requested.shape == cached[:, :1].shape
     active = tile_mask(requested, tile)
     written = expand_tiles(active, tile, (oh, ow))
-    coords = active[0, 0].nonzero().cpu().tolist()
+    regions = rectangles(active)
     jobs = []
     area = 0
-    for ty, tx in coords:
+    for ty, tx, ey, ex in regions:
         y0, x0 = ty*tile, tx*tile
-        y1, x1 = min(y0+tile, oh), min(x0+tile, ow)
+        y1, x1 = min(ey*tile, oh), min(ex*tile, ow)
         iy0 = max(0, ((y0*stride-radius)//stride)*stride)
         ix0 = max(0, ((x0*stride-radius)//stride)*stride)
         iy1 = min(h, math.ceil(((y1-1)*stride+radius+1)/stride)*stride)
@@ -89,9 +116,10 @@ intermediate BN offsets would then produce a different boundary condition.
 
 class CacheRepairDetector:
     """Fixed existing detector; full FM, cached ResNet stages, dense decoder/head."""
-    def __init__(self, model, config, fraction=.5, tile=8, max_age=1., dense=False):
+    def __init__(self, model, config, fraction=.5, tile=8, max_age=1., dense=False, occupancy_policy='cell'):
         self.model, self.config = model, config
         self.fraction, self.tile, self.max_age, self.dense = fraction, tile, max_age, dense
+        self.occupancy_policy = occupancy_policy
         args = config['model']['args']
         self.lidar_range = args['lidar_range']
         self.layers = args['base_bev_backbone']['layer_nums']
@@ -116,7 +144,7 @@ class CacheRepairDetector:
             requests = torch.ones_like(spatial[:,:1], dtype=torch.bool)
         else:
             previous, valid = warp_bev(state['shallow'], state['pose'], meta['pose'], self.lidar_range)
-            requests = select_updates(spatial, previous, valid, self.fraction)
+            requests = select_updates(spatial, previous, valid, self.fraction, occupancy_policy=self.occupancy_policy)
         stages, ages, stats = [], [], []
         x = temporal
         first_written = None

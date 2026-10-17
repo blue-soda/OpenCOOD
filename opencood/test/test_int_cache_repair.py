@@ -2,7 +2,7 @@ import unittest
 import torch
 from torch import nn
 from opencood.models.sub_modules.codyntrust_resblock import BasicBlock
-from opencood.models.sub_modules.int_cache_repair import refresh_tiles, select_updates
+from opencood.models.sub_modules.int_cache_repair import refresh_tiles, select_updates, rectangles
 
 
 class CacheRepairTests(unittest.TestCase):
@@ -61,6 +61,20 @@ class CacheRepairTests(unittest.TestCase):
     def test_identical_features_no_optional_updates(self):
         x=torch.ones(1,3,35,67);valid=torch.ones_like(x[:,:1],dtype=torch.bool)
         self.assertFalse(bool(select_updates(x,x,valid,.5).any()))
+
+    def test_rectangles_preserve_exact_mask_without_overlapping_writes(self):
+        mask=torch.rand(1,1,13,32)>.6
+        mask[...,3:8,4:9]=True
+        painted=torch.zeros_like(mask,dtype=torch.int)
+        for y0,x0,y1,x1 in rectangles(mask):painted[...,y0:y1,x0:x1]+=1
+        self.assertTrue(torch.equal(painted,mask.int()))
+
+    def test_coarse_occupancy_does_not_treat_within_tile_sampling_as_new_coverage(self):
+        x=torch.zeros(1,3,64,64);old=x.clone();x[...,3,4]=1;old[...,5,6]=1
+        valid=torch.ones_like(x[:,:1],dtype=torch.bool)
+        self.assertFalse(bool(select_updates(x,old,valid,0,occupancy_policy='tile').any()))
+        x[...,40,40]=1
+        self.assertEqual(int(select_updates(x,old,valid,0,occupancy_policy='tile').sum()),32*32)
 
     def test_reject_training_and_invalid_budget(self):
         x=torch.ones(1,3,16,16);mask=torch.ones_like(x[:,:1],dtype=torch.bool)
