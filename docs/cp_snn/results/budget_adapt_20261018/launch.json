@@ -1,0 +1,11 @@
+{
+  "gpus": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "git_commit": "20ccc33293d3d0f07a854e2d007978de116dacde",
+  "audit_sha256": "9ed5f3f9293546235163b8737be2f22f4cdc175bb2a297529207677d805af436",
+  "started_unix": 1792280031.625017
+}

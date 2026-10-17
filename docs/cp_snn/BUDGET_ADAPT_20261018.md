@@ -36,3 +36,18 @@
 真实batch审计：两帧直接预算路径、真实消息往返及既有PTQ模型输出精确一致；融合梯度有限且非零，编码器梯度/更新仅joint存在，解码器无梯度且BN/解码器哈希不变。审计优化步丢弃。配置、来源summary、初始化权重SHA全部归档。CPU测试覆盖批次隔离、消息前向值、梯度路由、空特征、排序稳定与四组10轮流水线。
 
 根目录/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018，入口launch_e3dsnn_budget_round。计划GPU1/2/3/4，启动前检查空闲；训练6h、每项推理/复算/诊断1h超时，失败不自动重试、不终止其他任务。四组完成后本轮退出，不追加LR/比例/种子搜索；依据真实AP—通信关系决定是否值得进行教师或融合机制实验，并单独登记下一轮。
+
+
+## 真实审计与启动（2026-10-18）
+
+实现提交20ccc33293d3d0f07a854e2d007978de116dacde已由main推送并在181拉取，39项回归检查通过。四组真实两帧审计全部通过：直接预算前向、真实消息解码、原PTQ模型的psm/rm/dm逐值一致；梯度有限且按冻结规则路由；丢弃的优化步只在joint改变编码器，四组BN和BEV/连续头摘要均不变。审计中的两帧消息SNN为14571/16603字节，ANN为14036/15578字节，仅为启动检查，不能代替全量通信统计。
+
+四组流水线已在181空闲GPU1/2/3/4启动，协调PID45765；zero监督PID45906/45907/45909/45910。启动快照为零适配评估中，已分别保存245/242/237/237个逐帧预测文件，尚未进入训练。零适配四组全量评估和CPU复算门槛通过后自动进入各10轮训练；最终消息往返、开关路端、CPU复算及GT诊断均由流水线执行。当前没有新增AP训练结论。
+
+原始字节与SHA已核对并同步到用户记录：
+
+- [audit.json](results/budget_adapt_20261018/audit.json)：9ed5f3f9293546235163b8737be2f22f4cdc175bb2a297529207677d805af436。
+- [launch.json](results/budget_adapt_20261018/launch.json)：1d55939181cdcbb0d8e3d18fef84fae6ec1c97f66a615d549eda8ad3d09ca441。
+- [startup_snapshot.json](results/budget_adapt_20261018/startup_snapshot.json)：4a988dfdf947e6635c1e80dd04c3f27d7d84273d915bb509e2adfda6b2e18842。
+- 同目录保存八份配置和supervise.py；配置SHA见audit，监督脚本SHA为3a661c319d8dde0949d14dff1e9134199f6993d426d4d3f9f23c0576b4b2bd84。
+

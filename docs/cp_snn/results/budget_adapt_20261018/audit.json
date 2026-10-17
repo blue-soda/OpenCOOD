@@ -1,0 +1,93 @@
+{
+  "groups": {
+    "s_fusion": {
+      "initial_sha256": "10c6a2b324f0ada60aaab7f6ac0afb729056c48ceffc5d4d7ff249bcffcde78d",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "config_sha256": {
+        "": "d1bb590bf55015f0a76e069300a1668e7b46eda511c5cf7aef1f80fc857f551a",
+        "_ego": "7484acc63f150e39d7c6a7af6287a95fd3616a17e18481e1113e9721fce62ac1"
+      },
+      "gradient_l1": {
+        "backbone_3d.": 0,
+        "fusion_net.": 41.72232726216316
+      },
+      "packet_bytes": [
+        14571,
+        16603
+      ],
+      "direct_wire_native_exact": true,
+      "decoder_and_bn_fixed": true,
+      "encoder_changed": false,
+      "discarded_step_loss": 1.3611440134735833
+    },
+    "s_joint": {
+      "initial_sha256": "10c6a2b324f0ada60aaab7f6ac0afb729056c48ceffc5d4d7ff249bcffcde78d",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "config_sha256": {
+        "": "56e3a74df19de52ee4de2f5d8e52b80f3953ff0a402b63befa727061d65f4cd6",
+        "_ego": "c2737bbaa0f497178094796edf66b28241ad21d5fc871fcaeed26f51aeb41c51"
+      },
+      "gradient_l1": {
+        "backbone_3d.": 1.2260227799415588,
+        "fusion_net.": 41.72232726216316
+      },
+      "packet_bytes": [
+        14571,
+        16603
+      ],
+      "direct_wire_native_exact": true,
+      "decoder_and_bn_fixed": true,
+      "encoder_changed": true,
+      "discarded_step_loss": 1.3611440134735833
+    },
+    "a_fusion": {
+      "initial_sha256": "624ce3b2adbd1eedc02f03876a33e38f5a5e66be7b6f9c8f78ae689cac558034",
+      "encoder_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+      "decoder_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+      "config_sha256": {
+        "": "fe35d12ff7f3ebf1271a9b5516ff37222ba0da557c36662172ad30434d75ea7f",
+        "_ego": "2d205648e0a8a42951c1898219103df9be9ffc455963156484a39e8313b1d45c"
+      },
+      "gradient_l1": {
+        "backbone_3d.": 0,
+        "fusion_net.": 42.08183145523071
+      },
+      "packet_bytes": [
+        14036,
+        15578
+      ],
+      "direct_wire_native_exact": true,
+      "decoder_and_bn_fixed": true,
+      "encoder_changed": false,
+      "discarded_step_loss": 1.3531835242397308
+    },
+    "a_joint": {
+      "initial_sha256": "624ce3b2adbd1eedc02f03876a33e38f5a5e66be7b6f9c8f78ae689cac558034",
+      "encoder_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+      "decoder_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+      "config_sha256": {
+        "": "cbd7f31fc8f5e590458d541c3a5f2334bfcb964a062cf05ec69df141979226db",
+        "_ego": "51b5cd5e0ed26c4a1458bf6874204e32f1e44188143f7c2e8bad2f303e6a3a54"
+      },
+      "gradient_l1": {
+        "backbone_3d.": 1.8211784958839417,
+        "fusion_net.": 42.08183145523071
+      },
+      "packet_bytes": [
+        14036,
+        15578
+      ],
+      "direct_wire_native_exact": true,
+      "decoder_and_bn_fixed": true,
+      "encoder_changed": true,
+      "discarded_step_loss": 1.3531835242397308
+    }
+  },
+  "source_summary_sha256": {
+    "s": "c277533fcd31e5d49908f7d7b75e29680ae3de6cc01da0d1813ca2e06270e687",
+    "a": "1b50ac7212196530b64a7c921f882e49a4fd3cd4e77a57c236b8b8e4a5ee6e41"
+  },
+  "passed": true
+}

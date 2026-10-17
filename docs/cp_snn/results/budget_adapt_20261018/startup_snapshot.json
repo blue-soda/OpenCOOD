@@ -1,0 +1,143 @@
+{
+  "captured_unix": 1792280086.3920562,
+  "round_status": {
+    "state": "running",
+    "stage": "zero",
+    "supervisors": {
+      "budget_s_fusion_zero": 45906,
+      "budget_s_joint_zero": 45907,
+      "budget_a_fusion_zero": 45909,
+      "budget_a_joint_zero": 45910
+    }
+  },
+  "groups": {
+    "s_fusion": {
+      "pipeline": {
+        "state": "running",
+        "job": "budget_s_fusion_zero_on",
+        "child_pid": 45908,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/s_fusion.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/s_fusion_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/budget_s_fusion_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 45906,
+        "updated_unix": 1792280033.5965698
+      },
+      "saved_prediction_files": 245
+    },
+    "s_joint": {
+      "pipeline": {
+        "state": "running",
+        "job": "budget_s_joint_zero_on",
+        "child_pid": 45911,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/s_joint.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/s_joint_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/budget_s_joint_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 45907,
+        "updated_unix": 1792280033.6163323
+      },
+      "saved_prediction_files": 242
+    },
+    "a_fusion": {
+      "pipeline": {
+        "state": "running",
+        "job": "budget_a_fusion_zero_on",
+        "child_pid": 45912,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/a_fusion.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/a_fusion_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/budget_a_fusion_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 45909,
+        "updated_unix": 1792280033.6353297
+      },
+      "saved_prediction_files": 237
+    },
+    "a_joint": {
+      "pipeline": {
+        "state": "running",
+        "job": "budget_a_joint_zero_on",
+        "child_pid": 45913,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/a_joint.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/a_joint_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/budget_a_joint_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 45910,
+        "updated_unix": 1792280033.6485891
+      },
+      "saved_prediction_files": 237
+    }
+  }
+}
