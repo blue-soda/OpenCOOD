@@ -1,0 +1,154 @@
+"""Inference reference: ego-warped stage caches with actual cropped execution.
+
+Stage refreshes are exact relative to their (possibly approximate) input. No
+teacher output is injected into skipped cells. All costs include crop halos.
+"""
+import math
+import torch
+import torch.nn.functional as F
+from opencood.models.sub_modules.int_feature_memory import warp_bev
+
+
+def tile_mask(mask, tile):
+    return F.max_pool2d(mask.float(), tile, tile, ceil_mode=True) > 0
+
+
+def expand_tiles(mask, tile, shape):
+    return mask.repeat_interleave(tile, -2).repeat_interleave(tile, -1)[..., :shape[0], :shape[1]]
+
+
+def select_updates(current, previous, valid, fraction, tile=32):
+    """Cheap heuristic only: relative difference plus occupancy/coverage safety."""
+    if not 0 <= fraction <= 1:
+        raise ValueError('fraction must be in [0,1]')
+    pool = lambda x: F.avg_pool2d(x, tile, tile, ceil_mode=True, count_include_pad=False)
+    error = pool((current-previous).square().mean(1, keepdim=True))
+    energy = torch.maximum(pool(current.square().mean(1, keepdim=True)),
+                           pool(previous.square().mean(1, keepdim=True)))
+    score = (error / energy.clamp_min(1e-6)).sqrt()
+    selected = torch.zeros_like(score, dtype=torch.bool)
+    count = int(math.ceil(fraction * score.numel()))
+    if count:
+        indices = score.flatten().topk(count, sorted=False).indices
+        selected.view(-1)[indices] = score.flatten()[indices] > 0
+    changed_occupancy = (current.abs().sum(1, keepdim=True)>0) != (previous.abs().sum(1, keepdim=True)>0)
+    return expand_tiles(selected, tile, current.shape[-2:]) | changed_occupancy | ~valid
+
+
+def refresh_tiles(module, x, cached, requested, stride, radius, tile=8,
+                  fallback_fraction=.8, allow_fallback=True):
+    """Run only selected stage-output tiles, batching equal-shaped input crops.
+
+Only eval-mode local convolutional modules are supported. radius is the full
+input-space dependency radius about output index * stride, including residuals.
+Input crop origins are stride aligned. Do not externally zero-pad global edges:
+intermediate BN offsets would then produce a different boundary condition.
+"""
+    if module.training or x.shape[0] != 1:
+        raise ValueError('Frozen eval modules and batch=1 are required')
+    h, w = x.shape[-2:]
+    oh, ow = cached.shape[-2:]
+    assert (oh, ow) == ((h+stride-1)//stride, (w+stride-1)//stride)
+    assert requested.shape == cached[:, :1].shape
+    active = tile_mask(requested, tile)
+    written = expand_tiles(active, tile, (oh, ow))
+    coords = active[0, 0].nonzero().cpu().tolist()
+    jobs = []
+    area = 0
+    for ty, tx in coords:
+        y0, x0 = ty*tile, tx*tile
+        y1, x1 = min(y0+tile, oh), min(x0+tile, ow)
+        iy0 = max(0, ((y0*stride-radius)//stride)*stride)
+        ix0 = max(0, ((x0*stride-radius)//stride)*stride)
+        iy1 = min(h, math.ceil(((y1-1)*stride+radius+1)/stride)*stride)
+        ix1 = min(w, math.ceil(((x1-1)*stride+radius+1)/stride)*stride)
+        jobs.append((y0,x0,y1,x1,iy0,ix0,iy1,ix1))
+        area += (iy1-iy0)*(ix1-ix0)
+    ratio = area / float(h*w)
+    stats = dict(requested_fraction=float(requested.float().mean()),
+                 selected_fraction=float(written.float().mean()),
+                 crop_area_ratio_before_fallback=ratio, tiles=len(jobs), fallback=False,
+                 executed_input_area_ratio=ratio, actual_write_fraction=float(written.float().mean()))
+    if allow_fallback and (bool(active.all()) or ratio >= fallback_fraction):
+        stats.update(fallback=True, executed_input_area_ratio=1., actual_write_fraction=1.)
+        return module(x), torch.ones_like(requested), stats
+    output = cached.clone()
+    groups = {}
+    for job in jobs:
+        groups.setdefault((job[6]-job[4], job[7]-job[5]), []).append(job)
+    for group in groups.values():
+        for start in range(0, len(group), 8):
+            batch = group[start:start+8]
+            crops = torch.cat([x[..., j[4]:j[6], j[5]:j[7]] for j in batch], 0)
+            result = module(crops)
+            for i, (y0,x0,y1,x1,iy0,ix0,_,_) in enumerate(batch):
+                sy, sx = y0-iy0//stride, x0-ix0//stride
+                output[..., y0:y1, x0:x1] = result[i:i+1, :, sy:sy+y1-y0, sx:sx+x1-x0]
+    return output, written, stats
+
+
+class CacheRepairDetector:
+    """Fixed existing detector; full FM, cached ResNet stages, dense decoder/head."""
+    def __init__(self, model, config, fraction=.5, tile=8, max_age=1., dense=False):
+        self.model, self.config = model, config
+        self.fraction, self.tile, self.max_age, self.dense = fraction, tile, max_age, dense
+        args = config['model']['args']
+        self.lidar_range = args['lidar_range']
+        self.layers = args['base_bev_backbone']['layer_nums']
+        assert args['base_bev_backbone']['layer_strides'] == [2,2,2]
+        assert args['base_bev_backbone']['resnet']
+        assert not model.backbone.use_dropout
+
+    def step(self, data, state, meta):
+        m = self.model
+        p = data['processed_lidar']
+        if p['voxel_features'].shape[0]:
+            batch = {k:p[k] for k in ['voxel_features','voxel_coords','voxel_num_points']}
+            batch['batch_size'] = 1
+            spatial = m.scatter(m.pillar_vfe(batch))['spatial_features']
+        else:
+            nx, ny, _ = m.scatter.model_cfg['grid_size']
+            spatial = m.cls_head.weight.new_zeros(1,64,int(ny),int(nx))
+        temporal, fm, info = m.feature_memory.step(spatial, None if state is None else state['fm'], meta)
+        fresh = state is None or bool(info['reset'])
+        if fresh or self.dense:
+            previous = torch.zeros_like(spatial)
+            requests = torch.ones_like(spatial[:,:1], dtype=torch.bool)
+        else:
+            previous, valid = warp_bev(state['shallow'], state['pose'], meta['pose'], self.lidar_range)
+            requests = select_updates(spatial, previous, valid, self.fraction)
+        stages, ages, stats = [], [], []
+        x = temporal
+        first_written = None
+        for i, n in enumerate(self.layers):
+            module = getattr(m.backbone.resnet, 'layer%d' % (i+1))
+            if fresh or self.dense:
+                x = module(x)
+                age = torch.zeros_like(x[:,:1])
+                written = torch.ones_like(age, dtype=torch.bool)
+                st = dict(fallback=True, executed_input_area_ratio=1., actual_write_fraction=1.,
+                          requested_fraction=1., selected_fraction=1., crop_area_ratio_before_fallback=1., tiles=0)
+            else:
+                cached, valid = warp_bev(state['stages'][i], state['pose'], meta['pose'], self.lidar_range)
+                age, _ = warp_bev(state['ages'][i], state['pose'], meta['pose'], self.lidar_range)
+                age = age + info['delta_t']
+                req = F.max_pool2d(requests.float(), 2**(i+1), 2**(i+1), ceil_mode=True)>0
+                req = req | ~valid | (age >= self.max_age)
+                # BasicBlock stack: first block radius=3, each further block adds 4.
+                x, written, st = refresh_tiles(module, x, cached, req, 2, 4*n-1, self.tile)
+                age = torch.where(written, torch.zeros_like(age), age)
+            if i == 0:
+                first_written = written.repeat_interleave(2,-2).repeat_interleave(2,-1)[...,:spatial.shape[-2],:spatial.shape[-1]]
+            stages.append(x); ages.append(age); stats.append(st)
+        # Decoder uses actual mixed caches, never dense teacher outputs.
+        features = m.backbone.decode_multiscale_feature(stages)
+        if m.shrink_flag:
+            features = m.shrink_conv(features)
+        pred = dict(psm=m.cls_head(features), rm=m.reg_head(features))
+        if m.use_dir:
+            pred['dm'] = m.dir_head(features)
+        new = dict(fm=fm, pose=meta['pose'], stages=stages, ages=ages,
+                   shallow=torch.where(first_written, spatial, previous))
+        info.update(cache_stages=stats, cache_bytes=sum(t.numel()*t.element_size() for t in
+                    stages+ages+[new['shallow']])+fm['value'].numel()*fm['value'].element_size())
+        return pred, new, info
