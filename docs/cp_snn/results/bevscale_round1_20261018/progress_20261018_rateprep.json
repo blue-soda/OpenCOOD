@@ -1,0 +1,503 @@
+{
+  "checked_unix": 1792262220.7446458,
+  "round_status": {
+    "state": "running",
+    "stage": "adapt10",
+    "supervisors": {
+      "bevscale_fixed_high_adapt10": 55837,
+      "bevscale_learned_high_adapt10": 55838,
+      "bevscale_fixed_low_adapt10": 55840,
+      "bevscale_learned_low_adapt10": 55842
+    }
+  },
+  "groups": {
+    "fixed_high": {
+      "progress.json": {
+        "state": "training",
+        "epoch": 6,
+        "epochs": 10,
+        "batch": 1051,
+        "batches": 2339,
+        "loss": 1.4873650634122502,
+        "gradient_norm": 4.050414085388184,
+        "elapsed_seconds": 188.736492930213
+      },
+      "best_ap70_metrics.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 27494,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7735374289747875,
+          "0.5": 0.7282723162467538,
+          "0.7": 0.5740880201325361
+        },
+        "epoch": 3,
+        "train_loss": 1.3417944298169724,
+        "train_samples": 4678,
+        "seconds": 617.7153918619733,
+        "train_loss_components": {
+          "fused_detection_loss": 0.6257732611856716,
+          "ego_detection_loss": 0.7160211686313035
+        },
+        "bev_scale_report": {
+          "scales": {
+            "blocks.0.1": 1.0,
+            "blocks.0.4": 1.0,
+            "blocks.0.7": 1.0,
+            "blocks.0.10": 1.0,
+            "blocks.0.13": 1.0,
+            "blocks.0.16": 1.0,
+            "blocks.1.1": 1.0,
+            "blocks.1.4": 1.0,
+            "blocks.1.7": 1.0,
+            "blocks.1.10": 1.0,
+            "blocks.1.13": 1.0,
+            "blocks.1.16": 1.0,
+            "deblocks.0.0": 1.0,
+            "deblocks.1.0": 1.0
+          },
+          "count": 14,
+          "minimum": 1.0,
+          "maximum": 1.0,
+          "changed_from_one": 0,
+          "at_bounds": 0,
+          "passed": true,
+          "verified_through_epoch": 3
+        }
+      },
+      "bev_scales.json": {
+        "scales": {
+          "blocks.0.1": 1.0,
+          "blocks.0.4": 1.0,
+          "blocks.0.7": 1.0,
+          "blocks.0.10": 1.0,
+          "blocks.0.13": 1.0,
+          "blocks.0.16": 1.0,
+          "blocks.1.1": 1.0,
+          "blocks.1.4": 1.0,
+          "blocks.1.7": 1.0,
+          "blocks.1.10": 1.0,
+          "blocks.1.13": 1.0,
+          "blocks.1.16": 1.0,
+          "deblocks.0.0": 1.0,
+          "deblocks.1.0": 1.0
+        },
+        "count": 14,
+        "minimum": 1.0,
+        "maximum": 1.0,
+        "changed_from_one": 0,
+        "at_bounds": 0,
+        "passed": true,
+        "verified_through_epoch": 5
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "58e02060c61e4db74050a4ba56f8ff72e741d3ebc8480ab3f5cf3256b60f12bc",
+        "current_sha256": "58e02060c61e4db74050a4ba56f8ff72e741d3ebc8480ab3f5cf3256b60f12bc",
+        "verified_through_epoch": 5,
+        "passed": true
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "current_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "verified_through_epoch": 5,
+        "passed": true
+      },
+      "epochs": [
+        {
+          "epoch": 1,
+          "ap70": 0.5571858513604607,
+          "seconds": 606.3090483781416
+        },
+        {
+          "epoch": 2,
+          "ap70": 0.565539940087744,
+          "seconds": 675.8522798880003
+        },
+        {
+          "epoch": 3,
+          "ap70": 0.5740880201325361,
+          "seconds": 617.7153918619733
+        },
+        {
+          "epoch": 4,
+          "ap70": 0.5706544414209617,
+          "seconds": 584.8807043640409
+        },
+        {
+          "epoch": 5,
+          "ap70": 0.5716776284194065,
+          "seconds": 663.5375713319518
+        }
+      ]
+    },
+    "learned_high": {
+      "progress.json": {
+        "state": "training",
+        "epoch": 6,
+        "epochs": 10,
+        "batch": 751,
+        "batches": 2339,
+        "loss": 0.8510065750570271,
+        "gradient_norm": 7.240990161895752,
+        "elapsed_seconds": 147.2084447988309
+      },
+      "best_ap70_metrics.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 27380,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7726905391177095,
+          "0.5": 0.7282668388030108,
+          "0.7": 0.5726393917992635
+        },
+        "epoch": 3,
+        "train_loss": 1.339147965559135,
+        "train_samples": 4678,
+        "seconds": 640.8446457141545,
+        "train_loss_components": {
+          "fused_detection_loss": 0.6245436058264315,
+          "ego_detection_loss": 0.7146043597327014
+        },
+        "bev_scale_report": {
+          "scales": {
+            "blocks.0.1": 1.0518813133239746,
+            "blocks.0.4": 1.0188368558883667,
+            "blocks.0.7": 0.9873732924461365,
+            "blocks.0.10": 1.0134774446487427,
+            "blocks.0.13": 0.9935297966003418,
+            "blocks.0.16": 0.9876437187194824,
+            "blocks.1.1": 1.0259127616882324,
+            "blocks.1.4": 0.9935169219970703,
+            "blocks.1.7": 0.9810238480567932,
+            "blocks.1.10": 1.0137733221054077,
+            "blocks.1.13": 0.9820670485496521,
+            "blocks.1.16": 1.0003046989440918,
+            "deblocks.0.0": 0.9773296117782593,
+            "deblocks.1.0": 0.9796347618103027
+          },
+          "count": 14,
+          "minimum": 0.9773296117782593,
+          "maximum": 1.0518813133239746,
+          "changed_from_one": 14,
+          "at_bounds": 0,
+          "passed": true,
+          "verified_through_epoch": 3
+        }
+      },
+      "bev_scales.json": {
+        "scales": {
+          "blocks.0.1": 1.096069097518921,
+          "blocks.0.4": 1.0260117053985596,
+          "blocks.0.7": 0.9931374788284302,
+          "blocks.0.10": 1.0135390758514404,
+          "blocks.0.13": 0.9969661831855774,
+          "blocks.0.16": 0.9801706075668335,
+          "blocks.1.1": 1.0375410318374634,
+          "blocks.1.4": 1.0000343322753906,
+          "blocks.1.7": 0.9649255275726318,
+          "blocks.1.10": 1.0050991773605347,
+          "blocks.1.13": 0.9772331714630127,
+          "blocks.1.16": 1.0117548704147339,
+          "deblocks.0.0": 0.9707087874412537,
+          "deblocks.1.0": 0.9607493281364441
+        },
+        "count": 14,
+        "minimum": 0.9607493281364441,
+        "maximum": 1.096069097518921,
+        "changed_from_one": 14,
+        "at_bounds": 0,
+        "passed": true,
+        "verified_through_epoch": 5
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "58e02060c61e4db74050a4ba56f8ff72e741d3ebc8480ab3f5cf3256b60f12bc",
+        "current_sha256": "58e02060c61e4db74050a4ba56f8ff72e741d3ebc8480ab3f5cf3256b60f12bc",
+        "verified_through_epoch": 5,
+        "passed": true
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "current_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "verified_through_epoch": 5,
+        "passed": true
+      },
+      "epochs": [
+        {
+          "epoch": 1,
+          "ap70": 0.5576054688220333,
+          "seconds": 604.2167787929066
+        },
+        {
+          "epoch": 2,
+          "ap70": 0.5722711207795963,
+          "seconds": 666.6834636870772
+        },
+        {
+          "epoch": 3,
+          "ap70": 0.5726393917992635,
+          "seconds": 640.8446457141545
+        },
+        {
+          "epoch": 4,
+          "ap70": 0.5719265240720877,
+          "seconds": 634.2171230791137
+        },
+        {
+          "epoch": 5,
+          "ap70": 0.572124295431622,
+          "seconds": 636.4469637880102
+        }
+      ]
+    },
+    "fixed_low": {
+      "progress.json": {
+        "state": "training",
+        "epoch": 6,
+        "epochs": 10,
+        "batch": 701,
+        "batches": 2339,
+        "loss": 1.477177730271661,
+        "gradient_norm": 5.856740474700928,
+        "elapsed_seconds": 129.04394343402237
+      },
+      "best_ap70_metrics.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 28281,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7804554170134991,
+          "0.5": 0.7348726748198321,
+          "0.7": 0.5813798802692716
+        },
+        "epoch": 2,
+        "train_loss": 1.3060492259823362,
+        "train_samples": 4678,
+        "seconds": 666.0821544751525,
+        "train_loss_components": {
+          "fused_detection_loss": 0.6064533807373732,
+          "ego_detection_loss": 0.6995958452449625
+        },
+        "bev_scale_report": {
+          "scales": {
+            "blocks.0.1": 1.0,
+            "blocks.0.4": 1.0,
+            "blocks.0.7": 1.0,
+            "blocks.0.10": 1.0,
+            "blocks.0.13": 1.0,
+            "blocks.0.16": 1.0,
+            "blocks.1.1": 1.0,
+            "blocks.1.4": 1.0,
+            "blocks.1.7": 1.0,
+            "blocks.1.10": 1.0,
+            "blocks.1.13": 1.0,
+            "blocks.1.16": 1.0,
+            "deblocks.0.0": 1.0,
+            "deblocks.1.0": 1.0
+          },
+          "count": 14,
+          "minimum": 1.0,
+          "maximum": 1.0,
+          "changed_from_one": 0,
+          "at_bounds": 0,
+          "passed": true,
+          "verified_through_epoch": 2
+        }
+      },
+      "bev_scales.json": {
+        "scales": {
+          "blocks.0.1": 1.0,
+          "blocks.0.4": 1.0,
+          "blocks.0.7": 1.0,
+          "blocks.0.10": 1.0,
+          "blocks.0.13": 1.0,
+          "blocks.0.16": 1.0,
+          "blocks.1.1": 1.0,
+          "blocks.1.4": 1.0,
+          "blocks.1.7": 1.0,
+          "blocks.1.10": 1.0,
+          "blocks.1.13": 1.0,
+          "blocks.1.16": 1.0,
+          "deblocks.0.0": 1.0,
+          "deblocks.1.0": 1.0
+        },
+        "count": 14,
+        "minimum": 1.0,
+        "maximum": 1.0,
+        "changed_from_one": 0,
+        "at_bounds": 0,
+        "passed": true,
+        "verified_through_epoch": 5
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "58e02060c61e4db74050a4ba56f8ff72e741d3ebc8480ab3f5cf3256b60f12bc",
+        "current_sha256": "58e02060c61e4db74050a4ba56f8ff72e741d3ebc8480ab3f5cf3256b60f12bc",
+        "verified_through_epoch": 5,
+        "passed": true
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "current_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "verified_through_epoch": 5,
+        "passed": true
+      },
+      "epochs": [
+        {
+          "epoch": 1,
+          "ap70": 0.57536147774872,
+          "seconds": 598.1865876452066
+        },
+        {
+          "epoch": 2,
+          "ap70": 0.5813798802692716,
+          "seconds": 666.0821544751525
+        },
+        {
+          "epoch": 3,
+          "ap70": 0.5751257416870952,
+          "seconds": 679.2911942817736
+        },
+        {
+          "epoch": 4,
+          "ap70": 0.5776244770622453,
+          "seconds": 650.8155267760158
+        },
+        {
+          "epoch": 5,
+          "ap70": 0.5789389472012898,
+          "seconds": 613.1400436451659
+        }
+      ]
+    },
+    "learned_low": {
+      "progress.json": {
+        "state": "training",
+        "epoch": 6,
+        "epochs": 10,
+        "batch": 501,
+        "batches": 2339,
+        "loss": 1.2936358330429383,
+        "gradient_norm": 3.2469260692596436,
+        "elapsed_seconds": 91.55570460599847
+      },
+      "best_ap70_metrics.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 28400,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7818310525591511,
+          "0.5": 0.735722289815158,
+          "0.7": 0.5799264839930022
+        },
+        "epoch": 4,
+        "train_loss": 1.265158122414078,
+        "train_samples": 4678,
+        "seconds": 657.5712622338906,
+        "train_loss_components": {
+          "fused_detection_loss": 0.5862244687301467,
+          "ego_detection_loss": 0.678933653683929
+        },
+        "bev_scale_report": {
+          "scales": {
+            "blocks.0.1": 1.018964171409607,
+            "blocks.0.4": 0.9916971921920776,
+            "blocks.0.7": 0.9855846762657166,
+            "blocks.0.10": 1.0015572309494019,
+            "blocks.0.13": 0.9937215447425842,
+            "blocks.0.16": 0.994902491569519,
+            "blocks.1.1": 1.010268211364746,
+            "blocks.1.4": 0.9926996231079102,
+            "blocks.1.7": 0.9903678894042969,
+            "blocks.1.10": 0.9983468055725098,
+            "blocks.1.13": 0.9980099201202393,
+            "blocks.1.16": 1.0071583986282349,
+            "deblocks.0.0": 0.996547520160675,
+            "deblocks.1.0": 1.0002214908599854
+          },
+          "count": 14,
+          "minimum": 0.9855846762657166,
+          "maximum": 1.018964171409607,
+          "changed_from_one": 14,
+          "at_bounds": 0,
+          "passed": true,
+          "verified_through_epoch": 4
+        }
+      },
+      "bev_scales.json": {
+        "scales": {
+          "blocks.0.1": 1.0277858972549438,
+          "blocks.0.4": 0.9921811819076538,
+          "blocks.0.7": 0.9839900732040405,
+          "blocks.0.10": 1.0009424686431885,
+          "blocks.0.13": 0.9940744042396545,
+          "blocks.0.16": 0.995042085647583,
+          "blocks.1.1": 1.011778473854065,
+          "blocks.1.4": 0.9949498772621155,
+          "blocks.1.7": 0.9898061156272888,
+          "blocks.1.10": 0.994667649269104,
+          "blocks.1.13": 0.9997895359992981,
+          "blocks.1.16": 1.0075527429580688,
+          "deblocks.0.0": 0.9954148530960083,
+          "deblocks.1.0": 0.9985301494598389
+        },
+        "count": 14,
+        "minimum": 0.9839900732040405,
+        "maximum": 1.0277858972549438,
+        "changed_from_one": 14,
+        "at_bounds": 0,
+        "passed": true,
+        "verified_through_epoch": 5
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "58e02060c61e4db74050a4ba56f8ff72e741d3ebc8480ab3f5cf3256b60f12bc",
+        "current_sha256": "58e02060c61e4db74050a4ba56f8ff72e741d3ebc8480ab3f5cf3256b60f12bc",
+        "verified_through_epoch": 5,
+        "passed": true
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "current_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "verified_through_epoch": 5,
+        "passed": true
+      },
+      "epochs": [
+        {
+          "epoch": 1,
+          "ap70": 0.5741214388028575,
+          "seconds": 615.5968298979569
+        },
+        {
+          "epoch": 2,
+          "ap70": 0.5781368787637576,
+          "seconds": 659.6689428659156
+        },
+        {
+          "epoch": 3,
+          "ap70": 0.5765456168479671,
+          "seconds": 661.8270733389072
+        },
+        {
+          "epoch": 4,
+          "ap70": 0.5799264839930022,
+          "seconds": 657.5712622338906
+        },
+        {
+          "epoch": 5,
+          "ap70": 0.576976998763231,
+          "seconds": 649.0554382670671
+        }
+      ]
+    }
+  }
+}

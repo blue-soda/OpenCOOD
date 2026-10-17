@@ -90,3 +90,5 @@ CUDA_VISIBLE_DEVICES=1 /data0/chen/miniconda3/envs/opencood/bin/python \
 5. 最后研究跨消息到达的膜状态更新。E-3DSNN 当前 Count4 本身没有跨包膜状态；虚拟脉冲步、物理时间与发送者 ID 必须分开。
 
 不启动长时间训练，直到完整检测链、单 batch loss/梯度以及对照配置通过核验。
+
+最新（2026-10-18）：BEV四组完成5/10轮，零适配精确通过；并行准备[固定权重通信对照](RATE_PROBE_20261018.md)，统一容器、实际bytes与逐点复算，0轮新增训练。

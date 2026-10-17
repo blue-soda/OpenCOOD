@@ -23,6 +23,10 @@ class E3dsnnFusion(E3dsnnSingle):
             raise ValueError('Continuous readout requires residual fusion')
         self.origin, self.step = encoded_grid(args['voxel_size'], args['lidar_range'])
         self.packet_roundtrip = False
+        self.message_codec = args.get('message_codec')
+        if self.message_codec is not None:
+            from opencood.utils.quantized_feature_packet import validate_options
+            validate_options(self.message_codec)
         self.collect_fusion_diagnostics = False
         self.freeze_detector = args.get('freeze_detector', False)
         self.freeze_detector_bn = args.get('freeze_detector_bn', False)
@@ -72,6 +76,8 @@ class E3dsnnFusion(E3dsnnSingle):
             raise ValueError('Unexpected pretrained mapping: {}, {}'.format(missing, extra))
 
     def forward(self, data):
+        if self.message_codec is not None and (self.training or not self.packet_roundtrip):
+            raise ValueError('Rate probes require eval with actual packet roundtrip')
         b = data['object_bbx_mask'].shape[0]
         ego_sparse = self.encode_lidar(data['processed_lidar'], b)
         ego = ego_sparse.dense()
@@ -97,9 +103,13 @@ class E3dsnnFusion(E3dsnnSingle):
                     'timestamps_us': data['timestamps_us'][i].detach().cpu().tolist(),
                     'shape_zyx': list(ego.shape[2:]), 'origin_xyz': self.origin, 'step_xyz': self.step,
                     'source_to_ego': transform[i].detach().cpu().tolist()}
-                packet = fusion_packet.encode(road_sparse.indices[active, 1:].cpu().numpy(),
-                    road_sparse.features[active].detach().cpu().numpy(), meta, self.activation)
-                coords, values, received = fusion_packet.decode(packet, self.activation)
+                codec, codec_args = fusion_packet, ()
+                if self.message_codec is not None:
+                    from opencood.utils import quantized_feature_packet
+                    codec, codec_args = quantized_feature_packet, (self.message_codec,)
+                packet = codec.encode(road_sparse.indices[active, 1:].cpu().numpy(),
+                    road_sparse.features[active].detach().cpu().numpy(), meta, self.activation, *codec_args)
+                coords, values, received = codec.decode(packet, self.activation, *codec_args)
                 if received != meta:
                     raise ValueError('Packet metadata changed')
                 xyz = torch.as_tensor(coords.astype('int64'), device=ego.device)

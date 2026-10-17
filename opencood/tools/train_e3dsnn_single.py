@@ -226,6 +226,7 @@ def execute(args, output_dir):
         'fusion_activation_kind': getattr(model, 'fusion_activation_kind', getattr(model, 'receiver_activation', cfg['model']['args'].get('activation', 'count4'))),
         'bev_activation': getattr(model, 'bev_activation', getattr(model, 'receiver_activation', cfg['model']['args'].get('activation', 'count4'))),
         'bev_scale_mode': getattr(model, 'bev_scale_mode', None),
+        'message_codec': getattr(model, 'message_codec', None),
         'freeze_encoder': getattr(model, 'freeze_encoder', False),
         'trainable_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
         'freeze_detector': getattr(model, 'freeze_detector', False),
