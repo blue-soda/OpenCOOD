@@ -59,6 +59,27 @@ def run(config, checkpoint):
     model.eval()
     with torch.no_grad():
         assert 'ego_output' not in model(batch['ego'])
+        if model.fusion_readout == 'continuous':
+            data = batch['ego']
+            original_encoder = model.encode_lidar
+            size = data['object_bbx_mask'].shape[0]
+            cached = {id(data[key]): original_encoder(data[key], size)
+                      for key in ('processed_lidar', 'road_lidar')}
+            model.encode_lidar = lambda lidar, batch_size: cached[id(lidar)]
+            model.packet_roundtrip = True
+            model.collect_fusion_diagnostics = True
+            continuous = model(data)
+            model.fusion_readout = 'activated'
+            discrete = model(data)
+            assert continuous['packet_bytes'] == discrete['packet_bytes']
+            assert torch.isfinite(continuous['psm']).all() and torch.isfinite(continuous['rm']).all()
+            assert not torch.equal(continuous['psm'], discrete['psm'])
+            assert 'above_cap_fraction' not in continuous['fusion_probe']
+            report['readout_audit'] = dict(sender_packets_identical=True,
+                packet_bytes=continuous['packet_bytes'], distinct_detector_output=True,
+                cached_encoder_features=True, continuous_probe_omits_count_cap=True)
+            model.encode_lidar = original_encoder
+            model.fusion_readout = 'continuous'
     report.update(passed=True, inference_has_no_auxiliary_branch=True,
                   scope='Two real train frames; one warmup and one joint optimizer step; weights discarded')
     return report

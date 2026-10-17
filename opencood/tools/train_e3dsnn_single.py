@@ -220,6 +220,7 @@ def execute(args, output_dir):
         'gpu_visible': os.getenv('CUDA_VISIBLE_DEVICES'), 'parameters': sum(p.numel() for p in model.parameters()),
         'architecture': cfg['model']['core_method'],
         'activation': cfg['model']['args'].get('activation', 'count4'),
+        'fusion_readout': getattr(model, 'fusion_readout', 'activated'),
         'trainable_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
         'freeze_detector': getattr(model, 'freeze_detector', False),
         'freeze_detector_bn': getattr(model, 'freeze_detector_bn', False),

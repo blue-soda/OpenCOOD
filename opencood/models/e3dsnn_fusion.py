@@ -5,6 +5,7 @@ from opencood.models.e3dsnn_single import E3dsnnSingle
 from opencood.models.e3dsnn_single_ann import replace_counts
 from opencood.models.sub_modules.e3dsnn.backbone_3d import Multispike
 from opencood.models.fuse_modules.e3dsnn_geometry import encoded_grid, warp_volume
+from opencood.models.fuse_modules.e3dsnn_readout import residual_readout
 from opencood.utils import fusion_packet
 
 
@@ -15,6 +16,11 @@ class E3dsnnFusion(E3dsnnSingle):
         self.fusion_mode = args.get('fusion_mode', 'residual')
         if self.fusion_mode not in ('ego', 'max', 'residual'):
             raise ValueError('Unknown fusion mode')
+        self.fusion_readout = args.get('fusion_readout', 'activated')
+        if self.fusion_readout not in ('activated', 'continuous'):
+            raise ValueError('Unknown fusion readout')
+        if self.fusion_readout == 'continuous' and self.fusion_mode != 'residual':
+            raise ValueError('Continuous readout requires residual fusion')
         self.origin, self.step = encoded_grid(args['voxel_size'], args['lidar_range'])
         self.packet_roundtrip = False
         self.collect_fusion_diagnostics = False
@@ -114,7 +120,8 @@ class E3dsnnFusion(E3dsnnSingle):
         else:
             delta = self.fusion_net(torch.cat((ego_bev, road_bev, mask), 1))
             residual = self.fusion_scale * supported * delta
-            fused = self.fusion_activation(ego_bev + residual)
+            fused = residual_readout(ego_bev, residual, supported,
+                                     self.fusion_activation, self.fusion_readout)
         fused = torch.where(supported > 0, fused, ego_bev)
         result = self.detect_bev(fused)
         if self.training and self.enable_ego_aux:
@@ -125,7 +132,8 @@ class E3dsnnFusion(E3dsnnSingle):
             if self.fusion_mode != 'residual' or self.training:
                 raise ValueError('Fusion diagnostics require residual eval')
             from opencood.utils.e3dsnn_fusion_probe import probe_maps
-            result['fusion_probe'] = probe_maps(ego_bev, residual, fused, supported, self.activation)
+            result['fusion_probe'] = probe_maps(ego_bev, residual, fused, supported,
+                self.activation if self.fusion_readout == 'activated' else 'continuous')
         if data.get('return_spikes', False):
             result['spike_features'] = ego_sparse.features
         if packet_bytes:
