@@ -145,7 +145,8 @@ class INTFeatureMemory(nn.Module):
         if self.fusion is not None and identity_init:
             self.fusion.initialize_concat_identity()
 
-    def step(self, current, state, meta, reset=False, align=True, detach_state=True):
+    def step(self, current, state, meta, reset=False, align=True, detach_state=True,
+             state_observer=None):
         assert current.shape[0] == 1, 'Use one explicit state per sequence, not batch slots.'
         reason = 'initial' if state is None else None
         delta_t = 0.
@@ -173,7 +174,14 @@ class INTFeatureMemory(nn.Module):
         else:
             past = state['value'].clone()
             coverage = 1.
+            valid = torch.ones_like(past[:, :1], dtype=torch.bool)
         output, cached = self.fusion(current, [past], delta_t=delta_t, detach_state=detach_state)
+        if state_observer is not None and reason is None:
+            if self.mode != 'gru':
+                raise ValueError('Hidden-state observer currently supports ANN GRU only')
+            # Reuse the very same aligned hidden state consumed by the GRU.
+            # Exclude age, occupancy and the post-fusion readout from this comparison.
+            state_observer(cached[:, :self.channels], past[:, :self.channels], valid)
         value = output if cached is None else cached
         if detach_state:
             value = value.detach()

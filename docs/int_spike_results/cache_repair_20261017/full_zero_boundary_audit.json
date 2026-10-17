@@ -1,0 +1,13 @@
+{
+  "status": "PASSED",
+  "scans": 5794,
+  "labels": 1738,
+  "zero_fill_frames": 531,
+  "zero_fill_labeled_frames": 148,
+  "reused_labeled_frames": 852,
+  "different_refresh_decisions": 856,
+  "different_decisions_on_labeled_frames": 275,
+  "report_sha256": "2b0aaaa401634f78462b589240387a665ae883b1fcce7265113ee09fb74ad364",
+  "frames_sha256": "354d815054d7746e4d7dc4e234c362eda30dc8953de650cbb91db2badaef2085",
+  "caveat": "AP not independently recomputed from boxes; global AP does not prove safety of boundary objects"
+}

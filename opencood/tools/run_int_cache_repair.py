@@ -93,7 +93,7 @@ def engineering(a,model,cfg,rows,out):
                 tests='All test_int*.py; synthetic boundaries/phase/nonzero BN; eight real frames and three real-weight crop checks')
 
 
-def evaluate(a,model,cfg,rows,out):
+def evaluate(a,model,cfg,rows,out,wrapper=None):
     if a.content_calibration:
         check=json.loads(Path(a.content_check).read_text())
         assert check['status']=='PASSED' and check['content_calibration_sha256']==a.content_calibration_sha256
@@ -106,7 +106,8 @@ def evaluate(a,model,cfg,rows,out):
         assert provenance['checkpoint']['sha256']==digest(json.loads((Path(a.root)/('full_'+a.mode)/'best.json').read_text())['checkpoint'])
     chosen=rows if a.stage=='full' else rows[:a.frames]
     dataset,stream=loader(chosen,cfg,4,303)
-    wrapper=CacheRepairDetector(model,cfg,a.fraction,a.tile,a.max_age,a.dense,a.occupancy_policy,a.oracle_stage0,a.support_profile,a.oracle_index)
+    if wrapper is None:
+        wrapper=CacheRepairDetector(model,cfg,a.fraction,a.tile,a.max_age,a.dense,a.occupancy_policy,a.oracle_stage0,a.support_profile,a.oracle_index)
     if a.periodic_last:wrapper=PeriodicStageDetector(model,cfg,a.periodic_last,a.max_age,a.content_threshold,a.zero_uncovered)
     state=None;records=[];times=[]
     ap={t:dict(tp=[],fp=[],gt=0,score=[]) for t in [.3,.5,.7]}
