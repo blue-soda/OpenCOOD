@@ -1,0 +1,141 @@
+{
+  "boundary_fraction_mean": [
+    0.008100963434853493,
+    0.0023971752140891246
+  ],
+  "caveats": [
+    "Training-only geometry/content diagnostic; no AP or actual sparse execution.",
+    "Current FM and stage1 execute; no current stage2/3 target or teacher is computed.",
+    "Boundary-only is a necessary-work diagnostic ignoring content changes, not a deployable policy.",
+    "Ideal deduplicated conv work excludes decoder/FM/warp/selector/launch/memory; no latency claim.",
+    "Tile4/8/16 are training cost candidates; thresholds stay frozen from the early-gate suite."
+  ],
+  "partial_opportunities": 499,
+  "results": {
+    "boundary_only_lower_bound_tile16": {
+      "ideal_backbone_conv_saved_fraction": 0.2236112437053815,
+      "stages": [
+        {
+          "mean_partial_ideal_conv_fraction": 0.14075717026957743,
+          "mean_partial_output_fraction": 0.10628367319725499
+        },
+        {
+          "mean_partial_ideal_conv_fraction": 0.5909105031768963,
+          "mean_partial_output_fraction": 0.5481120645402667
+        }
+      ]
+    },
+    "boundary_only_lower_bound_tile4": {
+      "ideal_backbone_conv_saved_fraction": 0.29193336617416066,
+      "stages": [
+        {
+          "mean_partial_ideal_conv_fraction": 0.0484282547354279,
+          "mean_partial_output_fraction": 0.018865666890429157
+        },
+        {
+          "mean_partial_ideal_conv_fraction": 0.33133755883860744,
+          "mean_partial_output_fraction": 0.2419111095891448
+        }
+      ]
+    },
+    "boundary_only_lower_bound_tile8": {
+      "ideal_backbone_conv_saved_fraction": 0.2719682935565719,
+      "stages": [
+        {
+          "mean_partial_ideal_conv_fraction": 0.078217918095762,
+          "mean_partial_output_fraction": 0.04656805437550934
+        },
+        {
+          "mean_partial_ideal_conv_fraction": 0.4049685639274119,
+          "mean_partial_output_fraction": 0.3293889161938417
+        }
+      ]
+    },
+    "content_and_boundary_tile16": {
+      "ideal_backbone_conv_saved_fraction": 0.06561358093584654,
+      "stages": [
+        {
+          "mean_partial_ideal_conv_fraction": 0.6684785911692667,
+          "mean_partial_output_fraction": 0.6080987121469391
+        },
+        {
+          "mean_partial_ideal_conv_fraction": 0.9427405937752212,
+          "mean_partial_output_fraction": 0.9322453877013289
+        }
+      ]
+    },
+    "content_and_boundary_tile4": {
+      "ideal_backbone_conv_saved_fraction": 0.0903524819215881,
+      "stages": [
+        {
+          "mean_partial_ideal_conv_fraction": 0.5721357186829307,
+          "mean_partial_output_fraction": 0.4763520487279954
+        },
+        {
+          "mean_partial_ideal_conv_fraction": 0.8984951002040996,
+          "mean_partial_output_fraction": 0.8620427689236964
+        }
+      ]
+    },
+    "content_and_boundary_tile8": {
+      "ideal_backbone_conv_saved_fraction": 0.08663330306080765,
+      "stages": [
+        {
+          "mean_partial_ideal_conv_fraction": 0.5779046421507815,
+          "mean_partial_output_fraction": 0.4855157731097184
+        },
+        {
+          "mean_partial_ideal_conv_fraction": 0.912037778029296,
+          "mean_partial_output_fraction": 0.885758769416618
+        }
+      ]
+    }
+  },
+  "scans": 1024,
+  "seconds": 60.53033152688295,
+  "source_policy": {
+    "cache_kind": "stages",
+    "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+    "contract": {
+      "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+      "fm_only_epochs": 1,
+      "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+      "lr": 0.0001,
+      "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+      "min_delta": 0.001,
+      "min_epochs": 20,
+      "mode": "gru",
+      "patience": 10,
+      "seed": 303,
+      "state_policy": "whole-segment/tbptt/v1",
+      "tbptt_steps": 4
+    },
+    "eligible_pairs": 130,
+    "gate": "stage1",
+    "max_achievable_reuse": 0.0751953125,
+    "max_age": 0.25,
+    "period": 2,
+    "scans": 1024,
+    "selected": {
+      "counts": {
+        "change": 537,
+        "coverage": 284,
+        "initial": 50,
+        "period": 76,
+        "reuse": 77
+      },
+      "reuse_fraction": 0.0751953125,
+      "threshold": 0.26467612385749817
+    },
+    "selection": "Closest training reuse budget 40%, ties lower threshold; no labels or target features used",
+    "split": "train",
+    "status": "COMPLETED",
+    "target_reuse_fraction": 0.4,
+    "trace_sha256": "d245880290d2c8c352e137cb49143a2b63ace9dd136122a26291e5fe8eb8d40e",
+    "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+  },
+  "split": "train",
+  "stage1_changed_fraction_mean": 0.14203008595445307,
+  "status": "COMPLETED",
+  "threshold": 0.26467612385749817
+}

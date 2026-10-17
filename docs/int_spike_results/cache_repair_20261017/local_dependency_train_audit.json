@@ -1,0 +1,9 @@
+{
+  "status": "PASSED",
+  "scans": 1024,
+  "full_refresh_frames": 525,
+  "partial_opportunities": 499,
+  "report_sha256": "13b96acc2c5df6097a259758424b846cba54dc5a786248f9284557f810aba000",
+  "frames_sha256": "bfd514eab816deea967c6640de37daedbc66e535d9410ee4a7c31694d45119de",
+  "caveat": "Verified training order and aggregate geometry/MAC arithmetic; ideal dependency counts are not measured latency or AP."
+}
