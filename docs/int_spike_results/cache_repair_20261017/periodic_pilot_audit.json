@@ -1,0 +1,26 @@
+{
+  "periodic1_v2": {
+    "status": "PASSED",
+    "report_sha256": "0d57628504c5128a3237f2501eddb8e9d10be0f0f94fb3b1e5193358b5a6f75c",
+    "frames_sha256": "c29e41ac2b01eeede44986ce5cc21bc6765ecdd2d5f4719eb99b23148693cbad",
+    "scans": 256,
+    "labels": 61,
+    "resets": 10
+  },
+  "periodic2": {
+    "status": "PASSED",
+    "report_sha256": "7b7098e275568105653f697ff27aba19752d5a4e0ac0807d8a54d93c292da0dc",
+    "frames_sha256": "89db92a69adc16bcfa5e40b799159c773fd96a9d29c82c82b757977bcce38043",
+    "scans": 256,
+    "labels": 61,
+    "resets": 10
+  },
+  "checks": [
+    "Manifest order/frame/segment/supervision",
+    "Refresh/reuse and stage execution summaries",
+    "Mean timing recomputation after 10 warmup frames",
+    "Frozen source hashes",
+    "Periodic1 AP30/50/70 exactly match original dense prefix"
+  ],
+  "caveat": "AP was not independently recomputed from detection boxes; timing is one sequential same-GPU pair"
+}
