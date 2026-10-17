@@ -1,0 +1,8 @@
+{
+  "supervisor_pid": 39525,
+  "started_unix": 1792273735.9516485,
+  "git_commit": "3886b90aa638fe8af3b867f422f4c78f0088f90f",
+  "plan_sha256": "7855906a1fc358160070e2bc1b10d440ee21696fcd5c9f766675e4b4de99fa04",
+  "supervisor_sha256": "3a661c319d8dde0949d14dff1e9134199f6993d426d4d3f9f23c0576b4b2bd84",
+  "cuda_visible_devices": ""
+}

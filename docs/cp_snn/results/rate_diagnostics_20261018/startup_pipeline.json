@@ -1,0 +1,19 @@
+{
+  "state": "running",
+  "job": "snn_compression",
+  "child_pid": 39527,
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.diagnose_e3dsnn_ap70",
+    "--ego-dir",
+    "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_receiver_native",
+    "--fusion-dir",
+    "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_receiver_keep25",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/e3dsnn_rate_diagnostics_20261018/snn_compression.json"
+  ],
+  "supervisor_pid": 39525,
+  "updated_unix": 1792273735.9858751
+}
