@@ -121,7 +121,7 @@ class CacheRepairDetector:
         x = temporal
         first_written = None
         for i, n in enumerate(self.layers):
-            module = getattr(m.backbone.resnet, 'layer%d' % (i+1))
+            module = getattr(m.backbone.resnet, 'layer%d' % i)
             if fresh or self.dense:
                 x = module(x)
                 age = torch.zeros_like(x[:,:1])

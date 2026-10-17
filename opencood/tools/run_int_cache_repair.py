@@ -43,7 +43,7 @@ def engineering(a,model,cfg,rows,out):
     wrapper=CacheRepairDetector(model,cfg,dense=True)
     original_state=cache_state=None;errors=[];crop_errors=[]
     captured=[]
-    hook=model.backbone.resnet.layer1.register_forward_pre_hook(lambda m,x:captured.append(x[0].detach()))
+    hook=model.backbone.resnet.layer0.register_forward_pre_hook(lambda m,x:captured.append(x[0].detach()))
     with torch.no_grad():
         for sample in stream:
             ego=to_device(sample['ego'],torch.device('cuda'));meta=sample['meta']
@@ -55,7 +55,7 @@ def engineering(a,model,cfg,rows,out):
         hook.remove()
         x=captured[-1]
         for i,n in enumerate(wrapper.layers):
-            stage=getattr(model.backbone.resnet,'layer%d'%(i+1))
+            stage=getattr(model.backbone.resnet,'layer%d'%i)
             reference=stage(x);mask=torch.zeros_like(reference[:,:1],dtype=torch.bool)
             mask[...,0,0]=True;mask[...,-1,-1]=True
             mask[...,reference.shape[-2]//2,reference.shape[-1]//2]=True
