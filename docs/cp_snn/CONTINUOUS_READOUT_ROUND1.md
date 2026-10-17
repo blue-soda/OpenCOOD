@@ -3,7 +3,7 @@
 ## Material Passport
 
 来源：已核验辅助监督实验、用户授权AP70顺序；academic-research-suite / experiment-agent执行核验。
-当前状态：实现完成，待181真实batch检查及启动。
+当前状态：真实batch检查通过，181 GPU5已启动30轮训练；监督PID2458，源提交867ae9b5a6a88a337b2d769fd320d6627b85e4ac。
 
 ## 唯一改动与假设
 
@@ -27,3 +27,16 @@ SNN辅助监督57.87040%低于预定ANN单车57.98007%。检查融合后再次Co
 根目录 `/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017`，工具 `opencood.tools.launch_e3dsnn_continuous`。
 已有启动记录拒绝重复，GPU须空闲、磁盘至少8GiB；训练12h、评估各1h硬超时，失败不自动重试。
 本地21项CPU回归通过，覆盖小残差/负值/超4值、梯度、无覆盖恒等、旧ReLU行为及AP复算。
+
+
+## 启动验证
+
+21项CPU回归在本地与181通过。真实batch2预热/联合两步检查：融合及应解冻检测器具有有限非零梯度，BN统计保持不变，推理不执行辅助分支。
+固定同一发送端编码结果切换两种读出，消息完全一致（两帧61136/70667字节），BEV输入确实不同。
+首次检查错误地要求两步更新后最终检测输出立即不同，该断言失败；日志smoke.log保留。改为在实际改动边界检查BEV输入并记录检测输出，而非要求下游量化后立即变化。
+修正后检查通过，最终检测输出在这两步仍相同（distinct_detector_output=false）；不能把小batch检查当成精度改善或完整训练的证据。
+修正检查日志smoke_boundary.log与smoke.json保留，训练仅启动一次。
+启动器已确认四组对照完整结束、共同GT一致、试验配置匹配、相同原始单车SHA、GPU5空闲和磁盘余量；自动任务继续30分钟跟进。
+完成后调用 `summarize_e3dsnn_fusion_probe --suffix _contaux1_joint30 --audit-name fixed_bn.json --activations count4` 导出核验摘要，并与辅助监督组比较。
+
+已观察第1轮超过400批，loss与梯度有限。启动证据 [startup_20261017.json](results/continuous_round1_20261017/startup_20261017.json)，SHA256 `072ccdcf689fec8a422ad25fa2aaa6329ad5a9a89f47fa69ebd66ea3aece2e85`。

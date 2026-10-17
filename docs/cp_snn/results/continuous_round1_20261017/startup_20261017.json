@@ -1,0 +1,229 @@
+{
+  "root": "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017",
+  "files": {
+    "smoke.json": {
+      "config_sha256": "ddfb6c5b59f5bedd155bb8f921241c830c18da983d98e9696c1c2e46b305d6a2",
+      "checkpoint_sha256": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
+      "ego_aux_weight": 1.0,
+      "phases": {
+        "warmup": {
+          "loss": 1.910744238298669,
+          "components": {
+            "fused_detection_loss": 0.9553721191493345,
+            "ego_detection_loss": 0.9553721191493345
+          },
+          "gradient_l1": {
+            "fusion_net.": 1.284399051219225,
+            "backbone_3d.": 0,
+            "backbone_2d.": 0,
+            "reg_head.": 0
+          },
+          "bn_unchanged": true
+        },
+        "joint": {
+          "loss": 1.910744238298669,
+          "components": {
+            "fused_detection_loss": 0.9553721191493345,
+            "ego_detection_loss": 0.9553721191493345
+          },
+          "gradient_l1": {
+            "fusion_net.": 16.62002060492523,
+            "backbone_3d.": 254.01213142485358,
+            "backbone_2d.": 697.3513222783804,
+            "reg_head.": 32.21095132827759
+          },
+          "bn_unchanged": true
+        }
+      },
+      "readout_audit": {
+        "sender_packets_identical": true,
+        "packet_bytes": [
+          61136,
+          70667
+        ],
+        "distinct_bev_input": true,
+        "distinct_detector_output": false,
+        "cached_encoder_features": true,
+        "continuous_probe_omits_count_cap": true
+      },
+      "passed": true,
+      "inference_has_no_auxiliary_branch": true,
+      "scope": "Two real train frames; one warmup and one joint optimizer step; weights discarded"
+    },
+    "count4_contaux1_joint30_launch.json": {
+      "state": "launched",
+      "gpu": 5,
+      "git_commit": "867ae9b5a6a88a337b2d769fd320d6627b85e4ac",
+      "started_unix": 1792205461.0275257,
+      "supervisor_pid": 2458
+    },
+    "count4_contaux1_joint30_plan.json": {
+      "name": "count4_contaux1_joint30",
+      "jobs": [
+        {
+          "name": "count4_contaux1_joint30_train",
+          "timeout_seconds": 43200,
+          "command": [
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-u",
+            "-m",
+            "opencood.tools.train_e3dsnn_single",
+            "--workers",
+            "2",
+            "--mode",
+            "train",
+            "--config",
+            "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_contaux1_181.yaml",
+            "--single-checkpoint",
+            "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/snn_single.pth",
+            "--output",
+            "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017/count4_contaux1_joint30",
+            "--epochs",
+            "30",
+            "--warmup-epochs",
+            "3",
+            "--selection-iou",
+            "0.7"
+          ]
+        },
+        {
+          "name": "count4_contaux1_joint30_on",
+          "timeout_seconds": 3600,
+          "command": [
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-u",
+            "-m",
+            "opencood.tools.train_e3dsnn_single",
+            "--workers",
+            "2",
+            "--mode",
+            "eval",
+            "--config",
+            "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_contaux1_181.yaml",
+            "--checkpoint",
+            "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017/count4_contaux1_joint30/best_ap70.pth",
+            "--output",
+            "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017/count4_contaux1_joint30_on",
+            "--eval-3d",
+            "--save-predictions",
+            "--packet-roundtrip",
+            "--fusion-diagnostics"
+          ]
+        },
+        {
+          "name": "count4_contaux1_joint30_on_replay",
+          "timeout_seconds": 3600,
+          "command": [
+            "env",
+            "CUDA_VISIBLE_DEVICES=",
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-u",
+            "-m",
+            "opencood.tools.replay_e3dsnn_predictions",
+            "--evaluation-dir",
+            "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017/count4_contaux1_joint30_on"
+          ]
+        },
+        {
+          "name": "count4_contaux1_joint30_off",
+          "timeout_seconds": 3600,
+          "command": [
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-u",
+            "-m",
+            "opencood.tools.train_e3dsnn_single",
+            "--workers",
+            "2",
+            "--mode",
+            "eval",
+            "--config",
+            "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_ego_181.yaml",
+            "--checkpoint",
+            "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017/count4_contaux1_joint30/best_ap70.pth",
+            "--output",
+            "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017/count4_contaux1_joint30_off",
+            "--eval-3d",
+            "--save-predictions"
+          ]
+        },
+        {
+          "name": "count4_contaux1_joint30_off_replay",
+          "timeout_seconds": 3600,
+          "command": [
+            "env",
+            "CUDA_VISIBLE_DEVICES=",
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-u",
+            "-m",
+            "opencood.tools.replay_e3dsnn_predictions",
+            "--evaluation-dir",
+            "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017/count4_contaux1_joint30_off"
+          ]
+        },
+        {
+          "name": "count4_contaux1_joint30_diagnostic",
+          "timeout_seconds": 3600,
+          "command": [
+            "env",
+            "CUDA_VISIBLE_DEVICES=",
+            "/data1/tzm/miniconda3/envs/opencood/bin/python",
+            "-u",
+            "-m",
+            "opencood.tools.diagnose_e3dsnn_ap70",
+            "--ego-dir",
+            "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017/count4_contaux1_joint30_off",
+            "--fusion-dir",
+            "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017/count4_contaux1_joint30_on",
+            "--output",
+            "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017/count4_contaux1_joint30_diagnostic.json"
+          ]
+        }
+      ],
+      "gpu": 5,
+      "git_commit": "867ae9b5a6a88a337b2d769fd320d6627b85e4ac",
+      "config_sha256": "ddfb6c5b59f5bedd155bb8f921241c830c18da983d98e9696c1c2e46b305d6a2",
+      "initializer_sha256": "404dfa3aec12b657a7450741974cec7b7af62b1b5e35696dcba37ff42709cdbd",
+      "control_summary_sha256": "bd70f1a3fcc55e57f6bcb969cf80574ac274b1be539eaa181e3552247bee37fe"
+    },
+    "count4_contaux1_joint30_pipeline.json": {
+      "state": "running",
+      "job": "count4_contaux1_joint30_train",
+      "child_pid": 2459,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--mode",
+        "train",
+        "--config",
+        "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_pair_count4_contaux1_181.yaml",
+        "--single-checkpoint",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/initializers/snn_single.pth",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_continuous_round1_20261017/count4_contaux1_joint30",
+        "--epochs",
+        "30",
+        "--warmup-epochs",
+        "3",
+        "--selection-iou",
+        "0.7"
+      ],
+      "supervisor_pid": 2458,
+      "updated_unix": 1792205461.0613217
+    },
+    "count4_contaux1_joint30/progress.json": {
+      "state": "training",
+      "epoch": 1,
+      "epochs": 30,
+      "batch": 551,
+      "batches": 2339,
+      "loss": 1.618106277239598,
+      "gradient_norm": 0.7769594788551331,
+      "elapsed_seconds": 72.78209041780792
+    }
+  },
+  "initial_smoke_failure": "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)\n  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]\nTraceback (most recent call last):\n  File \"/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py\", line 193, in _run_module_as_main\n    \"__main__\", mod_spec)\n  File \"/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py\", line 85, in _run_code\n    exec(code, run_globals)\n  File \"/data1/tzm/workspace/OpenCOOD/opencood/tools/audit_e3dsnn_aux.py\", line 94, in <module>\n    result = run(args.config, args.checkpoint)\n  File \"/data1/tzm/workspace/OpenCOOD/opencood/tools/audit_e3dsnn_aux.py\", line 76, in run\n    assert not torch.equal(continuous['psm'], discrete['psm'])\nAssertionError\n"
+}

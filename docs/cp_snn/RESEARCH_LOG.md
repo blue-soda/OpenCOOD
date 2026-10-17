@@ -451,3 +451,5 @@ SNN最佳57.87040%仍低于原始ANN单车57.98007%，差0.10966个百分点，�
 
 证据 [aux_final_summary.json](results/aux_round1_20261017/aux_final_summary.json)，SHA256 `bd70f1a3fcc55e57f6bcb969cf80574ac274b1be539eaa181e3552247bee37fe`，含逐帧包长、评估/复算、模型SHA、BN审计和GT转换/探针。
 跨组核验 [cohort_check.json](results/aux_round1_20261017/cohort_check.json)，有序GT摘要 `54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee`。原始预测保留服务器。
+
+接收端连续读出已在181 GPU5启动30轮，监督PID2458，源提交867ae9b；真实batch验证、首次过强断言的修正及复核记录见CONTINUOUS_READOUT_ROUND1.md。
