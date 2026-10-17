@@ -50,4 +50,3 @@
 - [launch.json](results/budget_adapt_20261018/launch.json)：1d55939181cdcbb0d8e3d18fef84fae6ec1c97f66a615d549eda8ad3d09ca441。
 - [startup_snapshot.json](results/budget_adapt_20261018/startup_snapshot.json)：4a988dfdf947e6635c1e80dd04c3f27d7d84273d915bb509e2adfda6b2e18842。
 - 同目录保存八份配置和supervise.py；配置SHA见audit，监督脚本SHA为3a661c319d8dde0949d14dff1e9134199f6993d426d4d3f9f23c0576b4b2bd84。
-
