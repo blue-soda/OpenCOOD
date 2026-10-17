@@ -25,13 +25,14 @@ def setup(a):
     assert digest(args['config'])==contract['config_sha256']
     assert digest(args['manifest'])==contract['manifest_sha256']
     cfg=load_yaml(args['config']);cfg['data_augment']=[]
-    rows=json.loads(Path(args['manifest']).read_text())['val']
+    split='train' if a.stage=='calibrate' else 'val'
+    rows=json.loads(Path(args['manifest']).read_text())[split]
     torch.manual_seed(303);np.random.seed(303)
     torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     torch.backends.cudnn.deterministic=True;torch.backends.cudnn.benchmark=False
     model=PointPillarINT(cfg['model']['args'],a.mode).cuda().eval()
     model.load_state_dict(torch.load(best['checkpoint'],map_location='cpu')['model'],strict=True)
-    return model,cfg,rows,dict(contract=contract,checkpoint=best,arguments=vars(a))
+    return model,cfg,rows,dict(contract=contract,checkpoint=best,arguments=vars(a),split=split)
 
 
 def engineering(a,model,cfg,rows,out):
@@ -134,7 +135,11 @@ def evaluate(a,model,cfg,rows,out):
 def worker(a):
     out=Path(a.output);write_json(out/'status.json',dict(status='RUNNING'))
     model,cfg,rows,provenance=setup(a);write_json(out/'provenance.json',provenance)
-    report=engineering(a,model,cfg,rows,out) if a.stage=='engineering' else evaluate(a,model,cfg,rows,out)
+    if a.stage=='calibrate':
+        from opencood.tools.int_cache_gate_calibration import calibrate
+        report=calibrate(a,model,cfg,rows,out,provenance)
+    else:
+        report=engineering(a,model,cfg,rows,out) if a.stage=='engineering' else evaluate(a,model,cfg,rows,out)
     write_json(out/'report.json',report);write_json(out/'status.json',dict(status='COMPLETED'))
     print(json.dumps(report),flush=True)
 
@@ -142,7 +147,7 @@ def worker(a):
 def main():
     p=argparse.ArgumentParser();p.add_argument('--root',required=True);p.add_argument('--output',required=True)
     p.add_argument('--mode',default='spike_gru');p.add_argument('--gpu',type=int,required=True)
-    p.add_argument('--stage',choices=['engineering','pilot','full'],required=True)
+    p.add_argument('--stage',choices=['engineering','pilot','full','calibrate'],required=True)
     p.add_argument('--fraction',type=float,default=.5);p.add_argument('--tile',type=int,default=8)
     p.add_argument('--max-age',type=float,default=1.);p.add_argument('--frames',type=int,default=256)
     p.add_argument('--occupancy-policy',choices=['cell','tile'],default='cell')

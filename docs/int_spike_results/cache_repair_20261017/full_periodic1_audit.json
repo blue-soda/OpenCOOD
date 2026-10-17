@@ -1,0 +1,18 @@
+{
+  "status": "PASSED",
+  "scans": 5794,
+  "labels": 1738,
+  "resets": 214,
+  "report_sha256": "7cf86409270e5600d12d6f97d08db96ccc16ea30b7378e5d8c5a848778c59375",
+  "frames_sha256": "eb64ae777a3bd0e14d87bc4f2a082abfd3ce012c9e2cbe1a9b365a2129f23341",
+  "mean_model_ms_reduction_percent": 6.26883281669437,
+  "checks": [
+    "Manifest frame/segment/supervision coverage",
+    "All stages execute every frame",
+    "Refresh reasons and cache bytes",
+    "Mean timing recomputation",
+    "Frozen source hashes",
+    "AP70 exactly equals frozen checkpoint best"
+  ],
+  "caveat": "One sequential same-GPU pair; AP not independently recalculated from boxes; timing excludes IO, voxelization and postprocess"
+}

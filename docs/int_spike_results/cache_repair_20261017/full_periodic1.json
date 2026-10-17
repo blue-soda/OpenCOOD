@@ -1,0 +1,52 @@
+{
+  "caveats": [
+    "Oracle, when enabled, caches only oracle_index and computes that full current stage solely to rank error; extra work is counted; not deployable or a formal optimal AP bound.",
+    "Ideal required convolution MACs, when profiled, exclude oracle, warp, selector, decoder, memory traffic and launch overhead; no sparse kernel or speedup is established.",
+    "Stage input-area ratios include repeated halo work, are not measured FLOPs.",
+    "Current FM and decoder/head remain dense; no dynamic-object motion prediction.",
+    "Upstream reused features can alter even refreshed downstream outputs.",
+    "Concurrent GPU experiments are not a controlled latency comparison."
+  ],
+  "labels": 1738,
+  "metrics": {
+    "bev_ap30": 0.8536119501279772,
+    "bev_ap50": 0.8380867977929637,
+    "bev_ap70": 0.758736104616861
+  },
+  "model_step_ms_mean": 32.91270245765246,
+  "model_step_ms_p50": 32.64479897916317,
+  "model_step_ms_p95": 35.07056630915031,
+  "oracle_index": null,
+  "oracle_stage0": false,
+  "peak_gpu_bytes": 451966976,
+  "periodic_last": 1,
+  "periodic_refresh_counts": {
+    "age": 0,
+    "coverage": 0,
+    "initial": 214,
+    "period": 5580,
+    "reuse": 0
+  },
+  "reset_frames": 214,
+  "scans": 5794,
+  "scope": "Fixed-weight inference intervention; full validation",
+  "seconds": 363.9608582218643,
+  "stage_means": [
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    }
+  ],
+  "state_bytes": 29433600,
+  "status": "COMPLETED",
+  "support_profile": false,
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included"
+}
