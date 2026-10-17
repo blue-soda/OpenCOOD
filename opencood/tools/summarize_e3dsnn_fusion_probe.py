@@ -25,12 +25,12 @@ def aggregate(rows):
                  for key in valid[0] if key != 'supported_cells'})
 
 
-def summarize(root, suffix=''):
+def summarize(root, suffix='', audit_name='frozen_detector.json', activations=('count4', 'relu')):
     root = Path(root)
     report = dict(root=str(root), models={},
         scope='Same-device fixed-weight on/off comparison. Lost GT cohort is outcome-selected; '
               'ROI summaries are descriptive, not causal, and overlapping regions are not independent.')
-    for activation in ('count4', 'relu'):
+    for activation in activations:
         prefix = activation + suffix
         diagnostic_path = root / (prefix + '_diagnostic.json')
         diagnostic = json.loads(diagnostic_path.read_text())
@@ -86,9 +86,9 @@ def summarize(root, suffix=''):
         model['verified_inference_blobs'] = blobs[0]
         if suffix:
             training = root / prefix
-            for name in ('best_ap70_metrics.json', 'frozen_detector.json', 'status.json'):
+            for name in ('best_ap70_metrics.json', audit_name, 'status.json'):
                 model[name] = evidence(training / name)
-            frozen = model['frozen_detector.json']['content']
+            frozen = model[audit_name]['content']
             assert frozen['passed'] and frozen['verified_through_epoch'] == 30
             assert frozen['initial_sha256'] == frozen['current_sha256']
             assert model['status.json']['content']['state'] == 'complete'
@@ -104,8 +104,9 @@ if __name__ == '__main__':
     parser.add_argument('--root', required=True)
     parser.add_argument('--output', required=True)
     parser.add_argument('--suffix', default='', help='Run suffix, e.g. _frozen30')
+    parser.add_argument('--audit-name', choices=['frozen_detector.json', 'fixed_bn.json'], default='frozen_detector.json')
     args = parser.parse_args()
-    result = summarize(args.root, args.suffix)
+    result = summarize(args.root, args.suffix, args.audit_name)
     with Path(args.output).open('x') as stream:
         json.dump(result, stream, indent=2)
     print(json.dumps(dict(passed=result['passed'], output=args.output)), flush=True)
