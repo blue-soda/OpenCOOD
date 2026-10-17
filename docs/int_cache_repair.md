@@ -254,3 +254,7 @@ automation改为每45分钟，提示词仍“推进时序感知，仅完成异�
 补充--stage learned-eval入口，等待对应训练status=COMPLETED后独立加载指定epoch/repairs.pth；校验冻结检测器/源策略/权重契约、参数量和原工程验收。用--repair-policy local|dense及--repair-period 2评估相应修正，--repair-period 1为同路径全部原主干刷新控制。均完整5794帧，无训练和教师；记录权重哈希、修正帧及标注暴露、原深层调用比例、模型平均/P50/P95及缓存。后续等待两项训练结束，在同一空闲GPU依次控制/local-best/dense-best，核对各best完整AP可复现后比较速度。当前只是准备入口，不重复运行已有完整epoch评估、不修改训练中的参数或停止条件。
 
 45分钟轮询继续；健康训练阶段保持静默。
+
+### 2026-10-18 轻量修正平台停止及独立复测
+两组各9epoch按既定平台规则停止（stale8，LR6.25e-5），最佳均epoch5。完整验证AP70：冻结GRU75.87361046%，local75.78958625%，dense75.79115348%；差值分别-0.08402/-0.08246个百分点。仅116,992参数修正模块训练，原检测器冻结。两组9轮帧顺序、标签、修正暴露、权重哈希及最佳选择审计通过；每轮5794扫描/1738标签，2843修正帧含852标注帧。AP未从检测框另行复算。此阶段说明精度接近，不能据并行训练时延宣布提速或SNN收益。
+代码2b44254已main推送并由181拉取。顺序复测light_repair_benchmark_v1启动于181 GPU7，队列PID40415，依次control/local-best/dense-best，每项独立重载、完整验证、核对AP并测模型平均/P50/P95。源目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017；首项control已运行。训练审计/队列启动归档light_repair_training_audit.json、light_repair_benchmark_launch.json。下一轮先读队列status/results；若失败看对应run.log，不重复训练或覆盖目录。结果出来后按真实速度与精度选择候选，勿把模块混合面积统计当主干MAC。当前45分钟路线级自动任务继续，仅完成或异常通知。

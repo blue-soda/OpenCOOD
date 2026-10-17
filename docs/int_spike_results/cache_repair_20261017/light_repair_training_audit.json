@@ -1,0 +1,300 @@
+{
+  "caveat": "Validates manifests, summaries and hashes; does not independently recompute AP from boxes.",
+  "runs": {
+    "dense": {
+      "best": {
+        "ap70": 0.7579115347856362,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_dense/epoch_005/repairs.pth",
+        "epoch": 5,
+        "sha256": "f25dcac44f35527732857aa1642271d033e893ab0915568f127be333a1b53007"
+      },
+      "epochs": [
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        }
+      ],
+      "history": [
+        {
+          "ap70": 0.7576422345828263,
+          "epoch": 1,
+          "lr": 0.001,
+          "seconds": 720.7393748709001,
+          "stale_epochs": 0,
+          "train_loss": 0.2851130423813882,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.757305163333221,
+          "epoch": 2,
+          "lr": 0.001,
+          "seconds": 722.0131493250374,
+          "stale_epochs": 1,
+          "train_loss": 0.2708962075491629,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7575308524993136,
+          "epoch": 3,
+          "lr": 0.0005,
+          "seconds": 723.2818093700334,
+          "stale_epochs": 2,
+          "train_loss": 0.26839434497455167,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7578030871333283,
+          "epoch": 4,
+          "lr": 0.0005,
+          "seconds": 729.1341586830094,
+          "stale_epochs": 3,
+          "train_loss": 0.26665146529145495,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7579115347856362,
+          "epoch": 5,
+          "lr": 0.00025,
+          "seconds": 727.9929045699537,
+          "stale_epochs": 4,
+          "train_loss": 0.26599917095793774,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7577704932662289,
+          "epoch": 6,
+          "lr": 0.00025,
+          "seconds": 723.68996246811,
+          "stale_epochs": 5,
+          "train_loss": 0.2654995220141298,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7575795654661654,
+          "epoch": 7,
+          "lr": 0.000125,
+          "seconds": 723.0973520071711,
+          "stale_epochs": 6,
+          "train_loss": 0.2651874832711982,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7578207598910784,
+          "epoch": 8,
+          "lr": 0.000125,
+          "seconds": 723.750566751929,
+          "stale_epochs": 7,
+          "train_loss": 0.26501232868644614,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7578908031199545,
+          "epoch": 9,
+          "lr": 6.25e-05,
+          "seconds": 723.6552258441225,
+          "stale_epochs": 8,
+          "train_loss": 0.26482297173618563,
+          "updates": 4225
+        }
+      ]
+    },
+    "local": {
+      "best": {
+        "ap70": 0.757895862501562,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_local/epoch_005/repairs.pth",
+        "epoch": 5,
+        "sha256": "28ae626e93c1f73b03aaa31cff44ad36b6db2ca230a2f0db07f8b7203681b5eb"
+      },
+      "epochs": [
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        }
+      ],
+      "history": [
+        {
+          "ap70": 0.7573764240136438,
+          "epoch": 1,
+          "lr": 0.001,
+          "seconds": 735.7352749260608,
+          "stale_epochs": 0,
+          "train_loss": 0.32804075517245296,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7577270228179458,
+          "epoch": 2,
+          "lr": 0.001,
+          "seconds": 737.6444752209354,
+          "stale_epochs": 1,
+          "train_loss": 0.3203161600461373,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7577336566814112,
+          "epoch": 3,
+          "lr": 0.0005,
+          "seconds": 735.6259432509542,
+          "stale_epochs": 2,
+          "train_loss": 0.31843449845469207,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7578680148202773,
+          "epoch": 4,
+          "lr": 0.0005,
+          "seconds": 743.1427836308721,
+          "stale_epochs": 3,
+          "train_loss": 0.3170796763209196,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.757895862501562,
+          "epoch": 5,
+          "lr": 0.00025,
+          "seconds": 739.1608524629846,
+          "stale_epochs": 4,
+          "train_loss": 0.31662404059129357,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7578734043807053,
+          "epoch": 6,
+          "lr": 0.00025,
+          "seconds": 735.1545257519465,
+          "stale_epochs": 5,
+          "train_loss": 0.3160050001440669,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7578343557086377,
+          "epoch": 7,
+          "lr": 0.000125,
+          "seconds": 737.4563017790206,
+          "stale_epochs": 6,
+          "train_loss": 0.3157663563740324,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7577604630282351,
+          "epoch": 8,
+          "lr": 0.000125,
+          "seconds": 737.5375454979949,
+          "stale_epochs": 7,
+          "train_loss": 0.31546332552411854,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.757681253192623,
+          "epoch": 9,
+          "lr": 6.25e-05,
+          "seconds": 736.0848812840413,
+          "stale_epochs": 8,
+          "train_loss": 0.3153451307073853,
+          "updates": 4225
+        }
+      ]
+    }
+  },
+  "status": "PASSED"
+}
