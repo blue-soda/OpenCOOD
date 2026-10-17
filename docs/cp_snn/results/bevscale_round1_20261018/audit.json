@@ -1,0 +1,195 @@
+{
+  "source_summary_sha256": "bc99826219b0613414f9931b56649fe194a144ccb98f8aabea51852faa29c938",
+  "initializer": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_ss_adapt10/best_ap70.pth",
+  "initializer_sha256": "1af52702cab7d15e61c8a38ea03cc4655437e53f46553c739a2f950025a9000e",
+  "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+  "groups": {
+    "fixed_high": {
+      "config_sha256": {
+        "_181.yaml": "4bddc2778c100922afe24dd31341957fca232cf3cf0fc56b50641d5a138ba838",
+        "_ego_181.yaml": "8252a209ec9f7e5035585364d4697097b0749bacf7db2022008e976619128e85"
+      },
+      "native_exact_output_match": true,
+      "packet_direct_output_match": true,
+      "packet_bytes": [
+        75043,
+        86477
+      ],
+      "encoder_and_bn_fixed": true,
+      "gradient_l1": {
+        "fusion_net.": 25.833256509155035,
+        "backbone_2d.": 569.8355805128813,
+        "reg_head.": 25.541391849517822
+      },
+      "scale_gradient_l1": 0.0,
+      "scales_after_discarded_step": {
+        "scales": {
+          "blocks.0.1": 1.0,
+          "blocks.0.4": 1.0,
+          "blocks.0.7": 1.0,
+          "blocks.0.10": 1.0,
+          "blocks.0.13": 1.0,
+          "blocks.0.16": 1.0,
+          "blocks.1.1": 1.0,
+          "blocks.1.4": 1.0,
+          "blocks.1.7": 1.0,
+          "blocks.1.10": 1.0,
+          "blocks.1.13": 1.0,
+          "blocks.1.16": 1.0,
+          "deblocks.0.0": 1.0,
+          "deblocks.1.0": 1.0
+        },
+        "count": 14,
+        "minimum": 1.0,
+        "maximum": 1.0,
+        "changed_from_one": 0,
+        "at_bounds": 0,
+        "passed": true
+      },
+      "loss": 1.4347096572767688,
+      "parameters": 3094997,
+      "lr": 0.0002
+    },
+    "learned_high": {
+      "config_sha256": {
+        "_181.yaml": "2686dc30cf2eb49dfe041238b01598c3adfd09cc7bcc1f9ab403ee9f0e7f58c1",
+        "_ego_181.yaml": "eb5da10e7e247247821b7f37e91799466ef1b92cf7109d0fe03cd3eb227f4f3d"
+      },
+      "native_exact_output_match": true,
+      "packet_direct_output_match": true,
+      "packet_bytes": [
+        75043,
+        86477
+      ],
+      "encoder_and_bn_fixed": true,
+      "gradient_l1": {
+        "fusion_net.": 25.833256509155035,
+        "backbone_2d.": 570.2706067124382,
+        "reg_head.": 25.541391849517822
+      },
+      "scale_gradient_l1": 0.43502619955688715,
+      "scales_after_discarded_step": {
+        "scales": {
+          "blocks.0.1": 1.0002000331878662,
+          "blocks.0.4": 1.0002000331878662,
+          "blocks.0.7": 0.9998000264167786,
+          "blocks.0.10": 1.0002000331878662,
+          "blocks.0.13": 0.9998000264167786,
+          "blocks.0.16": 1.0002000331878662,
+          "blocks.1.1": 0.9998000264167786,
+          "blocks.1.4": 1.0002000331878662,
+          "blocks.1.7": 0.9998000264167786,
+          "blocks.1.10": 0.9998000264167786,
+          "blocks.1.13": 1.0002000331878662,
+          "blocks.1.16": 0.9998000264167786,
+          "deblocks.0.0": 1.0002000331878662,
+          "deblocks.1.0": 0.9998000264167786
+        },
+        "count": 14,
+        "minimum": 0.9998000264167786,
+        "maximum": 1.0002000331878662,
+        "changed_from_one": 14,
+        "at_bounds": 0,
+        "passed": true
+      },
+      "loss": 1.4347096572767688,
+      "parameters": 3095011,
+      "lr": 0.0002
+    },
+    "fixed_low": {
+      "config_sha256": {
+        "_181.yaml": "58296ecb7a286a5642856a24979f66c556edf202e62d461fcc1504af2aeced5d",
+        "_ego_181.yaml": "051ecdc3280aaef5d8902aaec31682accdc0eb31b98b1e8264f933435f9e67a4"
+      },
+      "native_exact_output_match": true,
+      "packet_direct_output_match": true,
+      "packet_bytes": [
+        75043,
+        86477
+      ],
+      "encoder_and_bn_fixed": true,
+      "gradient_l1": {
+        "fusion_net.": 25.833256509155035,
+        "backbone_2d.": 569.8355805128813,
+        "reg_head.": 25.541391849517822
+      },
+      "scale_gradient_l1": 0.0,
+      "scales_after_discarded_step": {
+        "scales": {
+          "blocks.0.1": 1.0,
+          "blocks.0.4": 1.0,
+          "blocks.0.7": 1.0,
+          "blocks.0.10": 1.0,
+          "blocks.0.13": 1.0,
+          "blocks.0.16": 1.0,
+          "blocks.1.1": 1.0,
+          "blocks.1.4": 1.0,
+          "blocks.1.7": 1.0,
+          "blocks.1.10": 1.0,
+          "blocks.1.13": 1.0,
+          "blocks.1.16": 1.0,
+          "deblocks.0.0": 1.0,
+          "deblocks.1.0": 1.0
+        },
+        "count": 14,
+        "minimum": 1.0,
+        "maximum": 1.0,
+        "changed_from_one": 0,
+        "at_bounds": 0,
+        "passed": true
+      },
+      "loss": 1.4347096572767688,
+      "parameters": 3094997,
+      "lr": 5e-05
+    },
+    "learned_low": {
+      "config_sha256": {
+        "_181.yaml": "71cf0fe13db75aaaa804f26006d40a290764c02a74f237af4b755e2346711ac5",
+        "_ego_181.yaml": "e431085df7c60ff0f312227642baf30e7a79b62bf837a790f822d29adfe1b835"
+      },
+      "native_exact_output_match": true,
+      "packet_direct_output_match": true,
+      "packet_bytes": [
+        75043,
+        86477
+      ],
+      "encoder_and_bn_fixed": true,
+      "gradient_l1": {
+        "fusion_net.": 14.195779806002975,
+        "backbone_2d.": 733.2023938531056,
+        "reg_head.": 29.455920457839966
+      },
+      "scale_gradient_l1": 0.5339247519150376,
+      "scales_after_discarded_step": {
+        "scales": {
+          "blocks.0.1": 1.0000500679016113,
+          "blocks.0.4": 1.0000500679016113,
+          "blocks.0.7": 0.9999500513076782,
+          "blocks.0.10": 1.0000500679016113,
+          "blocks.0.13": 0.9999500513076782,
+          "blocks.0.16": 1.0000500679016113,
+          "blocks.1.1": 0.9999500513076782,
+          "blocks.1.4": 1.0000500679016113,
+          "blocks.1.7": 0.9999500513076782,
+          "blocks.1.10": 0.9999500513076782,
+          "blocks.1.13": 0.9999500513076782,
+          "blocks.1.16": 0.9999500513076782,
+          "deblocks.0.0": 1.0000500679016113,
+          "deblocks.1.0": 0.9999500513076782
+        },
+        "count": 14,
+        "minimum": 0.9999500513076782,
+        "maximum": 1.0000500679016113,
+        "changed_from_one": 14,
+        "at_bounds": 0,
+        "passed": true
+      },
+      "loss": 1.7172502473953686,
+      "parameters": 3095011,
+      "lr": 5e-05
+    }
+  },
+  "scope": "Two real augmented frames; cached encoder identity, packet roundtrip, one discarded update.",
+  "initial_state_sha256": "ac320c173cb73f15aefbfbffe59a2ce9166dc8f55f40089e7b8d3cf68c48d170",
+  "passed": true
+}

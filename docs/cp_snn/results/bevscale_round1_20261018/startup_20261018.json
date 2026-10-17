@@ -1,0 +1,147 @@
+{
+  "captured_unix": 1792258538.1365855,
+  "launch": {
+    "gpus": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "git_commit": "1abb5e0462e44167c9d3b067e6c2d93503b04ddb",
+    "audit_sha256": "90d85883cb64ef393d157c3e9a8e1d2a9cd8186f8754a77e96ddc89c2ab1953b",
+    "source": "/data1/tzm/workspace/diagnostics/e3dsnn_receiver_round1_20261017",
+    "started_unix": 1792258501.943916
+  },
+  "round_status": {
+    "state": "running",
+    "stage": "zero",
+    "supervisors": {
+      "bevscale_fixed_high_zero": 54746,
+      "bevscale_learned_high_zero": 54747,
+      "bevscale_fixed_low_zero": 54748,
+      "bevscale_learned_low_zero": 54751
+    }
+  },
+  "pipelines": {
+    "fixed_high": {
+      "state": "running",
+      "job": "bevscale_fixed_high_zero_on",
+      "child_pid": 54749,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--seed",
+        "20260929",
+        "--mode",
+        "eval",
+        "--config",
+        "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_bevscale_fixed_high_181.yaml",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_bevscale_round1_20261018/initial.pth",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_bevscale_round1_20261018/bevscale_fixed_high_zero_on",
+        "--eval-3d",
+        "--save-predictions",
+        "--packet-roundtrip",
+        "--fusion-diagnostics"
+      ],
+      "supervisor_pid": 54746,
+      "updated_unix": 1792258503.9522924,
+      "prediction_files_observed": 98
+    },
+    "learned_high": {
+      "state": "running",
+      "job": "bevscale_learned_high_zero_on",
+      "child_pid": 54750,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--seed",
+        "20260929",
+        "--mode",
+        "eval",
+        "--config",
+        "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_bevscale_learned_high_181.yaml",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_bevscale_round1_20261018/initial.pth",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_bevscale_round1_20261018/bevscale_learned_high_zero_on",
+        "--eval-3d",
+        "--save-predictions",
+        "--packet-roundtrip",
+        "--fusion-diagnostics"
+      ],
+      "supervisor_pid": 54747,
+      "updated_unix": 1792258503.965337,
+      "prediction_files_observed": 98
+    },
+    "fixed_low": {
+      "state": "running",
+      "job": "bevscale_fixed_low_zero_on",
+      "child_pid": 54752,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--seed",
+        "20260929",
+        "--mode",
+        "eval",
+        "--config",
+        "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_bevscale_fixed_low_181.yaml",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_bevscale_round1_20261018/initial.pth",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_bevscale_round1_20261018/bevscale_fixed_low_zero_on",
+        "--eval-3d",
+        "--save-predictions",
+        "--packet-roundtrip",
+        "--fusion-diagnostics"
+      ],
+      "supervisor_pid": 54748,
+      "updated_unix": 1792258503.9856992,
+      "prediction_files_observed": 104
+    },
+    "learned_low": {
+      "state": "running",
+      "job": "bevscale_learned_low_zero_on",
+      "child_pid": 54753,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--seed",
+        "20260929",
+        "--mode",
+        "eval",
+        "--config",
+        "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_bevscale_learned_low_181.yaml",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_bevscale_round1_20261018/initial.pth",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_bevscale_round1_20261018/bevscale_learned_low_zero_on",
+        "--eval-3d",
+        "--save-predictions",
+        "--packet-roundtrip",
+        "--fusion-diagnostics"
+      ],
+      "supervisor_pid": 54751,
+      "updated_unix": 1792258504.0072963,
+      "prediction_files_observed": 101
+    }
+  }
+}
