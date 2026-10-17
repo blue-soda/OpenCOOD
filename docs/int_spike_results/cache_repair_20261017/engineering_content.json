@@ -1,0 +1,39 @@
+{
+  "content_full_refresh_max_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "dense_prediction_max_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "periodic_full_refresh_max_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "real_weight_stage_crop_max_errors": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "status": "PASSED",
+  "tests": "All test_int*.py; synthetic boundaries/phase/nonzero BN; eight real frames and three real-weight crop checks"
+}

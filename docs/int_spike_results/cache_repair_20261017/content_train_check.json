@@ -1,0 +1,23 @@
+{
+  "actual_stage_calls": 615,
+  "cache_bytes": 29534400,
+  "checks": [
+    "All frame decisions equal frozen replay",
+    "Forward hook proves exactly one stage call on refresh and zero on reuse",
+    "Descriptor score agrees within 1e-6",
+    "Finite predictions; training only; no detection labels used"
+  ],
+  "content_calibration_sha256": "b944037122473abf021bad20132e751f9332cbc23cb4d75365fc41e741073903",
+  "counts": {
+    "age": 0,
+    "change": 51,
+    "coverage": 493,
+    "initial": 50,
+    "period": 21,
+    "reuse": 409
+  },
+  "max_descriptor_score_error": 0.0,
+  "scans": 1024,
+  "split": "train",
+  "status": "PASSED"
+}
