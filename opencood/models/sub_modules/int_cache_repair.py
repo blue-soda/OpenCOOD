@@ -116,10 +116,11 @@ intermediate BN offsets would then produce a different boundary condition.
 
 class CacheRepairDetector:
     """Fixed existing detector; full FM, cached ResNet stages, dense decoder/head."""
-    def __init__(self, model, config, fraction=.5, tile=8, max_age=1., dense=False, occupancy_policy='cell'):
+    def __init__(self, model, config, fraction=.5, tile=8, max_age=1., dense=False, occupancy_policy='cell', oracle_stage0=False):
         self.model, self.config = model, config
         self.fraction, self.tile, self.max_age, self.dense = fraction, tile, max_age, dense
         self.occupancy_policy = occupancy_policy
+        self.oracle_stage0 = oracle_stage0
         args = config['model']['args']
         self.lidar_range = args['lidar_range']
         self.layers = args['base_bev_backbone']['layer_nums']
@@ -150,7 +151,7 @@ class CacheRepairDetector:
         first_written = None
         for i, n in enumerate(self.layers):
             module = getattr(m.backbone.resnet, 'layer%d' % i)
-            if fresh or self.dense:
+            if fresh or self.dense or (self.oracle_stage0 and i>0):
                 x = module(x)
                 age = torch.zeros_like(x[:,:1])
                 written = torch.ones_like(age, dtype=torch.bool)
@@ -161,9 +162,23 @@ class CacheRepairDetector:
                 age, _ = warp_bev(state['ages'][i], state['pose'], meta['pose'], self.lidar_range)
                 age = age + info['delta_t']
                 req = F.max_pool2d(requests.float(), 2**(i+1), 2**(i+1), ceil_mode=True)>0
+                if self.oracle_stage0 and i==0:
+                    # Diagnostic upper-information selector, NOT deployable inference.
+                    # Dense output is used only for ranking; skipped outputs still
+                    # come from recursively warped cache, never this dense tensor.
+                    oracle = module(x)
+                    error = F.avg_pool2d((oracle-cached).square().mean(1,keepdim=True),
+                                         self.tile,self.tile,ceil_mode=True,count_include_pad=False)
+                    chosen = torch.zeros_like(error,dtype=torch.bool)
+                    count = int(math.ceil(self.fraction*error.numel()))
+                    if count:chosen.view(-1)[error.flatten().topk(count,sorted=False).indices]=True
+                    req = expand_tiles(chosen,self.tile,cached.shape[-2:])
                 req = req | ~valid | (age >= self.max_age)
                 # BasicBlock stack: first block radius=3, each further block adds 4.
-                x, written, st = refresh_tiles(module, x, cached, req, 2, 4*n-1, self.tile)
+                x, written, st = refresh_tiles(module, x, cached, req, 2, 4*n-1, self.tile,
+                                               allow_fallback=not self.oracle_stage0)
+                if self.oracle_stage0:
+                    st['executed_input_area_ratio'] += 1.  # Include dense oracle work.
                 age = torch.where(written, torch.zeros_like(age), age)
             if i == 0:
                 first_written = written.repeat_interleave(2,-2).repeat_interleave(2,-1)[...,:spatial.shape[-2],:spatial.shape[-1]]

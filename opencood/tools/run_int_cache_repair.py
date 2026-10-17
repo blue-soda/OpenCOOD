@@ -77,7 +77,7 @@ def evaluate(a,model,cfg,rows,out):
         assert provenance['checkpoint']['sha256']==digest(json.loads((Path(a.root)/('full_'+a.mode)/'best.json').read_text())['checkpoint'])
     chosen=rows if a.stage=='full' else rows[:a.frames]
     dataset,stream=loader(chosen,cfg,4,303)
-    wrapper=CacheRepairDetector(model,cfg,a.fraction,a.tile,a.max_age,a.dense,a.occupancy_policy)
+    wrapper=CacheRepairDetector(model,cfg,a.fraction,a.tile,a.max_age,a.dense,a.occupancy_policy,a.oracle_stage0)
     state=None;records=[];times=[]
     ap={t:dict(tp=[],fp=[],gt=0,score=[]) for t in [.3,.5,.7]}
     started=time.monotonic()
@@ -108,7 +108,9 @@ def evaluate(a,model,cfg,rows,out):
         model_step_ms_p50=float(np.median(times)),model_step_ms_p95=float(np.percentile(times,95)),
         timing_scope='Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included',
         state_bytes=records[-1]['cache_bytes'],peak_gpu_bytes=torch.cuda.max_memory_allocated(),seconds=time.monotonic()-started,
-        caveats=['Stage input-area ratios include repeated halo work, are not measured FLOPs.',
+        oracle_stage0=a.oracle_stage0,
+        caveats=['Oracle stage0, when enabled, computes dense current stage0 solely to rank error; its extra work is counted; not a deployable selector or a formal optimal AP bound.',
+                 'Stage input-area ratios include repeated halo work, are not measured FLOPs.',
                  'Current FM and decoder/head remain dense; no dynamic-object motion prediction.',
                  'Upstream reused features can alter even refreshed downstream outputs.',
                  'Concurrent GPU experiments are not a controlled latency comparison.'])
@@ -129,6 +131,7 @@ def main():
     p.add_argument('--fraction',type=float,default=.5);p.add_argument('--tile',type=int,default=8)
     p.add_argument('--max-age',type=float,default=1.);p.add_argument('--frames',type=int,default=256)
     p.add_argument('--occupancy-policy',choices=['cell','tile'],default='cell')
+    p.add_argument('--oracle-stage0',action='store_true')
     p.add_argument('--dense',action='store_true');p.add_argument('--engineering')
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.stage=='full' and not a.engineering:p.error('Full evaluation requires engineering report')
