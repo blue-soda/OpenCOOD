@@ -225,6 +225,7 @@ def execute(args, output_dir):
         'receiver_activation': getattr(model, 'receiver_activation', cfg['model']['args'].get('activation', 'count4')),
         'fusion_activation_kind': getattr(model, 'fusion_activation_kind', getattr(model, 'receiver_activation', cfg['model']['args'].get('activation', 'count4'))),
         'bev_activation': getattr(model, 'bev_activation', getattr(model, 'receiver_activation', cfg['model']['args'].get('activation', 'count4'))),
+        'bev_scale_mode': getattr(model, 'bev_scale_mode', None),
         'freeze_encoder': getattr(model, 'freeze_encoder', False),
         'trainable_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
         'freeze_detector': getattr(model, 'freeze_detector', False),
@@ -379,6 +380,11 @@ def execute(args, output_dir):
         metrics.update({'epoch': epoch + 1, 'train_loss': total / samples,
                         'train_samples': samples, 'seconds': time.monotonic() - started})
         metrics['train_loss_components'] = {k: v / samples for k, v in component_totals.items()}
+        if hasattr(model, 'bev_scale_report'):
+            report = model.bev_scale_report()
+            report['verified_through_epoch'] = epoch + 1
+            metrics['bev_scale_report'] = report
+            write_json(output_dir / 'bev_scales.json', report)
         if frozen_encoder_digest is not None:
             current_encoder_digest = encoder_digest(model)
             if current_encoder_digest != frozen_encoder_digest:
