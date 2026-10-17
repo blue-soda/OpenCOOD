@@ -1,0 +1,55 @@
+{
+  "caveats": [
+    "Oracle stage0, when enabled, computes dense current stage0 solely to rank error; its extra work is counted; not a deployable selector or a formal optimal AP bound.",
+    "Stage input-area ratios include repeated halo work, are not measured FLOPs.",
+    "Current FM and decoder/head remain dense; no dynamic-object motion prediction.",
+    "Upstream reused features can alter even refreshed downstream outputs.",
+    "Concurrent GPU experiments are not a controlled latency comparison."
+  ],
+  "labels": 61,
+  "metrics": {
+    "bev_ap30": 0.9559494551889091,
+    "bev_ap50": 0.9296875125369761,
+    "bev_ap70": 0.8563326568564885
+  },
+  "model_step_ms_p50": 90.181915438734,
+  "model_step_ms_p95": 102.87838650401682,
+  "oracle_stage0": true,
+  "peak_gpu_bytes": 494831104,
+  "reset_frames": 10,
+  "scans": 256,
+  "scope": "Engineering prefix only; not a full validation result",
+  "seconds": 28.868387856986374,
+  "stage_means": [
+    {
+      "actual_write_fraction": 0.5577281547011808,
+      "crop_area_ratio_before_fallback": 1.624007316468254,
+      "executed_input_area_ratio": 2.584944816468254,
+      "fallback": 0.0390625,
+      "requested_fraction": 0.5351081779226661,
+      "selected_fraction": 0.5577281547011808,
+      "tiles": 56.96875
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "crop_area_ratio_before_fallback": 1.0,
+      "executed_input_area_ratio": 1.0,
+      "fallback": 1.0,
+      "requested_fraction": 1.0,
+      "selected_fraction": 1.0,
+      "tiles": 0.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "crop_area_ratio_before_fallback": 1.0,
+      "executed_input_area_ratio": 1.0,
+      "fallback": 1.0,
+      "requested_fraction": 1.0,
+      "selected_fraction": 1.0,
+      "tiles": 0.0
+    }
+  ],
+  "state_bytes": 74724300,
+  "status": "COMPLETED",
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included"
+}

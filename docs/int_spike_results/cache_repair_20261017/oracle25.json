@@ -1,0 +1,55 @@
+{
+  "caveats": [
+    "Oracle stage0, when enabled, computes dense current stage0 solely to rank error; its extra work is counted; not a deployable selector or a formal optimal AP bound.",
+    "Stage input-area ratios include repeated halo work, are not measured FLOPs.",
+    "Current FM and decoder/head remain dense; no dynamic-object motion prediction.",
+    "Upstream reused features can alter even refreshed downstream outputs.",
+    "Concurrent GPU experiments are not a controlled latency comparison."
+  ],
+  "labels": 61,
+  "metrics": {
+    "bev_ap30": 0.9490820341841182,
+    "bev_ap50": 0.9156544871036191,
+    "bev_ap70": 0.8127032795219459
+  },
+  "model_step_ms_p50": 78.3252315595746,
+  "model_step_ms_p95": 94.86095886677504,
+  "oracle_stage0": true,
+  "peak_gpu_bytes": 494830592,
+  "reset_frames": 10,
+  "scans": 256,
+  "scope": "Engineering prefix only; not a full validation result",
+  "seconds": 26.167510805884376,
+  "stage_means": [
+    {
+      "actual_write_fraction": 0.3451190354535356,
+      "crop_area_ratio_before_fallback": 1.1256239149305558,
+      "executed_input_area_ratio": 2.0865614149305554,
+      "fallback": 0.0390625,
+      "requested_fraction": 0.3074249640922062,
+      "selected_fraction": 0.3451190354535356,
+      "tiles": 53.10546875
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "crop_area_ratio_before_fallback": 1.0,
+      "executed_input_area_ratio": 1.0,
+      "fallback": 1.0,
+      "requested_fraction": 1.0,
+      "selected_fraction": 1.0,
+      "tiles": 0.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "crop_area_ratio_before_fallback": 1.0,
+      "executed_input_area_ratio": 1.0,
+      "fallback": 1.0,
+      "requested_fraction": 1.0,
+      "selected_fraction": 1.0,
+      "tiles": 0.0
+    }
+  ],
+  "state_bytes": 74724300,
+  "status": "COMPLETED",
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included"
+}

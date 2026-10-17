@@ -1,0 +1,29 @@
+{
+  "code_commit": "049e5ed6cd7520c719c0e2014a8fab52e3a0b46c",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_cache_repair",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/full_oracle_gru50",
+    "--stage",
+    "full",
+    "--mode",
+    "gru",
+    "--fraction",
+    ".5",
+    "--occupancy-policy",
+    "tile",
+    "--oracle-stage0",
+    "--engineering",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/engineering_gru/report.json",
+    "--gpu",
+    "0",
+    "--worker"
+  ],
+  "created_unix": 1792242246.2481794,
+  "gpu": 0,
+  "pid": 24811
+}

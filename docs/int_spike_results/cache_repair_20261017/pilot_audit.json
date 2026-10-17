@@ -1,0 +1,62 @@
+{
+  "status": "PASSED",
+  "scope": "Eight fixed-weight 256-frame pilots; prefix coverage, order, checkpoint hashes, finite AP and reset counts",
+  "runs": {
+    "pilot25": {
+      "status": "PASSED",
+      "checkpoint_sha256": "bcc8bc9339a573ac2453cfb0c84b269878f0bf5ce24749d024f75e0c7085394e",
+      "mode": "spike_gru",
+      "code_commit": "4cda4eefca3b448637bf6f68e09d2c5d42f1ce83",
+      "report_sha256": "a28df78a24858d4b17a40cb5160d18c2e9e187f2244fcd872100e0e09fb70ed3"
+    },
+    "pilot50": {
+      "status": "PASSED",
+      "checkpoint_sha256": "bcc8bc9339a573ac2453cfb0c84b269878f0bf5ce24749d024f75e0c7085394e",
+      "mode": "spike_gru",
+      "code_commit": "4cda4eefca3b448637bf6f68e09d2c5d42f1ce83",
+      "report_sha256": "1f6f863b9a34bafea413c72386e71f36e4ae56d241d37e17462247e75972c1b1"
+    },
+    "pilot25_merged": {
+      "status": "PASSED",
+      "checkpoint_sha256": "bcc8bc9339a573ac2453cfb0c84b269878f0bf5ce24749d024f75e0c7085394e",
+      "mode": "spike_gru",
+      "code_commit": "ecad57da8a96802f2cbaba3d8037074034ec38c1",
+      "report_sha256": "6196f56974df45ce718aad05621cdac2f1915ec91cb0de425344cdac02227501"
+    },
+    "pilot50_merged": {
+      "status": "PASSED",
+      "checkpoint_sha256": "bcc8bc9339a573ac2453cfb0c84b269878f0bf5ce24749d024f75e0c7085394e",
+      "mode": "spike_gru",
+      "code_commit": "ecad57da8a96802f2cbaba3d8037074034ec38c1",
+      "report_sha256": "391931d2020bcde0339eeccc3fa81477584c73fd783ed223fa096a72be490066"
+    },
+    "pilot_gru25": {
+      "status": "PASSED",
+      "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+      "mode": "gru",
+      "code_commit": "ecad57da8a96802f2cbaba3d8037074034ec38c1",
+      "report_sha256": "f474c7589fbce5d106678ba0a8655dbed8f945d8de3be485f18655357571c3bd"
+    },
+    "pilot_gru_dense": {
+      "status": "PASSED",
+      "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+      "mode": "gru",
+      "code_commit": "ecad57da8a96802f2cbaba3d8037074034ec38c1",
+      "report_sha256": "0e745a731688b3ae69ce26f1e612c0553272c3e839e6d6ebc58c200d089b80be"
+    },
+    "oracle_gru25": {
+      "status": "PASSED",
+      "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+      "mode": "gru",
+      "code_commit": "e5e54b43b15276d0f2189b47d6f9814794a46d08",
+      "report_sha256": "8bd091416fdc82b966f00ab9686bad36056c8fa2a279f19cbfe883754f4ecf82"
+    },
+    "oracle_gru50": {
+      "status": "PASSED",
+      "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+      "mode": "gru",
+      "code_commit": "e5e54b43b15276d0f2189b47d6f9814794a46d08",
+      "report_sha256": "4c060ca1f1cf5dffdece3a53e360f01bd4305606d1c814fead75d2edf1cbc3cf"
+    }
+  }
+}
