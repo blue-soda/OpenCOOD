@@ -1,0 +1,55 @@
+{
+  "caveats": [
+    "Oracle, when enabled, caches only oracle_index and computes that full current stage solely to rank error; extra work is counted; not deployable or a formal optimal AP bound.",
+    "Ideal required convolution MACs, when profiled, exclude oracle, warp, selector, decoder, memory traffic and launch overhead; no sparse kernel or speedup is established.",
+    "Stage input-area ratios include repeated halo work, are not measured FLOPs.",
+    "Current FM and decoder/head remain dense; no dynamic-object motion prediction.",
+    "Upstream reused features can alter even refreshed downstream outputs.",
+    "Concurrent GPU experiments are not a controlled latency comparison."
+  ],
+  "content_calibration_sha256": "b944037122473abf021bad20132e751f9332cbc23cb4d75365fc41e741073903",
+  "content_threshold": 0.45884764194488525,
+  "labels": 61,
+  "metrics": {
+    "bev_ap30": 0.9553239677680164,
+    "bev_ap50": 0.931832988198836,
+    "bev_ap70": 0.8633300525146191
+  },
+  "model_step_ms_mean": 32.232431162951315,
+  "model_step_ms_p50": 33.18992105778307,
+  "model_step_ms_p95": 36.81500622769818,
+  "oracle_index": null,
+  "oracle_stage0": false,
+  "peak_gpu_bytes": 447932928,
+  "periodic_last": 3,
+  "periodic_refresh_counts": {
+    "age": 0,
+    "change": 12,
+    "coverage": 139,
+    "initial": 10,
+    "period": 0,
+    "reuse": 95
+  },
+  "reset_frames": 10,
+  "scans": 256,
+  "scope": "Engineering prefix only; not a full validation result",
+  "seconds": 15.873202802846208,
+  "stage_means": [
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 0.62890625,
+      "executed_input_area_ratio": 0.62890625
+    }
+  ],
+  "state_bytes": 29534400,
+  "status": "COMPLETED",
+  "support_profile": false,
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included"
+}

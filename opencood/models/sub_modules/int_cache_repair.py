@@ -155,15 +155,17 @@ intermediate BN offsets would then produce a different boundary condition.
     return output, written, stats
 
 
-def periodic_stage_step(module, x, cache, pose, timestamp_us, lidar_range, period, max_age):
+def periodic_stage_step(module, x, cache, pose, timestamp_us, lidar_range, period, max_age, zero_uncovered=False):
     """Whole-stage refresh; skipped frames never call module or read its output.
 
 The cache stays in the pose of its last computation, avoiding repeated resampling.
-Any uncovered output cell forces refresh; no approximate coverage threshold.
+Normally any uncovered cell forces refresh. zero_uncovered is an explicit
+diagnostic: retain the warp's zero fill instead, with no learned boundary repair.
 """
     if period < 1 or max_age <= 0 or module.training:
         raise ValueError('Positive period/age and eval mode required')
     count = 0 if cache is None else cache['frames']+1
+    uncovered=0.
     reason = 'initial' if cache is None else None
     if cache is not None:
         age = (int(timestamp_us)-cache['timestamp_us'])/1e6
@@ -173,12 +175,14 @@ Any uncovered output cell forces refresh; no approximate coverage threshold.
         elif age >= max_age:reason = 'age'
         else:
             output, valid = warp_bev(cache['value'],cache['pose'],pose,lidar_range)
-            if not bool(valid.all()):reason = 'coverage'
+            if zero_uncovered:uncovered=float((~valid).float().mean())
+            elif not bool(valid.all()):reason = 'coverage'
     if reason is not None:
         output = module(x)
         new = dict(value=output,pose=pose,timestamp_us=int(timestamp_us),frames=0)
     else:
         new = dict(cache,frames=count)
+    if zero_uncovered:new['uncovered_fraction']=uncovered
     return output,new,reason
 
 
@@ -276,10 +280,12 @@ class CacheRepairDetector:
 
 class PeriodicStageDetector(CacheRepairDetector):
     """Full FM/stages 0,1; periodically execute stage 2; dense decoder/head."""
-    def __init__(self,model,config,period=2,max_age=1.,content_threshold=None):
+    def __init__(self,model,config,period=2,max_age=1.,content_threshold=None,zero_uncovered=False):
         super().__init__(model,config,max_age=max_age)
         self.period=period
         self.content_threshold=content_threshold
+        self.zero_uncovered=zero_uncovered
+        assert not (zero_uncovered and content_threshold is not None)
 
     def step(self,data,state,meta):
         m=self.model;p=data['processed_lidar']
@@ -300,7 +306,7 @@ class PeriodicStageDetector(CacheRepairDetector):
             else:
                 if self.content_threshold is None:
                     x,cache,reason=periodic_stage_step(module,x,cache,meta['pose'],meta['timestamp_us'],
-                                                     self.lidar_range,self.period,self.max_age)
+                                                     self.lidar_range,self.period,self.max_age,self.zero_uncovered)
                 else:
                     x,cache,reason,score=content_stage_step(module,x,cache,meta['pose'],meta['timestamp_us'],
                         self.lidar_range,self.period,self.max_age,self.content_threshold)
@@ -316,4 +322,5 @@ class PeriodicStageDetector(CacheRepairDetector):
         if self.content_threshold is not None:tensors.append(cache['descriptor'])
         info.update(cache_stages=stats,periodic_refresh_reason=reason,content_score=score,
                     cache_bytes=sum(t.numel()*t.element_size() for t in tensors))
+        if self.zero_uncovered:info['uncovered_fraction']=cache['uncovered_fraction']
         return pred,new,info

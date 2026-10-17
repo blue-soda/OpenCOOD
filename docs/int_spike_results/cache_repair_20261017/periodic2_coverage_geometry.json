@@ -1,0 +1,11 @@
+{
+  "status": "COMPLETED",
+  "scope": "Geometry only, full periodic2 coverage-trigger frames; no claim of boundary safety",
+  "coverage_refresh_frames": 1016,
+  "labeled_coverage_refresh_frames": 286,
+  "invalid_fraction_mean": 0.015111860996075562,
+  "invalid_fraction_median": 0.01587301678955555,
+  "invalid_fraction_p95": 0.02539682574570179,
+  "invalid_fraction_max": 0.03999999910593033,
+  "postprocess_range_equals_model_range": true
+}

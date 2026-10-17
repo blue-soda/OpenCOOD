@@ -1,0 +1,19 @@
+{
+  "content_pilot": {
+    "status": "PASSED",
+    "report_sha256": "39038b0dd08a9ab12681fa2dd6904f557d93509f860ee46646596e3831e44162",
+    "frames_sha256": "caf5e791e6960f6f94db8d697eab7b286899ddf031ed727aeeb008f4ff398703"
+  },
+  "content_periodic2_control": {
+    "status": "PASSED",
+    "report_sha256": "812be807e39085d53445143baa226339f7cf828f2854b48663ceac7bca0a2d2d",
+    "frames_sha256": "dd47e0699d56d62aedcd59913bdad9b25a0d4001c5db4c8daf2ff7f64a862e65"
+  },
+  "comparison": {
+    "different_refresh_decisions": 21,
+    "different_decisions_on_labeled_frames": 0,
+    "ap_metrics_identical": true,
+    "mean_time_increase_percent": 3.2336008171640174
+  },
+  "caveat": "Exact AP equality need not imply equal features; only 61 labeled prefix frames. No threshold retuning or full content run justified."
+}

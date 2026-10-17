@@ -107,7 +107,7 @@ def evaluate(a,model,cfg,rows,out):
     chosen=rows if a.stage=='full' else rows[:a.frames]
     dataset,stream=loader(chosen,cfg,4,303)
     wrapper=CacheRepairDetector(model,cfg,a.fraction,a.tile,a.max_age,a.dense,a.occupancy_policy,a.oracle_stage0,a.support_profile,a.oracle_index)
-    if a.periodic_last:wrapper=PeriodicStageDetector(model,cfg,a.periodic_last,a.max_age,a.content_threshold)
+    if a.periodic_last:wrapper=PeriodicStageDetector(model,cfg,a.periodic_last,a.max_age,a.content_threshold,a.zero_uncovered)
     state=None;records=[];times=[]
     ap={t:dict(tp=[],fp=[],gt=0,score=[]) for t in [.3,.5,.7]}
     started=time.monotonic()
@@ -144,9 +144,12 @@ def evaluate(a,model,cfg,rows,out):
         support_profile=a.support_profile,
         periodic_last=a.periodic_last,
         content_calibration_sha256=a.content_calibration_sha256,content_threshold=a.content_threshold,
+        zero_uncovered=a.zero_uncovered,
+        uncovered_fraction_mean=float(np.mean([r['uncovered_fraction'] for r in records])) if a.zero_uncovered else None,
         periodic_refresh_counts={reason or 'reuse':sum(r.get('periodic_refresh_reason')==reason for r in records)
                                  for reason in ['initial','period','age','coverage','change',None]} if a.periodic_last else None,
         caveats=['Oracle, when enabled, caches only oracle_index and computes that full current stage solely to rank error; extra work is counted; not deployable or a formal optimal AP bound.',
+                 'zero_uncovered, when enabled, is a diagnostic that leaves new-view cells zero; it is not learned boundary repair and may miss newly visible objects.',
                  'Ideal required convolution MACs, when profiled, exclude oracle, warp, selector, decoder, memory traffic and launch overhead; no sparse kernel or speedup is established.',
                  'Stage input-area ratios include repeated halo work, are not measured FLOPs.',
                  'Current FM and decoder/head remain dense; no dynamic-object motion prediction.',
@@ -182,6 +185,7 @@ def main():
     p.add_argument('--support-profile',action='store_true')
     p.add_argument('--periodic-last',type=int,default=0,help='Positive period for whole last-stage refresh; 1 is paired dense control')
     p.add_argument('--content-calibration');p.add_argument('--content-check')
+    p.add_argument('--zero-uncovered',action='store_true',help='Diagnostic periodic-only ablation: zero-fill uncovered cells instead of forcing a full refresh')
     p.add_argument('--dense',action='store_true');p.add_argument('--engineering')
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.oracle_index and not a.oracle_stage0:p.error('--oracle-index requires --oracle-stage0')
@@ -191,6 +195,7 @@ def main():
     if a.stage=='full' and not a.engineering:p.error('Full evaluation requires engineering report')
     if a.stage=='gate-check' and not a.content_calibration:p.error('gate-check requires content calibration')
     if a.content_calibration and not a.periodic_last:p.error('Content gate requires periodic guard')
+    if a.zero_uncovered and (not a.periodic_last or a.content_calibration):p.error('Zero-fill diagnostic requires periodic-only mode')
     if a.content_calibration and a.stage in ['pilot','full'] and not a.content_check:p.error('Content evaluation requires gate-check report')
     if a.worker:
         try:worker(a)

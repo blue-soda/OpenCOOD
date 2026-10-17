@@ -122,5 +122,19 @@ class CacheRepairTests(unittest.TestCase):
         self.assertEqual(reason,'age')
         with self.assertRaises(ValueError):periodic_stage_step(layer,x,cache,pose,0,bounds,2,1.)
 
+    def test_zero_uncovered_diagnostic_preserves_valid_cells_and_skips_module(self):
+        class Counter(nn.Module):
+            def __init__(self):super().__init__();self.calls=0
+            def forward(self,x):self.calls+=1;return x
+        layer=Counter().eval();x=torch.ones(1,3,8,8);pose=torch.eye(4).numpy()
+        bounds=[-4,-4,-1,4,4,1]
+        _,cache,_=periodic_stage_step(layer,x,None,pose,0,bounds,2,1.)
+        moved=pose.copy();moved[0,3]=2
+        out,new,reason=periodic_stage_step(layer,x*9,cache,moved,100000,bounds,2,1.,True)
+        self.assertIsNone(reason);self.assertEqual(layer.calls,1)
+        self.assertTrue(torch.equal(out[...,:6],torch.ones_like(out[...,:6])))
+        self.assertTrue(torch.equal(out[...,6:],torch.zeros_like(out[...,6:])))
+        self.assertEqual(new['uncovered_fraction'],.25)
+
 
 if __name__=='__main__':unittest.main()
