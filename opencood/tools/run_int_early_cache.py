@@ -208,6 +208,26 @@ def worker(a):
             results[name] = enrich(report,target,gate,kind,policy)
             write_json(target/'report.json',results[name])
         write_json(out/'report.json',dict(status='COMPLETED',version=VERSION,results=results))
+    elif requested == 'full':
+        source = Path(a.source_suite)
+        original = json.loads((source/'provenance.json').read_text())
+        assert original['checkpoint']['sha256'] == provenance['checkpoint']['sha256']
+        assert original['contract'] == provenance['contract']
+        gate = json.loads((source/'engineering'/'report.json').read_text())
+        assert gate['status'] == 'PASSED' and gate['version'] == VERSION
+        name = a.gate+'_'+a.cache_kind
+        policy = json.loads((source/'frozen_policies.json').read_text())[name]
+        check = json.loads((source/('train_'+name)/'training_check.json').read_text())
+        assert check['status'] == 'PASSED'
+        assert check['calibration_sha256'] == digest(source/('train_'+name)/'report.json')
+        assert policy == json.loads((source/('train_'+name)/'report.json').read_text())
+        assert policy['version'] == VERSION and policy['split'] == 'train'
+        a.stage = 'full'
+        a.engineering = str(source/'engineering'/'report.json')
+        wrapper = EarlyCacheDetector(model,cfg,a.gate,a.cache_kind,policy['selected']['threshold'])
+        report = enrich(evaluate(a,model,cfg,val,out,wrapper),out,a.gate,a.cache_kind,policy)
+        report['caveats'][-1] = 'One sequential measurement does not establish stable latency across repeated runs.'
+        write_json(out/'report.json',report)
     else:
         raise ValueError(requested)
     write_json(out/'status.json',dict(status='COMPLETED'))
@@ -216,10 +236,14 @@ def worker(a):
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--root',required=True);p.add_argument('--output',required=True)
-    p.add_argument('--gpu',type=int,required=True);p.add_argument('--stage',choices=['suite'],default='suite')
+    p.add_argument('--gpu',type=int,required=True);p.add_argument('--stage',choices=['suite','full'],default='suite')
+    p.add_argument('--source-suite');p.add_argument('--gate',choices=['gru','stage1'],default='gru')
+    p.add_argument('--cache-kind',choices=['stages','decoded'],default='stages')
     p.add_argument('--mode',choices=['gru'],default='gru')
     p.add_argument('--train-frames',type=int,default=1024);p.add_argument('--frames',type=int,default=256)
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
+    if a.stage == 'full' and not a.source_suite:
+        p.error('Full evaluation requires the original suite with frozen policies and passed checks')
     if a.worker:
         try:
             worker(a)

@@ -34,3 +34,11 @@ GRU通过INTFeatureMemory.step可选只读observer使用已有warp结果，参�
 入口 `python -m opencood.tools.run_int_early_cache --root /data1/tzm/workspace/diagnostics/int_spiking_gru_20261016 --output <新目录> --gpu 0`。suite依次完成工程、四项训练标定与执行检查、冻结策略和五项短验证。status.json记录阶段，失败停止。
 
 遵守本地main提交/push、181pull；不创建分支，不改其他研究文件。定时任务“推进时序感知，仅完成异常通知”（14字含标点），初始每小时，依据真实事件调整，不重复轮询已完成文件，不把路线限制在当前子任务。
+
+## 启动与工程结果
+
+实现82b17f9已在main提交/push并由181拉取。181 GPU0启动early_four_way，PID5041，目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/early_four_way。52项INT测试通过；四组合各8真实帧全刷新最大预测误差均为0，真实stage/shrink调用与记录一致。8帧在严格覆盖下均未触发复用，因此真实跳算仍须依靠后续1024训练帧hook检查，不能把短工程检查宣传为已有真实数据省算结果。
+
+suite正在训练集标定/核验，随后自动同GPU顺序验证。定时改为30分钟以覆盖这轮预计短实验完成事件；长期训练或连续静默时应放宽，提示词保持路线级“推进时序感知，仅完成异常通知”。不要重复启动suite或重新标定已经冻结的阈值。
+
+完整验证入口支持 --stage full --source-suite <early_four_way目录> --gate gru|stage1 --cache-kind stages|decoded，只读取原冻结阈值且校验工程/训练检查及权重契约。短测出结果后按精度/真实省算决定值得扩展的候选，勿未看筛选就启动全部完整验证。
