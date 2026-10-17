@@ -1,0 +1,58 @@
+{
+  "caveats": [
+    "Oracle, when enabled, caches only oracle_index and computes that full current stage solely to rank error; extra work is counted; not deployable or a formal optimal AP bound.",
+    "zero_uncovered, when enabled, is a diagnostic that leaves new-view cells zero; it is not learned boundary repair and may miss newly visible objects.",
+    "Ideal required convolution MACs, when profiled, exclude oracle, warp, selector, decoder, memory traffic and launch overhead; no sparse kernel or speedup is established.",
+    "Stage input-area ratios include repeated halo work, are not measured FLOPs.",
+    "Current FM and decoder/head remain dense; no dynamic-object motion prediction.",
+    "Upstream reused features can alter even refreshed downstream outputs.",
+    "Concurrent GPU experiments are not a controlled latency comparison."
+  ],
+  "content_calibration_sha256": null,
+  "content_threshold": null,
+  "labels": 61,
+  "metrics": {
+    "bev_ap30": 0.9554860291148597,
+    "bev_ap50": 0.9320032346652752,
+    "bev_ap70": 0.8634676640807383
+  },
+  "model_step_ms_mean": 30.108195771198204,
+  "model_step_ms_p50": 31.08654951211065,
+  "model_step_ms_p95": 34.38131866278127,
+  "oracle_index": null,
+  "oracle_stage0": false,
+  "peak_gpu_bytes": 448849920,
+  "periodic_last": 2,
+  "periodic_refresh_counts": {
+    "age": 0,
+    "change": 0,
+    "coverage": 0,
+    "initial": 10,
+    "period": 120,
+    "reuse": 126
+  },
+  "reset_frames": 10,
+  "scans": 256,
+  "scope": "Engineering prefix only; not a full validation result",
+  "seconds": 15.476628687931225,
+  "stage_means": [
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 0.5078125,
+      "executed_input_area_ratio": 0.5078125
+    }
+  ],
+  "state_bytes": 29433600,
+  "status": "COMPLETED",
+  "support_profile": false,
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+  "uncovered_fraction_mean": 0.001073908685157221,
+  "zero_uncovered": true
+}

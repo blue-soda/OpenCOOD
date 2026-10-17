@@ -1,0 +1,30 @@
+{
+  "periodic2": {
+    "scans": 256,
+    "labels": 61,
+    "reuse_frames": 102,
+    "reuse_labeled_frames": 28,
+    "coverage_labeled_frames": 1
+  },
+  "full_periodic2": {
+    "scans": 5794,
+    "labels": 1738,
+    "reuse_frames": 2327,
+    "reuse_labeled_frames": 711,
+    "coverage_labeled_frames": 286
+  },
+  "content_pilot": {
+    "scans": 256,
+    "labels": 61,
+    "reuse_frames": 95,
+    "reuse_labeled_frames": 28,
+    "coverage_labeled_frames": 32
+  },
+  "zero_boundary_pilot": {
+    "scans": 256,
+    "labels": 61,
+    "reuse_frames": 126,
+    "reuse_labeled_frames": 29,
+    "coverage_labeled_frames": 0
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "code_commit": "63e429539eb2fb36600b3bdb50453b6d06b2ca64",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_cache_repair",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/full_zero_boundary",
+    "--stage",
+    "full",
+    "--mode",
+    "gru",
+    "--gpu",
+    "0",
+    "--periodic-last",
+    "2",
+    "--max-age",
+    ".25",
+    "--zero-uncovered",
+    "--engineering",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/engineering_content/report.json",
+    "--worker"
+  ],
+  "created_unix": 1792259871.9678643,
+  "gpu": 0,
+  "pid": 62017
+}

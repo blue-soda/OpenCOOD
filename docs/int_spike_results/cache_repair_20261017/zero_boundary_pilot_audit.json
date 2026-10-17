@@ -1,0 +1,12 @@
+{
+  "status": "PASSED",
+  "scans": 256,
+  "labels": 61,
+  "report_sha256": "7c28225da7c6ddf5a0188d9f6fa394e9dcc9774c12faf051257778191f6c32a4",
+  "frames_sha256": "2dc523013b98beb68e6f19613b9a2fc55eeec3040c536390bd3a18ef789685d3",
+  "different_refresh_decisions": 30,
+  "different_decisions_on_labeled_frames": 1,
+  "zero_fill_frames": 26,
+  "zero_fill_labeled_frames": 0,
+  "caveat": "No independent AP recomputation; diagnostic does not repair new-view features"
+}
