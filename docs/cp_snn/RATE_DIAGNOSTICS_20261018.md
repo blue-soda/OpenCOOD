@@ -28,3 +28,20 @@
 证据：[launch.json](results/rate_diagnostics_20261018/launch.json)，SHA256 63401d6457f566ee229b7ba0d6a2fee4d9c27a32b79165fd83e04610339dba9e；[startup_pipeline.json](results/rate_diagnostics_20261018/startup_pipeline.json)，SHA256 4de8a0d6c87c905b0caf88732c58f82fcfc7802ab1859109a969bf7bfb46e090。
 
 下一次检查远端rate_diagnostics_pipeline.json；complete后依次取回四个同名结果JSON，核对passed/精确AP及A/B目录对应关系，再按总目标登记有界训练方案。running则检查日志推进，不再次启动。自动任务继续90分钟，无变化静默。
+
+## 最终核验与后继（2026-10-18）
+
+四项已完成，均1738帧、28622GT，A/B逐帧GT和预测哈希一致性通过，精确重现归档AP50/AP70。
+
+| 对比A→B | 保留TP70 | 丢失 | 新增 | 共同未检 | AP70变化(pp) |
+|---|---:|---:|---:|---:|---:|
+| SNN完整→保留25% | 18424 | 386 | 188 | 9624 | −0.45197 |
+| ANN完整→2bit保留50% | 18621 | 376 | 200 | 9425 | −0.36409 |
+| 完整SNN→完整ANN | 17694 | 1116 | 1303 | 8509 | +1.00824 |
+| 低通信SNN→低通信ANN | 17486 | 1126 | 1335 | 8675 | +1.09612 |
+
+SNN与ANN压缩分别净少检198与176个目标，FP同时减少427与362。SNN压缩在recall>0.5段的AP贡献损失0.50618pp，ANN为0.43450pp，低召回段略有改善抵消部分损失。完整模型ANN在recall>0.5段的AP贡献高约0.72883pp；低通信时高约0.80052pp。差距集中在高召回尾部的描述，不能直接推出校准、NMS、量化或某层的因果责任。
+
+结束描述诊断，不继续扩充分析项。下一轮固定各自成熟ANN BEV及连续头，用两类编码器×融合only/前端joint的匹配10轮实验检验消息条件下的任务适配，见[BUDGET_ADAPT_20261018.md](BUDGET_ADAPT_20261018.md)。先保留ANN融合以隔离前端因素，不能写成已改进SNN融合。
+
+原始证据目录results/rate_diagnostics_20261018：snn_compression.json SHA256 b65959fa2366aa40b7c5751ff1112034461e6a4b4136511b4485947826a14ac3；ann_compression.json a448ddf2c538419152d0857dac08a99969b1de725bd9b8205bbf153bbf716ec4；full_gap.json c916d888eb3aa4d14b3d6f3813dfa27ffdea2f5e517467ebc777a181c6949572；lowrate_gap.json cda17e603080031eb3d780430d5863591fd0699f54397108f7a79a8437d90bc2；完成状态7c440b8fce9cec0e2b6effbfb7ba6de4d4509508219ef710b1b27749cff3ccc7。远端原始字节已核对并镜像。

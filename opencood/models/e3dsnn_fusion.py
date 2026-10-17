@@ -75,6 +75,12 @@ class E3dsnnFusion(E3dsnnSingle):
         if set(missing) != expected or extra:
             raise ValueError('Unexpected pretrained mapping: {}, {}'.format(missing, extra))
 
+    def process_road_features(self, sparse):
+        return sparse
+
+    def wire_options(self):
+        return self.message_codec
+
     def forward(self, data):
         if self.message_codec is not None and (self.training or not self.packet_roundtrip):
             raise ValueError('Rate probes require eval with actual packet roundtrip')
@@ -90,6 +96,7 @@ class E3dsnnFusion(E3dsnnSingle):
                 result['spike_features'] = ego_sparse.features
             return result
         road_sparse = self.encode_lidar(data['road_lidar'], b)
+        road_sparse = self.process_road_features(road_sparse)
         transform = data['road_to_ego']
         packet_bytes = []
         if self.packet_roundtrip:
@@ -104,9 +111,9 @@ class E3dsnnFusion(E3dsnnSingle):
                     'shape_zyx': list(ego.shape[2:]), 'origin_xyz': self.origin, 'step_xyz': self.step,
                     'source_to_ego': transform[i].detach().cpu().tolist()}
                 codec, codec_args = fusion_packet, ()
-                if self.message_codec is not None:
+                if self.wire_options() is not None:
                     from opencood.utils import quantized_feature_packet
-                    codec, codec_args = quantized_feature_packet, (self.message_codec,)
+                    codec, codec_args = quantized_feature_packet, (self.wire_options(),)
                 packet = codec.encode(road_sparse.indices[active, 1:].cpu().numpy(),
                     road_sparse.features[active].detach().cpu().numpy(), meta, self.activation, *codec_args)
                 coords, values, received = codec.decode(packet, self.activation, *codec_args)

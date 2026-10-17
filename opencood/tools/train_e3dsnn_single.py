@@ -227,6 +227,8 @@ def execute(args, output_dir):
         'bev_activation': getattr(model, 'bev_activation', getattr(model, 'receiver_activation', cfg['model']['args'].get('activation', 'count4'))),
         'bev_scale_mode': getattr(model, 'bev_scale_mode', None),
         'message_codec': getattr(model, 'message_codec', None),
+        'budget_codec': getattr(model, 'budget_codec', None),
+        'train_encoder': getattr(model, 'train_encoder', None),
         'freeze_encoder': getattr(model, 'freeze_encoder', False),
         'trainable_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
         'freeze_detector': getattr(model, 'freeze_detector', False),
@@ -326,6 +328,7 @@ def execute(args, output_dir):
     frozen_digest = None
     fixed_bn_digest = None
     frozen_encoder_digest = None
+    frozen_decoder = model.frozen_decoder_digest() if hasattr(model, 'frozen_decoder_digest') else None
     if getattr(model, 'freeze_encoder', False):
         if args.warmup_epochs:
             raise ValueError('Encoder freezing cannot be combined with parameter-resetting fusion warmup')
@@ -392,6 +395,12 @@ def execute(args, output_dir):
                 raise RuntimeError('Frozen encoder weights or buffers changed')
             write_json(output_dir / 'frozen_encoder.json', {'initial_sha256': frozen_encoder_digest,
                 'current_sha256': current_encoder_digest, 'verified_through_epoch': epoch + 1, 'passed': True})
+        if frozen_decoder is not None:
+            current = model.frozen_decoder_digest()
+            if current != frozen_decoder:
+                raise RuntimeError('Frozen BEV or continuous head parameters/buffers changed')
+            write_json(output_dir / 'frozen_decoder.json', dict(initial_sha256=frozen_decoder,
+                current_sha256=current, verified_through_epoch=epoch + 1, passed=True))
         if fixed_bn_digest is not None:
             current_bn_digest = bn_digest(model)
             if current_bn_digest != fixed_bn_digest:

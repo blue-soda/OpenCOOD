@@ -1,0 +1,11 @@
+{
+  "state": "complete",
+  "jobs": [
+    "snn_compression",
+    "ann_compression",
+    "full_gap",
+    "lowrate_gap"
+  ],
+  "supervisor_pid": 39525,
+  "updated_unix": 1792273975.1881793
+}
