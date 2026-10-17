@@ -1,0 +1,70 @@
+{
+  "name": "rate_diagnostics",
+  "jobs": [
+    {
+      "name": "snn_compression",
+      "timeout_seconds": 3600,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.diagnose_e3dsnn_ap70",
+        "--ego-dir",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_receiver_native",
+        "--fusion-dir",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_receiver_keep25",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_rate_diagnostics_20261018/snn_compression.json"
+      ]
+    },
+    {
+      "name": "ann_compression",
+      "timeout_seconds": 3600,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.diagnose_e3dsnn_ap70",
+        "--ego-dir",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_full_native",
+        "--fusion-dir",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_lowrate_ann_20261018/ann_full_q2keep50",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_rate_diagnostics_20261018/ann_compression.json"
+      ]
+    },
+    {
+      "name": "full_gap",
+      "timeout_seconds": 3600,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.diagnose_e3dsnn_ap70",
+        "--ego-dir",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_receiver_native",
+        "--fusion-dir",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_full_native",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_rate_diagnostics_20261018/full_gap.json"
+      ]
+    },
+    {
+      "name": "lowrate_gap",
+      "timeout_seconds": 3600,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.diagnose_e3dsnn_ap70",
+        "--ego-dir",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_receiver_keep25",
+        "--fusion-dir",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_lowrate_ann_20261018/ann_full_q2keep50",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_rate_diagnostics_20261018/lowrate_gap.json"
+      ]
+    }
+  ],
+  "scope": "Existing predictions only; ego/fusion are legacy A/B argument names, NOT single/cooperative treatments."
+}

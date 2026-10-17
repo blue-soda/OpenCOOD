@@ -25,3 +25,22 @@ ANN2bit在22.94 kB达到60.92188% AP70，而SNN最低消息为16.01 kB。尚不�
 证据：[audit.json](results/lowrate_ann_20261018/audit.json)，SHA256 e8c2e5e410427516b5f3da6ca2cc27394546fe9c2a54dc2e05e813428b74508b；[launch.json](results/lowrate_ann_20261018/launch.json)，SHA256 334e2da513b827b552cd977a5aa517650dc387d055cc0e3bd0be17d48e5da9c0；[processes.json](results/lowrate_ann_20261018/processes.json)，SHA256 ec2bb3eebe878f41b91342a00cd413972434582bc0d4fcbe777f4b2110578db4；[startup_20261018.json](results/lowrate_ann_20261018/startup_20261018.json)，SHA256 9542929935a253b98830df41618f2ebc1c8f18aced3b99f4456a3d4279d6bb12。启动快照仍在加载，未输出帧，不将PID作为完成证据。
 
 续接读取ann_full_status.json，若complete再取ann_full_summary.json并与原13点汇总；若running只检查健康状态。完成后停止该三点探针，不扩展无界比例搜索，按总目标选择前端/融合改进。
+
+
+## 三点最终复核与退出（2026-10-18）
+
+三点全部完成，1738帧/28622GT、有序GT摘要、预测哈希及BEV/3D CPU精确复算均通过。表中AP为百分数，kB为十进制。
+
+| ANN 2bit体素保留 | AP30 | AP50 | AP70 | 均值kB/帧 | P95 kB/帧 |
+|---|---:|---:|---:|---:|---:|
+| q2keep75 | 78.37352 | 73.94267 | 60.86988 | 19.69605 | 23.65390 |
+| q2keep50 | 78.22230 | 73.79632 | 60.89717 | 15.53050 | 18.47465 |
+| q2keep25 | 77.80993 | 73.44596 | 60.58842 | 10.33929 | 11.96445 |
+
+ANN2bit保留50%为60.89717%/15.53050 kB；匹配40轮协同适配的SNN编码器＋ANN接收端保留25%为59.80106%/16.00512 kB，前者AP高1.09612个百分点且平均消息更小。ANN保留25%为60.58842%/10.33929 kB，仍优于该SNN点。当前已覆盖的通信区间未证明SNN独有精度—通信优势，不再扩大位宽/比例搜索。
+
+匹配来源的完整消息AP差为1.00824个百分点；降到上述15.53/16.01 kB后差为1.09612个百分点。SNN从完整到压缩下降0.45197个百分点，ANN下降0.36409个百分点，额外差仅0.08788个百分点。这个差分只是固定权重、不同编码干预的描述，不是因果分解或显著性检验；它提示多数差距在压缩之前已存在，不能把主要问题归于低位宽打包或缺失体素处理。
+
+本轮按预算退出。下一步先对既有预测做四项CPU逐GT/PR核验（无新增GPU推理和训练），区分完整消息差距与压缩造成的目标丢失/排序变化，随后优先设计固定成熟ANN后端的SNN前端/融合任务适配，并保留匹配预算量化ANN。不追加BEV调参，不把补齐强ANN负结果解释为路线已完成。
+
+证据：[ann_full_summary.json](results/lowrate_ann_20261018/ann_full_summary.json)，SHA256 1b50ac7212196530b64a7c921f882e49a4fd3cd4e77a57c236b8b8e4a5ee6e41；[ann_full_status.json](results/lowrate_ann_20261018/ann_full_status.json)，SHA256 9e9b267d7d8b25aff1ce22bf8fef279d73532083e6ca3babe6bd80ab4a350ff5。原始字节已取回、核对并镜像。
