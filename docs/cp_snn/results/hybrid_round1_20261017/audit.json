@@ -1,0 +1,100 @@
+{
+  "donors": {
+    "s": {
+      "path": "/data1/tzm/workspace/diagnostics/e3dsnn_aux_round1_20261017/count4_aux1_joint30/best_ap70.pth",
+      "sha256": "74361d967b4174a2d87fc8413435c85a138655e487ba9ed180a2f6a97fcd62b4"
+    },
+    "a": {
+      "path": "/data1/tzm/workspace/diagnostics/e3dsnn_aux_round1_20261017/relu_aux1_joint30/best_ap70.pth",
+      "sha256": "12992afcbbcaa304c481fe648dc9d7bacdcc208c158a0ce7131a4b3fe3646ab6"
+    }
+  },
+  "combinations": {
+    "ss": {
+      "config_sha256": "abeabd7417a5d3a3f1dd36c91c152c278920a791f3513c37bedb79fa842f157c",
+      "checkpoint_sha256": "0bde0dcb9b2fa56bb4a82c84a32d458757f8b6bfa0d0e55774a69751bb723756",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "packet_bytes": [
+        75043,
+        86477
+      ],
+      "native_exact_output_match": true,
+      "native_encoder_max_abs_error": 0.0,
+      "encoder_frozen_after_step": true,
+      "bn_fixed_after_step": true,
+      "gradient_l1": {
+        "fusion_net.": 22.866090327501297,
+        "backbone_2d.": 608.3354695886374,
+        "reg_head.": 25.332520961761475
+      },
+      "loss": 1.4136014422397707,
+      "encoder_activation": "count4",
+      "receiver_activation": "count4"
+    },
+    "sa": {
+      "config_sha256": "86811c1e74f2cf2bb86ad4bb4facc3b8109dfa54769e944f295b0b675c1c80df",
+      "checkpoint_sha256": "45b57c0d8a471df34033cb53c781f1a14418589c93b3657b94c47d212a457061",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "packet_bytes": [
+        75043,
+        86477
+      ],
+      "native_exact_output_match": null,
+      "native_encoder_max_abs_error": null,
+      "encoder_frozen_after_step": true,
+      "bn_fixed_after_step": true,
+      "gradient_l1": {
+        "fusion_net.": 534.6527109742165,
+        "backbone_2d.": 3551.8793280422688,
+        "reg_head.": 40.499253273010254
+      },
+      "loss": 5.237268473801995,
+      "encoder_activation": "count4",
+      "receiver_activation": "relu"
+    },
+    "as": {
+      "config_sha256": "f7647418a9927fc63ed42a8da648593583fa471b6b724a387c8bc9e65d99c96f",
+      "checkpoint_sha256": "e98f1d33d3caf11929555636f145b706ffb778bbaa47ca107c09b9d9c180424f",
+      "encoder_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+      "packet_bytes": [
+        301146,
+        363678
+      ],
+      "native_exact_output_match": null,
+      "native_encoder_max_abs_error": null,
+      "encoder_frozen_after_step": true,
+      "bn_fixed_after_step": true,
+      "gradient_l1": {
+        "fusion_net.": 114.91183377802372,
+        "backbone_2d.": 4539.752056002617,
+        "reg_head.": 68.08567190170288
+      },
+      "loss": 7.167087326026294,
+      "encoder_activation": "relu",
+      "receiver_activation": "count4"
+    },
+    "aa": {
+      "config_sha256": "f2d36aedb3385ffe40111f910c8d8e3098b67a7d6edbc00fd2f0aef060cb647b",
+      "checkpoint_sha256": "7d0d8c0098cb146261a4391c7ac96a5f38bdd87ed30e71bccddf74dd7273ffe2",
+      "encoder_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+      "packet_bytes": [
+        301146,
+        363678
+      ],
+      "native_exact_output_match": true,
+      "native_encoder_max_abs_error": 0.0,
+      "encoder_frozen_after_step": true,
+      "bn_fixed_after_step": true,
+      "gradient_l1": {
+        "fusion_net.": 25.755868807435036,
+        "backbone_2d.": 647.0858362261206,
+        "reg_head.": 28.33397626876831
+      },
+      "loss": 1.5826017677326134,
+      "encoder_activation": "relu",
+      "receiver_activation": "relu"
+    }
+  },
+  "scope": "Two real augmented training frames; native output equality uses cached encoder features; optimizer updates discarded.",
+  "passed": true
+}

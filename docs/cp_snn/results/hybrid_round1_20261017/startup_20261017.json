@@ -1,0 +1,339 @@
+{
+  "root": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017",
+  "launch": {
+    "gpus": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "git_commit": "58977b40d42217bd9fff4600db35c8654981601f",
+    "audit_sha256": "527b1727e7774c245bc3de2422862de817e30a8f1b4a63f870c59f1e10f8fb05",
+    "started_unix": 1792240019.3737469,
+    "source": "/data1/tzm/workspace/diagnostics/e3dsnn_aux_round1_20261017"
+  },
+  "round": {
+    "state": "running",
+    "stage": "zero",
+    "supervisors": {
+      "hybrid_ss_zero": 1845,
+      "hybrid_sa_zero": 1846,
+      "hybrid_as_zero": 1850,
+      "hybrid_aa_zero": 1852
+    }
+  },
+  "pipelines": {
+    "ss": {
+      "pipeline": {
+        "state": "running",
+        "job": "hybrid_ss_zero_on",
+        "child_pid": 1851,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_ss_181.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/ss_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_ss_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 1845,
+        "updated_unix": 1792240021.5601308
+      },
+      "predictions_written": 467,
+      "plan": {
+        "name": "hybrid_ss_zero",
+        "jobs": [
+          {
+            "name": "hybrid_ss_zero_on",
+            "timeout_seconds": 3600,
+            "command": [
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.train_e3dsnn_single",
+              "--workers",
+              "2",
+              "--seed",
+              "20260929",
+              "--mode",
+              "eval",
+              "--config",
+              "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_ss_181.yaml",
+              "--checkpoint",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/ss_initial.pth",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_ss_zero_on",
+              "--eval-3d",
+              "--save-predictions",
+              "--packet-roundtrip",
+              "--fusion-diagnostics"
+            ]
+          },
+          {
+            "name": "hybrid_ss_zero_on_replay",
+            "timeout_seconds": 3600,
+            "command": [
+              "env",
+              "CUDA_VISIBLE_DEVICES=",
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.replay_e3dsnn_predictions",
+              "--evaluation-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_ss_zero_on"
+            ]
+          }
+        ],
+        "gpu": 1
+      }
+    },
+    "sa": {
+      "pipeline": {
+        "state": "running",
+        "job": "hybrid_sa_zero_on",
+        "child_pid": 1853,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_sa_181.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/sa_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_sa_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 1846,
+        "updated_unix": 1792240021.57231
+      },
+      "predictions_written": 660,
+      "plan": {
+        "name": "hybrid_sa_zero",
+        "jobs": [
+          {
+            "name": "hybrid_sa_zero_on",
+            "timeout_seconds": 3600,
+            "command": [
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.train_e3dsnn_single",
+              "--workers",
+              "2",
+              "--seed",
+              "20260929",
+              "--mode",
+              "eval",
+              "--config",
+              "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_sa_181.yaml",
+              "--checkpoint",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/sa_initial.pth",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_sa_zero_on",
+              "--eval-3d",
+              "--save-predictions",
+              "--packet-roundtrip",
+              "--fusion-diagnostics"
+            ]
+          },
+          {
+            "name": "hybrid_sa_zero_on_replay",
+            "timeout_seconds": 3600,
+            "command": [
+              "env",
+              "CUDA_VISIBLE_DEVICES=",
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.replay_e3dsnn_predictions",
+              "--evaluation-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_sa_zero_on"
+            ]
+          }
+        ],
+        "gpu": 2
+      }
+    },
+    "as": {
+      "pipeline": {
+        "state": "running",
+        "job": "hybrid_as_zero_on",
+        "child_pid": 1856,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_as_181.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/as_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_as_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 1850,
+        "updated_unix": 1792240021.5868008
+      },
+      "predictions_written": 488,
+      "plan": {
+        "name": "hybrid_as_zero",
+        "jobs": [
+          {
+            "name": "hybrid_as_zero_on",
+            "timeout_seconds": 3600,
+            "command": [
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.train_e3dsnn_single",
+              "--workers",
+              "2",
+              "--seed",
+              "20260929",
+              "--mode",
+              "eval",
+              "--config",
+              "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_as_181.yaml",
+              "--checkpoint",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/as_initial.pth",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_as_zero_on",
+              "--eval-3d",
+              "--save-predictions",
+              "--packet-roundtrip",
+              "--fusion-diagnostics"
+            ]
+          },
+          {
+            "name": "hybrid_as_zero_on_replay",
+            "timeout_seconds": 3600,
+            "command": [
+              "env",
+              "CUDA_VISIBLE_DEVICES=",
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.replay_e3dsnn_predictions",
+              "--evaluation-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_as_zero_on"
+            ]
+          }
+        ],
+        "gpu": 3
+      }
+    },
+    "aa": {
+      "pipeline": {
+        "state": "running",
+        "job": "hybrid_aa_zero_on",
+        "child_pid": 1857,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_aa_181.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/aa_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_aa_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 1852,
+        "updated_unix": 1792240021.5974207
+      },
+      "predictions_written": 365,
+      "plan": {
+        "name": "hybrid_aa_zero",
+        "jobs": [
+          {
+            "name": "hybrid_aa_zero_on",
+            "timeout_seconds": 3600,
+            "command": [
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.train_e3dsnn_single",
+              "--workers",
+              "2",
+              "--seed",
+              "20260929",
+              "--mode",
+              "eval",
+              "--config",
+              "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_aa_181.yaml",
+              "--checkpoint",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/aa_initial.pth",
+              "--output",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_aa_zero_on",
+              "--eval-3d",
+              "--save-predictions",
+              "--packet-roundtrip",
+              "--fusion-diagnostics"
+            ]
+          },
+          {
+            "name": "hybrid_aa_zero_on_replay",
+            "timeout_seconds": 3600,
+            "command": [
+              "env",
+              "CUDA_VISIBLE_DEVICES=",
+              "/data1/tzm/miniconda3/envs/opencood/bin/python",
+              "-u",
+              "-m",
+              "opencood.tools.replay_e3dsnn_predictions",
+              "--evaluation-dir",
+              "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_aa_zero_on"
+            ]
+          }
+        ],
+        "gpu": 6
+      }
+    }
+  }
+}
