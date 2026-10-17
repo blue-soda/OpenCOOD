@@ -277,6 +277,7 @@ def main():
     p.add_argument('--source-suite');p.add_argument('--gate',choices=['gru','stage1'],default='gru')
     p.add_argument('--cache-kind',choices=['stages','decoded'],default='stages')
     p.add_argument('--mode',choices=['gru'],default='gru')
+    p.add_argument('--repair-policy',choices=['local','dense'],default='local')
     p.add_argument('--train-frames',type=int,default=1024);p.add_argument('--frames',type=int,default=256)
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.stage in ('full','local-profile','local-suite','learned-repair') and not a.source_suite:
