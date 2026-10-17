@@ -1,0 +1,22 @@
+{
+  "crop_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "full_refresh_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "partial_frames_with_zero_original_deep_stage_calls": 3,
+  "status": "PASSED"
+}

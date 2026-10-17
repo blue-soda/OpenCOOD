@@ -110,3 +110,16 @@ local_execution（181 GPU7/PID22075，71e481c）完成57项单测及真实8帧�
 AdamW lr1e-3/weight_decay1e-4，seed303，梯度裁剪5；每epoch完整5794帧验证。至少5epoch；AP70连续5epoch未达到0.001显著改善且LR<=1e-4后停止，上限20epoch，到上限不能声称收敛。ReduceLROnPlateau factor0.5/patience1/min_lr1e-5，保存每epoch小模块checkpoint及含优化器/调度器的latest，best按完整AP70。只在工程测试通过后启动；零初始化工程8帧检查全刷新等价、裁剪等价，hook确认局部帧原二/三级零调用。入口--stage learned-repair，原source-suite仍early_four_way_v2。
 
 为区分“小网络本身省算”与“区域选择额外收益”，同架构同参数增加dense修正对照：局部帧在整张二/三级网格运行小修正模块，仍不执行原深层ResNet；不计算描述子或选择器。local则真实tile4裁剪。两者分别训练，冻结源模型/种子/数据/优化与收敛规则相同，避免只与昂贵原主干比较就宣称稀疏选择有效。计划利用两张空闲3090并行训练；并行期间耗时只作运行诊断，最终速度需同GPU顺序配对复测。两者都允许作为最终候选，研究目标是精度与真实成本，不预设局部方案一定更好。
+
+## 最新活动训练：轻量局部修正与整图小模块对照
+
+代码f7769a9已main提交/push、181 pull。直连GitHub一次超时后经既有origin镜像成功拉取，未改全局配置。59项INT测试通过，两项真实8帧工程验收全刷新/修正核验误差0；各3个修正帧hook确认原二/三级零调用。
+
+- light_repair_local：181 GPU7，PID23907，真实tile4局部执行。
+- light_repair_dense：181 GPU0，PID24064，同架构小模块整图执行，无内容选择开销。
+
+共同根目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017。二者均正常进入epoch1，已有数百训练帧、有限loss/梯度；尚无完整验证AP。训练参数116,992，原模型30,776,212参数冻结。工程/启动/训练契约归档light_local_*及light_dense_*。原局部主干方案已完成并停止扩展，勿重复运行。
+
+下一轮分别检查status.json/run.log/history.json/best.json；训练持续且健康时不重复启动。每epoch完整5794帧验证、checkpoint及latest；至少5epoch，AP70平台5epoch且LR<=1e-4停止，最多20epoch（上限不等于收敛）。若异常，先定位并从最新可用checkpoint设计恢复，勿覆盖旧目录。完成后审计两组完整验证和真实修正标注帧暴露；选择best进行同GPU顺序精度/耗时配对，训练并行期间耗时不能作最终速度比较。若局部选择不如整图小模块，优先保留更快且精度合格的实现，不为稀疏而牺牲研究目标。
+
+automation改为每45分钟，提示词仍“推进时序感知，仅完成异常通知”。按真实训练事件调整间隔，长期无新事件时放宽；任务负责整条高效时序感知路线，不局限于这两个训练目录。
