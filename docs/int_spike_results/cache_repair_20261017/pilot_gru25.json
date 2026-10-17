@@ -1,0 +1,53 @@
+{
+  "caveats": [
+    "Stage input-area ratios include repeated halo work, are not measured FLOPs.",
+    "Current FM and decoder/head remain dense; no dynamic-object motion prediction.",
+    "Upstream reused features can alter even refreshed downstream outputs.",
+    "Concurrent GPU experiments are not a controlled latency comparison."
+  ],
+  "labels": 61,
+  "metrics": {
+    "bev_ap30": 0.892716064241429,
+    "bev_ap50": 0.7857812661569835,
+    "bev_ap70": 0.5159505394842943
+  },
+  "model_step_ms_p50": 65.61981700360775,
+  "model_step_ms_p95": 83.02955009276047,
+  "peak_gpu_bytes": 494876672,
+  "reset_frames": 10,
+  "scans": 256,
+  "scope": "Engineering prefix only; not a full validation result",
+  "seconds": 23.038449947023764,
+  "stage_means": [
+    {
+      "actual_write_fraction": 0.4488045541802421,
+      "crop_area_ratio_before_fallback": 0.7439760044642858,
+      "executed_input_area_ratio": 0.7522400483630953,
+      "fallback": 0.203125,
+      "requested_fraction": 0.3337958707707003,
+      "selected_fraction": 0.3542162576923147,
+      "tiles": 20.95703125
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "crop_area_ratio_before_fallback": 1.5991982886904763,
+      "executed_input_area_ratio": 1.0,
+      "fallback": 1.0,
+      "requested_fraction": 0.32780194777296856,
+      "selected_fraction": 0.37135911313816905,
+      "tiles": 18.58203125
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "crop_area_ratio_before_fallback": 2.7381299603174605,
+      "executed_input_area_ratio": 1.0,
+      "fallback": 1.0,
+      "requested_fraction": 0.3365153649356216,
+      "selected_fraction": 0.7355952082434669,
+      "tiles": 7.171875
+    }
+  ],
+  "state_bytes": 74724300,
+  "status": "COMPLETED",
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included"
+}
