@@ -121,7 +121,7 @@ def evaluate(a,model,cfg,rows,out):
         oracle_index=a.oracle_index if a.oracle_stage0 else None,
         support_profile=a.support_profile,
         periodic_last=a.periodic_last,
-        periodic_refresh_counts={reason:sum(r.get('periodic_refresh_reason')==reason for r in records)
+        periodic_refresh_counts={reason or 'reuse':sum(r.get('periodic_refresh_reason')==reason for r in records)
                                  for reason in ['initial','period','age','coverage',None]} if a.periodic_last else None,
         caveats=['Oracle, when enabled, caches only oracle_index and computes that full current stage solely to rank error; extra work is counted; not deployable or a formal optimal AP bound.',
                  'Ideal required convolution MACs, when profiled, exclude oracle, warp, selector, decoder, memory traffic and launch overhead; no sparse kernel or speedup is established.',
