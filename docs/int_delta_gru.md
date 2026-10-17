@@ -109,3 +109,18 @@ delta_gru 的历史收益明显较小且不对齐下降更大。这里 reset 同
 **当前接续：** 即时状态差版本的两轮工程试跑与精确断点恢复均已通过，正式训练已在 181 GPU 0 启动（初始 PID 21490）。实际配置 `<新根目录>/inputs/config.yaml`，输出 `full_delta_gru`，日志 `full_delta_gru.log`，启动记录 `launch_full_delta_gru.json`。seed303、TBPTT4、首轮 FM 预热、原始 P1、至少 20/最多 40 轮及既有平台期规则保持不变。证据存于 [delta_instant_20261017](int_spike_results/delta_instant_20261017/launch_full_delta_gru.json)。
 
 定时任务回到每 **30 分钟**检查新根目录，替代短诊断阶段 10 分钟；旧两项诊断已完成，不要重复启动。启动时磁盘约剩 14 GiB，继续监控每轮 5 GiB 安全下限。若新训练中断，查明原因后以 `resume_int_memory --root <新根目录> --launch-record launch_full_delta_gru.json` 接续；平台期后才选择最佳权重执行回放和 profile。当前 74.1284% 是旧权重干预结果，不是本次新训练的成绩。
+
+## 2026-10-17 即时状态差训练完成（当前接续）
+
+用户随后要求减少静默轮询，训练期间已改为每 2 小时检查。此次检查确认即时状态差版本正常完成 27 轮，最佳第 17 轮 AP70 **74.6976%**，stale=10，最终学习率 6.25e-6，满足预设平台期停止规则。全部 27 轮覆盖、有限 loss/AP、最佳权重哈希和实际 instant 策略审计通过，见 [training_completion.json](int_spike_results/delta_instant_20261017/training_completion.json)。不恢复训练。
+
+| 版本 | 最佳验证 AP70 | 读出刷新位置 | 8×8 刷新块 | 最大残差绝对值 |
+|---|---:|---:|---:|---:|
+| 原误差积累 delta_gru | 73.2605% | 67.05% | 82.23% | 17.1564 |
+| 即时状态差，重新训练 | 74.6976% | 55.06% | 75.11% | 1.7500 |
+
+统计取各自最佳轮的完整 5,794 帧验证。即时版本较原误差积累版提升 1.4371 pp，但仍低于 GRU 1.1760 pp、spike_gru 1.2896 pp；缓存仍是 195 个 FP32 通道，块刷新仍较密集，不能据此宣布省算优势。此前 74.1284% 仅为旧权重干预成绩，须与此处重新训练结果区分。
+
+已启动新根目录下 `replay_delta_gru` 的 aligned/reset/no-align 完整回放，GPU 1，初始 worker PID 36762；在 GPU 2 运行固定 256 帧 `profile_256.json`，不与早期 GPU 0 的不同时段 profile 作严格加速对比。历史回放预计约 18–25 分钟，仅在此后处理阶段临时调整为每 30 分钟检查，避免训练期频繁静默轮询。下一步核验 `replay_delta_gru/status.json`，完成后运行 `summarize_int_memory --root /data1/tzm/workspace/diagnostics/int_delta_instant_20261017 --modes delta_gru --output /data1/tzm/workspace/diagnostics/int_delta_instant_20261017/final_report` 并归档，再决定机制或执行方式是否值得继续修改。旧两个根目录的训练/消融均已收尾，不重复启动。
+
+固定 256 帧 profile 已完成并归档：[profile_256.json](int_spike_results/delta_instant_20261017/profile_256.json)。模型墙钟中位数 37.77 ms，FM 均值 8.37 ms、backbone 21.44 ms、shrink 4.87 ms；该样本读出刷新位置 54.19%、8×8 刷新块 74.60%。仍是包含插桩的稠密实现，未实现或证明端到端加速。后续只等完整历史回放。

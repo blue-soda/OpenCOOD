@@ -1,0 +1,434 @@
+{
+  "training_audit": "PASSED",
+  "checked_unix": 1792224327.2378209,
+  "result": {
+    "best": {
+      "bev_ap70": 0.7469762601720821,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/full_delta_gru/epoch_017/trained.pth",
+      "epoch": 17,
+      "sha256": "b99bfc2d6d1666234114971884affec2cf2a659156e5a80817ad0000189d880b"
+    },
+    "caveat": "Validation plateau is an operational stopping rule, not a proof of convergence or a held-out test result.",
+    "epochs": 27,
+    "status": "PLATEAU_REACHED"
+  },
+  "contract": {
+    "mode": "delta_gru",
+    "seed": 303,
+    "lr": 0.0001,
+    "min_epochs": 20,
+    "patience": 10,
+    "min_delta": 0.001,
+    "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+    "config_sha256": "91cf9670b3c57dd52c0d7b9edfc7894b2ca9769aad53c0253389f216033f0aba",
+    "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+    "state_policy": "whole-segment/tbptt/v1",
+    "tbptt_steps": 4,
+    "fm_only_epochs": 1
+  },
+  "stale": 10,
+  "final_lr": 6.25e-06,
+  "curve": [
+    {
+      "epoch": 1,
+      "loss": 0.9763852417848783,
+      "metrics": {
+        "bev_ap30": 0.7799929528392134,
+        "bev_ap50": 0.751667513779779,
+        "bev_ap70": 0.6010207658293645
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 2,
+      "loss": 0.7021831442230689,
+      "metrics": {
+        "bev_ap30": 0.8064635428119373,
+        "bev_ap50": 0.77540287316722,
+        "bev_ap70": 0.6341819794117545
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 3,
+      "loss": 0.5848865384195122,
+      "metrics": {
+        "bev_ap30": 0.8067633510756208,
+        "bev_ap50": 0.7833594669922284,
+        "bev_ap70": 0.6631540725923493
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 4,
+      "loss": 0.5498062908274418,
+      "metrics": {
+        "bev_ap30": 0.8442784843998292,
+        "bev_ap50": 0.8123065825264552,
+        "bev_ap70": 0.6812503447040386
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 5,
+      "loss": 0.515131402718049,
+      "metrics": {
+        "bev_ap30": 0.8309177177617166,
+        "bev_ap50": 0.8054280187900658,
+        "bev_ap70": 0.6979544842400803
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 6,
+      "loss": 0.491324552535788,
+      "metrics": {
+        "bev_ap30": 0.8377638853186598,
+        "bev_ap50": 0.8115563719397796,
+        "bev_ap70": 0.6973732949100713
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 7,
+      "loss": 0.4677792719676961,
+      "metrics": {
+        "bev_ap30": 0.7947044577383241,
+        "bev_ap50": 0.7787307266994744,
+        "bev_ap70": 0.6931863995462554
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 8,
+      "loss": 0.45192667519126106,
+      "metrics": {
+        "bev_ap30": 0.818812744654349,
+        "bev_ap50": 0.8004515740401033,
+        "bev_ap70": 0.7080676067998757
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 9,
+      "loss": 0.4320687405446742,
+      "metrics": {
+        "bev_ap30": 0.8591214272490164,
+        "bev_ap50": 0.8317173202182764,
+        "bev_ap70": 0.7142710113927272
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 10,
+      "loss": 0.41369598710162214,
+      "metrics": {
+        "bev_ap30": 0.8281843305035365,
+        "bev_ap50": 0.8109074238374966,
+        "bev_ap70": 0.7252146505986432
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 11,
+      "loss": 0.3977942837839921,
+      "metrics": {
+        "bev_ap30": 0.8530530007395014,
+        "bev_ap50": 0.8299421579555678,
+        "bev_ap70": 0.6911496608159644
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 12,
+      "loss": 0.3789864224847109,
+      "metrics": {
+        "bev_ap30": 0.8503597043277109,
+        "bev_ap50": 0.8289276941339428,
+        "bev_ap70": 0.7295491548844212
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 13,
+      "loss": 0.3614447076342817,
+      "metrics": {
+        "bev_ap30": 0.8543730770982058,
+        "bev_ap50": 0.8334979495105977,
+        "bev_ap70": 0.743279493690856
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 14,
+      "loss": 0.3517579629054831,
+      "metrics": {
+        "bev_ap30": 0.852831142609097,
+        "bev_ap50": 0.8331859276782522,
+        "bev_ap70": 0.7395246396266308
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 15,
+      "loss": 0.3320732090687473,
+      "metrics": {
+        "bev_ap30": 0.8446298451954162,
+        "bev_ap50": 0.8268953092552814,
+        "bev_ap70": 0.7356401205404711
+      },
+      "lr": 0.0001,
+      "next_lr": 0.0001
+    },
+    {
+      "epoch": 16,
+      "loss": 0.3211493590985572,
+      "metrics": {
+        "bev_ap30": 0.8484274247993332,
+        "bev_ap50": 0.8299849006036377,
+        "bev_ap70": 0.7423245426759842
+      },
+      "lr": 0.0001,
+      "next_lr": 5e-05
+    },
+    {
+      "epoch": 17,
+      "loss": 0.28691140425038875,
+      "metrics": {
+        "bev_ap30": 0.8510869293416925,
+        "bev_ap50": 0.832420627862806,
+        "bev_ap70": 0.7469762601720821
+      },
+      "lr": 5e-05,
+      "next_lr": 5e-05
+    },
+    {
+      "epoch": 18,
+      "loss": 0.2650086415053746,
+      "metrics": {
+        "bev_ap30": 0.8378431569041572,
+        "bev_ap50": 0.8189050480374451,
+        "bev_ap70": 0.7373127328641519
+      },
+      "lr": 5e-05,
+      "next_lr": 5e-05
+    },
+    {
+      "epoch": 19,
+      "loss": 0.2535691781589777,
+      "metrics": {
+        "bev_ap30": 0.8250274623680852,
+        "bev_ap50": 0.8080786015433382,
+        "bev_ap70": 0.7304338275958545
+      },
+      "lr": 5e-05,
+      "next_lr": 5e-05
+    },
+    {
+      "epoch": 20,
+      "loss": 0.24477002047575988,
+      "metrics": {
+        "bev_ap30": 0.8444687386759644,
+        "bev_ap50": 0.8264221700815855,
+        "bev_ap70": 0.74479868618246
+      },
+      "lr": 5e-05,
+      "next_lr": 2.5e-05
+    },
+    {
+      "epoch": 21,
+      "loss": 0.22186876691977986,
+      "metrics": {
+        "bev_ap30": 0.8320737497135825,
+        "bev_ap50": 0.8158648674918483,
+        "bev_ap70": 0.740651987334374
+      },
+      "lr": 2.5e-05,
+      "next_lr": 2.5e-05
+    },
+    {
+      "epoch": 22,
+      "loss": 0.20881252197032601,
+      "metrics": {
+        "bev_ap30": 0.8354422654158948,
+        "bev_ap50": 0.8172654316341734,
+        "bev_ap70": 0.7411104350106292
+      },
+      "lr": 2.5e-05,
+      "next_lr": 2.5e-05
+    },
+    {
+      "epoch": 23,
+      "loss": 0.20011461707250258,
+      "metrics": {
+        "bev_ap30": 0.8250472923449055,
+        "bev_ap50": 0.8087400130372383,
+        "bev_ap70": 0.7341998804373604
+      },
+      "lr": 2.5e-05,
+      "next_lr": 1.25e-05
+    },
+    {
+      "epoch": 24,
+      "loss": 0.18812168981979902,
+      "metrics": {
+        "bev_ap30": 0.8207395052150267,
+        "bev_ap50": 0.8040398058803465,
+        "bev_ap70": 0.7326456413031601
+      },
+      "lr": 1.25e-05,
+      "next_lr": 1.25e-05
+    },
+    {
+      "epoch": 25,
+      "loss": 0.18061310065818628,
+      "metrics": {
+        "bev_ap30": 0.8264244758314085,
+        "bev_ap50": 0.8089871761166741,
+        "bev_ap70": 0.7329066635321925
+      },
+      "lr": 1.25e-05,
+      "next_lr": 1.25e-05
+    },
+    {
+      "epoch": 26,
+      "loss": 0.17516668876652577,
+      "metrics": {
+        "bev_ap30": 0.8190901245503858,
+        "bev_ap50": 0.8025758427181013,
+        "bev_ap70": 0.7302056421193204
+      },
+      "lr": 1.25e-05,
+      "next_lr": 6.25e-06
+    },
+    {
+      "epoch": 27,
+      "loss": 0.1680851151386306,
+      "metrics": {
+        "bev_ap30": 0.8213722400432831,
+        "bev_ap50": 0.8048194400781488,
+        "bev_ap70": 0.7313711251888468
+      },
+      "lr": 6.25e-06,
+      "next_lr": 6.25e-06
+    }
+  ],
+  "best_validation_diagnostics": {
+    "emission_nonzero_fraction": 0.09496742451997117,
+    "event_cells_fraction": 0.32264633920806673,
+    "readout_refresh_fraction": 0.5505650313889359,
+    "readout_refresh_tiles8": 0.7511445008241435,
+    "forced_refresh_fraction": 0.11709508225887477,
+    "membrane_abs_max": 1.7499964237213135
+  },
+  "scope": "Instant residual training audited; frozen history replay pending",
+  "replay_launch": {
+    "mode": "delta_gru",
+    "gpu": 1,
+    "created_unix": 1792224313.6841595,
+    "training_status": "PLATEAU_REACHED",
+    "training_epochs": 27,
+    "best_epoch": 17,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/full_delta_gru/epoch_017/trained.pth",
+    "checkpoint_sha256": "b99bfc2d6d1666234114971884affec2cf2a659156e5a80817ad0000189d880b",
+    "config_sha256": "91cf9670b3c57dd52c0d7b9edfc7894b2ca9769aad53c0253389f216033f0aba",
+    "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+    "manifest": "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/inputs/sequence_manifest.json",
+    "scans": 5794,
+    "labels": 1738,
+    "reference_metrics": {
+      "bev_ap30": 0.8510869293416925,
+      "bev_ap50": 0.832420627862806,
+      "bev_ap70": 0.7469762601720821
+    },
+    "commands": {
+      "aligned": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-m",
+        "opencood.tools.run_int_ego",
+        "--eval-only",
+        "--mode",
+        "delta_gru",
+        "--config",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/inputs/config.yaml",
+        "--data",
+        "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+        "--manifest",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/inputs/sequence_manifest.json",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/full_delta_gru/epoch_017/trained.pth",
+        "--seed",
+        "303",
+        "--workers",
+        "4",
+        "--history-policy",
+        "aligned",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/replay_delta_gru/aligned"
+      ],
+      "reset": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-m",
+        "opencood.tools.run_int_ego",
+        "--eval-only",
+        "--mode",
+        "delta_gru",
+        "--config",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/inputs/config.yaml",
+        "--data",
+        "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+        "--manifest",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/inputs/sequence_manifest.json",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/full_delta_gru/epoch_017/trained.pth",
+        "--seed",
+        "303",
+        "--workers",
+        "4",
+        "--history-policy",
+        "reset",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/replay_delta_gru/reset"
+      ],
+      "no-align": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-m",
+        "opencood.tools.run_int_ego",
+        "--eval-only",
+        "--mode",
+        "delta_gru",
+        "--config",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/inputs/config.yaml",
+        "--data",
+        "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+        "--manifest",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/inputs/sequence_manifest.json",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/full_delta_gru/epoch_017/trained.pth",
+        "--seed",
+        "303",
+        "--workers",
+        "4",
+        "--history-policy",
+        "no-align",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/int_delta_instant_20261017/replay_delta_gru/no-align"
+      ]
+    },
+    "code_commit": "4db164faebc5fadc80941594c0d8a8a425e69e79"
+  }
+}
