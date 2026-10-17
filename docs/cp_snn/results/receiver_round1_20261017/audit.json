@@ -1,0 +1,115 @@
+{
+  "source_summary_sha256": "e6a8d719393dcc31aea03ea331f4cdff0fa589d2d81648a71d37df11973e9bcf",
+  "donors": {
+    "s": {
+      "path": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_ss_adapt10/best_ap70.pth",
+      "sha256": "1af52702cab7d15e61c8a38ea03cc4655437e53f46553c739a2f950025a9000e",
+      "source_combination": "ss"
+    },
+    "a": {
+      "path": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_sa_adapt10/best_ap70.pth",
+      "sha256": "10c6a2b324f0ada60aaab7f6ac0afb729056c48ceffc5d4d7ff249bcffcde78d",
+      "source_combination": "sa"
+    }
+  },
+  "combinations": {
+    "ss": {
+      "checkpoint_sha256": "8fc4e9d60fc2c7d399c3d2639d6958ed59b6f4080d23a6ba34996c1c26ccbd35",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "config_sha256": {
+        "_181.yaml": "a3e754e4293c5754ece4b503e58e55a8c6b2adfa93448ae2fd1e8f56ce91cfea",
+        "_ego_181.yaml": "ff0a82c91ccb03f880dabd9fd05d49207edd17c14d8afacf304fe04173f862d0"
+      },
+      "native_exact_output_match": true,
+      "packet_and_direct_outputs_equal": true,
+      "packet_bytes": [
+        75043,
+        86477
+      ],
+      "encoder_frozen_after_step": true,
+      "bn_fixed_after_step": true,
+      "gradient_l1": {
+        "fusion_net.": 25.833256509155035,
+        "backbone_2d.": 569.8355805128813,
+        "reg_head.": 25.541391849517822
+      },
+      "loss": 1.4347096572767688,
+      "fusion_activation": "count4",
+      "bev_activation": "count4"
+    },
+    "as": {
+      "checkpoint_sha256": "03a3589679c1f8b40f906089102f8f166aa0d612fc1e51004140a0b37b3dcbff",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "config_sha256": {
+        "_181.yaml": "42badbc5ca81a01472380118ee00aa6fa7ba6cd002c839d9c2f4d0eb5528a689",
+        "_ego_181.yaml": "76af2dedafbc0994717ae2d7076d0889d6d53fae89cdaefb3e91b8c70b14e327"
+      },
+      "native_exact_output_match": null,
+      "packet_and_direct_outputs_equal": true,
+      "packet_bytes": [
+        75043,
+        86477
+      ],
+      "encoder_frozen_after_step": true,
+      "bn_fixed_after_step": true,
+      "gradient_l1": {
+        "fusion_net.": 94.53041014075279,
+        "backbone_2d.": 720.0454493463039,
+        "reg_head.": 30.334870100021362
+      },
+      "loss": 1.765908551365289,
+      "fusion_activation": "relu",
+      "bev_activation": "count4"
+    },
+    "sa": {
+      "checkpoint_sha256": "219478fc511914b13e74f3e61937755d47ffd974f5a5ae0be2b294133a121f09",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "config_sha256": {
+        "_181.yaml": "bc30bdddfa4241c3e8c8ed4e1c5b1522e57f150616e0b4ca1a6d684956b62622",
+        "_ego_181.yaml": "e92e03a737cb41965115d4224e01bc3c336af3703f9e35caaafdd42604d9e2db"
+      },
+      "native_exact_output_match": null,
+      "packet_and_direct_outputs_equal": true,
+      "packet_bytes": [
+        75043,
+        86477
+      ],
+      "encoder_frozen_after_step": true,
+      "bn_fixed_after_step": true,
+      "gradient_l1": {
+        "fusion_net.": 47.33472199738026,
+        "backbone_2d.": 622.571105606854,
+        "reg_head.": 26.14446449279785
+      },
+      "loss": 1.4937899642582715,
+      "fusion_activation": "count4",
+      "bev_activation": "relu"
+    },
+    "aa": {
+      "checkpoint_sha256": "09c0ec3663cc556546a9a435e1b81b1d8e0ea1162d54f41733b491396a7fef15",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "config_sha256": {
+        "_181.yaml": "935b5fb54b3d927cc055b7a6a24300ba5efce6085e0054697aec83cb9947d1ea",
+        "_ego_181.yaml": "d45432e76f6a37ce6b2e847c0f47d9203b9fa3ad4c0703196593a0b425ecdc20"
+      },
+      "native_exact_output_match": true,
+      "packet_and_direct_outputs_equal": true,
+      "packet_bytes": [
+        75043,
+        86477
+      ],
+      "encoder_frozen_after_step": true,
+      "bn_fixed_after_step": true,
+      "gradient_l1": {
+        "fusion_net.": 25.321478944271803,
+        "backbone_2d.": 656.309994071722,
+        "reg_head.": 26.950583457946777
+      },
+      "loss": 1.5759109717908233,
+      "fusion_activation": "relu",
+      "bev_activation": "relu"
+    }
+  },
+  "scope": "Two real augmented training frames. Native cached-output equality; packet versus direct feature equality; finite gradients. Optimizer updates discarded.",
+  "passed": true
+}

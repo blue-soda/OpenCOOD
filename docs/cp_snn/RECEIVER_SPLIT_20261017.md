@@ -2,7 +2,7 @@
 
 ## Material Passport
 
-来源：用户明确批准“先完成四组与最终复核，再拆分融合和BEV，定位后继续优化”。沿用academic-research-suite / experiment-agent，用户授权包含实现、训练和研究文档更新。当前状态：实现与23项CPU回归通过，等待上轮四组最终复核；尚未启动本轮GPU实验。
+来源：用户明确批准“先完成四组与最终复核，再拆分融合和BEV，定位后继续优化”。沿用academic-research-suite / experiment-agent，用户授权包含实现、训练和研究文档更新。当前状态：上轮最终复核全部通过；本地/181的23项CPU检查及真实batch审计通过，四组全量零适配已启动，源提交5bc07510ffca96ce7dd5f19226595c4840bea9d1。
 
 ## 研究问题与分组
 
@@ -42,3 +42,17 @@
 compose_receiver_state拒绝不同编码器、未知state条目和不兼容shape/dtype。launch_e3dsnn_receiver_round复用既有评估/CPU复算协议，串联零适配门槛和10轮适配。audit_e3dsnn_receiver_split在真实数据验证。
 预定根目录 `/data1/tzm/workspace/diagnostics/e3dsnn_receiver_round1_20261017`；来源为e3dsnn_hybrid_round1_20261017。状态入口round_status.json、receiver_{ss,as,sa,aa}_{zero,adapt10}_pipeline.json。
 仍采用main提交→push→服务器pull；自动跟进90分钟、无变化静默。完整结果与决定同步到用户指定cp-snn-plan。
+
+
+## 真实数据检查与启动
+
+来源SS best@10 SHA256 `1af52702cab7d15e61c8a38ea03cc4655437e53f46553c739a2f950025a9000e`；来源SA best@10 SHA256 `10c6a2b324f0ada60aaab7f6ac0afb729056c48ceffc5d4d7ff249bcffcde78d`。
+四组编码器state逐项相同，SHA256 `41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61`。
+两帧消息75043/86477字节，四组一致。每组消息往返和直接特征输出精确相等；复用编码特征时ss/aa与来源原生模型检测输出完全相等。一次优化步后编码器和全部BN不变，融合/BEV/回归头梯度有限且非零，回归头实际更新；审计更新丢弃。
+组合ss/as/sa/aa的小batch loss=1.43471/1.76591/1.49379/1.57591，仅用于接口/梯度检查，不是AP或性能结论。
+
+协调PID60884，四组依次GPU1/2/3/6。已实际观察每组182—209帧预测文件，状态running；不是只生成命令。零适配全量门槛通过后才自动开始统一10轮适配。
+
+[audit.json](results/receiver_round1_20261017/audit.json) SHA256 `ee60cf594bb18ea482a280ba696b533617cdc73acb02c1bd2b12a343f064bcc4`；[startup_20261017.json](results/receiver_round1_20261017/startup_20261017.json) SHA256 `f0cae10ba686d3eabaffefb56f6805c3ce7f44f4449dc246148d7fda626b52bd`。
+
+自动任务已改为“推进接收端定位，无变化静默”（13字），间隔仍90分钟。后续先完成本轮复核，再根据四组合差值决定融合或BEV＋头的优先优化，不预先宣布瓶颈。

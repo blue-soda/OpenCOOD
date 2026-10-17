@@ -1,0 +1,147 @@
+{
+  "captured_unix": 1792247028.2582178,
+  "launch": {
+    "gpus": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "git_commit": "5bc07510ffca96ce7dd5f19226595c4840bea9d1",
+    "audit_sha256": "ee60cf594bb18ea482a280ba696b533617cdc73acb02c1bd2b12a343f064bcc4",
+    "source": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017",
+    "started_unix": 1792246979.461195
+  },
+  "round_status": {
+    "state": "running",
+    "stage": "zero",
+    "supervisors": {
+      "receiver_ss_zero": 61033,
+      "receiver_as_zero": 61034,
+      "receiver_sa_zero": 61036,
+      "receiver_aa_zero": 61037
+    }
+  },
+  "pipelines": {
+    "ss": {
+      "state": "running",
+      "job": "receiver_ss_zero_on",
+      "child_pid": 61035,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--seed",
+        "20260929",
+        "--mode",
+        "eval",
+        "--config",
+        "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_receiver_ss_181.yaml",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_receiver_round1_20261017/ss_initial.pth",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_receiver_round1_20261017/receiver_ss_zero_on",
+        "--eval-3d",
+        "--save-predictions",
+        "--packet-roundtrip",
+        "--fusion-diagnostics"
+      ],
+      "supervisor_pid": 61033,
+      "updated_unix": 1792246981.543601,
+      "prediction_files_observed": 185
+    },
+    "as": {
+      "state": "running",
+      "job": "receiver_as_zero_on",
+      "child_pid": 61038,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--seed",
+        "20260929",
+        "--mode",
+        "eval",
+        "--config",
+        "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_receiver_as_181.yaml",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_receiver_round1_20261017/as_initial.pth",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_receiver_round1_20261017/receiver_as_zero_on",
+        "--eval-3d",
+        "--save-predictions",
+        "--packet-roundtrip",
+        "--fusion-diagnostics"
+      ],
+      "supervisor_pid": 61034,
+      "updated_unix": 1792246981.5651517,
+      "prediction_files_observed": 209
+    },
+    "sa": {
+      "state": "running",
+      "job": "receiver_sa_zero_on",
+      "child_pid": 61039,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--seed",
+        "20260929",
+        "--mode",
+        "eval",
+        "--config",
+        "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_receiver_sa_181.yaml",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_receiver_round1_20261017/sa_initial.pth",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_receiver_round1_20261017/receiver_sa_zero_on",
+        "--eval-3d",
+        "--save-predictions",
+        "--packet-roundtrip",
+        "--fusion-diagnostics"
+      ],
+      "supervisor_pid": 61036,
+      "updated_unix": 1792246981.5836835,
+      "prediction_files_observed": 182
+    },
+    "aa": {
+      "state": "running",
+      "job": "receiver_aa_zero_on",
+      "child_pid": 61040,
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.train_e3dsnn_single",
+        "--workers",
+        "2",
+        "--seed",
+        "20260929",
+        "--mode",
+        "eval",
+        "--config",
+        "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_receiver_aa_181.yaml",
+        "--checkpoint",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_receiver_round1_20261017/aa_initial.pth",
+        "--output",
+        "/data1/tzm/workspace/diagnostics/e3dsnn_receiver_round1_20261017/receiver_aa_zero_on",
+        "--eval-3d",
+        "--save-predictions",
+        "--packet-roundtrip",
+        "--fusion-diagnostics"
+      ],
+      "supervisor_pid": 61037,
+      "updated_unix": 1792246981.5988944,
+      "prediction_files_observed": 189
+    }
+  }
+}
