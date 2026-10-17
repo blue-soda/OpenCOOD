@@ -24,8 +24,12 @@ from opencood.utils import quantized_feature_packet as codec
 FAMILIES = ('snn_fusion', 'ann_receiver', 'ann_full')
 
 
-def variants(family):
+def variants(family, protocol='initial'):
     if family not in FAMILIES: raise ValueError('Unknown family')
+    if protocol == 'lowrate':
+        if family != 'ann_full': raise ValueError('Low-rate extension is ANN-only')
+        return [('q2keep%d' % k, dict(bits=2, keep_fraction=k / 100.)) for k in (75, 50, 25)]
+    if protocol != 'initial': raise ValueError('Unknown protocol')
     if family == 'ann_full':
         return [('native', None)] + [('q%d' % b, dict(bits=b, keep_fraction=1.)) for b in (8, 4, 3, 2)]
     return [('native', None)] + [('keep%d' % k, dict(bits=3, keep_fraction=k / 100.)) for k in (100, 50, 25)]
@@ -53,13 +57,28 @@ def sources(base):
     return result
 
 
-def audit(root, base):
+def parent_rate_gate(base):
+    parent = Path(base) / 'e3dsnn_rate_probe_20261018'
+    hashes = {}
+    for family in FAMILIES:
+        assert read(parent / (family + '_status.json'))['state'] == 'complete'
+        path = parent / (family + '_summary.json')
+        summary = read(path); assert summary['passed']
+        assert set(summary['variants']) == {name for name, _ in variants(family)}
+        hashes[family] = sha(path)
+    return hashes
+
+
+def audit(root, base, protocol='initial'):
     root = Path(root); root.mkdir(parents=True, exist_ok=True)
     if (root / 'audit.json').exists(): raise FileExistsError('Audit already completed')
+    parent_hashes = parent_rate_gate(base) if protocol == 'lowrate' else None
+    families = ('ann_full',) if protocol == 'lowrate' else FAMILIES
     torch.manual_seed(20260929); np.random.seed(20260929)
     source = sources(base)
-    report = dict(sources=source, families={}, scope='Two validation frames, cached sender, discarded outputs')
-    for family in FAMILIES:
+    report = dict(sources=source, families={}, protocol=protocol, parent_summary_sha256=parent_hashes,
+                  scope='Two validation frames, cached sender, discarded outputs')
+    for family in families:
         cfg = load_yaml(source[family]['config'])
         dataset = build_dataset(cfg, train=False)
         data = train_utils.to_device(dataset.collate_batch_test([dataset[0]]), torch.device('cuda'))['ego']
@@ -68,7 +87,7 @@ def audit(root, base):
         model.load_state_dict(torch.load(source[family]['checkpoint'], map_location='cpu'), strict=True)
         report['families'][family] = dict(configs={}, frames=[])
         raw_cfg = yaml.safe_load(Path(source[family]['config']).read_text())
-        for name, options in variants(family):
+        for name, options in variants(family, protocol):
             fresh = dict(raw_cfg)
             fresh['model'] = dict(raw_cfg['model'], args=dict(raw_cfg['model']['args']))
             fresh['model']['args']['message_codec'] = options
@@ -86,7 +105,7 @@ def audit(root, base):
                 road = cached[id(data['road_lidar'])]
                 c = road.indices[:, 1:].cpu().numpy(); f = road.features.detach().cpu().numpy()
                 frame = dict(frame_id=data['frame_ids'][0], variants={})
-                for name, options in variants(family):
+                for name, options in variants(family, protocol):
                     model.message_codec = options; model.packet_roundtrip = True
                     output = model(data)
                     if options is None:
@@ -121,7 +140,7 @@ def run_family(root, family):
     assert sha(source['checkpoint']) == source['checkpoint_sha256']
     summary = dict(family=family, source=source, variants={})
     try:
-        for name, options in variants(family):
+        for name, options in variants(family, audit_result.get('protocol', 'initial')):
             item = audit_result['families'][family]['configs'][name]
             assert sha(item['path']) == item['sha256']
             out = root / (family + '_' + name)
@@ -161,7 +180,11 @@ def run_family(root, family):
 def launch(root, base, gpus):
     root = Path(root); report = read(root / 'audit.json'); assert report['passed']
     assert sources(base) == report['sources']
-    if len(set(gpus)) != 3: raise ValueError('Three distinct GPUs required')
+    families = [f for f in FAMILIES if f in report['families']]
+    if report.get('protocol') == 'lowrate':
+        assert parent_rate_gate(base) == report['parent_summary_sha256']
+    if len(gpus) != len(families) or len(set(gpus)) != len(families):
+        raise ValueError('One distinct GPU per family required')
     if (root / 'launch.json').exists(): raise FileExistsError('Already attempted')
     if shutil.disk_usage(str(root)).free < 8 * 1024 ** 3: raise RuntimeError('Insufficient disk reserve')
     for gpu in gpus: free_gpu(gpu)
@@ -169,7 +192,7 @@ def launch(root, base, gpus):
                  audit_sha256=sha(root / 'audit.json'), gpus=gpus, started_unix=time.time())
     with (root / 'launch.json').open('x') as f: json.dump(setup, f, indent=2)
     processes = {}
-    for family, gpu in zip(FAMILIES, gpus):
+    for family, gpu in zip(families, gpus):
         env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu), PYTHONPATH=str(REPO),
                    OMP_NUM_THREADS='1', MKL_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1', NUMPY_MADVISE_HUGEPAGE='0')
         with (root / (family + '_supervisor.log')).open('xb') as log:
@@ -185,10 +208,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', required=True)
     parser.add_argument('--base', default='/data1/tzm/workspace/diagnostics')
-    parser.add_argument('--gpus', type=int, nargs=3, default=[0, 4, 5])
+    parser.add_argument('--gpus', type=int, nargs='+', default=[0, 4, 5])
+    parser.add_argument('--protocol', choices=['initial', 'lowrate'], default='initial')
     parser.add_argument('--audit', action='store_true')
     parser.add_argument('--family', choices=FAMILIES)
     args = parser.parse_args()
-    if args.audit: audit(args.root, args.base)
+    if args.audit: audit(args.root, args.base, args.protocol)
     elif args.family: run_family(args.root, args.family)
     else: launch(args.root, args.base, args.gpus)

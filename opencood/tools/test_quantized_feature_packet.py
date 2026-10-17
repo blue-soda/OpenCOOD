@@ -56,5 +56,17 @@ class QuantizedPacketTest(unittest.TestCase):
             with self.assertRaises(ValueError): codec.encode(self.coords, values, self.meta, 'count4', options)
         with self.assertRaises(ValueError): codec.validate_options(dict(bits=3, keep_fraction=0))
 
+    def test_bounded_protocol_variants(self):
+        from opencood.tools.launch_e3dsnn_rate_probe import variants, FAMILIES
+        self.assertEqual(sum(len(variants(f)) for f in FAMILIES), 13)
+        for f in FAMILIES:
+            self.assertEqual(variants(f)[0], ('native', None))
+        points = variants('ann_full', 'lowrate')
+        self.assertEqual(len(points), 3)
+        self.assertEqual([o['keep_fraction'] for _, o in points], [.75, .5, .25])
+        self.assertTrue(all(o['bits'] == 2 for _, o in points))
+        with self.assertRaises(ValueError): variants('snn_fusion', 'lowrate')
+        with self.assertRaises(ValueError): variants('ann_full', 'unknown')
+
 
 if __name__ == '__main__': unittest.main()
