@@ -1,0 +1,88 @@
+{
+  "status": "PASSED",
+  "training": {
+    "gru_decoded": {
+      "eligible_pairs": 0,
+      "max_achievable_reuse": 0.0,
+      "selected_threshold": 0.0,
+      "selected_reuse": 0.0,
+      "actual_stage_calls": [
+        1024,
+        1024,
+        1024
+      ]
+    },
+    "gru_stages": {
+      "eligible_pairs": 0,
+      "max_achievable_reuse": 0.0,
+      "selected_threshold": 0.0,
+      "selected_reuse": 0.0,
+      "actual_stage_calls": [
+        1024,
+        1024,
+        1024
+      ]
+    },
+    "stage1_decoded": {
+      "eligible_pairs": 0,
+      "max_achievable_reuse": 0.0,
+      "selected_threshold": 0.0,
+      "selected_reuse": 0.0,
+      "actual_stage_calls": [
+        1024,
+        1024,
+        1024
+      ]
+    },
+    "stage1_stages": {
+      "eligible_pairs": 130,
+      "max_achievable_reuse": 0.0751953125,
+      "selected_threshold": 0.26467612385749817,
+      "selected_reuse": 0.0751953125,
+      "actual_stage_calls": [
+        1024,
+        947,
+        947
+      ]
+    }
+  },
+  "validation": {
+    "dense_control": {
+      "reused_frames": 0,
+      "reused_labeled_frames": 0,
+      "frames_sha256": "9f227d6c1d620baf47c9ed1277bf502b9b426a72d79ac2ce45bd51b644a7d52e",
+      "ap70": 0.8616458207993445,
+      "mean_ms": 34.1965782037762
+    },
+    "gru_decoded": {
+      "reused_frames": 0,
+      "reused_labeled_frames": 0,
+      "frames_sha256": "600296511f984c03758884b781e6de865243fd770f29a7ae4a5f7a756e515cf3",
+      "ap70": 0.8616458207993445,
+      "mean_ms": 36.30668846738896
+    },
+    "gru_stages": {
+      "reused_frames": 0,
+      "reused_labeled_frames": 0,
+      "frames_sha256": "0fb5256b2473e6662377c795b8add263fa755183a8598173b266487fafef058c",
+      "ap70": 0.8616458207993445,
+      "mean_ms": 35.112765303441904
+    },
+    "stage1_decoded": {
+      "reused_frames": 0,
+      "reused_labeled_frames": 0,
+      "frames_sha256": "fe3c86fe92493ad62eb887f7b0a70d0a3051919f5d27fd33bfe0f6aae1a1e0ba",
+      "ap70": 0.8616458207993445,
+      "mean_ms": 35.62242688792871
+    },
+    "stage1_stages": {
+      "reused_frames": 6,
+      "reused_labeled_frames": 2,
+      "frames_sha256": "721832d6883b389050f92916b3aece5f0b781b124e970d9e5a211bdaf2a35365",
+      "ap70": 0.8616262269585434,
+      "mean_ms": 36.881035532635764
+    }
+  },
+  "report_sha256": "4ab601b315386b0bc42d29955e19eda7a60fc469dba809b6cb3fb619aec82f6b",
+  "caveat": "AP not independently recomputed from detection boxes; zero reuse is not evidence for reuse accuracy."
+}

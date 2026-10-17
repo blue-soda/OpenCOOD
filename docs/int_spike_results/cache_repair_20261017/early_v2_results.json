@@ -1,0 +1,465 @@
+{
+  "results": {
+    "dense_control": {
+      "backbone_conv_mac_saved_fraction": 0.0,
+      "cache_kind": "stages",
+      "calibration": null,
+      "caveats": [
+        "Fixed frozen ANN GRU; no independent SNN benefit claimed.",
+        "GRU hidden update uses its existing aligned state; stage1 compares aligned same-layer descriptors.",
+        "One reuse frame maximum; hidden-state comparison is not valid for older deep cache anchors.",
+        "Strict coverage; all warp/selection/cache work counted. Timing excludes IO/voxelization/postprocess.",
+        "Stages cache uses current stage1 when it has already been computed; decoded cache skips the decoder.",
+        "Prefix validation and one sequential timing run do not establish stable full-validation accuracy or speed."
+      ],
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "decoder_call_fraction": 1.0,
+      "gate": "gru",
+      "labels": 61,
+      "metrics": {
+        "bev_ap30": 0.9549927266869173,
+        "bev_ap50": 0.9316390259497906,
+        "bev_ap70": 0.8616458207993445
+      },
+      "model_step_ms_mean": 34.1965782037762,
+      "model_step_ms_p50": 33.88997400179505,
+      "model_step_ms_p95": 36.487096920609474,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 467969536,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "refresh_counts": {
+        "initial": 10,
+        "period": 246
+      },
+      "reset_frames": 10,
+      "reused_labeled_frames": 0,
+      "scans": 256,
+      "scope": "Engineering prefix only; not a full validation result",
+      "seconds": 17.42404517508112,
+      "stage_means": [
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        }
+      ],
+      "state_bytes": 48787200,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "version": "early_hidden_or_stage1_period2_cache_coverage_v2",
+      "zero_uncovered": false
+    },
+    "gru_decoded": {
+      "backbone_conv_mac_saved_fraction": 0.0,
+      "cache_kind": "decoded",
+      "calibration": {
+        "cache_kind": "decoded",
+        "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+        "contract": {
+          "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+          "fm_only_epochs": 1,
+          "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+          "lr": 0.0001,
+          "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+          "min_delta": 0.001,
+          "min_epochs": 20,
+          "mode": "gru",
+          "patience": 10,
+          "seed": 303,
+          "state_policy": "whole-segment/tbptt/v1",
+          "tbptt_steps": 4
+        },
+        "eligible_pairs": 0,
+        "gate": "gru",
+        "max_achievable_reuse": 0.0,
+        "max_age": 0.25,
+        "period": 2,
+        "scans": 1024,
+        "selected": {
+          "counts": {
+            "change": 974,
+            "initial": 50
+          },
+          "reuse_fraction": 0.0,
+          "threshold": 0.0
+        },
+        "selection": "Closest training reuse budget 40%, ties lower threshold; no labels or target features used",
+        "split": "train",
+        "status": "COMPLETED",
+        "target_reuse_fraction": 0.4,
+        "trace_sha256": "692313029aaaea191f890540a7e942a7e62409d507802a5d1b6c4b8768da10ba",
+        "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+      },
+      "caveats": [
+        "Fixed frozen ANN GRU; no independent SNN benefit claimed.",
+        "GRU hidden update uses its existing aligned state; stage1 compares aligned same-layer descriptors.",
+        "One reuse frame maximum; hidden-state comparison is not valid for older deep cache anchors.",
+        "Strict coverage; all warp/selection/cache work counted. Timing excludes IO/voxelization/postprocess.",
+        "Stages cache uses current stage1 when it has already been computed; decoded cache skips the decoder.",
+        "Prefix validation and one sequential timing run do not establish stable full-validation accuracy or speed."
+      ],
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "decoder_call_fraction": 1.0,
+      "gate": "gru",
+      "labels": 61,
+      "metrics": {
+        "bev_ap30": 0.9549927266869173,
+        "bev_ap50": 0.9316390259497906,
+        "bev_ap70": 0.8616458207993445
+      },
+      "model_step_ms_mean": 36.30668846738896,
+      "model_step_ms_p50": 35.391270532272756,
+      "model_step_ms_p95": 43.24818984605372,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 469640704,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "refresh_counts": {
+        "change": 246,
+        "initial": 10
+      },
+      "reset_frames": 10,
+      "reused_labeled_frames": 0,
+      "scans": 256,
+      "scope": "Engineering prefix only; not a full validation result",
+      "seconds": 18.29326309612952,
+      "stage_means": [
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        }
+      ],
+      "state_bytes": 52012800,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "version": "early_hidden_or_stage1_period2_cache_coverage_v2",
+      "zero_uncovered": false
+    },
+    "gru_stages": {
+      "backbone_conv_mac_saved_fraction": 0.0,
+      "cache_kind": "stages",
+      "calibration": {
+        "cache_kind": "stages",
+        "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+        "contract": {
+          "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+          "fm_only_epochs": 1,
+          "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+          "lr": 0.0001,
+          "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+          "min_delta": 0.001,
+          "min_epochs": 20,
+          "mode": "gru",
+          "patience": 10,
+          "seed": 303,
+          "state_policy": "whole-segment/tbptt/v1",
+          "tbptt_steps": 4
+        },
+        "eligible_pairs": 0,
+        "gate": "gru",
+        "max_achievable_reuse": 0.0,
+        "max_age": 0.25,
+        "period": 2,
+        "scans": 1024,
+        "selected": {
+          "counts": {
+            "change": 974,
+            "initial": 50
+          },
+          "reuse_fraction": 0.0,
+          "threshold": 0.0
+        },
+        "selection": "Closest training reuse budget 40%, ties lower threshold; no labels or target features used",
+        "split": "train",
+        "status": "COMPLETED",
+        "target_reuse_fraction": 0.4,
+        "trace_sha256": "8494eb0b05d10aecc52fd8322fc0b901ae8b8a6d06e493426e7ab2675c4446b5",
+        "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+      },
+      "caveats": [
+        "Fixed frozen ANN GRU; no independent SNN benefit claimed.",
+        "GRU hidden update uses its existing aligned state; stage1 compares aligned same-layer descriptors.",
+        "One reuse frame maximum; hidden-state comparison is not valid for older deep cache anchors.",
+        "Strict coverage; all warp/selection/cache work counted. Timing excludes IO/voxelization/postprocess.",
+        "Stages cache uses current stage1 when it has already been computed; decoded cache skips the decoder.",
+        "Prefix validation and one sequential timing run do not establish stable full-validation accuracy or speed."
+      ],
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "decoder_call_fraction": 1.0,
+      "gate": "gru",
+      "labels": 61,
+      "metrics": {
+        "bev_ap30": 0.9549927266869173,
+        "bev_ap50": 0.9316390259497906,
+        "bev_ap70": 0.8616458207993445
+      },
+      "model_step_ms_mean": 35.112765303441904,
+      "model_step_ms_p50": 34.657197073102,
+      "model_step_ms_p95": 38.49581949179992,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 467969536,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "refresh_counts": {
+        "change": 246,
+        "initial": 10
+      },
+      "reset_frames": 10,
+      "reused_labeled_frames": 0,
+      "scans": 256,
+      "scope": "Engineering prefix only; not a full validation result",
+      "seconds": 17.90867595002055,
+      "stage_means": [
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        }
+      ],
+      "state_bytes": 48787200,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "version": "early_hidden_or_stage1_period2_cache_coverage_v2",
+      "zero_uncovered": false
+    },
+    "stage1_decoded": {
+      "backbone_conv_mac_saved_fraction": 0.0,
+      "cache_kind": "decoded",
+      "calibration": {
+        "cache_kind": "decoded",
+        "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+        "contract": {
+          "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+          "fm_only_epochs": 1,
+          "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+          "lr": 0.0001,
+          "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+          "min_delta": 0.001,
+          "min_epochs": 20,
+          "mode": "gru",
+          "patience": 10,
+          "seed": 303,
+          "state_policy": "whole-segment/tbptt/v1",
+          "tbptt_steps": 4
+        },
+        "eligible_pairs": 0,
+        "gate": "stage1",
+        "max_achievable_reuse": 0.0,
+        "max_age": 0.25,
+        "period": 2,
+        "scans": 1024,
+        "selected": {
+          "counts": {
+            "change": 974,
+            "initial": 50
+          },
+          "reuse_fraction": 0.0,
+          "threshold": 0.0
+        },
+        "selection": "Closest training reuse budget 40%, ties lower threshold; no labels or target features used",
+        "split": "train",
+        "status": "COMPLETED",
+        "target_reuse_fraction": 0.4,
+        "trace_sha256": "c52db974a252ae7647641e4b298bc648e2a4f6ede851b87176b61f7ca0af2c83",
+        "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+      },
+      "caveats": [
+        "Fixed frozen ANN GRU; no independent SNN benefit claimed.",
+        "GRU hidden update uses its existing aligned state; stage1 compares aligned same-layer descriptors.",
+        "One reuse frame maximum; hidden-state comparison is not valid for older deep cache anchors.",
+        "Strict coverage; all warp/selection/cache work counted. Timing excludes IO/voxelization/postprocess.",
+        "Stages cache uses current stage1 when it has already been computed; decoded cache skips the decoder.",
+        "Prefix validation and one sequential timing run do not establish stable full-validation accuracy or speed."
+      ],
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "decoder_call_fraction": 1.0,
+      "gate": "stage1",
+      "labels": 61,
+      "metrics": {
+        "bev_ap30": 0.9549927266869173,
+        "bev_ap50": 0.9316390259497906,
+        "bev_ap70": 0.8616458207993445
+      },
+      "model_step_ms_mean": 35.62242688792871,
+      "model_step_ms_p50": 34.983670455403626,
+      "model_step_ms_p95": 40.3419965878129,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 469741568,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "refresh_counts": {
+        "change": 246,
+        "initial": 10
+      },
+      "reset_frames": 10,
+      "reused_labeled_frames": 0,
+      "scans": 256,
+      "scope": "Engineering prefix only; not a full validation result",
+      "seconds": 18.119488812051713,
+      "stage_means": [
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        }
+      ],
+      "state_bytes": 52113600,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "version": "early_hidden_or_stage1_period2_cache_coverage_v2",
+      "zero_uncovered": false
+    },
+    "stage1_stages": {
+      "backbone_conv_mac_saved_fraction": 0.01769301470588225,
+      "cache_kind": "stages",
+      "calibration": {
+        "cache_kind": "stages",
+        "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+        "contract": {
+          "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+          "fm_only_epochs": 1,
+          "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+          "lr": 0.0001,
+          "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+          "min_delta": 0.001,
+          "min_epochs": 20,
+          "mode": "gru",
+          "patience": 10,
+          "seed": 303,
+          "state_policy": "whole-segment/tbptt/v1",
+          "tbptt_steps": 4
+        },
+        "eligible_pairs": 130,
+        "gate": "stage1",
+        "max_achievable_reuse": 0.0751953125,
+        "max_age": 0.25,
+        "period": 2,
+        "scans": 1024,
+        "selected": {
+          "counts": {
+            "change": 537,
+            "coverage": 284,
+            "initial": 50,
+            "period": 76,
+            "reuse": 77
+          },
+          "reuse_fraction": 0.0751953125,
+          "threshold": 0.26467612385749817
+        },
+        "selection": "Closest training reuse budget 40%, ties lower threshold; no labels or target features used",
+        "split": "train",
+        "status": "COMPLETED",
+        "target_reuse_fraction": 0.4,
+        "trace_sha256": "d245880290d2c8c352e137cb49143a2b63ace9dd136122a26291e5fe8eb8d40e",
+        "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+      },
+      "caveats": [
+        "Fixed frozen ANN GRU; no independent SNN benefit claimed.",
+        "GRU hidden update uses its existing aligned state; stage1 compares aligned same-layer descriptors.",
+        "One reuse frame maximum; hidden-state comparison is not valid for older deep cache anchors.",
+        "Strict coverage; all warp/selection/cache work counted. Timing excludes IO/voxelization/postprocess.",
+        "Stages cache uses current stage1 when it has already been computed; decoded cache skips the decoder.",
+        "Prefix validation and one sequential timing run do not establish stable full-validation accuracy or speed."
+      ],
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "decoder_call_fraction": 1.0,
+      "gate": "stage1",
+      "labels": 61,
+      "metrics": {
+        "bev_ap30": 0.9550643246124912,
+        "bev_ap50": 0.9316728557240673,
+        "bev_ap70": 0.8616262269585434
+      },
+      "model_step_ms_mean": 36.881035532635764,
+      "model_step_ms_p50": 36.71894851140678,
+      "model_step_ms_p95": 41.76632117014378,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 468125696,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "refresh_counts": {
+        "change": 91,
+        "coverage": 144,
+        "initial": 10,
+        "period": 5,
+        "reuse": 6
+      },
+      "reset_frames": 10,
+      "reused_labeled_frames": 2,
+      "scans": 256,
+      "scope": "Engineering prefix only; not a full validation result",
+      "seconds": 18.673041102010757,
+      "stage_means": [
+        {
+          "actual_write_fraction": 1.0,
+          "executed_input_area_ratio": 1.0
+        },
+        {
+          "actual_write_fraction": 0.9765625,
+          "executed_input_area_ratio": 0.9765625
+        },
+        {
+          "actual_write_fraction": 0.9765625,
+          "executed_input_area_ratio": 0.9765625
+        }
+      ],
+      "state_bytes": 48888000,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "version": "early_hidden_or_stage1_period2_cache_coverage_v2",
+      "zero_uncovered": false
+    }
+  },
+  "status": "COMPLETED",
+  "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+}

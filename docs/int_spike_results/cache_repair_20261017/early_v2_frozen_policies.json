@@ -1,0 +1,157 @@
+{
+  "gru_decoded": {
+    "cache_kind": "decoded",
+    "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+    "contract": {
+      "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+      "fm_only_epochs": 1,
+      "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+      "lr": 0.0001,
+      "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+      "min_delta": 0.001,
+      "min_epochs": 20,
+      "mode": "gru",
+      "patience": 10,
+      "seed": 303,
+      "state_policy": "whole-segment/tbptt/v1",
+      "tbptt_steps": 4
+    },
+    "eligible_pairs": 0,
+    "gate": "gru",
+    "max_achievable_reuse": 0.0,
+    "max_age": 0.25,
+    "period": 2,
+    "scans": 1024,
+    "selected": {
+      "counts": {
+        "change": 974,
+        "initial": 50
+      },
+      "reuse_fraction": 0.0,
+      "threshold": 0.0
+    },
+    "selection": "Closest training reuse budget 40%, ties lower threshold; no labels or target features used",
+    "split": "train",
+    "status": "COMPLETED",
+    "target_reuse_fraction": 0.4,
+    "trace_sha256": "692313029aaaea191f890540a7e942a7e62409d507802a5d1b6c4b8768da10ba",
+    "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+  },
+  "gru_stages": {
+    "cache_kind": "stages",
+    "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+    "contract": {
+      "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+      "fm_only_epochs": 1,
+      "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+      "lr": 0.0001,
+      "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+      "min_delta": 0.001,
+      "min_epochs": 20,
+      "mode": "gru",
+      "patience": 10,
+      "seed": 303,
+      "state_policy": "whole-segment/tbptt/v1",
+      "tbptt_steps": 4
+    },
+    "eligible_pairs": 0,
+    "gate": "gru",
+    "max_achievable_reuse": 0.0,
+    "max_age": 0.25,
+    "period": 2,
+    "scans": 1024,
+    "selected": {
+      "counts": {
+        "change": 974,
+        "initial": 50
+      },
+      "reuse_fraction": 0.0,
+      "threshold": 0.0
+    },
+    "selection": "Closest training reuse budget 40%, ties lower threshold; no labels or target features used",
+    "split": "train",
+    "status": "COMPLETED",
+    "target_reuse_fraction": 0.4,
+    "trace_sha256": "8494eb0b05d10aecc52fd8322fc0b901ae8b8a6d06e493426e7ab2675c4446b5",
+    "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+  },
+  "stage1_decoded": {
+    "cache_kind": "decoded",
+    "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+    "contract": {
+      "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+      "fm_only_epochs": 1,
+      "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+      "lr": 0.0001,
+      "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+      "min_delta": 0.001,
+      "min_epochs": 20,
+      "mode": "gru",
+      "patience": 10,
+      "seed": 303,
+      "state_policy": "whole-segment/tbptt/v1",
+      "tbptt_steps": 4
+    },
+    "eligible_pairs": 0,
+    "gate": "stage1",
+    "max_achievable_reuse": 0.0,
+    "max_age": 0.25,
+    "period": 2,
+    "scans": 1024,
+    "selected": {
+      "counts": {
+        "change": 974,
+        "initial": 50
+      },
+      "reuse_fraction": 0.0,
+      "threshold": 0.0
+    },
+    "selection": "Closest training reuse budget 40%, ties lower threshold; no labels or target features used",
+    "split": "train",
+    "status": "COMPLETED",
+    "target_reuse_fraction": 0.4,
+    "trace_sha256": "c52db974a252ae7647641e4b298bc648e2a4f6ede851b87176b61f7ca0af2c83",
+    "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+  },
+  "stage1_stages": {
+    "cache_kind": "stages",
+    "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+    "contract": {
+      "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+      "fm_only_epochs": 1,
+      "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+      "lr": 0.0001,
+      "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+      "min_delta": 0.001,
+      "min_epochs": 20,
+      "mode": "gru",
+      "patience": 10,
+      "seed": 303,
+      "state_policy": "whole-segment/tbptt/v1",
+      "tbptt_steps": 4
+    },
+    "eligible_pairs": 130,
+    "gate": "stage1",
+    "max_achievable_reuse": 0.0751953125,
+    "max_age": 0.25,
+    "period": 2,
+    "scans": 1024,
+    "selected": {
+      "counts": {
+        "change": 537,
+        "coverage": 284,
+        "initial": 50,
+        "period": 76,
+        "reuse": 77
+      },
+      "reuse_fraction": 0.0751953125,
+      "threshold": 0.26467612385749817
+    },
+    "selection": "Closest training reuse budget 40%, ties lower threshold; no labels or target features used",
+    "split": "train",
+    "status": "COMPLETED",
+    "target_reuse_fraction": 0.4,
+    "trace_sha256": "d245880290d2c8c352e137cb49143a2b63ace9dd136122a26291e5fe8eb8d40e",
+    "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+  }
+}
