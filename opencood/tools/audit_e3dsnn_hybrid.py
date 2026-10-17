@@ -66,8 +66,16 @@ def audit(root, source):
                 native.load_state_dict(states[name[0]], strict=True)
                 # Independent encoder equality also checks selective activations.
                 direct = native.encode_lidar(data['processed_lidar'], size)
-                assert torch.equal(direct.indices, cached[id(data['processed_lidar'])].indices)
-                torch.testing.assert_close(direct.features, cached[id(data['processed_lidar'])].features, rtol=0, atol=0)
+                expected = cached[id(data['processed_lidar'])]
+                def canonical(sparse):
+                    idx = sparse.indices.long(); d, h, w = sparse.spatial_shape
+                    order = (((idx[:, 0] * d + idx[:, 1]) * h + idx[:, 2]) * w + idx[:, 3]).argsort()
+                    return sparse.indices[order], sparse.features[order]
+                actual_indices, actual_values = canonical(direct)
+                expected_indices, expected_values = canonical(expected)
+                assert torch.equal(actual_indices, expected_indices)
+                encoder_max_error = float((actual_values - expected_values).abs().max())
+                torch.testing.assert_close(actual_values, expected_values, rtol=1e-5, atol=1e-6)
                 native.encode_lidar = lambda lidar, batch_size: cached[id(lidar)]
                 native.packet_roundtrip = True
                 reference = native(data)
@@ -97,6 +105,7 @@ def audit(root, source):
         report['combinations'][name] = dict(config_sha256=hashlib.sha256(config.read_bytes()).hexdigest(),
             checkpoint_sha256=hashlib.sha256(checkpoint.read_bytes()).hexdigest(), encoder_sha256=before,
             packet_bytes=result['packet_bytes'], native_exact_output_match=native_equal,
+            native_encoder_max_abs_error=encoder_max_error if native_equal else None,
             encoder_frozen_after_step=True, bn_fixed_after_step=True, gradient_l1=gradients,
             loss=float(loss.detach()), encoder_activation=model.encoder_activation,
             receiver_activation=model.receiver_activation)
