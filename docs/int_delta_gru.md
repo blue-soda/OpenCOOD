@@ -124,3 +124,21 @@ delta_gru 的历史收益明显较小且不对齐下降更大。这里 reset 同
 已启动新根目录下 `replay_delta_gru` 的 aligned/reset/no-align 完整回放，GPU 1，初始 worker PID 36762；在 GPU 2 运行固定 256 帧 `profile_256.json`，不与早期 GPU 0 的不同时段 profile 作严格加速对比。历史回放预计约 18–25 分钟，仅在此后处理阶段临时调整为每 30 分钟检查，避免训练期频繁静默轮询。下一步核验 `replay_delta_gru/status.json`，完成后运行 `summarize_int_memory --root /data1/tzm/workspace/diagnostics/int_delta_instant_20261017 --modes delta_gru --output /data1/tzm/workspace/diagnostics/int_delta_instant_20261017/final_report` 并归档，再决定机制或执行方式是否值得继续修改。旧两个根目录的训练/消融均已收尾，不重复启动。
 
 固定 256 帧 profile 已完成并归档：[profile_256.json](int_spike_results/delta_instant_20261017/profile_256.json)。模型墙钟中位数 37.77 ms，FM 均值 8.37 ms、backbone 21.44 ms、shrink 4.87 ms；该样本读出刷新位置 54.19%、8×8 刷新块 74.60%。仍是包含插桩的稠密实现，未实现或证明端到端加速。后续只等完整历史回放。
+
+## 2026-10-17 即时版本消融完成，暂不追加 delta 训练
+
+即时版本三项回放已全部完成，逐帧顺序、覆盖、权重哈希和 aligned AP 与最佳训练轮的一致性审计通过。证据：[final_report/report.json](int_spike_results/delta_instant_20261017/final_report/report.json)。
+
+| 模型 | 对齐 AP70 | 清空历史 AP70 | 不对齐 AP70 | 对齐历史收益 |
+|---|---:|---:|---:|---:|
+| spike_gru | 75.9872% | 74.2929% | 71.5460% | +1.6944 pp |
+| 原误差积累 delta_gru | 73.2605% | 72.7762% | 57.4270% | +0.4843 pp |
+| 即时状态差，重新训练 | 74.6976% | 73.5844% | 66.5769% | +1.1132 pp |
+
+即时版本恢复了部分历史收益，但精度仍低于 spike_gru，75.11% 的 8×8 块需要刷新且缓存为原来的 3 倍。目前不继续训练 delta 变种，也不直接投入其稀疏算子实现。保留它作为误差积累机制的探索记录，回到精度较好的 spike_gru 检查是否存在更合适的计算复用位置。
+
+新增只读诊断 `opencood.tools.profile_int_readout_change`：在原 spike_gru 最佳权重的完整验证序列上，记录 FM 读出 Y 与位姿对齐上一帧读出的差异，统计 8×8 块的相对 RMS 差异超过 0/0.05/0.1/0.2 的比例；新视野和重置帧强制视为活跃。模型仍完整执行，预测不作任何替换。合成同值、单块变化及无历史覆盖检查先通过才执行流式诊断。
+
+该诊断是每帧使用真实上一帧读出的单步统计，不模拟多帧陈旧缓存，不传播主干感受野邻域，也不证明 AP 或实际加速。用于判断是否值得在保留现有状态更新的前提下研究读出/主干的增量计算。
+
+**当前唯一待跟进任务**：181 原 spike_gru 根目录 `/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/readout_change_20261017`，GPU 1，初始 PID 51436，代码 `d2268b6`；查看 `status.json`、`run.log`，完成后归档 `report.json`，如需核验顺序检查 `frames.jsonl`。启动记录 [readout_change_launch.json](int_spike_results/spiking_gru_20261016/readout_change_launch.json)。保持本次短后处理 30 分钟检查，禁止重复启动已完成的三个训练/消融系列；若无进一步值得运行的检查则结束该阶段监控。

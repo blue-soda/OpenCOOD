@@ -1,0 +1,20 @@
+{
+  "code_commit": "d2268b60adfdd9187fb1ba7d8a0546e34a74b6fd",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.profile_int_readout_change",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/readout_change_20261017",
+    "--mode",
+    "spike_gru",
+    "--gpu",
+    "1",
+    "--worker"
+  ],
+  "created_unix": 1792226336.3906922,
+  "gpu": 1,
+  "pid": 51436
+}
