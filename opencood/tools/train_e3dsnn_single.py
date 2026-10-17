@@ -223,6 +223,8 @@ def execute(args, output_dir):
         'fusion_readout': getattr(model, 'fusion_readout', 'activated'),
         'encoder_activation': getattr(model, 'encoder_activation', cfg['model']['args'].get('activation', 'count4')),
         'receiver_activation': getattr(model, 'receiver_activation', cfg['model']['args'].get('activation', 'count4')),
+        'fusion_activation_kind': getattr(model, 'fusion_activation_kind', getattr(model, 'receiver_activation', cfg['model']['args'].get('activation', 'count4'))),
+        'bev_activation': getattr(model, 'bev_activation', getattr(model, 'receiver_activation', cfg['model']['args'].get('activation', 'count4'))),
         'freeze_encoder': getattr(model, 'freeze_encoder', False),
         'trainable_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
         'freeze_detector': getattr(model, 'freeze_detector', False),

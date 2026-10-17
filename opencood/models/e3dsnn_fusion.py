@@ -133,7 +133,8 @@ class E3dsnnFusion(E3dsnnSingle):
                 raise ValueError('Fusion diagnostics require residual eval')
             from opencood.utils.e3dsnn_fusion_probe import probe_maps
             result['fusion_probe'] = probe_maps(ego_bev, residual, fused, supported,
-                getattr(self, 'receiver_activation', self.activation) if self.fusion_readout == 'activated' else 'continuous')
+                getattr(self, 'fusion_activation_kind', getattr(self, 'receiver_activation', self.activation))
+                if self.fusion_readout == 'activated' else 'continuous')
         if data.get('return_spikes', False):
             result['spike_features'] = ego_sparse.features
         if packet_bytes:

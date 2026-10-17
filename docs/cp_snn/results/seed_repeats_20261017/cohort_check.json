@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "runs": {
+    "count4_aux1_seed20260930_joint30_on": {
+      "ordered_gt_sha256": "54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee",
+      "samples": 1738,
+      "gt_boxes": 28622,
+      "replay_passed": true
+    },
+    "count4_aux1_seed20260930_joint30_off": {
+      "ordered_gt_sha256": "54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee",
+      "samples": 1738,
+      "gt_boxes": 28622,
+      "replay_passed": true
+    },
+    "count4_aux1_seed20261001_joint30_on": {
+      "ordered_gt_sha256": "54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee",
+      "samples": 1738,
+      "gt_boxes": 28622,
+      "replay_passed": true
+    },
+    "count4_aux1_seed20261001_joint30_off": {
+      "ordered_gt_sha256": "54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee",
+      "samples": 1738,
+      "gt_boxes": 28622,
+      "replay_passed": true
+    }
+  }
+}
