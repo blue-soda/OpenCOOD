@@ -1,0 +1,23 @@
+{
+  "status": "PASSED",
+  "report_sha256": "218fab3f19443c1d9eacf51f1814e5d4da472e3c160232913baa6f3b18171517",
+  "frames_sha256": "1110b7d2ecc35176230f75ba8c046911d543b06b33eecdae1b6833d0c543a2c5",
+  "scans": 5794,
+  "labels": 1738,
+  "resets": 214,
+  "refresh_counts": {
+    "age": 0,
+    "coverage": 1016,
+    "initial": 214,
+    "period": 2237,
+    "reuse": 2327
+  },
+  "checks": [
+    "Complete manifest order/frame/segment/supervision",
+    "Refresh/reuse and stage execution summaries",
+    "Reset always refreshes; cache bytes consistent",
+    "Mean timing recomputation after 10 warmup frames",
+    "Frozen checkpoint/config/manifest hashes"
+  ],
+  "caveat": "AP was not independently recomputed from detection boxes; paired full timing control is pending"
+}
