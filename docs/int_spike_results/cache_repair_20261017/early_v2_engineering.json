@@ -1,0 +1,54 @@
+{
+  "actual_module_calls_match": true,
+  "full_refresh_errors": [
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "real_reuse_counts": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "status": "PASSED",
+  "tests": "All INT tests, eight real frames, four full-refresh prediction parity checks, actual stage/shrink hooks",
+  "version": "early_hidden_or_stage1_period2_cache_coverage_v2"
+}
