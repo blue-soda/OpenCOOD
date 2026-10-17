@@ -106,7 +106,7 @@ class CacheRepairTests(unittest.TestCase):
             def __init__(self):super().__init__();self.calls=0
             def forward(self,x):self.calls+=1;return x*2
         layer=Counter().eval();x=torch.randn(1,3,8,8)
-        pose=[0,0,0,0,0,0];bounds=[-4,-4,-1,4,4,1]
+        pose=torch.eye(4).numpy();bounds=[-4,-4,-1,4,4,1]
         first,cache,_=periodic_stage_step(layer,x,None,pose,0,bounds,2,1.)
         skipped,next_cache,reason=periodic_stage_step(layer,x+9,cache,pose,100000,bounds,2,1.)
         self.assertIsNone(reason);self.assertEqual(layer.calls,1)
@@ -115,7 +115,8 @@ class CacheRepairTests(unittest.TestCase):
         refreshed,_,reason=periodic_stage_step(layer,x+9,next_cache,pose,200000,bounds,2,1.)
         self.assertEqual(reason,'period');self.assertEqual(layer.calls,2)
         self.assertTrue(torch.equal(refreshed,(x+9)*2))
-        _,_,reason=periodic_stage_step(layer,x,cache,[2,0,0,0,0,0],100000,bounds,4,1.)
+        moved=pose.copy();moved[0,3]=2
+        _,_,reason=periodic_stage_step(layer,x,cache,moved,100000,bounds,4,1.)
         self.assertEqual(reason,'coverage')
         _,_,reason=periodic_stage_step(layer,x,cache,pose,200000,bounds,4,.15)
         self.assertEqual(reason,'age')
