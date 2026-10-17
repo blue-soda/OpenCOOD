@@ -1,0 +1,58 @@
+{
+  "caveat": "Threshold selected using training descriptor scores and causal reuse rate only; dense feature error is diagnostic, not AP or speed. No validation frames/labels used.",
+  "checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+  "contract": {
+    "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+    "fm_only_epochs": 1,
+    "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+    "lr": 0.0001,
+    "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+    "min_delta": 0.001,
+    "min_epochs": 20,
+    "mode": "gru",
+    "patience": 10,
+    "seed": 303,
+    "state_policy": "whole-segment/tbptt/v1",
+    "tbptt_steps": 4
+  },
+  "descriptor": "groupmean16_avgpool2_block4_relative_rms_p90_v1",
+  "eligible_pairs": 912,
+  "max_age": 0.25,
+  "max_period": 3,
+  "scans": 1024,
+  "score_target_error_pearson": 0.5980510707007358,
+  "seconds": 42.79749686107971,
+  "selected": {
+    "threshold": 0.45884764194488525,
+    "reuse_fraction": 0.3994140625,
+    "counts": {
+      "initial": 50,
+      "period": 21,
+      "age": 0,
+      "coverage": 493,
+      "change": 51,
+      "reuse": 409
+    },
+    "reused_target_error_mean": 0.2935100571960575,
+    "reused_target_error_p95": 0.3659765243530273
+  },
+  "split": "train",
+  "status": "COMPLETED",
+  "target_reuse_fraction": 0.4013671875,
+  "training_periodic2_control": {
+    "reuse_fraction": 0.4013671875,
+    "counts": {
+      "initial": 50,
+      "period": 391,
+      "age": 0,
+      "coverage": 172,
+      "change": 0,
+      "reuse": 411
+    },
+    "reused_target_error_mean": 0.29575434972479975,
+    "reused_target_error_p95": 0.37602928280830383
+  },
+  "selection_rule": "Closest training reuse rate to periodic2; tie chooses lower threshold; no target errors or validation data in selection",
+  "source_report_sha256": "719b98717a1cc55a18fbc00543b57704b7273d171c888af9634abfe89dc92fbe",
+  "source_trace_sha256": "1105ed73f384f2a6b58166ce1c003af842b22a0d31bf49e551a164e26ea4b96d"
+}

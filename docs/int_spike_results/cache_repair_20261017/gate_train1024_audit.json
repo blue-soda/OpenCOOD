@@ -1,0 +1,15 @@
+{
+  "status": "PASSED",
+  "scans": 1024,
+  "split": "train",
+  "checks": [
+    "Training manifest frame order",
+    "Frozen source hashes",
+    "Finite scores and lag ages",
+    "Independent causal decision counts for both thresholds",
+    "Budget-matched selection matches saved candidate list"
+  ],
+  "report_sha256": "719b98717a1cc55a18fbc00543b57704b7273d171c888af9634abfe89dc92fbe",
+  "matched_report_sha256": "b944037122473abf021bad20132e751f9332cbc23cb4d75365fc41e741073903",
+  "trace_sha256": "1105ed73f384f2a6b58166ce1c003af842b22a0d31bf49e551a164e26ea4b96d"
+}
