@@ -1,0 +1,44 @@
+{
+  "checked_unix": 1792262459.4841514,
+  "families": {
+    "snn_fusion": {
+      "state": "running",
+      "variant": "native",
+      "updated_unix": 1792262389.4128163,
+      "saved_prediction_files": 139,
+      "log_tail": "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)\n  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]\n/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.\n  warnings.warn(\"nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.\")\n"
+    },
+    "ann_receiver": {
+      "state": "running",
+      "variant": "native",
+      "updated_unix": 1792262389.436032,
+      "saved_prediction_files": 190,
+      "log_tail": "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)\n  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]\n/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.\n  warnings.warn(\"nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.\")\n"
+    },
+    "ann_full": {
+      "state": "running",
+      "variant": "native",
+      "updated_unix": 1792262389.4653533,
+      "saved_prediction_files": 151,
+      "log_tail": "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)\n  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]\n/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.\n  warnings.warn(\"nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.\")\n"
+    }
+  },
+  "bev": {
+    "fixed_high": {
+      "completed_epochs": 5,
+      "best_ap70_training_only": 0.5740880201325361
+    },
+    "learned_high": {
+      "completed_epochs": 5,
+      "best_ap70_training_only": 0.5726393917992635
+    },
+    "fixed_low": {
+      "completed_epochs": 5,
+      "best_ap70_training_only": 0.5813798802692716
+    },
+    "learned_low": {
+      "completed_epochs": 5,
+      "best_ap70_training_only": 0.5799264839930022
+    }
+  }
+}

@@ -39,3 +39,28 @@
 
 根目录：/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018。
 入口：opencood.tools.launch_e3dsnn_rate_probe；新codec：opencood.utils.quantized_feature_packet；默认未配置时既有模型与包格式保持原路径。新配置强制eval且实际packet_roundtrip，拒绝无声忽略量化或带量化训练。
+
+
+## 真实审计与实际启动
+
+本地与181各35项CPU检查通过。三条来源各两帧、全部13配置的消息结果与直接重建的量化特征检测输出精确一致；两条SNN来源100%统一容器输出与原生Count4输出也精确一致。审计不更新任何参数。
+
+| 两帧接口探针的实际包长（bytes） | 000211 | 000212 |
+|---|---:|---:|
+| SNN原生Count4（两来源相同） | 86229 | 86169 |
+| SNN统一容器100%（无损） | 33145 | 33299 |
+| SNN统一容器50% | 22584 | 22831 |
+| SNN统一容器25% | 14652 | 14906 |
+| ANN原生FP32 | 297396 | 301698 |
+| ANN 8bit | 74483 | 75562 |
+| ANN 4bit | 41045 | 41543 |
+| ANN 3bit | 32256 | 32760 |
+| ANN 2bit | 21286 | 21226 |
+
+这里只是两帧接口证据，不能外推全验证集AP或平均通信量。尤其ANN3bit和SNN无损包已接近相同大小，因此必须比较其全量AP，不能沿用对FP32的约74%通信差声称对量化ANN同样成立。SNN原生→统一容器的下降属于传输实现收益。
+
+13点全量评估已在181实际启动，运行提交82b17f921d536d358b1192f9f5571f53254e50ff（包含实现cc5c877）。三条有超时的监督进程：snn_fusion PID4870/GPU0，ann_receiver PID4871/GPU4，ann_full PID4872/GPU5。启动快照分别已保存139/190/151帧预测，均在原生门槛评估；后继点只有门槛通过才自动运行。既有BEV四组仍健康运行，快照均完成5轮，无最终结果。
+
+证据：[audit.json](results/rate_probe_20261018/audit.json)，SHA256 467e501f7130c836d6322363fc0cda532b6769969c375ec752d0124506f0f5a0；[launch.json](results/rate_probe_20261018/launch.json)，SHA256 6b48ce84f207e2bbc82c16f34a1d2d2fc08c42bfbe7c17a25807cecb54e0a7f2；[processes.json](results/rate_probe_20261018/processes.json)，SHA256 900c343a85af1dbb0bd68d7a3302ce1e8c201d9108350b8f934c91ea007e67ce；[startup_20261018.json](results/rate_probe_20261018/startup_20261018.json)，SHA256 fa1c154daa24f5124b248d5dd3612f74d45bda74cc6ecb97314d8ff2ec2dddbf。均按远端原始字节取回并核对SHA，同步用户目录evidence。
+
+续接时依次读取三条*_status.json；完成后用*_summary.json（已含全帧CPU/GT/哈希复核）汇总全部13点，若仍running则继续原任务、不重复启动。任一failed先保留日志和部分结果、定位原因，不静默跳过。BEV原四组继续按既定轮数与复核流程收尾；自动任务仍读取RESEARCH_GOALS.md，每90分钟，关键变化才通知。

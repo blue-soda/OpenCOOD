@@ -1,0 +1,321 @@
+{
+  "sources": {
+    "snn_fusion": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_receiver_round1_20261017/receiver_sa_adapt10/best_ap70.pth",
+      "checkpoint_sha256": "3c1a2ae7bc23eab1318f805b960aed4194bae153f27b849f692f0bfeda1fdeb8",
+      "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_receiver_sa_181.yaml",
+      "source_summary_sha256": "bc99826219b0613414f9931b56649fe194a144ccb98f8aabea51852faa29c938",
+      "reference_ap": {
+        "0.3": 0.7858516403369837,
+        "0.5": 0.7382509462072345,
+        "0.7": 0.6003046757148471
+      },
+      "reference_communication": {
+        "count": 1738,
+        "mean_bytes": 91247.22094361334,
+        "median_bytes": 92898.0,
+        "min_bytes": 34525,
+        "max_bytes": 124517,
+        "p95_bytes": 112432.5,
+        "total_bytes": 158587670,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "adaptation_epochs": 50
+    },
+    "ann_receiver": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_sa_adapt10/best_ap70.pth",
+      "checkpoint_sha256": "10c6a2b324f0ada60aaab7f6ac0afb729056c48ceffc5d4d7ff249bcffcde78d",
+      "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_sa_181.yaml",
+      "source_summary_sha256": "e6a8d719393dcc31aea03ea331f4cdff0fa589d2d81648a71d37df11973e9bcf",
+      "reference_ap": {
+        "0.3": 0.7856730505189037,
+        "0.5": 0.7392846859237878,
+        "0.7": 0.6025302615686546
+      },
+      "reference_communication": {
+        "count": 1738,
+        "mean_bytes": 91247.22151898734,
+        "median_bytes": 92898.0,
+        "min_bytes": 34525,
+        "max_bytes": 124517,
+        "p95_bytes": 112432.5,
+        "total_bytes": 158587671,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "adaptation_epochs": 40
+    },
+    "ann_full": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_aa_adapt10/best_ap70.pth",
+      "checkpoint_sha256": "624ce3b2adbd1eedc02f03876a33e38f5a5e66be7b6f9c8f78ae689cac558034",
+      "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_aa_181.yaml",
+      "source_summary_sha256": "e6a8d719393dcc31aea03ea331f4cdff0fa589d2d81648a71d37df11973e9bcf",
+      "reference_ap": {
+        "0.3": 0.7878135631993223,
+        "0.5": 0.7421519554188454,
+        "0.7": 0.6126394117465073
+      },
+      "reference_communication": {
+        "count": 1738,
+        "mean_bytes": 354528.95281933254,
+        "median_bytes": 369507.0,
+        "min_bytes": 155161,
+        "max_bytes": 451806,
+        "p95_bytes": 423396.15,
+        "total_bytes": 616171320,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "adaptation_epochs": 40
+    }
+  },
+  "families": {
+    "snn_fusion": {
+      "configs": {
+        "native": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/snn_fusion_native.yaml",
+          "sha256": "53bf4fadf9787e988d44d84b736c870c19fe7dd6b0d67b0cd101a390f33f1866",
+          "options": null
+        },
+        "keep100": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/snn_fusion_keep100.yaml",
+          "sha256": "8b145f2ee7d0d248a734b4b65bbf0f37f071cc0bcfbfe059a03224b688ce0c52",
+          "options": {
+            "bits": 3,
+            "keep_fraction": 1.0
+          }
+        },
+        "keep50": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/snn_fusion_keep50.yaml",
+          "sha256": "82d9831bf920db95e0d4d3bdabeb3a1ae22327aa03bf3f98af51a09912c1377f",
+          "options": {
+            "bits": 3,
+            "keep_fraction": 0.5
+          }
+        },
+        "keep25": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/snn_fusion_keep25.yaml",
+          "sha256": "a7e1037cbc4df8c724e9820aa30c78228dfcbbc2a0890010490958d14bfc6d07",
+          "options": {
+            "bits": 3,
+            "keep_fraction": 0.25
+          }
+        }
+      },
+      "frames": [
+        {
+          "frame_id": "000211",
+          "variants": {
+            "native": {
+              "packet_bytes": 86229,
+              "oracle_exact": true
+            },
+            "keep100": {
+              "packet_bytes": 33145,
+              "oracle_exact": true
+            },
+            "keep50": {
+              "packet_bytes": 22584,
+              "oracle_exact": true
+            },
+            "keep25": {
+              "packet_bytes": 14652,
+              "oracle_exact": true
+            }
+          }
+        },
+        {
+          "frame_id": "000212",
+          "variants": {
+            "native": {
+              "packet_bytes": 86169,
+              "oracle_exact": true
+            },
+            "keep100": {
+              "packet_bytes": 33299,
+              "oracle_exact": true
+            },
+            "keep50": {
+              "packet_bytes": 22831,
+              "oracle_exact": true
+            },
+            "keep25": {
+              "packet_bytes": 14906,
+              "oracle_exact": true
+            }
+          }
+        }
+      ]
+    },
+    "ann_receiver": {
+      "configs": {
+        "native": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_receiver_native.yaml",
+          "sha256": "74a96e236cb9e6de8134d47215aa629fa3b26e9ce1e5962803a89d9298d7cfbd",
+          "options": null
+        },
+        "keep100": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_receiver_keep100.yaml",
+          "sha256": "ef5c0b2704dd5e8ac86503f283593cd8a8820ea17e0526f991143a85de597a57",
+          "options": {
+            "bits": 3,
+            "keep_fraction": 1.0
+          }
+        },
+        "keep50": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_receiver_keep50.yaml",
+          "sha256": "6d2c4dc1bfd99dc69274c6f9bee8a72a9df47339e6b730028beb4a5112112e6a",
+          "options": {
+            "bits": 3,
+            "keep_fraction": 0.5
+          }
+        },
+        "keep25": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_receiver_keep25.yaml",
+          "sha256": "f5bbaf081c20ff4704c2538491a260eb8d02460bc87c8c8f2857032640ee7e05",
+          "options": {
+            "bits": 3,
+            "keep_fraction": 0.25
+          }
+        }
+      },
+      "frames": [
+        {
+          "frame_id": "000211",
+          "variants": {
+            "native": {
+              "packet_bytes": 86229,
+              "oracle_exact": true
+            },
+            "keep100": {
+              "packet_bytes": 33145,
+              "oracle_exact": true
+            },
+            "keep50": {
+              "packet_bytes": 22584,
+              "oracle_exact": true
+            },
+            "keep25": {
+              "packet_bytes": 14652,
+              "oracle_exact": true
+            }
+          }
+        },
+        {
+          "frame_id": "000212",
+          "variants": {
+            "native": {
+              "packet_bytes": 86169,
+              "oracle_exact": true
+            },
+            "keep100": {
+              "packet_bytes": 33299,
+              "oracle_exact": true
+            },
+            "keep50": {
+              "packet_bytes": 22831,
+              "oracle_exact": true
+            },
+            "keep25": {
+              "packet_bytes": 14906,
+              "oracle_exact": true
+            }
+          }
+        }
+      ]
+    },
+    "ann_full": {
+      "configs": {
+        "native": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_full_native.yaml",
+          "sha256": "43fc493bfa1666364ceff2c4f8d24ffaf9815101a6da57f89dbe6693e9ca0c30",
+          "options": null
+        },
+        "q8": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_full_q8.yaml",
+          "sha256": "2ca7dea1bfb0fdc3752212f8e3f4d1548499c8ae51b48fcd4bb3c9b1adaeb3e8",
+          "options": {
+            "bits": 8,
+            "keep_fraction": 1.0
+          }
+        },
+        "q4": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_full_q4.yaml",
+          "sha256": "80f8199b42dc03ce38a37082bf4790a7d7001ca3c59e4d3a4e20168180c0adfd",
+          "options": {
+            "bits": 4,
+            "keep_fraction": 1.0
+          }
+        },
+        "q3": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_full_q3.yaml",
+          "sha256": "e92416580c7f1c85474faa93982a2b8fe3bb5bb1ba095c910a2b5c645b9efa26",
+          "options": {
+            "bits": 3,
+            "keep_fraction": 1.0
+          }
+        },
+        "q2": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_rate_probe_20261018/ann_full_q2.yaml",
+          "sha256": "70705e836a73be2fcb821f83ee84760c2fe9403dc41841c5f9e70a7274c83054",
+          "options": {
+            "bits": 2,
+            "keep_fraction": 1.0
+          }
+        }
+      },
+      "frames": [
+        {
+          "frame_id": "000211",
+          "variants": {
+            "native": {
+              "packet_bytes": 297396,
+              "oracle_exact": true
+            },
+            "q8": {
+              "packet_bytes": 74483,
+              "oracle_exact": true
+            },
+            "q4": {
+              "packet_bytes": 41045,
+              "oracle_exact": true
+            },
+            "q3": {
+              "packet_bytes": 32256,
+              "oracle_exact": true
+            },
+            "q2": {
+              "packet_bytes": 21286,
+              "oracle_exact": true
+            }
+          }
+        },
+        {
+          "frame_id": "000212",
+          "variants": {
+            "native": {
+              "packet_bytes": 301698,
+              "oracle_exact": true
+            },
+            "q8": {
+              "packet_bytes": 75562,
+              "oracle_exact": true
+            },
+            "q4": {
+              "packet_bytes": 41543,
+              "oracle_exact": true
+            },
+            "q3": {
+              "packet_bytes": 32760,
+              "oracle_exact": true
+            },
+            "q2": {
+              "packet_bytes": 21226,
+              "oracle_exact": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  "scope": "Two validation frames, cached sender, discarded outputs",
+  "passed": true
+}

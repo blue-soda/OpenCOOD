@@ -1,0 +1,14 @@
+{
+  "snn_fusion": {
+    "pid": 4870,
+    "gpu": 0
+  },
+  "ann_receiver": {
+    "pid": 4871,
+    "gpu": 4
+  },
+  "ann_full": {
+    "pid": 4872,
+    "gpu": 5
+  }
+}
