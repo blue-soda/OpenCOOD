@@ -91,9 +91,12 @@ def calibrate(model, cfg, rows, out, gate, kind, provenance, frames):
             records.append(record)
             log.write(json.dumps(record)+'\n')
     assert len(records) == min(frames, len(rows))
+    all_scores = [r['early_score'] for r in records if r['early_score'] is not None]
+    assert all_scores and np.isfinite(all_scores).all(), 'No finite temporal comparisons in training prefix'
     scores = [r['early_score'] for r in records if r['early_score'] is not None and r['candidate_valid']]
-    assert scores and np.isfinite(scores).all()
-    thresholds = sorted(set([0.] + np.quantile(scores, np.linspace(0, 1, 101)).tolist()))
+    # Zero eligible pairs is a measured geometry limit, not a broken experiment.
+    thresholds = sorted(set([0., max(all_scores)] +
+        (np.quantile(scores, np.linspace(0, 1, 101)).tolist() if scores else [])))
     candidates = []
     for threshold in thresholds:
         result = replay(records, threshold)
@@ -102,7 +105,9 @@ def calibrate(model, cfg, rows, out, gate, kind, provenance, frames):
     selected = min(candidates, key=lambda r: (abs(r['reuse_fraction']-.4), r['threshold']))
     write_json(out/'candidates.json', candidates)
     return dict(status='COMPLETED', version=VERSION, split='train', gate=gate, cache_kind=kind,
-                scans=len(records), period=2, max_age=.25, target_reuse_fraction=.4, selected=selected,
+                scans=len(records), eligible_pairs=len(scores), period=2, max_age=.25,
+                max_achievable_reuse=replay(records,max(all_scores))['reuse_fraction'],
+                target_reuse_fraction=.4, selected=selected,
                 checkpoint_sha256=provenance['checkpoint']['sha256'], contract=provenance['contract'],
                 trace_sha256=digest(out/'frames.jsonl'),
                 selection='Closest training reuse budget 40%, ties lower threshold; no labels or target features used')

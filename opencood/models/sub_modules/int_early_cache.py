@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.models.sub_modules.int_cache_gate import descriptor_change
 
-VERSION = 'early_hidden_or_stage1_period2_strict_v1'
+VERSION = 'early_hidden_or_stage1_period2_cache_coverage_v2'
 
 
 def early_descriptor(x, pool):
@@ -66,7 +66,10 @@ class EarlyCacheDetector:
         observed = {}
 
         def observe(current, past, valid):
-            observed['valid'] = bool(valid.all())
+            # FM is recomputed everywhere, including newly visible cells. Require
+            # overlap for comparison, but complete coverage only for REUSED deep
+            # tensors below. The change score still includes new-view differences.
+            observed['valid'] = bool(valid.any())
             observed['score'] = descriptor_change(early_descriptor(current, 8), early_descriptor(past, 8))
 
         x, fm, info = m.feature_memory.step(spatial, None if state is None else state['fm'], meta,
