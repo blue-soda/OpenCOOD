@@ -32,6 +32,18 @@ def local_requests(changed_stage1, valid_stage2, valid_stage3, tile):
     return written2,written3
 
 
+class OriginalDetectorControl:
+    """Original detector step with reporting only; no additional deep cache."""
+    def __init__(self, model):
+        self.model = model
+
+    def step(self, data, state, meta):
+        prediction, state, info = self.model.step(data, state, meta)
+        info.update(cache_stages=[dict(actual_write_fraction=1., executed_input_area_ratio=1.) for _ in range(3)],
+                    cache_bytes=info['state_bytes'], local_partial=False, local_verification_errors=[])
+        return prediction, state, info
+
+
 class LocalCacheDetector:
     """Actual frozen-stage crop execution, one partial frame per full refresh.
 

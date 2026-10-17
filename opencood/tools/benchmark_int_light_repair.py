@@ -67,7 +67,11 @@ def worker(a):
     write(out/'training_audit.json', dict(status='PASSED', runs=audits,
         caveat='Validates manifests, summaries and hashes; does not independently recompute AP from boxes.'))
     results = {}
-    for name, policy, period in [('control', 'dense', 1), ('local', 'local', 2), ('dense', 'dense', 2)]:
+    cases = [('control', 'dense', 1, 'none'), ('local', 'local', 2, 'none'), ('dense', 'dense', 2, 'none')]
+    if a.suite == 'mechanism':
+        cases = [('original', 'dense', 1, 'original'), ('dense', 'dense', 2, 'none'),
+                 ('zero_residual', 'dense', 2, 'zero-residual')]
+    for name, policy, period, ablation in cases:
         free = int(subprocess.check_output(['nvidia-smi', '-i', str(a.gpu),
                    '--query-gpu=memory.free', '--format=csv,noheader,nounits']).decode().strip())
         assert free > 22000, 'GPU acquired by another job; stop rather than contaminate timings'
@@ -76,7 +80,8 @@ def worker(a):
         command = [sys.executable, '-m', 'opencood.tools.run_int_early_cache', '--root', a.root,
                    '--output', str(target), '--gpu', str(a.gpu), '--stage', 'learned-eval',
                    '--source-suite', str(source/'early_four_way_v2'), '--repair-policy', policy,
-                   '--repair-checkpoint', bests[policy]['checkpoint'], '--repair-period', str(period), '--worker']
+                   '--repair-checkpoint', bests[policy]['checkpoint'], '--repair-period', str(period),
+                   '--repair-ablation', ablation, '--worker']
         write(out/'status.json', dict(status='RUNNING', phase=name))
         with (target/'run.log').open('x') as log:
             child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
@@ -86,7 +91,10 @@ def worker(a):
         exposure = audit_frames(target, rows)
         report = read(target/'report.json')
         expected = read(Path(a.root)/'full_gru'/'best.json')['bev_ap70'] if period == 1 else bests[policy]['ap70']
-        assert abs(report['metrics']['bev_ap70']-expected) < 1e-10, 'Reloaded AP mismatch'
+        if ablation != 'zero-residual':
+            assert abs(report['metrics']['bev_ap70']-expected) < 1e-10, 'Reloaded AP mismatch'
+        else:
+            assert exposure == results['dense']['audit'], 'Intervention changed cache schedule'
         assert report['repair_checkpoint_sha256'] == bests[policy]['sha256']
         results[name] = dict(report=report, audit=exposure)
         write(out/'results.json', results)
@@ -98,6 +106,7 @@ def main():
     for key in ('root', 'training-root', 'output'):
         p.add_argument('--'+key, required=True)
     p.add_argument('--gpu', type=int, required=True)
+    p.add_argument('--suite', choices=['standard', 'mechanism'], default='standard')
     p.add_argument('--worker', action='store_true')
     a = p.parse_args()
     out = Path(a.output)

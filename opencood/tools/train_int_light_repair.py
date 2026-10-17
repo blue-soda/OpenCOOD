@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 from opencood.models.sub_modules.int_light_repair import make_repairs,repair_input_request
-from opencood.models.sub_modules.int_local_cache import LocalCacheDetector,local_change_mask
+from opencood.models.sub_modules.int_local_cache import LocalCacheDetector,local_change_mask,OriginalDetectorControl
 from opencood.models.sub_modules.int_early_cache import early_descriptor
 from opencood.models.sub_modules.int_cache_repair import tile_mask,expand_tiles
 from opencood.models.sub_modules.int_feature_memory import warp_bev
@@ -31,16 +31,27 @@ def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
     assert contract['repair_policy']==a.repair_policy
     repairs=make_repairs().cuda().eval();repairs.load_state_dict(saved['repairs'],strict=True)
     assert sum(p.numel() for p in repairs.parameters())==contract['trainable_parameters']
+    ablation=getattr(a,'repair_ablation','none')
+    if ablation=='zero-residual':
+        assert a.repair_period==2 and a.repair_policy=='dense'
+        # Preserve all input preparation and small-module compute, but suppress
+        # learned correction. Outputs are exactly the warped historical values.
+        with torch.no_grad():
+            for repair in repairs:
+                repair.net[-1].weight.zero_();repair.net[-1].bias.zero_()
+    if ablation=='original':assert a.repair_period==1
     engineering=json.loads((run/'engineering.json').read_text())
     assert engineering['status']=='PASSED'
     a.stage='full';a.engineering=str(run/'engineering.json')
     wrapper=LocalCacheDetector(model,cfg,policy['selected']['threshold'],period=a.repair_period,
                               repair_modules=repairs,repair_dense=a.repair_policy=='dense')
+    if ablation=='original':wrapper=OriginalDetectorControl(model)
     torch.cuda.reset_peak_memory_stats()
     report=evaluate(a,model,cfg,rows,out,wrapper)
     frames=[json.loads(s) for s in (out/'frames.jsonl').read_text().splitlines()]
     partial=[r for r in frames if r['local_partial']]
     report.update(repair_policy=a.repair_policy,repair_period=a.repair_period,repair_checkpoint=str(checkpoint),
+        repair_ablation=ablation,
         repair_checkpoint_sha256=digest(checkpoint),repair_epoch=saved['epoch'],
         partial_frames=len(partial),partial_labeled_frames=sum(r['supervised'] for r in partial),
         original_deep_stage_call_fraction=1-len(partial)/len(frames),
@@ -49,6 +60,10 @@ def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
                  'stage_means combines different module input areas, not backbone MAC reduction.',
                  'Timing includes model/gate/warp/cache/repair/decoder/head but excludes IO/voxelization/postprocess.',
                  'Use sequential runs on the same GPU after both training jobs finish; one timing pair is not a stability study.'])
+    if ablation=='zero-residual':
+        report['caveats'].append('Loaded checkpoint hash is unchanged provenance; final residual weights/bias are zeroed in memory. Small-module compute remains, so this is an accuracy intervention, not an optimized warp-only speed baseline. New-view deep features remain zero.')
+    if ablation=='original':
+        report['caveats'].append('Direct original model.step; no deep cache or repair execution. Only existing FM state is retained. Loaded repair modules are unused.')
     return report
 
 
