@@ -1,8 +1,4 @@
-"""Detection interface for frame-local membrane fusion; fixed sender partitions.
-
-Stage-one integration only: encoder frozen, shared channel adapter trainable,
-ANN BEV/heads frozen. A learned progressive sender is not implemented here.
-"""
+"""Frame-local membrane fusion with frozen, learned or spatial sender ordering."""
 from dataclasses import asdict
 import numpy as np
 import torch
@@ -11,6 +7,7 @@ from opencood.models.fuse_modules.e3dsnn_progressive import (
     MessageContract,ProgressiveMembraneFusion,split_counts)
 from opencood.utils import count4_compact_packet as compact
 from opencood.utils.e3dsnn_transplant import encoder_digest
+from opencood.models.fuse_modules.e3dsnn_progressive_sender import ProgressiveSender
 
 
 class E3dsnnProgressiveDetector(E3dsnnBudget):
@@ -25,9 +22,13 @@ class E3dsnnProgressiveDetector(E3dsnnBudget):
         self.membrane_fusion=ProgressiveMembraneFusion(128,
             retain_residual=bool(args.get('retain_membrane_residual',True)),
             adaptive_gate=bool(args.get('adaptive_membrane_gate',False)))
+        self.sender_order=args.get('sender_order','spatial')
+        if self.sender_order not in ('spatial','frozen','learned'):raise ValueError('Unknown sender order')
+        if self.sender_order!='spatial':self.progressive_sender=ProgressiveSender()
         for name,p in self.named_parameters():
             p.requires_grad_(name.startswith('membrane_fusion.basis.') or
-                (self.membrane_fusion.adaptive_gate and name.startswith('membrane_fusion.gate.')))
+                (self.membrane_fusion.adaptive_gate and name.startswith('membrane_fusion.gate.')) or
+                (self.sender_order=='learned' and name.startswith('progressive_sender.')))
         self._encoder_identity=None
 
     def load_state_dict(self,*args,**kwargs):
@@ -36,7 +37,7 @@ class E3dsnnProgressiveDetector(E3dsnnBudget):
 
     def load_legacy(self,state):
         missing,extra=self.load_state_dict(state,strict=False)
-        expected={k for k in self.state_dict() if k.startswith('membrane_fusion.')}
+        expected={k for k in self.state_dict() if k.startswith(('membrane_fusion.','progressive_sender.'))}
         if set(missing)!=expected or extra:raise ValueError('Unexpected progressive checkpoint mapping')
 
     def encode_membrane(self,lidar,batch_size):
@@ -75,7 +76,8 @@ class E3dsnnProgressiveDetector(E3dsnnBudget):
         from opencood.utils.e3dsnn_budget import budget_features
         values=budget_features(road.indices,road.features,self.activation,self.budget_codec)
         road=road.replace_feature(values).dense()
-        chunks=[split_counts(road[i:i+1],self.progressive_packets) for i in range(b)]
+        partition=split_counts if self.sender_order=='spatial' else self.progressive_sender
+        chunks=[partition(road[i:i+1],self.progressive_packets) for i in range(b)]
         kept=membrane.new_ones(b)
         if self.training and self.message_dropout:
             kept=(torch.rand(b,device=membrane.device)>=self.message_dropout).to(membrane.dtype)

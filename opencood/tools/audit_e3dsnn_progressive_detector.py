@@ -5,6 +5,7 @@ from pathlib import Path
 import time
 import random
 import subprocess
+import yaml
 import numpy as np
 import torch
 import spconv.pytorch as spconv
@@ -18,27 +19,32 @@ from opencood.utils.e3dsnn_budget import decoder_digest
 from opencood.utils.e3dsnn_fusion_probe import bn_digest
 
 
-def audit(root,base):
+def audit(root,base,sender_order='spatial',retain_residual=True):
     root=Path(root);root.mkdir(parents=True,exist_ok=True)
     if any(root.iterdir()):raise FileExistsError('Fresh audit directory required')
     source=Path(base)/'e3dsnn_budget_round1_20261018'
     prior=read(source/'adapt10_summary.json');assert prior['passed']
     checkpoint=source/'budget_s_fusion_adapt10/best_ap70.pth'
     assert sha(checkpoint)==prior['groups']['s_fusion']['checkpoint_sha256']
-    cfg=load_yaml(str(source/'s_fusion.yaml'))
-    cfg['model']['core_method']='e3dsnn_progressive_detector'
-    cfg['model']['args'].update(progressive_packets=3,readout_prefix=3,
-        adaptive_membrane_gate=True,retain_membrane_residual=True)
+    raw=yaml.safe_load((source/'s_fusion.yaml').read_text())
+    raw['model']['core_method']='e3dsnn_progressive_detector'
+    raw['model']['args'].update(progressive_packets=3,readout_prefix=3,
+        adaptive_membrane_gate=True,retain_membrane_residual=retain_residual,sender_order=sender_order)
+    (root/'config.yaml').write_text(yaml.safe_dump(raw))
+    cfg=load_yaml(str(root/'config.yaml'))
     random.seed(20260929);np.random.seed(20260929);torch.manual_seed(20260929)
     dataset=build_dataset(cfg,train=True)
     samples=[dataset[i] for i in (0,1)]
     batch=train_utils.to_device(dataset.collate_batch_train(samples),torch.device('cuda'))
     data=batch['ego'];model=train_utils.create_model(cfg).cuda().eval()
     model.load_legacy(torch.load(str(checkpoint),map_location='cpu'))
+    torch.save(model.state_dict(),str(root/'initial.pth'))
     report=dict(started_unix=time.time(),source_sha256=sha(checkpoint),frames=data['frame_ids'],
         road_frames=data['road_frame_ids'],prefixes=[],scope='Augmented train frames 0/1; discarded optimization step; no AP estimate.')
     rotation=data['road_to_ego'][:,:3,:3].double()
     report.update(code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
+        sender_order=sender_order,retain_residual=retain_residual,
+        initial_sha256=sha(root/'initial.pth'),config_sha256=sha(root/'config.yaml'),
         geometry_arithmetic='float64 inverse/grid; float32 interpolation/features',
         pose_orthogonality_max_error=float((rotation.transpose(1,2)@rotation-torch.eye(3,device='cuda')).abs().max()))
     encode_membrane=model.encode_membrane;encode=model.encode_lidar
@@ -77,7 +83,9 @@ def audit(root,base):
     assert len(output['prefix_outputs'])==3
     loss.backward()
     grads={k:float(p.grad.abs().sum()) for k,p in model.named_parameters() if p.grad is not None}
-    assert set(grads)=={'membrane_fusion.basis.weight','membrane_fusion.gate.weight'}
+    expected={'membrane_fusion.basis.weight','membrane_fusion.gate.weight'}
+    if sender_order=='learned':expected.update(k for k,p in model.named_parameters() if k.startswith('progressive_sender.'))
+    assert set(grads)==expected
     assert all(v>0 and np.isfinite(v) for v in grads.values())
     torch.nn.utils.clip_grad_norm_(model.parameters(),10.,error_if_nonfinite=True);optimizer.step()
     assert encoder_digest(model)==enc and decoder_digest(model)==dec and bn_digest(model)==bn
@@ -93,9 +101,12 @@ def audit(root,base):
     report['full_dropout_all_prefixes_equal_local_readout']=True
     report['passed']=True;report['finished_unix']=time.time()
     (root/'audit.json').write_text(json.dumps(report,indent=2));print(json.dumps(report),flush=True)
+    return report
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--root',required=True)
     parser.add_argument('--base',default='/data1/tzm/workspace/diagnostics')
-    args=parser.parse_args();audit(args.root,args.base)
+    parser.add_argument('--sender-order',choices=('spatial','frozen','learned'),default='spatial')
+    parser.add_argument('--clear-residual',action='store_true')
+    args=parser.parse_args();audit(args.root,args.base,args.sender_order,not args.clear_residual)
