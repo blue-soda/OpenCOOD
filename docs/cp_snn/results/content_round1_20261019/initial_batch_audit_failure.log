@@ -1,0 +1,12 @@
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+Traceback (most recent call last):
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/data1/tzm/workspace/OpenCOOD/opencood/tools/audit_e3dsnn_content_detector.py", line 116, in <module>
+    a=p.parse_args();audit(a.root,a.base,a.family,a.learn)
+  File "/data1/tzm/workspace/OpenCOOD/opencood/tools/audit_e3dsnn_content_detector.py", line 80, in audit
+    assert torch.allclose(combined[key][i:i+1],isolated[key],atol=2e-5,rtol=2e-5)
+AssertionError
