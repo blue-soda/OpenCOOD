@@ -76,5 +76,24 @@ class SelectiveUnifiedTests(unittest.TestCase):
         self.assertTrue(torch.allclose(merged,fixed,atol=2e-5,rtol=2e-5))
         self.assertTrue(torch.equal(fixed[~wf.expand_as(fixed)],old[~wf.expand_as(old)]))
 
+    def test_gather_matches_masked_recurrence_with_new_view_and_fallback(self):
+        gather=SelectiveUnifiedBEV(self.student,1e6,tile=4,execution='gather',fallback_fraction=.95)
+        masked=SelectiveUnifiedBEV(self.student,1e6,tile=4,execution='masked_dense',fallback_fraction=.95)
+        a=b=None;partial=False;fallback=False
+        with torch.no_grad():
+            for index in range(5):
+                meta=dict(self.meta,timestamp_us=100000*(index+1));meta['pose']=np.eye(4);meta['pose'][0,3]=index
+                x=torch.randn(1,64,64,72)
+                if index==4:gather.threshold=masked.threshold=0.
+                pa,a,ia=gather.step_spatial(x,a,meta);pb,b,ib=masked.step_spatial(x,b,meta)
+                self.assertEqual(ia['update_stats']['actual_write_fraction'],ib['update_stats']['actual_write_fraction'])
+                self.assertEqual(ia['update_stats']['fallback'],ib['update_stats']['fallback'])
+                for key in pa:self.assertTrue(torch.allclose(pa[key],pb[key],atol=2e-5,rtol=2e-5))
+                self.assertTrue(torch.equal(a['reference'],b['reference']))
+                self.assertTrue(torch.equal(a['age'],b['age']))
+                partial=partial or 0<ia['reused_fraction']<1
+                fallback=fallback or ia['update_stats']['fallback']
+        self.assertTrue(partial);self.assertTrue(fallback)
+
 
 if __name__=='__main__':unittest.main()

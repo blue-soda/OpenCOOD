@@ -53,8 +53,16 @@ def integration(a,student,cfg,rows,out):
         selected=written.expand_as(actual);error=float((actual-expected).abs()[selected].max())
         assert torch.allclose(actual[selected],expected[selected],atol=1e-4,rtol=1e-4)
         assert torch.equal(actual[~selected],torch.zeros_like(actual[~selected]))
+        gather_error=None
+        if a.executor=='gather':
+            gathered,gw,_=refresh_tiles(student.core.update,x,torch.zeros_like(expected),mask,1,2,a.tile,
+                                       allow_fallback=False,execution='gather')
+            assert torch.equal(written,gw)
+            gather_error=float((gathered-expected).abs()[selected].max())
+            assert torch.allclose(gathered[selected],expected[selected],atol=1e-4,rtol=1e-4)
+            assert torch.equal(gathered[~selected],torch.zeros_like(gathered[~selected]))
     result=dict(status='PASSED',dense_wrapper_prediction_max_errors=errors,real_weight_crop_max_error=error,
-                real_weight_crop_stats=stats,checkpoint_sha256=digest(Path(a.checkpoint)))
+                real_weight_crop_stats=stats,real_weight_gather_max_error=gather_error,checkpoint_sha256=digest(Path(a.checkpoint)))
     write_json(out/'selective_engineering.json',result)
 
 
@@ -102,12 +110,12 @@ def worker(a):
     calibration=calibrate(a,student,cfg,train,out)
     write_json(out/'experiment_contract.json',dict(checkpoint=a.checkpoint,checkpoint_sha256=digest(Path(a.checkpoint)),
         source_epoch=saved['epoch'],source_training_contract=saved['contract'],tile=a.tile,max_cell_age=a.max_age,
-        layout=a.layout,crop_batch=a.crop_batch,
+        layout=a.layout,crop_batch=a.crop_batch,executor=a.executor,
         calibration=calibration,validation_scans=len(val) if a.frames==0 else min(a.frames,len(val)),
         rule='Fixed thresholds from training prefix; force unseen/aged cells; fallback if halo crop input area>=.8; no feature training',
         timing='Same GPU sequential runs, dense control before/after; includes selector/cache/warp/crops/readout; other GPUs may be active'))
-    plans=[('dense_before',None,None),('sparse_q50','sparse','q50'),('masked_q75','masked_dense','q75'),
-           ('sparse_q75','sparse','q75'),('dense_after',None,None)]
+    plans=[('dense_before',None,None),('sparse_q50',a.executor,'q50'),('masked_q75','masked_dense','q75'),
+           ('sparse_q75',a.executor,'q75'),('dense_after',None,None)]
     reports={}
     for name,mode,q in plans:
         directory=out/name;directory.mkdir()
@@ -122,7 +130,7 @@ def worker(a):
         records=[json.loads(s) for s in (directory/'frames.jsonl').read_text().splitlines()]
         chosen=val if a.frames==0 else val[:a.frames]
         assert [(x['frame'],x['segment'],x['supervised']) for x in records]==[(x['frame'],x['segment'],x['supervised']) for x in chosen]
-        report.update(name=name,checkpoint_sha256=digest(Path(a.checkpoint)),source_epoch=saved['epoch'],
+        report.update(name=name,execution=mode,checkpoint_sha256=digest(Path(a.checkpoint)),source_epoch=saved['epoch'],
             scope='Full validation' if a.frames==0 else 'Early-checkpoint validation prefix; engineering/latency pilot only',
             caveats=['Fixed-weight sparse inference intervention; not a trained sparse model or convergence result.',
                      'Evidence encoder/context and readout/head remain dense. Reference+age increase cache and warp costs.',
@@ -141,7 +149,7 @@ def worker(a):
     assert all(x['update_stats']['actual_write_fraction']==y['update_stats']['actual_write_fraction'] and
                x['update_stats']['fallback']==y['update_stats']['fallback'] for x,y in zip(left,right))
     final=dict(status='COMPLETED',checkpoint_sha256=digest(Path(a.checkpoint)),source_epoch=saved['epoch'],
-        tile=a.tile,calibration=calibration,reports=reports,masked_sparse_write_masks_counts_agree=True,
+        tile=a.tile,executor=a.executor,calibration=calibration,reports=reports,masked_sparse_write_masks_counts_agree=True,
         dense_before_after_ms_ratio=reports['dense_after']['model_step_ms_mean']/reports['dense_before']['model_step_ms_mean'])
     write_json(out/'report.json',final);write_json(out/'status.json',dict(status='COMPLETED'))
 
@@ -153,6 +161,7 @@ def main():
     p.add_argument('--frames',type=int,default=512,help='Validation prefix; 0 selects full validation')
     p.add_argument('--calibration-frames',type=int,default=1024);p.add_argument('--wait-minutes',type=float,default=30.)
     p.add_argument('--layout',choices=['merged','fixed'],default='merged');p.add_argument('--crop-batch',type=int,default=8)
+    p.add_argument('--executor',choices=['sparse','gather'],default='sparse')
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.frames<0 or a.calibration_frames<8 or a.max_age<=0:p.error('Invalid frame/age limits')
     if a.worker:

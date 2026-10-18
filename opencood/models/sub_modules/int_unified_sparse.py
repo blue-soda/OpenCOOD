@@ -21,7 +21,7 @@ class SelectiveUnifiedBEV:
     """
     def __init__(self,student,threshold,tile=16,max_age=.5,execution='sparse',fallback_fraction=.8,layout='merged',batch_size=8):
         if student.memory_policy!='recurrent':raise ValueError('Selective updates require recurrent weights')
-        if execution not in ('sparse','masked_dense','full'):raise ValueError('Unknown execution')
+        if execution not in ('sparse','masked_dense','gather','full'):raise ValueError('Unknown execution')
         if not math.isfinite(threshold) or threshold<0 or tile<1 or max_age<=0:raise ValueError('Invalid gate')
         self.student=student;self.threshold=threshold;self.tile=tile;self.max_age=max_age
         self.execution=execution;self.fallback_fraction=fallback_fraction

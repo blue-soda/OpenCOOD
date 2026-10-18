@@ -26,7 +26,7 @@ def _lookup(indices, size):
 
 def _neighbors(target, table, height, width, sentinel):
     offsets = torch.arange(-1, 2, device=target.device)
-    yy = target[:, None, None] // width + offsets[None, :, None]
+    yy = torch.div(target[:, None, None], width, rounding_mode='floor') + offsets[None, :, None]
     xx = target[:, None, None] % width + offsets[None, None, :]
     valid = (yy >= 0) & (yy < height) & (xx >= 0) & (xx < width)
     flat = (yy.clamp(0, height - 1) * width + xx.clamp(0, width - 1)).reshape(-1)

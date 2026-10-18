@@ -114,7 +114,7 @@ intermediate BN offsets would then produce a different boundary condition.
 """
     if module.training or x.shape[0] != 1:
         raise ValueError('Frozen eval modules and batch=1 are required')
-    if execution not in ('sparse','masked_dense'):raise ValueError('Unknown tile execution')
+    if execution not in ('sparse','masked_dense','gather'):raise ValueError('Unknown tile execution')
     if layout not in ('merged','fixed') or batch_size<1:raise ValueError('Invalid crop layout/batch')
     h, w = x.shape[-2:]
     oh, ow = cached.shape[-2:]
@@ -146,6 +146,13 @@ intermediate BN offsets would then produce a different boundary condition.
     if execution=='masked_dense':
         stats['executed_input_area_ratio']=1.
         return torch.where(written,module(x),cached),written,stats
+    if execution=='gather':
+        from opencood.models.sub_modules.int_unified_gather import gathered_update
+        if stride!=1 or radius!=2:raise ValueError('Gather requires the radius-two V2 state update')
+        # Preserve the crop planner's exact write/fallback policy for this comparison.
+        # Gathered dependencies have no duplicated rectangle halos.
+        stats['executed_input_area_ratio']=float(F.max_pool2d(written.float(),5,1,2).mean())
+        return torch.where(written,gathered_update(module,x,written),cached),written,stats
     output = cached.clone()
     groups = {}
     for job in jobs:
