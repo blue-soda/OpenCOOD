@@ -113,19 +113,25 @@ class ResidualStateUpdate(nn.Module):
     """V2 update remains radius two on precomputed current evidence plus history."""
     radius=2
 
-    def __init__(self,evidence=256,channels=256):
+    def __init__(self,evidence=256,channels=256,normalize_current=False):
         super().__init__()
-        self.evidence=evidence;self.channels=channels
+        self.evidence=evidence;self.channels=channels;self.normalize_current=normalize_current
         self.net=nn.Sequential(nn.Conv2d(evidence+channels+1,channels,1),ChannelNorm(channels),nn.SiLU(),
             SpatialResidual(channels,channels//2),SpatialResidual(channels,channels//2),
             ChannelNorm(channels),nn.Conv2d(channels,channels*2,1))
         self.current=nn.Conv2d(evidence,channels,1)
 
+    def current_value(self,evidence):
+        value=self.current(evidence)
+        if self.normalize_current:
+            value=F.layer_norm(value.permute(0,2,3,1),(self.channels,)).permute(0,3,1,2).contiguous()
+        return value
+
     def forward(self,packed):
         old=packed[:,self.evidence:self.evidence+self.channels]
         valid=packed[:,-1:]
         residual,gate=self.net(packed).chunk(2,dim=1)
-        candidate=self.current(packed[:,:self.evidence])+residual
+        candidate=self.current_value(packed[:,:self.evidence])+residual
         retain=gate.sigmoid()*valid
         return retain*old+(1-retain)*candidate
 
@@ -134,7 +140,7 @@ class UnifiedBEVCoreV2(UnifiedBEVCore):
     """Higher-capacity evidence encoder; one state and no multiscale decoder."""
     channels=256
 
-    def __init__(self,cls_channels=2,reg_channels=14,dir_channels=4,memory_policy='recurrent'):
+    def __init__(self,cls_channels=2,reg_channels=14,dir_channels=4,memory_policy='recurrent',normalize_current=False):
         nn.Module.__init__(self)
         if memory_policy not in ('recurrent','reset'):raise ValueError('Unknown memory policy')
         self.memory_policy=memory_policy
@@ -144,7 +150,7 @@ class UnifiedBEVCoreV2(UnifiedBEVCore):
             SpatialResidual(192,96),nn.Conv2d(192,256,3,stride=2,padding=1),ChannelNorm(256),nn.SiLU(),
             SpatialResidual(256,128,1),SpatialResidual(256,128,2),SpatialResidual(256,128,3),
             nn.Conv2d(256,128,1))
-        self.update=ResidualStateUpdate()
+        self.update=ResidualStateUpdate(normalize_current=normalize_current)
         self.readout=nn.Sequential(ChannelNorm(256),nn.Conv2d(256,256,1),nn.SiLU())
         self.cls_head=nn.Conv2d(256,cls_channels,1)
         self.reg_head=nn.Conv2d(256,reg_channels,1)
@@ -160,7 +166,7 @@ class UnifiedBEVDetector(nn.Module):
     """Own only the frozen Pillar encoder and new core; no teacher or old backbone."""
     def __init__(self,teacher,config,variant='v1',memory_policy='recurrent'):
         super().__init__()
-        if variant not in ('v1','v2'):raise ValueError('Unknown unified architecture')
+        if variant not in ('v1','v2','v2n'):raise ValueError('Unknown unified architecture')
         if variant=='v1' and memory_policy!='recurrent':raise ValueError('V1 contract is recurrent only')
         self.variant=variant;self.memory_policy=memory_policy
         self.pillar_vfe=copy.deepcopy(teacher.pillar_vfe)
@@ -168,7 +174,7 @@ class UnifiedBEVDetector(nn.Module):
         self.bounds=config['model']['args']['lidar_range']
         heads=(teacher.cls_head.out_channels,teacher.reg_head.out_channels,
                teacher.dir_head.out_channels if teacher.use_dir else 0)
-        self.core=UnifiedBEVCore(*heads) if variant=='v1' else UnifiedBEVCoreV2(*heads,memory_policy=memory_policy)
+        self.core=UnifiedBEVCore(*heads) if variant=='v1' else UnifiedBEVCoreV2(*heads,memory_policy=memory_policy,normalize_current=variant=='v2n')
         self.core.cls_head.load_state_dict(teacher.cls_head.state_dict())
         self.core.reg_head.load_state_dict(teacher.reg_head.state_dict())
         if teacher.use_dir:self.core.dir_head.load_state_dict(teacher.dir_head.state_dict())

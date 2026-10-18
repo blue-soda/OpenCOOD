@@ -37,5 +37,18 @@ class GatheredUpdateTests(unittest.TestCase):
         module.eval()
         with self.assertRaises(ValueError): gathered_update(module, x, mask)
 
+    def test_normalized_shortcut_same_parameters_and_gather_equivalence(self):
+        torch.manual_seed(307);plain=ResidualStateUpdate(evidence=6,channels=8).eval().double()
+        torch.manual_seed(307);norm=ResidualStateUpdate(evidence=6,channels=8,normalize_current=True).eval().double()
+        self.assertEqual(list(plain.state_dict()),list(norm.state_dict()))
+        for k in plain.state_dict():self.assertTrue(torch.equal(plain.state_dict()[k],norm.state_dict()[k]))
+        with torch.no_grad():
+            x=torch.randn(1,15,9,13,dtype=torch.double)*1000;x[:,-1:]=1
+            value=norm.current_value(x[:,:6])
+            self.assertLess(float(value.mean(1).abs().max()),1e-10)
+            self.assertTrue(torch.allclose(value.square().mean(1),torch.ones_like(value[:,0]),atol=1e-6))
+            mask=torch.rand(1,1,9,13)>.6
+            self.assertTrue(torch.allclose(gathered_update(norm,x,mask),torch.where(mask,norm(x),x[:,6:14]),atol=1e-9,rtol=1e-9))
+
 
 if __name__ == '__main__': unittest.main()

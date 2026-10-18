@@ -114,7 +114,7 @@ def train_epoch(a,student,teacher,cfg,rows,optimizer,criterion,epoch,directory,o
                 optimizer.step();optimizer.zero_grad(set_to_none=True)
                 losses.append(float(loss.detach()));updates+=1
                 record.update(window_end=True,loss=losses[-1],gradient_norm=float(norm))
-                if a.variant=='v2':
+                if a.variant in ('v2','v2n'):
                     kd_windows.append(float(kd_mean.detach()))
                     if gt_mean is not None:gt_windows.append(float(gt_mean.detach()))
                     record.update(kd_loss=kd_windows[-1],gt_loss=float(gt_mean.detach()) if gt_mean is not None else None)
@@ -129,7 +129,7 @@ def train_epoch(a,student,teacher,cfg,rows,optimizer,criterion,epoch,directory,o
     assert all(p.grad is None for p in teacher.parameters())
     assert all(p.grad is None for p in student.pillar_vfe.parameters())
     result=dict(scans=len(rows),labels=labels,updates=updates,loss=float(np.mean(losses)))
-    if a.variant=='v2':result.update(mean_labelled_window_gt=float(np.mean(gt_windows)),mean_window_kd=float(np.mean(kd_windows)))
+    if a.variant in ('v2','v2n'):result.update(mean_labelled_window_gt=float(np.mean(gt_windows)),mean_window_kd=float(np.mean(kd_windows)))
     return result
 
 
@@ -171,11 +171,14 @@ def worker(a):
         loss='Mean GT detection loss over labelled frames + .2 mean foreground head distillation over all frames in each TBPTT window; no teacher feature target',
         protocol='Dense every-frame autoregressive state writeback; student state only; no augmentation/delay; reset by segment or gap>.25s; no periodic teacher refresh',
         future_sparse='Radius2 crop parity only; no learned selector, skipped state cells or coarse-context caching in this baseline')
-    if a.variant=='v2':
-        contract.update(version='unified_bev_dense_v2',memory_policy=a.memory_policy,
+    if a.variant in ('v2','v2n'):
+        contract.update(version='unified_bev_dense_'+a.variant,memory_policy=a.memory_policy,
             architecture='Pillar64 frozen; residual observation128 stride2; two downsample context stages192/256 with dilated residual blocks; single256 state; radius2 residual gated update with cellwise channel normalization; pointwise256 readout and trainable detection heads',
             protocol='Dense every-frame state update; memory_policy='+a.memory_policy+'; no augmentation/delay; same segment/gap resets and TBPTT windows as v1; no teacher state or periodic refresh',
             future_sparse='Radius2 update crop parity only, given full precomputed evidence; observation/context/readout remain dense; no active selector')
+    if a.variant=='v2n':
+        contract['current_branch']='Non-affine per-cell channel LayerNorm after current projection, before residual addition; no added parameters; all other V2 architecture/initialization unchanged'
+        contract['architecture']+='; normalize current shortcut with non-affine LayerNorm'
     optimizer=torch.optim.AdamW(student.core.parameters(),lr=.001,weight_decay=.0001)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=2,
         threshold=.001,threshold_mode='abs',min_lr=1e-5)
@@ -227,7 +230,7 @@ def main():
     p.add_argument('--root',required=True);p.add_argument('--output',required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--epochs',type=int,default=40)
     p.add_argument('--checkpoint');p.add_argument('--resume');p.add_argument('--worker',action='store_true')
-    p.add_argument('--variant',choices=['v1','v2'],default='v1')
+    p.add_argument('--variant',choices=['v1','v2','v2n'],default='v1')
     p.add_argument('--memory-policy',choices=['recurrent','reset'],default='recurrent')
     p.add_argument('--diagnostic',action='store_true',help='256-frame teacher/student/reset diagnostic; requires checkpoint')
     a=p.parse_args();out=Path(a.output)

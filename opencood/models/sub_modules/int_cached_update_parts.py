@@ -59,7 +59,7 @@ class CachedUpdateParts:
                 parts=gathered_update(module,packed,written,cached_parts=parts)
         residual,gate=parts.chunk(2,dim=1)
         retain=gate.sigmoid()*valid.to(old.dtype)
-        value=retain*old+(1-retain)*(module.current(evidence)+residual)
+        value=retain*old+(1-retain)*(module.current_value(evidence)+residual)
         age=torch.where(written,torch.zeros_like(age),age)
         new=dict(value=value.detach(),parts=parts.detach(),age=age.detach(),pose=meta['pose'],
                  scene=meta['segment'],timestamp_us=int(meta['timestamp_us']),since_anchor=since)
