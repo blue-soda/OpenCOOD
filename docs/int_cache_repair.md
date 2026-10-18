@@ -298,3 +298,8 @@ automation改回90分钟覆盖数小时训练，提示词“推进时序感知�
 ### 前景监督中期检查：第12轮正常，继续至停止条件
 decoded_foreground_period3已完成epoch1–11，当前epoch12训练7200/8593扫描。最佳epoch11 AP70=62.96500937%，epoch10降LR至5e-4后仍有显著改善，stale重新为0；尚未收敛，不提前停止。第一/第二修正深度每完整轮2855/2766次更新，loss/梯度有限。精度仍明显低于保留三级缓存period3的75.82349%，只说明前景监督持续改善，不能把这个中间结果称为可用替代。
 保持90分钟间隔，预计下次接近20轮上限或平台事件。若达到上限仍改善，必须明确max_epochs_not_proof_of_convergence，不可直接宣称收敛；结合改善幅度和定位误差证据决定恢复训练或调整设计，不仅因为GPU空闲而重复同类实验。所有旧队列已完成或明确STOPPED；当前只监控decoded_foreground_period3，不重新启动。
+
+### 20轮上限前准备连续恢复
+前景监督decoded完成epoch1–19，第20轮完整验证进行中。epoch15–19 AP70分别64.44019/64.54946/64.70400/64.84419/64.87340%，LR=2.5e-4、stale=1，仍有改善，不能以20轮硬上限声称收敛。准备新增--repair-resume latest.pth与--repair-max-epochs，后续只在原目录COMPLETED且原停止原因明确为max_epochs_not_proof_of_convergence时，在新目录连续恢复至总40轮或原平台条件先触发。
+恢复严格保持数据/教师哈希、架构、损失、周期、初始来源与其他训练契约，仅允许增大总轮数；核对latest与最后不可变epoch权重、history/report/best及SHA。恢复repair权重、AdamW一二阶矩/步数、scheduler、best/significant/stale/history，沿用303+epoch的数据加载种子，缓存按原每轮规则重新起始。新增CPU测试比较断点恢复和不中断的后续参数更新及降LR事件，并拒绝改变损失。旧checkpoint无RNG状态；模型无随机层、教师eval，不声称整个GPU作业逐位完全一致。来源目录完整保留，续训目录历史前段的epoch文件仍位于来源目录，best可能指向来源，勿假定全部epoch都在新目录。
+这是为判断当前小模块的精度上限而继续训练，不等于接受其约65%的检测精度。保留三级缓存period3 AP70=75.82349%、平均模型时间降低16.81%的候选。实际第20轮结果和续训启动状态待验收后补充。

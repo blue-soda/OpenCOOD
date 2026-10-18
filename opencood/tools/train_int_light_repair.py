@@ -16,6 +16,7 @@ from opencood.models.sub_modules.int_decoded_repair import DecodedCacheDetector
 from opencood.tools.run_int_cache_repair import evaluate
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
+from opencood.tools.int_repair_resume import restore_training
 
 
 def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
@@ -184,12 +185,11 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
                             optimizer='Fresh optimizer/scheduler; not an interrupted-run resume')
     for parameter in model.parameters():parameter.requires_grad_(False)
     dense=a.repair_policy=='dense'
-    engineering(model,cfg,val_rows,repairs,threshold,out,dense,period=period,target=target)
     optimizer=torch.optim.AdamW(repairs.parameters(),lr=1e-3,weight_decay=1e-4)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=1,
                                                        threshold=.001,threshold_mode='abs',min_lr=1e-5)
     contract=dict(source_policy=policy,repair_policy=a.repair_policy,repair_target=target,repair_period=period,initialization=initialization,
-        seed=303,epochs_min=5,epochs_max=20,patience=5,min_delta=.001,
+        seed=303,epochs_min=5,epochs_max=getattr(a,'repair_max_epochs',20),patience=5,min_delta=.001,
         optimizer='AdamW',initial_lr=.001,weight_decay=.0001,
         teacher_checkpoint_sha256=provenance['checkpoint']['sha256'],
         train_scans=len(train_rows),val_scans=len(val_rows),trainable_parameters=sum(p.numel() for p in repairs.parameters()),
@@ -201,8 +201,40 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
     contract['repair_loss']=loss_mode
     if loss_mode=='foreground':
         contract['loss']='0.1 feature loss + foreground-mass-normalized box SmoothL1(beta=1/9) + 0.1 foreground logit SmoothL1 + 0.1 dense logit SmoothL1 + 0.1 foreground direction KL; soft weights=teacher sigmoid squared'
+    best=-1.;significant=-1.;stale=0;history=[];captured={};start_epoch=1
+    resume_path=getattr(a,'repair_resume',None)
+    if resume_path:
+        resume_path=Path(resume_path);source=resume_path.parent
+        assert resume_path.name=='latest.pth' and source.resolve()!=out.resolve()
+        assert json.loads((source/'status.json').read_text())['status']=='COMPLETED'
+        source_report=json.loads((source/'report.json').read_text())
+        assert source_report['stop_reason']=='max_epochs_not_proof_of_convergence', 'Do not resume an already plateau-stopped run'
+        source_provenance=json.loads((source/'provenance.json').read_text())
+        assert source_provenance['contract']==provenance['contract']
+        assert source_provenance['checkpoint']['sha256']==provenance['checkpoint']['sha256']
+        saved=torch.load(str(resume_path),map_location='cpu')
+        assert saved['history']==json.loads((source/'history.json').read_text())
+        assert saved['contract']==json.loads((source/'training_contract.json').read_text())
+        final_path=source/('epoch_%03d'%saved['epoch'])/'repairs.pth'
+        final=torch.load(str(final_path),map_location='cpu')
+        assert all(torch.equal(v,final['repairs'][k]) for k,v in saved['repairs'].items())
+        final_report=json.loads((final_path.parent/'report.json').read_text())
+        assert final_report['repair_checkpoint_sha256']==digest(final_path)
+        assert final_report['metrics']['bev_ap70']==saved['history'][-1]['ap70']
+        # Initialization provenance stays unchanged: this restores training, not a warm start.
+        contract['initialization']=saved['contract']['initialization']
+        start_epoch,best,significant,stale,history=restore_training(saved,repairs,optimizer,scheduler,contract)
+        source_best=json.loads((source/'best.json').read_text())
+        assert source_best['ap70']==best and digest(Path(source_best['checkpoint']))==source_best['sha256']
+        write_json(out/'best.json',source_best)
+        write_json(out/'history.json',history)
+        write_json(out/'resumption.json',dict(source=str(source),checkpoint=str(resume_path),
+            checkpoint_sha256=digest(resume_path),next_epoch=start_epoch,restored_lr=optimizer.param_groups[0]['lr'],
+            restored_stale=stale,prior_epochs=len(history),prior_best=source_best,
+            state='repair weights, AdamW moments/steps, LR scheduler, best/significant/stale/history',
+            randomness='Epoch loader uses 303+epoch; repair modules have no stochastic layers and detector is eval. Legacy checkpoints do not store RNG state; bitwise whole-run equivalence is not claimed.'))
+    engineering(model,cfg,val_rows,repairs,threshold,out,dense,period=period,target=target)
     write_json(out/'training_contract.json',contract)
-    best=-1.;significant=-1.;stale=0;history=[];captured={}
     def capture(i):
         def callback(module,inputs,output):captured[i]=output.detach()
         return callback
@@ -211,7 +243,7 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
         def capture_decoded(module,inputs):captured['decoded']=inputs[0].detach()
         hooks.append(model.cls_head.register_forward_pre_hook(capture_decoded))
     try:
-        for epoch in range(1,21):
+        for epoch in range(start_epoch,contract['epochs_max']+1):
             repairs.train();state=cache=None;losses=[];started=time.monotonic();updates=0
             losses_by_depth={i:[] for i in range(1,period)}
             _,stream=loader(train_rows,cfg,4,303+epoch)

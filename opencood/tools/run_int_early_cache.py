@@ -292,6 +292,8 @@ def main():
     p.add_argument('--repair-policy',choices=['local','dense'],default='local')
     p.add_argument('--repair-target',choices=['stages','decoded'],default='stages')
     p.add_argument('--repair-loss',choices=['legacy','foreground'],default='legacy')
+    p.add_argument('--repair-resume',help='Completed epoch-boundary latest.pth; continue into a new output directory')
+    p.add_argument('--repair-max-epochs',type=int,default=20)
     p.add_argument('--repair-checkpoint');p.add_argument('--repair-period',type=int,choices=[1,2,3],default=2)
     p.add_argument('--repair-ablation',choices=['none','zero-residual','original'],default='none')
     p.add_argument('--profile-stages',action='store_true',help='Diagnostic prefix with stage spans; learned-eval only')
@@ -302,6 +304,9 @@ def main():
     if a.stage in ('learned-eval','decoded-diagnostic') and not a.repair_checkpoint:
         p.error('learned-eval requires a completed training checkpoint')
     if a.profile_stages and a.stage!='learned-eval':p.error('Stage profiling is evaluation-only')
+    if a.repair_resume and (a.stage!='learned-repair' or a.repair_checkpoint):
+        p.error('Resume is training-only and cannot be combined with initialization')
+    if a.repair_max_epochs < 5:p.error('Training epoch limit must be at least five')
     if a.stage=='learned-repair' and (a.repair_period==1 or (a.repair_period==3 and a.repair_policy!='dense')):
         p.error('Training supports period2 local/dense or period3 dense')
     if a.stage=='learned-repair' and a.repair_ablation!='none':
