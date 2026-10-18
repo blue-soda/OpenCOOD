@@ -31,3 +31,16 @@
 quantized_feature_packet增加可选发送端行分数，默认None完整保留原L1逻辑和线格式；分数不是额外包字段。e3dsnn_sender_rank只允许eval＋实际消息往返，所有权重冻结。两帧审计要求L1与旧模型输出/包长逐值相同、两策略真实解码与显式选择/量化构建的接收端输入预测相同；记录所选行交集，验证排序确实干预发送内容。CPU测试覆盖剔零后分数对齐、平局、行置换、ANN尺度、非法分数和六点零训练约束。
 
 根目录/data1/tzm/workspace/diagnostics/e3dsnn_sender_rank_20261018，入口launch_e3dsnn_sender_rank。181计划GPU1/2/3，启动前核验空闲；每来源串行L1和confidence，各自全量1738帧、BEV/3D AP、真实字节、预测哈希/有序GT、CPU精确复算及计时，每子任务1h超时，不自动重试或终止其他来源。六点完成即退出，不追加排序平滑、比例或混合权重搜索。若没有更好的AP—字节点，停止该现成分类头探针并据证据重新定义训练型消息价值学习问题；若有收益，再单独登记低成本替代与强ANN同机制验证，不能据单个点宣布阶段一完成。
+
+## 实现与启动事实
+
+实现main提交4915e75，本地/181各46项检查通过。三个来源各两帧真实审计通过，L1与原模型输出/包长严格一致，两策略实际往返均与显式接收端重建逐值相同。SNN两来源的两帧L1包为14652/14906字节，confidence为11767/11508；每帧保留851/852行，两策略交集295/302行。ANN两帧L1为14240/14258字节，confidence为13056/12556；保留1869/1868行，交集1063/1056行。仅证明干预和线格式正确，不能提前推断全量AP收益或总体码率。
+
+181 GPU1/2/3启动三条串行两点流水线，监督PID39743/39744/39745。当前执行各来源L1全量复现，门槛通过后自动confidence，再CPU精确复算。服务器ghproxy拉取临时失败，使用显式GitHub HTTPS 443地址完成fast-forward，未修改全局Git配置；SSH和GPU均正常。
+
+证据原始字节已核验并镜像：
+
+- [audit.json](results/sender_rank_20261018/audit.json) SHA256 ef95d5e7e307f865e34ab544661f6cabfc8ead1361c1188d5d504c540ad4af5e，含三来源权重/配置/summary SHA、六份新配置及审计。
+- [launch.json](results/sender_rank_20261018/launch.json) SHA256 95fe630b0fb478ff69db7c5fa45dd58ab50d8767a282fb2be05dc7814fb8c5c4。
+- [processes.json](results/sender_rank_20261018/processes.json) SHA256 86a9011f647510bfedf30f342fe04a8a61b5fbaf3ceb6aa45994344023866853。
+- [startup_snapshot.json](results/sender_rank_20261018/startup_snapshot.json) SHA256 8147bd5ba0b585ad82669eafcbf4ec6242371cc447464421556187039fe37821，记录刚启动状态，捕获时尚未写出预测；同目录保存六份配置。

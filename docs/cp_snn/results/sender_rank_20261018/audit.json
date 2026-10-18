@@ -1,0 +1,217 @@
+{
+  "sources": {
+    "snn_ann": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/budget_s_fusion_adapt10/best_ap70.pth",
+      "checkpoint_sha256": "f5ece651e3a8a039a52d3bf27bc503605bb34e14654202c4acafd548082c3f35",
+      "config": "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/s_fusion.yaml",
+      "config_sha256": "d1bb590bf55015f0a76e069300a1668e7b46eda511c5cf7aef1f80fc857f551a",
+      "source_summary_sha256": "23c302026f41cbc13599bd1b9ed31b32e10b419add153f4813848726adc08ae7",
+      "fusion_activation": "relu",
+      "reference_ap": {
+        "0.3": 0.7855338487667155,
+        "0.5": 0.7375053309251812,
+        "0.7": 0.600605923102092
+      },
+      "reference_bytes": {
+        "count": 1738,
+        "mean_bytes": 16005.108745684694,
+        "median_bytes": 16214.0,
+        "min_bytes": 8109,
+        "max_bytes": 22070,
+        "p95_bytes": 20087.85,
+        "total_bytes": 27816879,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "adaptation_epochs": 50
+    },
+    "snn_snn": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/message_snn_geometry_adapt10/best_ap70.pth",
+      "checkpoint_sha256": "9df3370488674a396aef4e3ada64673d55ed86055a0ceacd9404b89e36e153cd",
+      "config": "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/snn_geometry.yaml",
+      "config_sha256": "80eea9efcb10a5fb3fdfcec48d7b56c2e6585d613714f7d9cb405250ab44dce3",
+      "source_summary_sha256": "649abb03023f4de13ed56609d235ed9fdeccbf1a3d2396c2402e7339c2653cf2",
+      "fusion_activation": "count4",
+      "reference_ap": {
+        "0.3": 0.7803480536791776,
+        "0.5": 0.7337073651933638,
+        "0.7": 0.595485503616378
+      },
+      "reference_bytes": {
+        "count": 1738,
+        "mean_bytes": 16005.108745684694,
+        "median_bytes": 16214.0,
+        "min_bytes": 8109,
+        "max_bytes": 22070,
+        "p95_bytes": 20087.85,
+        "total_bytes": 27816879,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "adaptation_epochs": 50
+    },
+    "ann_ann": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/budget_a_fusion_adapt10/best_ap70.pth",
+      "checkpoint_sha256": "de51d9aa54dc19e4b553f83dbe1b575c9b55e96d62b8359fe8b8f3b6e436d925",
+      "config": "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/a_fusion.yaml",
+      "config_sha256": "fe35d12ff7f3ebf1271a9b5516ff37222ba0da557c36662172ad30434d75ea7f",
+      "source_summary_sha256": "23c302026f41cbc13599bd1b9ed31b32e10b419add153f4813848726adc08ae7",
+      "fusion_activation": "relu",
+      "reference_ap": {
+        "0.3": 0.7861450279241308,
+        "0.5": 0.7414896193332092,
+        "0.7": 0.611411125976146
+      },
+      "reference_bytes": {
+        "count": 1738,
+        "mean_bytes": 15530.500575373993,
+        "median_bytes": 15839.0,
+        "min_bytes": 8614,
+        "max_bytes": 19514,
+        "p95_bytes": 18474.649999999998,
+        "total_bytes": 26992010,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "adaptation_epochs": 50
+    }
+  },
+  "families": {
+    "snn_ann": {
+      "configs": {
+        "l1": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_sender_rank_20261018/snn_ann_l1.yaml",
+          "sha256": "13f5286851839b505a61f249a5f74b2d8a0b15b297fd6e39e6b7824aa76193f2"
+        },
+        "confidence": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_sender_rank_20261018/snn_ann_confidence.yaml",
+          "sha256": "30c533400704007f4b1d6f4ca55ffe140e785487dbad05d167c90d1903f321c8"
+        }
+      },
+      "frames": [
+        {
+          "frame_id": "000211",
+          "policies": {
+            "l1": {
+              "packet_bytes": 14652,
+              "retained_rows": 851,
+              "oracle_exact": true
+            },
+            "confidence": {
+              "packet_bytes": 11767,
+              "retained_rows": 851,
+              "oracle_exact": true
+            }
+          },
+          "selection_intersection": 295
+        },
+        {
+          "frame_id": "000212",
+          "policies": {
+            "l1": {
+              "packet_bytes": 14906,
+              "retained_rows": 852,
+              "oracle_exact": true
+            },
+            "confidence": {
+              "packet_bytes": 11508,
+              "retained_rows": 852,
+              "oracle_exact": true
+            }
+          },
+          "selection_intersection": 302
+        }
+      ]
+    },
+    "snn_snn": {
+      "configs": {
+        "l1": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_sender_rank_20261018/snn_snn_l1.yaml",
+          "sha256": "d84ccfd993ff9a0067e59ee1b6a67c0ee5599724d2e9672abdd2301ca629f667"
+        },
+        "confidence": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_sender_rank_20261018/snn_snn_confidence.yaml",
+          "sha256": "c32434dadf6b674919e0b7d70a316d5c9397d67c4faf04cd61bef9d42e93a393"
+        }
+      },
+      "frames": [
+        {
+          "frame_id": "000211",
+          "policies": {
+            "l1": {
+              "packet_bytes": 14652,
+              "retained_rows": 851,
+              "oracle_exact": true
+            },
+            "confidence": {
+              "packet_bytes": 11767,
+              "retained_rows": 851,
+              "oracle_exact": true
+            }
+          },
+          "selection_intersection": 295
+        },
+        {
+          "frame_id": "000212",
+          "policies": {
+            "l1": {
+              "packet_bytes": 14906,
+              "retained_rows": 852,
+              "oracle_exact": true
+            },
+            "confidence": {
+              "packet_bytes": 11508,
+              "retained_rows": 852,
+              "oracle_exact": true
+            }
+          },
+          "selection_intersection": 302
+        }
+      ]
+    },
+    "ann_ann": {
+      "configs": {
+        "l1": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_sender_rank_20261018/ann_ann_l1.yaml",
+          "sha256": "e812a719aa08322f239f0c60234a615d77b232be356240d857841511aee0df63"
+        },
+        "confidence": {
+          "path": "/data1/tzm/workspace/diagnostics/e3dsnn_sender_rank_20261018/ann_ann_confidence.yaml",
+          "sha256": "81189df8e318391a15ff9c7266ab17ed58ef91faf2cf5c831b78ac1d60c778eb"
+        }
+      },
+      "frames": [
+        {
+          "frame_id": "000211",
+          "policies": {
+            "l1": {
+              "packet_bytes": 14240,
+              "retained_rows": 1869,
+              "oracle_exact": true
+            },
+            "confidence": {
+              "packet_bytes": 13056,
+              "retained_rows": 1869,
+              "oracle_exact": true
+            }
+          },
+          "selection_intersection": 1063
+        },
+        {
+          "frame_id": "000212",
+          "policies": {
+            "l1": {
+              "packet_bytes": 14258,
+              "retained_rows": 1868,
+              "oracle_exact": true
+            },
+            "confidence": {
+              "packet_bytes": 12556,
+              "retained_rows": 1868,
+              "oracle_exact": true
+            }
+          },
+          "selection_intersection": 1056
+        }
+      ]
+    }
+  },
+  "passed": true
+}

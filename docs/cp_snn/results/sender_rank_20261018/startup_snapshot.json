@@ -1,0 +1,38 @@
+{
+  "captured_unix": 1792301230.119377,
+  "families": {
+    "snn_ann": {
+      "status": {
+        "state": "running",
+        "policy": "l1",
+        "updated_unix": 1792301211.5524049
+      },
+      "prediction_files": {
+        "l1": 0,
+        "confidence": 0
+      }
+    },
+    "snn_snn": {
+      "status": {
+        "state": "running",
+        "policy": "l1",
+        "updated_unix": 1792301211.5282094
+      },
+      "prediction_files": {
+        "l1": 0,
+        "confidence": 0
+      }
+    },
+    "ann_ann": {
+      "status": {
+        "state": "running",
+        "policy": "l1",
+        "updated_unix": 1792301211.6733336
+      },
+      "prediction_files": {
+        "l1": 0,
+        "confidence": 0
+      }
+    }
+  }
+}
