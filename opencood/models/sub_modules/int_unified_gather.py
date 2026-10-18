@@ -48,7 +48,7 @@ def _residual(x, source, target, block, height, width):
     return skip + _pointwise(mixed, net[5])
 
 
-def gathered_update(module, packed, mask):
+def gathered_update(module, packed, mask, cached_parts=None):
     """Return old state except selected cells, without changing model parameters.
 
     This experimental executor is deliberately not wired into production routing.
@@ -68,7 +68,10 @@ def gathered_update(module, packed, mask):
         conv = block.net[3]
         if conv.kernel_size != (3, 3) or conv.dilation != (1, 1) or conv.groups != 1:
             raise ValueError('Unsupported spatial update configuration')
-    old = packed[:, module.evidence:module.evidence + module.channels]
+    # Supplying cached_parts requests only the expensive net's residual/logit output.
+    old = packed[:, module.evidence:module.evidence + module.channels] if cached_parts is None else cached_parts
+    if cached_parts is not None and cached_parts.shape != (1, module.channels*2, height, width):
+        raise ValueError('Invalid residual/logit cache shape')
     selected = _indices(mask)
     if not selected.numel():
         return old.clone()
@@ -79,11 +82,14 @@ def gathered_update(module, packed, mask):
     value = F.silu(net[1].norm(_pointwise(rows[two], net[0])))
     value = _residual(value, two, one, net[3], height, width)
     value = _residual(value, one, selected, net[4], height, width)
-    residual, gate = _pointwise(net[5].norm(value), net[6]).chunk(2, dim=1)
-    current = rows[selected]
-    retain = gate.sigmoid() * current[:, -1:]
-    value = retain * current[:, module.evidence:module.evidence + module.channels]
-    value = value + (1 - retain) * (_pointwise(current[:, :module.evidence], module.current) + residual)
-    result = old[0].permute(1, 2, 0).reshape(height * width, module.channels).clone()
+    value = _pointwise(net[5].norm(value), net[6])
+    if cached_parts is None:
+        residual, gate = value.chunk(2, dim=1)
+        current = rows[selected]
+        retain = gate.sigmoid() * current[:, -1:]
+        value = retain * current[:, module.evidence:module.evidence + module.channels]
+        value = value + (1 - retain) * (_pointwise(current[:, :module.evidence], module.current) + residual)
+    channels=old.shape[1]
+    result = old[0].permute(1, 2, 0).reshape(height * width, channels).clone()
     result[selected] = value
-    return result.reshape(height, width, module.channels).permute(2, 0, 1).unsqueeze(0).contiguous()
+    return result.reshape(height, width, channels).permute(2, 0, 1).unsqueeze(0).contiguous()
