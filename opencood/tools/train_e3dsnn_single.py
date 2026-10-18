@@ -240,6 +240,12 @@ def execute(args, output_dir):
         'train_encoder': getattr(model, 'train_encoder', None),
         'message_support': getattr(model, 'message_support_kind', 'geometry'),
         'sender_ranking': getattr(model, 'sender_ranking', 'l1'),
+        'content_message': dict(family=model.content_family,latent_channels=32,
+            trainable=model.content_trainable,readout_prefix=model.readout_prefix,
+            full_packet=model.content_full_packet,geometry_dtype='float64',
+            prefixes='min(count,k); fixed frame scales; aligned latent sum',
+            projection='bias-free 128->32->128; frozen/learned content control')
+            if hasattr(model,'content_family') else None,
         'progressive': dict(packets=model.progressive_packets,readout_prefix=model.readout_prefix,
             sender_order=model.sender_order,retain_residual=model.membrane_fusion.retain_residual,
             adaptive_gate=model.membrane_fusion.adaptive_gate,geometry_dtype='float64',

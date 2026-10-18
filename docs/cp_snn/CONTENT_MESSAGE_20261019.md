@@ -35,3 +35,11 @@
 `e3dsnn_content_message.py`已实现独立128→32→128投影、Count3/ANN2bit、共享尺度、前缀/二值事件及basis摘要；没有接入现有运行模型。六项CPU测试覆盖整数分解/累计、空体素、整帧尺度、双矩阵梯度、非整数平移下对齐/线性展开一致及basis变化。这里没有对训练精度、压缩率或神经形态能耗的结论。
 
 实现提交`1139e0f`已push main并由181通过已发布Git bundle fast-forward同步。本地与181均运行`python -m unittest opencood.tools.test_e3dsnn_content_message`，各6项通过（181 Python3.7/Torch1.10）。下一次从32通道实际codec和检测器接入继续，不重复启动已完成的渐进家族对照。
+
+## 检测接入与启动前锁定（2026-10-19 07:28后）
+
+现已实现32通道真实codec、严格分帧累计器、检测forward及四组启动器，尚待真实增强batch2审计。独立codec/状态与内容表示共11项本地检查通过。累计器拒绝重复/错序、换帧/位姿/basis/尺度及不嵌套事件，保留对齐的小数；完整两位单包也纳入真实通信评估，并要求与三事件完整前缀预测等价。单包是同一权重的传输开销对照，不是额外训练组。
+
+源权重已按此前最终summary核对：SNN使用`e3dsnn_message_fusion_round1_20261018/message_snn_geometry_adapt10/best_ap70.pth`，SHA256 `9df3370488674a396aef4e3ada64673d55ed86055a0ceacd9404b89e36e153cd`；ANN使用`e3dsnn_budget_round1_20261018/budget_a_fusion_adapt10/best_ap70.pth`，SHA256 `de51d9aa54dc19e4b553f83dbe1b575c9b55e96d62b8359fe8b8f3b6e436d925`。两家族均已在源数据上适配50轮，结构/冻结设置按本计划，随后仅额外10轮。目录计划`/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_20261019`，组snn_fixed/snn_learn/ann_fixed/ann_learn。服务器当前GPU0/1/2/5空闲；启动前再次检查，其他占用GPU不触碰。
+
+成熟融合输入仍用几何覆盖mask；全空消息或消息dropout时强制返回本地，不把未收到数据当作空闲空间。内容P/D变化需要新basis摘要，即使共享3D编码器未变也不能沿用旧消息basis。上述均属于接口/实验控制，不是精度收益报告。
