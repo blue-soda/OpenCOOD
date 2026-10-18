@@ -1,0 +1,274 @@
+{
+  "provenance": {
+    "students": {
+      "s": {
+        "config": "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/s_fusion.yaml",
+        "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/budget_s_fusion_adapt10/best_ap70.pth",
+        "checkpoint_sha256": "f5ece651e3a8a039a52d3bf27bc503605bb34e14654202c4acafd548082c3f35",
+        "reference": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 28869,
+          "gt_boxes": 28622,
+          "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.7855338487667155,
+            "0.5": 0.7375053309251812,
+            "0.7": 0.600605923102092
+          },
+          "ap_3d": {
+            "0.3": 0.773584561279033,
+            "0.5": 0.6832495031200733,
+            "0.7": 0.40989658272422314
+          },
+          "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+          "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+          "predictions": {
+            "directory": "predictions",
+            "frames": 1738,
+            "index_sha256": "7d415ad99b23d55f86df016b29001ee94fc1fd7e2e1fb2163c47013520683b64"
+          },
+          "feature_packets": {
+            "count": 1738,
+            "mean_bytes": 16005.108745684694,
+            "median_bytes": 16214.0,
+            "min_bytes": 8109,
+            "max_bytes": 22070,
+            "p95_bytes": 20087.85,
+            "total_bytes": 27816879,
+            "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+          }
+        }
+      },
+      "a": {
+        "config": "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/a_fusion.yaml",
+        "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_budget_round1_20261018/budget_a_fusion_adapt10/best_ap70.pth",
+        "checkpoint_sha256": "de51d9aa54dc19e4b553f83dbe1b575c9b55e96d62b8359fe8b8f3b6e436d925",
+        "reference": {
+          "samples": 1738,
+          "indexed_samples": 1738,
+          "full_split": true,
+          "predicted_boxes": 28810,
+          "gt_boxes": 28622,
+          "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+          "ap": {
+            "0.3": 0.7861450279241308,
+            "0.5": 0.7414896193332092,
+            "0.7": 0.611411125976146
+          },
+          "ap_3d": {
+            "0.3": 0.7748785546540314,
+            "0.5": 0.6862781722470647,
+            "0.7": 0.42868254628526176
+          },
+          "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+          "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+          "predictions": {
+            "directory": "predictions",
+            "frames": 1738,
+            "index_sha256": "e80b57dc9aab26818b288560d251f64a24267fef600f8d83d66b6d7a6d97c794"
+          },
+          "feature_packets": {
+            "count": 1738,
+            "mean_bytes": 15530.500575373993,
+            "median_bytes": 15839.0,
+            "min_bytes": 8614,
+            "max_bytes": 19514,
+            "p95_bytes": 18474.649999999998,
+            "total_bytes": 26992010,
+            "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+          }
+        }
+      }
+    },
+    "teacher": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_aa_adapt10/best_ap70.pth",
+      "checkpoint_sha256": "624ce3b2adbd1eedc02f03876a33e38f5a5e66be7b6f9c8f78ae689cac558034",
+      "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_aa_181.yaml",
+      "source_summary_sha256": "e6a8d719393dcc31aea03ea331f4cdff0fa589d2d81648a71d37df11973e9bcf",
+      "reference_ap": {
+        "0.3": 0.7878135631993223,
+        "0.5": 0.7421519554188454,
+        "0.7": 0.6126394117465073
+      },
+      "reference_communication": {
+        "count": 1738,
+        "mean_bytes": 354528.95281933254,
+        "median_bytes": 369507.0,
+        "min_bytes": 155161,
+        "max_bytes": 451806,
+        "p95_bytes": 423396.15,
+        "total_bytes": 616171320,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "adaptation_epochs": 40
+    },
+    "parent_summary_sha256": "23c302026f41cbc13599bd1b9ed31b32e10b419add153f4813848726adc08ae7"
+  },
+  "groups": {
+    "s_kd0": {
+      "initial_sha256": "f5ece651e3a8a039a52d3bf27bc503605bb34e14654202c4acafd548082c3f35",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "teacher": {
+        "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_aa_adapt10/best_ap70.pth",
+        "checkpoint_sha256": "624ce3b2adbd1eedc02f03876a33e38f5a5e66be7b6f9c8f78ae689cac558034",
+        "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_aa_181.yaml",
+        "config_sha256": "f2d36aedb3385ffe40111f910c8d8e3098b67a7d6edbc00fd2f0aef060cb647b",
+        "weight": 0.0,
+        "state_sha256": "44290210011a8603a8f3fbdb00e88e2a29522a678bb0eebbb4b628e117f24323"
+      },
+      "config_sha256": {
+        "": "56c50443a9a99e8a45272fe2514751c8bfc53aac12261a4969ec5783d71f04a6",
+        "_ego": "90a0ca346b993287bc93c5f5ce9cb9ee2d637ca71606c9a90b7dd6ecb5a3fd3c"
+      },
+      "gradient_l1": {
+        "backbone_3d.": 1.1399697661399841,
+        "fusion_net.": 42.65942746400833
+      },
+      "packet_bytes": [
+        14571,
+        16603
+      ],
+      "step_seconds": 0.12909126607701182,
+      "kd0_old_loss_and_output_gradients_exact": true,
+      "teacher_fixed_and_isolated": true,
+      "actual_dropout_kd_zero": true,
+      "direct_wire_exact": true,
+      "loss_components": {
+        "fused_detection_loss": 0.4888237368621108,
+        "ego_detection_loss": 0.8667404240840715,
+        "kd_classification": 0.007724058348685503,
+        "kd_regression": 0.04070677608251572,
+        "kd_direction": 0.0810629278421402,
+        "kd_loss": 0.10535019636154175,
+        "kd_weight": 0.0,
+        "message_kept_fraction": 1.0
+      }
+    },
+    "s_kd1": {
+      "initial_sha256": "f5ece651e3a8a039a52d3bf27bc503605bb34e14654202c4acafd548082c3f35",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "teacher": {
+        "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_aa_adapt10/best_ap70.pth",
+        "checkpoint_sha256": "624ce3b2adbd1eedc02f03876a33e38f5a5e66be7b6f9c8f78ae689cac558034",
+        "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_aa_181.yaml",
+        "config_sha256": "f2d36aedb3385ffe40111f910c8d8e3098b67a7d6edbc00fd2f0aef060cb647b",
+        "weight": 1.0,
+        "state_sha256": "44290210011a8603a8f3fbdb00e88e2a29522a678bb0eebbb4b628e117f24323"
+      },
+      "config_sha256": {
+        "": "152b8826ae0249c4dea7253c848e3241596da7234591a5fa590d0c75d4c51190",
+        "_ego": "e947fca9bb8a270231248e066dbc07fb13cd2ab383e68fd8e99d5206d802540a"
+      },
+      "gradient_l1": {
+        "backbone_3d.": 1.2855637073516846,
+        "fusion_net.": 102.26749417185783
+      },
+      "packet_bytes": [
+        14571,
+        16603
+      ],
+      "step_seconds": 0.11829210794530809,
+      "kd0_old_loss_and_output_gradients_exact": true,
+      "teacher_fixed_and_isolated": true,
+      "actual_dropout_kd_zero": true,
+      "direct_wire_exact": true,
+      "loss_components": {
+        "fused_detection_loss": 0.4888237368621108,
+        "ego_detection_loss": 0.8667404240840715,
+        "kd_classification": 0.007724058348685503,
+        "kd_regression": 0.04070677608251572,
+        "kd_direction": 0.0810629278421402,
+        "kd_loss": 0.10535019636154175,
+        "kd_weight": 1.0,
+        "message_kept_fraction": 1.0
+      }
+    },
+    "a_kd0": {
+      "initial_sha256": "de51d9aa54dc19e4b553f83dbe1b575c9b55e96d62b8359fe8b8f3b6e436d925",
+      "encoder_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+      "decoder_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+      "teacher": {
+        "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_aa_adapt10/best_ap70.pth",
+        "checkpoint_sha256": "624ce3b2adbd1eedc02f03876a33e38f5a5e66be7b6f9c8f78ae689cac558034",
+        "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_aa_181.yaml",
+        "config_sha256": "f2d36aedb3385ffe40111f910c8d8e3098b67a7d6edbc00fd2f0aef060cb647b",
+        "weight": 0.0,
+        "state_sha256": "44290210011a8603a8f3fbdb00e88e2a29522a678bb0eebbb4b628e117f24323"
+      },
+      "config_sha256": {
+        "": "3d32f5a2dd054adae6ba04df2b605786ddb79a390dc78dc490469e3937c681b8",
+        "_ego": "5294ee4d0bafc89a863e0cefdad54364d843389328f6c0443d64b0774f87bff4"
+      },
+      "gradient_l1": {
+        "backbone_3d.": 1.7010570168495178,
+        "fusion_net.": 43.736673414707184
+      },
+      "packet_bytes": [
+        14036,
+        15578
+      ],
+      "step_seconds": 0.10988744487985969,
+      "kd0_old_loss_and_output_gradients_exact": true,
+      "teacher_fixed_and_isolated": true,
+      "actual_dropout_kd_zero": true,
+      "direct_wire_exact": true,
+      "loss_components": {
+        "fused_detection_loss": 0.48572004836103455,
+        "ego_detection_loss": 0.8595900106173034,
+        "kd_classification": 0.0005339066265150905,
+        "kd_regression": 0.008939716033637524,
+        "kd_direction": 0.029978753998875618,
+        "kd_loss": 0.024409089237451553,
+        "kd_weight": 0.0,
+        "message_kept_fraction": 1.0
+      }
+    },
+    "a_kd1": {
+      "initial_sha256": "de51d9aa54dc19e4b553f83dbe1b575c9b55e96d62b8359fe8b8f3b6e436d925",
+      "encoder_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+      "decoder_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+      "teacher": {
+        "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_hybrid_round1_20261017/hybrid_aa_adapt10/best_ap70.pth",
+        "checkpoint_sha256": "624ce3b2adbd1eedc02f03876a33e38f5a5e66be7b6f9c8f78ae689cac558034",
+        "config": "/data1/tzm/workspace/OpenCOOD/opencood/hypes_yaml/dair-v2x/snn/e3dsnn_hybrid_aa_181.yaml",
+        "config_sha256": "f2d36aedb3385ffe40111f910c8d8e3098b67a7d6edbc00fd2f0aef060cb647b",
+        "weight": 1.0,
+        "state_sha256": "44290210011a8603a8f3fbdb00e88e2a29522a678bb0eebbb4b628e117f24323"
+      },
+      "config_sha256": {
+        "": "e1357e853fcbc0cd60fe25b8b863dd421438c249e7a0ab5e88008667c7ee4d8f",
+        "_ego": "b8570530169340a614442d09e67f3d6424c9d176998793df2aedc7ea09a8ec31"
+      },
+      "gradient_l1": {
+        "backbone_3d.": 1.7481765151023865,
+        "fusion_net.": 44.81001456081867
+      },
+      "packet_bytes": [
+        14036,
+        15578
+      ],
+      "step_seconds": 0.11943668499588966,
+      "kd0_old_loss_and_output_gradients_exact": true,
+      "teacher_fixed_and_isolated": true,
+      "actual_dropout_kd_zero": true,
+      "direct_wire_exact": true,
+      "loss_components": {
+        "fused_detection_loss": 0.48572004836103455,
+        "ego_detection_loss": 0.8595900106173034,
+        "kd_classification": 0.0005339066265150905,
+        "kd_regression": 0.008939716033637524,
+        "kd_direction": 0.029978753998875618,
+        "kd_loss": 0.024409089237451553,
+        "kd_weight": 1.0,
+        "message_kept_fraction": 1.0
+      }
+    }
+  },
+  "estimated_train_seconds": 5659.444713541307,
+  "train_timeout_seconds": 21600,
+  "passed": true
+}

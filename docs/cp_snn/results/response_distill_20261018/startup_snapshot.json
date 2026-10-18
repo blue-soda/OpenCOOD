@@ -1,0 +1,144 @@
+{
+  "checked_unix": 1792311820.1541493,
+  "round_status": {
+    "state": "running",
+    "stage": "zero",
+    "supervisors": {
+      "response_s_kd0_zero": 58165,
+      "response_s_kd1_zero": 58166,
+      "response_a_kd0_zero": 58167,
+      "response_a_kd1_zero": 58169
+    }
+  },
+  "groups": {
+    "s_kd0": {
+      "pipeline": {
+        "state": "running",
+        "job": "response_s_kd0_zero_on",
+        "child_pid": 58168,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/s_kd0.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/s_kd0_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/response_s_kd0_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 58165,
+        "updated_unix": 1792311797.872428
+      },
+      "saved_prediction_frames": 4
+    },
+    "s_kd1": {
+      "pipeline": {
+        "state": "running",
+        "job": "response_s_kd1_zero_on",
+        "child_pid": 58170,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/s_kd1.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/s_kd1_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/response_s_kd1_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 58166,
+        "updated_unix": 1792311797.887369
+      },
+      "saved_prediction_frames": 4
+    },
+    "a_kd0": {
+      "pipeline": {
+        "state": "running",
+        "job": "response_a_kd0_zero_on",
+        "child_pid": 58171,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/a_kd0.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/a_kd0_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/response_a_kd0_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 58167,
+        "updated_unix": 1792311797.899928
+      },
+      "saved_prediction_frames": 3
+    },
+    "a_kd1": {
+      "pipeline": {
+        "state": "running",
+        "job": "response_a_kd1_zero_on",
+        "child_pid": 58172,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/a_kd1.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/a_kd1_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_distill_round1_20261018/response_a_kd1_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 58169,
+        "updated_unix": 1792311797.9167302
+      },
+      "saved_prediction_frames": 4
+    }
+  },
+  "gpu": "0, 2 MiB, 0 %\n1, 2443 MiB, 10 %\n2, 2443 MiB, 16 %\n3, 2443 MiB, 16 %\n4, 2443 MiB, 11 %\n5, 2 MiB, 0 %\n6, 2 MiB, 0 %\n7, 4723 MiB, 0 %\n"
+}
