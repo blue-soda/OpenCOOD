@@ -33,3 +33,5 @@
 ## 当前实现证据
 
 `e3dsnn_content_message.py`已实现独立128→32→128投影、Count3/ANN2bit、共享尺度、前缀/二值事件及basis摘要；没有接入现有运行模型。六项CPU测试覆盖整数分解/累计、空体素、整帧尺度、双矩阵梯度、非整数平移下对齐/线性展开一致及basis变化。这里没有对训练精度、压缩率或神经形态能耗的结论。
+
+实现提交`1139e0f`已push main并由181通过已发布Git bundle fast-forward同步。本地与181均运行`python -m unittest opencood.tools.test_e3dsnn_content_message`，各6项通过（181 Python3.7/Torch1.10）。下一次从32通道实际codec和检测器接入继续，不重复启动已完成的渐进家族对照。
