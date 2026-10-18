@@ -122,7 +122,11 @@ def worker(a):
         assert saved['contract']['data_contract']==provenance['contract']
         student.load_state_dict(saved['model'],strict=True)
         engineering(student,teacher,cfg,val,out)
-        report=validate(a,student,teacher,cfg,val,out)
+        if a.diagnostic:
+            from opencood.tools.diagnose_int_unified_bev import diagnose
+            report=diagnose(student,teacher,cfg,val,out)
+        else:
+            report=validate(a,student,teacher,cfg,val,out)
         report.update(checkpoint=a.checkpoint,checkpoint_sha256=digest(Path(a.checkpoint)))
         write_json(out/'report.json',report)
         write_json(out/'status.json',dict(status='COMPLETED'))
@@ -188,8 +192,10 @@ def main():
     p.add_argument('--root',required=True);p.add_argument('--output',required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--epochs',type=int,default=40)
     p.add_argument('--checkpoint');p.add_argument('--resume');p.add_argument('--worker',action='store_true')
+    p.add_argument('--diagnostic',action='store_true',help='256-frame teacher/student/reset diagnostic; requires checkpoint')
     a=p.parse_args();out=Path(a.output)
     if a.epochs<5 or (a.checkpoint and a.resume):p.error('At least five epochs; evaluation and resume are exclusive')
+    if a.diagnostic and not a.checkpoint:p.error('Diagnostic requires an immutable checkpoint')
     if a.worker:
         try:worker(a)
         except Exception as exc:
