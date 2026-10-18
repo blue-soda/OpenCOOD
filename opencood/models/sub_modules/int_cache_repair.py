@@ -104,7 +104,7 @@ Backward dependency propagation includes both main and residual branches.
 
 
 def refresh_tiles(module, x, cached, requested, stride, radius, tile=8,
-                  fallback_fraction=.8, allow_fallback=True):
+                  fallback_fraction=.8, allow_fallback=True, execution='sparse'):
     """Run only selected stage-output tiles, batching equal-shaped input crops.
 
 Only eval-mode local convolutional modules are supported. radius is the full
@@ -114,6 +114,7 @@ intermediate BN offsets would then produce a different boundary condition.
 """
     if module.training or x.shape[0] != 1:
         raise ValueError('Frozen eval modules and batch=1 are required')
+    if execution not in ('sparse','masked_dense'):raise ValueError('Unknown tile execution')
     h, w = x.shape[-2:]
     oh, ow = cached.shape[-2:]
     assert (oh, ow) == ((h+stride-1)//stride, (w+stride-1)//stride)
@@ -140,6 +141,9 @@ intermediate BN offsets would then produce a different boundary condition.
     if allow_fallback and (bool(active.all()) or ratio >= fallback_fraction):
         stats.update(fallback=True, executed_input_area_ratio=1., actual_write_fraction=1.)
         return module(x), torch.ones_like(requested), stats
+    if execution=='masked_dense':
+        stats['executed_input_area_ratio']=1.
+        return torch.where(written,module(x),cached),written,stats
     output = cached.clone()
     groups = {}
     for job in jobs:

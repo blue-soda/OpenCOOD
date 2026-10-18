@@ -180,7 +180,7 @@ class UnifiedBEVDetector(nn.Module):
         self.pillar_vfe.eval();self.scatter.eval()
         return self
 
-    def step(self,data,state,meta,detach_state=True):
+    def spatial(self,data):
         p=data['processed_lidar']
         with torch.no_grad():
             if p['voxel_features'].shape[0]:
@@ -190,4 +190,7 @@ class UnifiedBEVDetector(nn.Module):
             else:
                 nx,ny,_=self.scatter.model_cfg['grid_size']
                 spatial=self.core.cls_head.weight.new_zeros((1,64,int(ny),int(nx)))
-        return self.core.step(spatial,state,meta,self.bounds,detach_state)
+        return spatial
+
+    def step(self,data,state,meta,detach_state=True):
+        return self.core.step(self.spatial(data),state,meta,self.bounds,detach_state)
