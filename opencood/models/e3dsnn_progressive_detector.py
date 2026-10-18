@@ -6,14 +6,18 @@ from opencood.models.e3dsnn_budget import E3dsnnBudget
 from opencood.models.fuse_modules.e3dsnn_progressive import (
     MessageContract,ProgressiveMembraneFusion,split_counts)
 from opencood.utils import count4_compact_packet as compact
+from opencood.utils import quantized_feature_packet as quantized
 from opencood.utils.e3dsnn_transplant import encoder_digest
 from opencood.models.fuse_modules.e3dsnn_progressive_sender import ProgressiveSender,l1_partition
 
 
 class E3dsnnProgressiveDetector(E3dsnnBudget):
     def __init__(self,args):
-        if args['activation']!='count4' or args['train_encoder']:
+        self.matched_control=bool(args.get('progressive_matched_control',False))
+        if args['train_encoder'] or (args['activation']!='count4' and not self.matched_control):
             raise ValueError('Initial progressive interface requires frozen shared Count4 encoder')
+        if self.matched_control and (args['activation'] not in ('count4','relu') or args.get('sender_order')!='l1'):
+            raise ValueError('Matched family control uses a frozen Count4/ReLU encoder and L1 order')
         super().__init__(args)
         self.progressive_packets=int(args.get('progressive_packets',3))
         self.readout_prefix=int(args.get('readout_prefix',self.progressive_packets))
@@ -21,9 +25,9 @@ class E3dsnnProgressiveDetector(E3dsnnBudget):
             raise ValueError('Registered prefix range is 1..3')
         self.membrane_fusion=ProgressiveMembraneFusion(128,
             retain_residual=bool(args.get('retain_membrane_residual',True)),
-            adaptive_gate=bool(args.get('adaptive_membrane_gate',False)))
+            adaptive_gate=bool(args.get('adaptive_membrane_gate',False)),readout=self.activation)
         self.sender_order=args.get('sender_order','spatial')
-        self.fusion_activation_kind='count4'
+        self.fusion_activation_kind=self.activation
         self.message_support_kind='received'
         self.sender_ranking='progressive_'+self.sender_order
         if self.sender_order not in ('spatial','frozen','learned','l1'):raise ValueError('Unknown sender order')
@@ -56,11 +60,12 @@ class E3dsnnProgressiveDetector(E3dsnnBudget):
     def _contract(self,data,index,shape):
         if self._encoder_identity is None:self._encoder_identity=encoder_digest(self)
         return MessageContract(str(data['frame_ids'][index]),str(data['road_frame_ids'][index]),
-            'infrastructure',self._encoder_identity,'shared-3d-output-v1',tuple(int(n) for n in shape),
+            'infrastructure',self._encoder_identity,('shared-3d-'+self.activation+'-v2' if self.matched_control else 'shared-3d-output-v1'),tuple(int(n) for n in shape),
             tuple(self.origin),tuple(self.step),tuple(int(x) for x in data['timestamps_us'][index].detach().cpu().tolist()))
 
     def forward(self,data):
-        if self.training and self.sender_order=='l1':raise ValueError('L1 order substitution is an evaluation-only diagnostic')
+        if self.training and self.sender_order=='l1' and not self.matched_control:
+            raise ValueError('L1 order substitution is an evaluation-only diagnostic')
         if self.training and (self.packet_roundtrip or self.readout_prefix!=self.progressive_packets):
             raise ValueError('Train all prefixes on differentiable messages; wire replay is eval-only')
         b=data['object_bbx_mask'].shape[0]
@@ -78,10 +83,23 @@ class E3dsnnProgressiveDetector(E3dsnnBudget):
         road=self.encode_lidar(data['road_lidar'],b)
         # Keep selection identical on direct and wire paths; per-packet codec uses keep=1.
         from opencood.utils.e3dsnn_budget import budget_features
-        values=budget_features(road.indices,road.features,self.activation,self.budget_codec)
-        road=road.replace_feature(values).dense()
+        scales=[]
+        if self.activation=='relu':
+            # Quantize once per sender frame. Every fragment shares these scales.
+            addresses=road.indices.detach().cpu().numpy();features=road.features.detach().cpu().numpy()
+            dense=road.features.new_zeros((b,128)+tuple(road.spatial_shape))
+            for i in range(b):
+                rows=addresses[:,0]==i
+                coords,codes,scale=quantized.prepare(addresses[rows,1:],features[rows],'relu',self.budget_codec)
+                pos=torch.as_tensor(coords.astype(np.int64),device=dense.device)
+                dense[i,:,pos[:,0],pos[:,1],pos[:,2]]=dense.new_tensor((codes.astype(np.float32)*scale).T.copy())
+                scales.append(scale)
+            road=dense
+        else:
+            values=budget_features(road.indices,road.features,self.activation,self.budget_codec)
+            road=road.replace_feature(values).dense()
         partition=split_counts if self.sender_order=='spatial' else self.progressive_sender
-        if self.sender_order=='l1':partition=l1_partition
+        if self.sender_order=='l1':partition=lambda x,n:l1_partition(x,n,count4=self.activation=='count4')
         chunks=[partition(road[i:i+1],self.progressive_packets) for i in range(b)]
         kept=membrane.new_ones(b)
         if self.training and self.message_dropout:
@@ -95,8 +113,16 @@ class E3dsnnProgressiveDetector(E3dsnnBudget):
                     feature=part[0,:,active].T.detach().cpu().numpy()
                     meta=dict(asdict(contract),source_to_ego=pose[0].cpu().tolist(),
                               packet_index=k,packet_count=self.progressive_packets)
-                    packet=compact.encode(coords,feature,meta,dict(bits=3,keep_fraction=1.))
-                    coords,feature,received=compact.decode(packet,dict(bits=3,keep_fraction=1.))
+                    if self.activation=='count4':
+                        packet=compact.encode(coords,feature,meta,dict(bits=3,keep_fraction=1.))
+                        coords,feature,received=compact.decode(packet,dict(bits=3,keep_fraction=1.))
+                    else:
+                        options=dict(bits=self.budget_codec['bits'],keep_fraction=1.)
+                        codes=np.rint(feature/scales[i]).astype(np.uint8)
+                        if not np.array_equal(codes.astype(np.float32)*scales[i],feature):
+                            raise ValueError('Fragment lost original frame quantization values')
+                        packet=quantized.encode_prepared(coords,codes,scales[i],meta,'relu',options)
+                        coords,feature,received=quantized.decode(packet,'relu',options)
                     contract=MessageContract(**{name:tuple(received[name]) if name in
                         ('shape_zyx','origin_xyz','step_xyz','timestamps_us') else received[name]
                         for name in asdict(contract)})

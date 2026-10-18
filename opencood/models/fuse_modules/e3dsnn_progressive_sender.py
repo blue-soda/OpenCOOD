@@ -20,12 +20,13 @@ class _HardMembership(torch.autograd.Function):
         return gradient, None
 
 
-def balanced_partition(counts, scores, packets=3, temperature=1.):
+def balanced_partition(counts, scores, packets=3, temperature=1., count4=True):
     if counts.ndim!=5 or counts.shape[0]!=1 or scores.shape!=(1,1)+counts.shape[2:]:
         raise ValueError('One sender frame and one score per spatial voxel required')
     if packets<1 or packets>3 or not math.isfinite(temperature) or temperature<=0:
         raise ValueError('Invalid registered partition parameters')
-    if not torch.isfinite(counts).all() or torch.any((counts<0)|(counts>4)|(counts!=counts.floor())):
+    if not torch.isfinite(counts).all() or torch.any(counts<0):raise ValueError('Finite nonnegative input required')
+    if count4 and torch.any((counts>4)|(counts!=counts.floor())):
         raise ValueError('Exact Count4 input required')
     if not torch.isfinite(scores).all():raise ValueError('Nonfinite sender scores')
     active=torch.nonzero((counts[0]!=0).any(0).flatten()).flatten()
@@ -74,6 +75,6 @@ class ProgressiveSender(nn.Module):
         return balanced_partition(counts,scores,packets,self.temperature)
 
 
-def l1_partition(counts,packets=3):
+def l1_partition(counts,packets=3,count4=True):
     """Inference-only control: highest total Count4 activity first, stable ties."""
-    return balanced_partition(counts,counts.sum(1,keepdim=True),packets)
+    return balanced_partition(counts,counts.sum(1,keepdim=True),packets,count4=count4)

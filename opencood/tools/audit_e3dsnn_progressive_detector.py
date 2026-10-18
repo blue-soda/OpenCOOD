@@ -19,14 +19,17 @@ from opencood.utils.e3dsnn_budget import decoder_digest
 from opencood.utils.e3dsnn_fusion_probe import bn_digest
 
 
-def audit(root,base,sender_order='spatial',retain_residual=True):
+def audit(root,base,sender_order='spatial',retain_residual=True,family=None):
     root=Path(root);root.mkdir(parents=True,exist_ok=True)
     if any(root.iterdir()):raise FileExistsError('Fresh audit directory required')
     source=Path(base)/'e3dsnn_budget_round1_20261018'
     prior=read(source/'adapt10_summary.json');assert prior['passed']
-    checkpoint=source/'budget_s_fusion_adapt10/best_ap70.pth'
-    assert sha(checkpoint)==prior['groups']['s_fusion']['checkpoint_sha256']
-    raw=yaml.safe_load((source/'s_fusion.yaml').read_text())
+    group='a_fusion' if family=='ann' else 's_fusion'
+    checkpoint=source/('budget_'+group+'_adapt10/best_ap70.pth')
+    assert sha(checkpoint)==prior['groups'][group]['checkpoint_sha256']
+    raw=yaml.safe_load((source/(group+'.yaml')).read_text())
+    if family:
+        sender_order='l1';raw['model']['args']['progressive_matched_control']=True
     raw['model']['core_method']='e3dsnn_progressive_detector'
     raw['model']['args'].update(progressive_packets=3,readout_prefix=3,
         adaptive_membrane_gate=True,retain_membrane_residual=retain_residual,sender_order=sender_order)
@@ -43,13 +46,16 @@ def audit(root,base,sender_order='spatial',retain_residual=True):
         road_frames=data['road_frame_ids'],prefixes=[],scope='Augmented train frames 0/1; discarded optimization step; no AP estimate.')
     rotation=data['road_to_ego'][:,:3,:3].double()
     report.update(code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
-        sender_order=sender_order,retain_residual=retain_residual,
+        sender_order=sender_order,retain_residual=retain_residual,family=family,
+        parameters=sum(p.numel() for p in model.parameters()),trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad),
         initial_sha256=sha(root/'initial.pth'),config_sha256=sha(root/'config.yaml'),
         geometry_arithmetic='float64 inverse/grid; float32 interpolation/features',
         pose_orthogonality_max_error=float((rotation.transpose(1,2)@rotation-torch.eye(3,device='cuda')).abs().max()))
     encode_membrane=model.encode_membrane;encode=model.encode_lidar
     with torch.no_grad():
         ego,membrane=encode_membrane(data['processed_lidar'],2);road=encode(data['road_lidar'],2)
+        assert torch.equal(model.membrane_fusion.readout(membrane),ego.dense())
+        report['preactivation_readout_matches_frozen_encoder']=True
         model.encode_membrane=lambda lidar,n:(ego,membrane)
         model.encode_lidar=lambda lidar,n:road
         for prefix in (1,2,3):
@@ -110,4 +116,5 @@ if __name__=='__main__':
     parser.add_argument('--base',default='/data1/tzm/workspace/diagnostics')
     parser.add_argument('--sender-order',choices=('spatial','frozen','learned'),default='spatial')
     parser.add_argument('--clear-residual',action='store_true')
-    args=parser.parse_args();audit(args.root,args.base,args.sender_order,not args.clear_residual)
+    parser.add_argument('--family',choices=('snn','ann'))
+    args=parser.parse_args();audit(args.root,args.base,args.sender_order,not args.clear_residual,args.family)

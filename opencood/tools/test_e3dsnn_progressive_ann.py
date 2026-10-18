@@ -4,9 +4,17 @@ import numpy as np
 import torch
 from opencood.utils import quantized_feature_packet as codec
 from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract,ProgressiveMembraneFusion
+from opencood.models.fuse_modules.e3dsnn_progressive_sender import l1_partition
 
 
 class AnnPrerequisiteTest(unittest.TestCase):
+    def test_ann_partition_preserves_continuous_values(self):
+        x=torch.tensor([[[[[.15,2.5,.6,.4,7.2,.1]]]]])
+        parts=l1_partition(x,count4=False)
+        self.assertTrue(torch.equal(sum(parts),x))
+        self.assertTrue(torch.equal(parts[0],torch.tensor([[[[[0.,2.5,0.,0.,7.2,0.]]]]])))
+        with self.assertRaises(ValueError):l1_partition(x)
+
     def test_fragment_scale_is_preserved_not_requantized(self):
         coords=np.array([[0,0,i] for i in range(3)])
         features=np.tile(np.array([.4,.8,1.2],dtype=np.float32)[:,None],(1,128))
