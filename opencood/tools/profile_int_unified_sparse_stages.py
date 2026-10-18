@@ -63,6 +63,7 @@ def run(a,out):
     teacher,cfg,rows,provenance=setup(a)
     student=UnifiedBEVDetector(teacher,cfg,'v2','recurrent').cuda().eval()
     saved=torch.load(contract['checkpoint'],map_location='cpu')
+    assert saved['contract']['version']=='unified_bev_dense_v2'
     assert saved['contract']['data_contract']==provenance['contract']
     student.load_state_dict(saved['model'],strict=True)
     write_json(out/'provenance.json',dict(source_contracts=contracts,source_sha256=contract['checkpoint_sha256'],setup=provenance))

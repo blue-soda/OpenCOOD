@@ -32,7 +32,9 @@ def run(a,out):
     saved=torch.load(str(source),map_location='cpu')
     assert saved['contract']['memory_policy']=='recurrent'
     assert saved['contract']['data_contract']==provenance['contract']
-    student=UnifiedBEVDetector(teacher,cfg,'v2','recurrent').cuda().eval()
+    variant=saved['contract']['version'].replace('unified_bev_dense_','')
+    assert variant in ('v2','v2n')
+    student=UnifiedBEVDetector(teacher,cfg,variant,'recurrent').cuda().eval()
     student.load_state_dict(saved['model'],strict=True)
     runtime=json.loads((Path(a.root)/'full_gru/effective_runtime.json').read_text())['arguments']
     rows=json.loads(Path(runtime['manifest']).read_text())['train'][:a.frames]
@@ -53,8 +55,8 @@ def run(a,out):
                     aligned,valid=warp_bev(previous['evidence'],previous['pose'],sample['meta']['pose'],student.bounds)
                     valid=valid & packed[:,-1:].bool()
                     # Bias cancels; weight is the model's existing cheap current path.
-                    current=student.core.update.current(evidence)
-                    delta=current-student.core.update.current(aligned)
+                    current=student.core.update.current_value(evidence)
+                    delta=current-student.core.update.current_value(aligned)
                     corrected=old+delta;target=state['value']
                     retain=captured['net'][:,256:].sigmoid()*packed[:,-1:]
                     if bool(valid.any()):
@@ -101,7 +103,7 @@ def run(a,out):
         mean_logit_abs=float(np.mean([r['gate_logit_abs_mean'] for r in records if 'gate_logit_abs_mean' in r])),
         max_logit_abs=max(r['gate_logit_abs_max'] for r in records if 'gate_logit_abs_max' in r))
     write_json(out/'report.json',dict(status='COMPLETED',checkpoint=str(source),checkpoint_sha256=sha,split='train',
-        frames=len(records),seed=303,summary=summaries,gate_channels=gate_summary,
+        frames=len(records),seed=303,variant=variant,summary=summaries,gate_channels=gate_summary,
         caveats=['One-step dense-history diagnostic, not a recursive selective implementation, latency test or AP result.',
                  'Raw state RMS is sensitive to feature scale and is not equivalent to detection accuracy.',
                  'Untrained fixed unit delta gain; no validation-label or threshold selection.',

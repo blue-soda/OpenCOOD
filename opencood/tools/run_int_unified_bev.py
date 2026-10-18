@@ -60,6 +60,7 @@ def engineering(student,teacher,cfg,rows,out):
         weight_hash.update(name.encode());weight_hash.update(value.detach().cpu().contiguous().numpy().tobytes())
     report=dict(status='PASSED',frames=records,original_spatial_calls=calls,
                 variant=student.variant,memory_policy=student.memory_policy,core_state_sha256=weight_hash.hexdigest(),
+                current_branch_normalized=bool(getattr(student.core.update,'normalize_current',False)),
                 trainable_parameters=sum(p.numel() for p in student.parameters() if p.requires_grad),
                 core_conv_macs=conv_macs,core_conv_macs_total=sum(conv_macs.values()),
                 cost_scope='One real frame, core Conv2d only; excludes Pillar, warp, normalization, activation, interpolation and data movement; not measured latency.',

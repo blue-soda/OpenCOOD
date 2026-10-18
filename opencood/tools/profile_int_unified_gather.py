@@ -34,7 +34,9 @@ def run(a, out):
     sha = None
     if a.checkpoint:
         sha = digest(Path(a.checkpoint))
-        saved = torch.load(a.checkpoint, map_location='cpu')['model']
+        checkpoint = torch.load(a.checkpoint, map_location='cpu')
+        assert checkpoint['contract']['version']=='unified_bev_dense_v2', 'Microbenchmark supports original V2 only'
+        saved = checkpoint['model']
         prefix = 'core.update.'
         module.load_state_dict({k[len(prefix):]: v for k, v in saved.items() if k.startswith(prefix)}, strict=True)
     x = torch.randn(1, 513, 100, 252, device='cuda'); x[:, -1:] = 1
