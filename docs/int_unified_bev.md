@@ -4,7 +4,7 @@
 - Origin Skill: academic-research-suite / experiment-agent
 - Origin Mode: plan / run
 - Origin Date: 2026-10-18（Asia/Shanghai）
-- Verification Status: IMPLEMENTED，待服务器工程与训练验收
+- Verification Status: ENGINEERING_VERIFIED / v1续训与v2两条并行训练中，尚无新架构可用精度结论
 - Version Label: unified_bev_dense_v1
 
 ## 目标与现有证据
@@ -12,7 +12,7 @@
 
 保留对照为原ANN GRU（完整AP70=75.873610%，模型平均32.2585ms）及period3独立二/三级修正（75.823490%，26.8356ms，平均下降16.81%）。这是同GPU顺序单轮模型时间，不含IO/体素化/后处理。此前原ResNet局部裁剪变慢，小修正模块整图执行优于局部，故不能预设稀疏一定更快。
 
-解码后特征修正仍在181 GPU7训练（decoded_foreground_period3_resume_v2）；它保留冻结原检测器、只学41,984参数补差，和本次重新学习状态表示及检测头不同。不取消其健康训练，不以它的低精度证明新路线失败。
+解码后特征修正decoded_foreground_period3_resume_v2现已平台停止并独立重载确认AP70=66.85222%；它保留冻结原检测器、只学41,984参数补差，和本次重新学习状态表示及检测头不同。该配置已经结束，不以它的低精度证明新路线失败。2026-10-19用户要求及时加强架构并并行验证，第二版结构、实验契约与当前运行见[int_unified_bev_v2.md](int_unified_bev_v2.md)。
 
 ## 首个可训练模型
 输入仍是相同DAIR同步自车点云序列；继承冻结教师Pillar编码器和scatter，去掉原GRU、三个ResNet阶段、多尺度解码及shrink。学生模型不包含这些模块，不用教师缓存初始化任何学生状态。
@@ -85,3 +85,8 @@ unified_bev_dense_v1已COMPLETED，停止原因为max_epochs_not_proof_of_conver
 增量审计39–40轮完整8593训练扫描/4678标签/2262窗口、5794验证扫描/1738标签、帧顺序、有限梯度、独立稠密状态更新/旧主干零调用与权重SHA通过，连接既有1–38审计。latest完整模型与epoch40不可变权重一致；CPU严格恢复30项AdamW状态及scheduler.last_epoch=40、LR5e-4、stale2，history/best一致。源latest SHA=4e9fc66b86eb9f5a56a82df9066076389cd533c2aaf17fb97947553ad68c6150。归档unified_bev_dense_completion_20261019_audit.json与unified_bev_dense_v1_report.json；不是从检测框独立重算AP。
 按上一轮有界方案，使用既有--resume入口，在新目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_resume_v1启动续训，181 GPU0 PID24739，启动源码b2ac8e5。仅将总上限40改60，保留数据、模型、GT+KD损失、优化器、调度器与停止规则；完整源目录保留。64项INT测试与8真实帧工程验收通过，已进入epoch41训练600/8593扫描、161次更新；逐帧记录额外核验190次更新loss/梯度均有限。继承history/best与源一致，恢复SHA一致。归档unified_bev_dense_resume_v1_{launch,resumption,engineering,training_contract,launch_audit}.json。现有恢复入口未显式恢复保存的RNG字段，不宣称逐比特随机轨迹连续。
 本路线唯一活动实验改为unified_bev_dense_resume_v1；后续epoch41起在新目录，1–40权重仍在源目录，best可能继续引用源epoch38，审计不能假定所有文件位于续训目录。下一轮检查新目录status/history/best，验证新epoch完整曝光与学习率变化。达到平台或总60轮后重新评估精度差距与容量/上下文/监督诊断，不自动无限增加轮数。当前训练每轮约12分钟，现有automation已从30分钟恢复90分钟，提示词保持“推进时序感知，仅完成异常通知”。旧decoded及重载已结束，不再轮询。
+
+### 2026-10-19 03:17 按用户要求并行推进第二版，不再只等v1
+用户指出第一版低精度可能来自容量/架构，要求及时调整并利用其他空闲GPU。已实现v2：残差标准空间卷积观测、多尺度低分辨率上下文、256通道统一状态、逐位置通道归一化、半径2残差状态更新与逐点检测读出；不恢复原多尺度解码器。可训练参数从209,396增至2,471,508，核心Conv2d MAC从5.14690G增至29.22394G，状态25,804,800字节。加强表达能力是当前优先项，未宣称精度改善或实际加速；多项结构同时变化，不能归因某一项独立效果。
+源码64cca55已main push/181 pull，67项INT测试及两条作业各8真实帧验收通过，旧主干调用均0。新增并行实验unified_bev_v2_recurrent（181 GPU3 PID27008）与unified_bev_v2_reset（GPU4 PID27158），相同模型、初始权重SHA=faf1ecce3978be6e92d16a300dc2bc581beafea4dabc56af5f32f12dd94d4a1a、数据、GT+0.2KD损失、优化器与窗口，仅学生是否保留历史不同；二者总上限60轮，平台可提前停止。已进入epoch1实际更新，核验219/214个窗口loss/GT/KD/梯度有限，尚无完整AP。每帧清空是单独训练的对照，不同于对时序权重仅做推理清空干预；存储参数量一致但历史通道不活跃，不能声称有效容量相同。
+GPU0的unified_bev_dense_resume_v1保持原总60轮有界续训。当前应同时监控上述三条作业，根目录仍/data1/tzm/workspace/diagnostics/int_cache_repair_20261017。在v2第5/10轮主动比较同轮次v1与v2时序/单帧，判断空间表达不足还是状态学习困难，不再只等单GPU至上限；必要时据结果修订。先达到可用精度再做同GPU正式延迟和局部选择实验。已有75.82349%/26.8356ms三级缓存方案保留。详细设计/命令/判定在docs/int_unified_bev_v2.md，证据unified_bev_v2_launch_audit_20261019.json及两条launch/engineering/training_contract。现有automation改60分钟，提示词保持路线级“推进时序感知，仅完成异常通知”。

@@ -1,0 +1,108 @@
+{
+  "caveat": "New model: finite predictions/shape/causality, not parity with the teacher. Crop equivalence is a unit test, not an active sparse policy.",
+  "core_conv_macs": {
+    "cls_head": 12902400,
+    "context": 3902976000,
+    "dir_head": 25804800,
+    "observation": 4541644800,
+    "readout": 1651507200,
+    "reg_head": 90316800,
+    "update": 18998784000
+  },
+  "core_conv_macs_total": 29223936000,
+  "core_state_sha256": "faf1ecce3978be6e92d16a300dc2bc581beafea4dabc56af5f32f12dd94d4a1a",
+  "cost_scope": "One real frame, core Conv2d only; excludes Pillar, warp, normalization, activation, interpolation and data movement; not measured latency.",
+  "frames": [
+    {
+      "frame": "011050",
+      "reset": "initial",
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011051",
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011052",
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011053",
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011054",
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011056",
+      "reset": "scene",
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011057",
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011058",
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ]
+    }
+  ],
+  "memory_policy": "recurrent",
+  "original_spatial_calls": [
+    0,
+    0,
+    0
+  ],
+  "state_bytes": 25804800,
+  "status": "PASSED",
+  "trainable_parameters": 2471508,
+  "update_radius": 2,
+  "variant": "v2"
+}

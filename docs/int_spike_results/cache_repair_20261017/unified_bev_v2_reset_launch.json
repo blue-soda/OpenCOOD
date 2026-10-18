@@ -1,0 +1,24 @@
+{
+  "code_commit": "64cca554c170a0b6253ead31d78443e79e0bff05",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_unified_bev",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_reset",
+    "--gpu",
+    "4",
+    "--epochs",
+    "60",
+    "--variant",
+    "v2",
+    "--memory-policy",
+    "reset",
+    "--worker"
+  ],
+  "created_unix": 1792350830.44499,
+  "gpu": 4,
+  "pid": 27158
+}

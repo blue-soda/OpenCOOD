@@ -1,0 +1,330 @@
+{
+  "caveats": [
+    "Start audit only; no complete v2 validation yet.",
+    "Conv2d MACs exclude warp, normalization, activation, interpolation, Pillar and data movement; not latency.",
+    "V2 changes multiple architectural factors; cannot isolate a single cause of improvement.",
+    "Reset control retains identical stored parameters but history inputs are inactive."
+  ],
+  "contract_differences": [
+    "memory_policy",
+    "protocol"
+  ],
+  "experiments": [
+    {
+      "engineering": {
+        "caveat": "New model: finite predictions/shape/causality, not parity with the teacher. Crop equivalence is a unit test, not an active sparse policy.",
+        "core_conv_macs": {
+          "cls_head": 12902400,
+          "context": 3902976000,
+          "dir_head": 25804800,
+          "observation": 4541644800,
+          "readout": 1651507200,
+          "reg_head": 90316800,
+          "update": 18998784000
+        },
+        "core_conv_macs_total": 29223936000,
+        "core_state_sha256": "faf1ecce3978be6e92d16a300dc2bc581beafea4dabc56af5f32f12dd94d4a1a",
+        "cost_scope": "One real frame, core Conv2d only; excludes Pillar, warp, normalization, activation, interpolation and data movement; not measured latency.",
+        "frames": [
+          {
+            "frame": "011050",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011051",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011052",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011053",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011054",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011056",
+            "reset": "scene",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011057",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011058",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          }
+        ],
+        "memory_policy": "recurrent",
+        "original_spatial_calls": [
+          0,
+          0,
+          0
+        ],
+        "state_bytes": 25804800,
+        "status": "PASSED",
+        "trainable_parameters": 2471508,
+        "update_radius": 2,
+        "variant": "v2"
+      },
+      "finite_updates_observed": 219,
+      "launch": {
+        "code_commit": "64cca554c170a0b6253ead31d78443e79e0bff05",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-m",
+          "opencood.tools.run_int_unified_bev",
+          "--root",
+          "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent",
+          "--gpu",
+          "3",
+          "--epochs",
+          "60",
+          "--variant",
+          "v2",
+          "--memory-policy",
+          "recurrent",
+          "--worker"
+        ],
+        "created_unix": 1792350827.129944,
+        "gpu": 3,
+        "pid": 27008
+      },
+      "name": "unified_bev_v2_recurrent",
+      "observed_status": {
+        "epoch": 1,
+        "labels": 450,
+        "mean_loss": 2.3855830276774417,
+        "phase": "train",
+        "scans": 800,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 216
+      },
+      "train_records_observed": 812
+    },
+    {
+      "engineering": {
+        "caveat": "New model: finite predictions/shape/causality, not parity with the teacher. Crop equivalence is a unit test, not an active sparse policy.",
+        "core_conv_macs": {
+          "cls_head": 12902400,
+          "context": 3902976000,
+          "dir_head": 25804800,
+          "observation": 4541644800,
+          "readout": 1651507200,
+          "reg_head": 90316800,
+          "update": 18998784000
+        },
+        "core_conv_macs_total": 29223936000,
+        "core_state_sha256": "faf1ecce3978be6e92d16a300dc2bc581beafea4dabc56af5f32f12dd94d4a1a",
+        "cost_scope": "One real frame, core Conv2d only; excludes Pillar, warp, normalization, activation, interpolation and data movement; not measured latency.",
+        "frames": [
+          {
+            "frame": "011050",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011051",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011052",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011053",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011054",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011056",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011057",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011058",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          }
+        ],
+        "memory_policy": "reset",
+        "original_spatial_calls": [
+          0,
+          0,
+          0
+        ],
+        "state_bytes": 25804800,
+        "status": "PASSED",
+        "trainable_parameters": 2471508,
+        "update_radius": 2,
+        "variant": "v2"
+      },
+      "finite_updates_observed": 214,
+      "launch": {
+        "code_commit": "64cca554c170a0b6253ead31d78443e79e0bff05",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-m",
+          "opencood.tools.run_int_unified_bev",
+          "--root",
+          "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_reset",
+          "--gpu",
+          "4",
+          "--epochs",
+          "60",
+          "--variant",
+          "v2",
+          "--memory-policy",
+          "reset",
+          "--worker"
+        ],
+        "created_unix": 1792350830.44499,
+        "gpu": 4,
+        "pid": 27158
+      },
+      "name": "unified_bev_v2_reset",
+      "observed_status": {
+        "epoch": 1,
+        "labels": 290,
+        "mean_loss": 1.655747798593295,
+        "phase": "train",
+        "scans": 600,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 161
+      },
+      "train_records_observed": 794
+    }
+  ],
+  "identical_initial_core_weights": true,
+  "status": "PASSED",
+  "unit_tests": 67,
+  "v1_cost_reference": {
+    "core_conv_macs": {
+      "cls_head": 12902400,
+      "context": 6098400,
+      "dir_head": 25804800,
+      "observation": 1647475200,
+      "readout": 825753600,
+      "reg_head": 90316800,
+      "update": 2538547200
+    },
+    "core_conv_macs_total": 5146898400,
+    "input_shape": [
+      1,
+      64,
+      200,
+      504
+    ],
+    "trainable_parameters": 209396
+  }
+}

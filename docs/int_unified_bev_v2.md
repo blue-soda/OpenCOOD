@@ -4,7 +4,7 @@
 - Origin Skill: academic-research-suite / experiment-agent
 - Origin Mode: plan / run
 - Origin Date: 2026-10-19（Asia/Shanghai）
-- Verification Status: IMPLEMENTED / 待服务器测试与真实训练验收
+- Verification Status: ENGINEERING_VERIFIED / 两条v2训练均已实际更新，尚无完整验证AP
 - Version Label: unified_bev_dense_v2
 
 ## 问题、假设与本轮调整
@@ -47,3 +47,21 @@ python -m opencood.tools.run_int_unified_bev --root /data1/tzm/workspace/diagnos
 ```
 
 独立评估或恢复v2必须传相同`--variant v2 --memory-policy ...`；契约拒绝错模型/错历史模式加载。主入口默认仍v1，旧v1训练契约保持兼容。监控保存launch、training_contract、engineering、逐帧、history、best、权重及状态；同时检查PID与日志推进。异常长时间无更新时诊断，不凭GPU瞬时利用率杀作业。现有路线级自动任务继续，按新作业实测耗时调整间隔，无需新建重复任务。
+
+## 2026-10-19 03:17 已启动并验收
+实现64cca55已main提交/push、181 pull，67项INT测试全部通过；新增覆盖含ChannelNorm的局部裁剪及边界等价、未选区保留、新视野、256通道跨帧梯度、非因果拒绝与清空历史独立性。两条训练均通过8真实帧工程检查，原ResNet/解码/shrink调用0，实际输出shape正确且有限。
+
+| 工程指标 | v1 | v2时序 / v2单帧 |
+|---|---:|---:|
+| 可训练参数 | 209,396 | 2,471,508（两者相同） |
+| 冻结Pillar参数 | 768 | 768 |
+| 状态通道 | 128 | 256 |
+| 返回状态FP32字节 | 12,902,400 | 25,804,800（单帧对照不读取旧状态） |
+| 核心Conv2d MAC/帧 | 5.14690G | 29.22394G |
+| 更新模块Conv2d MAC/帧 | 2.53855G | 18.99878G |
+
+MAC来自相同64×200×504输入：v1用CPU形状探针、v2用首个真实帧Conv hook计数；不含Pillar、warp、归一化、激活、插值或数据搬运，不是实测加速。v2增大计算是有意放宽第一版过度压缩约束，更新模块约占核心卷积MAC的65%，为后续选择性更新保留目标；目前没有实际跳算收益。
+
+两条v2初始核心张量SHA均为faf1ecce3978be6e92d16a300dc2bc581beafea4dabc56af5f32f12dd94d4a1a，契约差异仅memory_policy及对应protocol文本。时序作业GPU3 PID27008，已训练800/8593扫描、216更新；单帧作业GPU4 PID27158，已训练600/8593扫描、161更新。逐帧日志进一步核验219/214个已完成窗口的总损失、KD、存在标签时GT与梯度均有限，并确认单帧每帧重置、时序存在跨帧状态。仅证明启动与更新成功，尚无完整验证AP；早期loss不作为胜负结论。
+
+证据归档docs/int_spike_results/cache_repair_20261017/unified_bev_v2_launch_audit_20261019.json及各作业launch/engineering/training_contract。v1在GPU0继续原续训，不中断。本路线现有自动任务从90分钟调为60分钟，仍使用“推进时序感知，仅完成异常通知”；每轮同时检查三条作业，按v2首个完整epoch耗时及5/10轮诊断节点调整，不能再只检查v1而忽略新实验。若有健康进展不重复通知，完成/异常及时报告。
