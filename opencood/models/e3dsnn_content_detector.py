@@ -134,7 +134,11 @@ class E3dsnnContentDetector(E3dsnnBudget):
                 masks.append(coverage * kept[i] * nonempty)
             road_bev = torch.cat(aligned).flatten(1, 2); mask = torch.cat(masks).flatten(1, 2)
             supported = mask.amax(1, keepdim=True)
-            delta = self.fusion_net(torch.cat((ego_bev, road_bev, mask), 1))
+            fusion_input = torch.cat((ego_bev, road_bev, mask), 1)
+            # Count thresholds can amplify batch-size-dependent CUDA convolution
+            # rounding. Use the same single-frame fusion kernel for train/eval;
+            # the real augmented batch audit verifies isolation of both families.
+            delta = torch.cat([self.fusion_net(x[None]) for x in fusion_input])
             residual = self.fusion_scale * supported * delta
             fused = residual_readout(ego_bev, residual, supported, self.fusion_activation, self.fusion_readout)
             fused = torch.where(supported > 0, fused, ego_bev)

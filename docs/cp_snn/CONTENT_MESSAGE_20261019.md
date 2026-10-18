@@ -43,3 +43,5 @@
 源权重已按此前最终summary核对：SNN使用`e3dsnn_message_fusion_round1_20261018/message_snn_geometry_adapt10/best_ap70.pth`，SHA256 `9df3370488674a396aef4e3ada64673d55ed86055a0ceacd9404b89e36e153cd`；ANN使用`e3dsnn_budget_round1_20261018/budget_a_fusion_adapt10/best_ap70.pth`，SHA256 `de51d9aa54dc19e4b553f83dbe1b575c9b55e96d62b8359fe8b8f3b6e436d925`。两家族均已在源数据上适配50轮，结构/冻结设置按本计划，随后仅额外10轮。目录计划`/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_20261019`，组snn_fixed/snn_learn/ann_fixed/ann_learn。服务器当前GPU0/1/2/5空闲；启动前再次检查，其他占用GPU不触碰。
 
 成熟融合输入仍用几何覆盖mask；全空消息或消息dropout时强制返回本地，不把未收到数据当作空闲空间。内容P/D变化需要新basis摘要，即使共享3D编码器未变也不能沿用旧消息basis。上述均属于接口/实验控制，不是精度收益报告。
+
+首次真实接口审计在逐样本一致性门槛退出，训练未启动。相同缓存编码器张量下，原batch2融合的第二帧预测最大差psm=0.0247793、rm=0.0269852、dm=0.0185696；仅把融合子网改为逐帧调用后全部差为0，第一帧始终为0。差异定位到融合子网的批量执行数值路径，尚未逐算子证明其底层CUDA原因；与阈值放大小数差相符，不据此推断存在跨帧状态混合。新内容检测器对两家族均采用逐帧融合执行，旧基线实现不改。失败审计保留在原计划目录；修复后的新审计/训练目录为`/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019`，须重新通过全量门槛。此为代码审计修复，不是重跑失败训练或新增搜索组。
