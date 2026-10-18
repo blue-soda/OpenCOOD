@@ -1,0 +1,25 @@
+{
+  "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+  "dense_wrapper_prediction_max_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "real_weight_crop_max_error": 0.0,
+  "real_weight_crop_stats": {
+    "actual_write_fraction": 0.08571428060531616,
+    "crop_area_ratio_before_fallback": 0.10444444444444445,
+    "executed_input_area_ratio": 0.10444444444444445,
+    "fallback": false,
+    "requested_fraction": 0.0001190476177725941,
+    "selected_fraction": 0.08571428060531616,
+    "tiles": 3
+  },
+  "real_weight_gather_max_error": 0.0009765625,
+  "status": "PASSED"
+}

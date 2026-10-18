@@ -1,0 +1,47 @@
+{
+  "frame": "011050",
+  "fp32": [
+    {
+      "tile": 16,
+      "max_error": 0.025390625,
+      "mean_error": 0.00023072068870533258,
+      "rms_error": 0.0005243837949819863,
+      "reference_rms": 1629.1287841796875,
+      "reference_max": 23038.4921875,
+      "failed_elements": 1,
+      "elements": 143360,
+      "bad_expected": [
+        -0.6620564460754395
+      ],
+      "bad_errors": [
+        0.0002465248107910156
+      ]
+    },
+    {
+      "tile": 32,
+      "max_error": 0.0009765625,
+      "mean_error": 5.570807957155921e-07,
+      "rms_error": 1.0042147550848313e-05,
+      "reference_rms": 1782.97119140625,
+      "reference_max": 37567.89453125,
+      "failed_elements": 0,
+      "elements": 552960,
+      "bad_expected": [],
+      "bad_errors": []
+    }
+  ],
+  "fp64_actual_crops": [
+    {
+      "max_error": 9.094947017729282e-13,
+      "allclose_1e9": true
+    },
+    {
+      "max_error": 4.547473508864641e-13,
+      "allclose_1e9": true
+    },
+    {
+      "max_error": 1.8189894035458565e-12,
+      "allclose_1e9": true
+    }
+  ]
+}

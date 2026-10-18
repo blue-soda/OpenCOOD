@@ -1,0 +1,15 @@
+{
+  "pid": 57638,
+  "gpu": 5,
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.profile_int_unified_gather",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_gather_dispatch_e5",
+    "--checkpoint",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_005/student.pth"
+  ],
+  "git": "512fecac0f0879c9b806b6f2d53446eb324cdb57",
+  "started": 1792357070.822961
+}

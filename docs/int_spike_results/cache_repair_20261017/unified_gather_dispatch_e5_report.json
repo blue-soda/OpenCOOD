@@ -1,0 +1,628 @@
+{
+  "caveats": [
+    "Includes dynamic indices, layout conversions, halo dependencies and scatter.",
+    "Excludes observation, context, selection, pose warp and head; no AP evidence.",
+    "Gather is opt-in diagnostic only, no running training or inference policy changed."
+  ],
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_005/student.pth",
+  "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+  "device": "NVIDIA GeForce RTX 3090",
+  "records": [
+    {
+      "max_abs_error": 9.1552734375e-05,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "selected_cell_fraction": 0.1053968220949173,
+      "tile": 8,
+      "timings": {
+        "crop": {
+          "mean_ms": 4.213718511164188,
+          "p95_ms": 4.3967101140879095,
+          "peak_allocated_bytes": 181972480
+        },
+        "dense_after": {
+          "mean_ms": 6.458256486803293,
+          "p95_ms": 6.533374090213329,
+          "peak_allocated_bytes": 315177984
+        },
+        "dense_before": {
+          "mean_ms": 6.593111460097134,
+          "p95_ms": 6.702613201923668,
+          "peak_allocated_bytes": 315177984
+        },
+        "gather": {
+          "mean_ms": 2.544768860874077,
+          "p95_ms": 2.796459582168608,
+          "peak_allocated_bytes": 175110656
+        },
+        "masked": {
+          "mean_ms": 6.565090323177476,
+          "p95_ms": 6.610182661097497,
+          "peak_allocated_bytes": 315177984
+        }
+      }
+    },
+    {
+      "max_abs_error": 3.814697265625e-05,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "selected_cell_fraction": 0.26031744480133057,
+      "tile": 8,
+      "timings": {
+        "crop": {
+          "mean_ms": 4.226388712413609,
+          "p95_ms": 4.321362997870892,
+          "peak_allocated_bytes": 219973120
+        },
+        "dense_after": {
+          "mean_ms": 6.462360258835058,
+          "p95_ms": 6.516932800877839,
+          "peak_allocated_bytes": 315177984
+        },
+        "dense_before": {
+          "mean_ms": 6.457418156787753,
+          "p95_ms": 6.515583989676088,
+          "peak_allocated_bytes": 315177984
+        },
+        "gather": {
+          "mean_ms": 2.6365966458494463,
+          "p95_ms": 2.738740702625364,
+          "peak_allocated_bytes": 201364480
+        },
+        "masked": {
+          "mean_ms": 6.534024785893659,
+          "p95_ms": 6.60171287599951,
+          "peak_allocated_bytes": 315177984
+        }
+      }
+    },
+    {
+      "max_abs_error": 3.814697265625e-05,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "selected_cell_fraction": 0.5206348896026611,
+      "tile": 8,
+      "timings": {
+        "crop": {
+          "mean_ms": 4.668883086803059,
+          "p95_ms": 4.774011927656829,
+          "peak_allocated_bytes": 275729408
+        },
+        "dense_after": {
+          "mean_ms": 6.508256223363181,
+          "p95_ms": 6.710043863859027,
+          "peak_allocated_bytes": 314358784
+        },
+        "dense_before": {
+          "mean_ms": 6.467145564965904,
+          "p95_ms": 6.656692922115326,
+          "peak_allocated_bytes": 314358784
+        },
+        "gather": {
+          "mean_ms": 3.797791882728537,
+          "p95_ms": 3.8625025539658964,
+          "peak_allocated_bytes": 265543680
+        },
+        "masked": {
+          "mean_ms": 6.539623625576496,
+          "p95_ms": 6.577945966273546,
+          "peak_allocated_bytes": 314358784
+        }
+      }
+    },
+    {
+      "max_abs_error": 4.57763671875e-05,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "selected_cell_fraction": 0.09904761612415314,
+      "tile": 8,
+      "timings": {
+        "crop": {
+          "mean_ms": 18.85607208435734,
+          "p95_ms": 20.525468047708273,
+          "peak_allocated_bytes": 171657728
+        },
+        "dense_after": {
+          "mean_ms": 6.531565954598288,
+          "p95_ms": 6.5425423556007445,
+          "peak_allocated_bytes": 315177984
+        },
+        "dense_before": {
+          "mean_ms": 6.475497083738446,
+          "p95_ms": 6.564433546736836,
+          "peak_allocated_bytes": 315177984
+        },
+        "gather": {
+          "mean_ms": 2.906401587339739,
+          "p95_ms": 3.0824915156699717,
+          "peak_allocated_bytes": 174145536
+        },
+        "masked": {
+          "mean_ms": 6.5939113885785146,
+          "p95_ms": 6.694961187895387,
+          "peak_allocated_bytes": 315177984
+        }
+      }
+    },
+    {
+      "max_abs_error": 3.814697265625e-05,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "selected_cell_fraction": 0.24888888001441956,
+      "tile": 8,
+      "timings": {
+        "crop": {
+          "mean_ms": 36.74307983213415,
+          "p95_ms": 45.393270358908914,
+          "peak_allocated_bytes": 176735232
+        },
+        "dense_after": {
+          "mean_ms": 6.465266357796888,
+          "p95_ms": 6.550422310829163,
+          "peak_allocated_bytes": 315177984
+        },
+        "dense_before": {
+          "mean_ms": 6.472944646763305,
+          "p95_ms": 6.552190228831023,
+          "peak_allocated_bytes": 315177984
+        },
+        "gather": {
+          "mean_ms": 2.677746342184643,
+          "p95_ms": 2.7915151324123144,
+          "peak_allocated_bytes": 224218112
+        },
+        "masked": {
+          "mean_ms": 6.551545726445814,
+          "p95_ms": 6.636497424915433,
+          "peak_allocated_bytes": 315177984
+        }
+      }
+    },
+    {
+      "max_abs_error": 3.814697265625e-05,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "selected_cell_fraction": 0.4965079128742218,
+      "tile": 8,
+      "timings": {
+        "crop": {
+          "mean_ms": 7.28285377069066,
+          "p95_ms": 7.589452376123517,
+          "peak_allocated_bytes": 314385920
+        },
+        "dense_after": {
+          "mean_ms": 6.478778606591125,
+          "p95_ms": 6.538607063703239,
+          "peak_allocated_bytes": 314358784
+        },
+        "dense_before": {
+          "mean_ms": 6.480468002458413,
+          "p95_ms": 6.583137868437916,
+          "peak_allocated_bytes": 314358784
+        },
+        "gather": {
+          "mean_ms": 4.174009050863485,
+          "p95_ms": 4.197404405567795,
+          "peak_allocated_bytes": 289499648
+        },
+        "masked": {
+          "mean_ms": 6.567117463176449,
+          "p95_ms": 6.659965799190104,
+          "peak_allocated_bytes": 314358784
+        }
+      }
+    },
+    {
+      "max_abs_error": 9.918212890625e-05,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "selected_cell_fraction": 0.11174602806568146,
+      "tile": 16,
+      "timings": {
+        "crop": {
+          "mean_ms": 2.8028586879372597,
+          "p95_ms": 2.9021192342042923,
+          "peak_allocated_bytes": 189283328
+        },
+        "dense_after": {
+          "mean_ms": 6.522534942875306,
+          "p95_ms": 6.6050136112608016,
+          "peak_allocated_bytes": 315177472
+        },
+        "dense_before": {
+          "mean_ms": 6.4563774115716415,
+          "p95_ms": 6.531129288487136,
+          "peak_allocated_bytes": 315177472
+        },
+        "gather": {
+          "mean_ms": 2.953663934022188,
+          "p95_ms": 3.0824865447357293,
+          "peak_allocated_bytes": 176096256
+        },
+        "masked": {
+          "mean_ms": 6.588873973426719,
+          "p95_ms": 6.634582683909684,
+          "peak_allocated_bytes": 315177472
+        }
+      }
+    },
+    {
+      "max_abs_error": 3.814697265625e-05,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "selected_cell_fraction": 0.28190475702285767,
+      "tile": 16,
+      "timings": {
+        "crop": {
+          "mean_ms": 5.788874044083059,
+          "p95_ms": 7.801260286942123,
+          "peak_allocated_bytes": 201380864
+        },
+        "dense_after": {
+          "mean_ms": 6.500848398233454,
+          "p95_ms": 6.5072056371718645,
+          "peak_allocated_bytes": 315177472
+        },
+        "dense_before": {
+          "mean_ms": 6.591159477829933,
+          "p95_ms": 6.7875084932893515,
+          "peak_allocated_bytes": 315177472
+        },
+        "gather": {
+          "mean_ms": 3.0865817641218505,
+          "p95_ms": 4.827462194953112,
+          "peak_allocated_bytes": 206807040
+        },
+        "masked": {
+          "mean_ms": 6.573401476877431,
+          "p95_ms": 6.6675536800175905,
+          "peak_allocated_bytes": 315177472
+        }
+      }
+    },
+    {
+      "max_abs_error": 4.57763671875e-05,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "selected_cell_fraction": 0.5612698197364807,
+      "tile": 16,
+      "timings": {
+        "crop": {
+          "mean_ms": 4.88668002653867,
+          "p95_ms": 4.959580360446125,
+          "peak_allocated_bytes": 275730944
+        },
+        "dense_after": {
+          "mean_ms": 6.47320004645735,
+          "p95_ms": 6.535870907828212,
+          "peak_allocated_bytes": 315177472
+        },
+        "dense_before": {
+          "mean_ms": 6.466640438884497,
+          "p95_ms": 6.53877534205094,
+          "peak_allocated_bytes": 315177472
+        },
+        "gather": {
+          "mean_ms": 4.047455848194659,
+          "p95_ms": 4.110753652639687,
+          "peak_allocated_bytes": 276512768
+        },
+        "masked": {
+          "mean_ms": 6.7047199079145985,
+          "p95_ms": 6.814013444818555,
+          "peak_allocated_bytes": 315177472
+        }
+      }
+    },
+    {
+      "max_abs_error": 3.814697265625e-05,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "selected_cell_fraction": 0.10158729553222656,
+      "tile": 16,
+      "timings": {
+        "crop": {
+          "mean_ms": 10.92543580258886,
+          "p95_ms": 13.457432331051672,
+          "peak_allocated_bytes": 171982848
+        },
+        "dense_after": {
+          "mean_ms": 6.498213717713952,
+          "p95_ms": 6.634217035025358,
+          "peak_allocated_bytes": 315177472
+        },
+        "dense_before": {
+          "mean_ms": 6.49106411729008,
+          "p95_ms": 6.581760034896433,
+          "peak_allocated_bytes": 315177472
+        },
+        "gather": {
+          "mean_ms": 2.4331831450884542,
+          "p95_ms": 2.9329729732125998,
+          "peak_allocated_bytes": 175343616
+        },
+        "masked": {
+          "mean_ms": 6.560569178933899,
+          "p95_ms": 6.683511566370726,
+          "peak_allocated_bytes": 315177472
+        }
+      }
+    },
+    {
+      "max_abs_error": 3.814697265625e-05,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "selected_cell_fraction": 0.25904759764671326,
+      "tile": 16,
+      "timings": {
+        "crop": {
+          "mean_ms": 16.52684927297135,
+          "p95_ms": 19.99710269737988,
+          "peak_allocated_bytes": 189267456
+        },
+        "dense_after": {
+          "mean_ms": 6.494932218144338,
+          "p95_ms": 6.583114096429199,
+          "peak_allocated_bytes": 315177472
+        },
+        "dense_before": {
+          "mean_ms": 6.607186615777512,
+          "p95_ms": 6.620757991913706,
+          "peak_allocated_bytes": 315177472
+        },
+        "gather": {
+          "mean_ms": 2.7516323529804745,
+          "p95_ms": 2.7893440914340317,
+          "peak_allocated_bytes": 212660736
+        },
+        "masked": {
+          "mean_ms": 6.760286361289521,
+          "p95_ms": 7.971820840612048,
+          "peak_allocated_bytes": 315177472
+        }
+      }
+    },
+    {
+      "max_abs_error": 4.57763671875e-05,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "selected_cell_fraction": 0.4952380657196045,
+      "tile": 16,
+      "timings": {
+        "crop": {
+          "mean_ms": 33.696020394563675,
+          "p95_ms": 36.78749584360048,
+          "peak_allocated_bytes": 191589376
+        },
+        "dense_after": {
+          "mean_ms": 6.533494343360265,
+          "p95_ms": 6.548554159235209,
+          "peak_allocated_bytes": 314358272
+        },
+        "dense_before": {
+          "mean_ms": 6.551346757138769,
+          "p95_ms": 6.747558829374611,
+          "peak_allocated_bytes": 314358272
+        },
+        "gather": {
+          "mean_ms": 3.859682621744772,
+          "p95_ms": 3.9203223772346973,
+          "peak_allocated_bytes": 271997440
+        },
+        "masked": {
+          "mean_ms": 6.608091892364125,
+          "p95_ms": 6.678373971953988,
+          "peak_allocated_bytes": 314358272
+        }
+      }
+    },
+    {
+      "max_abs_error": 3.814697265625e-05,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "selected_cell_fraction": 0.12190476059913635,
+      "tile": 32,
+      "timings": {
+        "crop": {
+          "mean_ms": 2.4242394991839924,
+          "p95_ms": 2.5012056110426784,
+          "peak_allocated_bytes": 189468672
+        },
+        "dense_after": {
+          "mean_ms": 6.537753234927853,
+          "p95_ms": 6.65153794689104,
+          "peak_allocated_bytes": 315181056
+        },
+        "dense_before": {
+          "mean_ms": 6.577095063403249,
+          "p95_ms": 6.599767331499606,
+          "peak_allocated_bytes": 315181056
+        },
+        "gather": {
+          "mean_ms": 2.5136472191661596,
+          "p95_ms": 2.5966094923205674,
+          "peak_allocated_bytes": 177678336
+        },
+        "masked": {
+          "mean_ms": 6.577782100066543,
+          "p95_ms": 6.655873544514179,
+          "peak_allocated_bytes": 315181056
+        }
+      }
+    },
+    {
+      "max_abs_error": 4.57763671875e-05,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "selected_cell_fraction": 0.3199999928474426,
+      "tile": 32,
+      "timings": {
+        "crop": {
+          "mean_ms": 3.238455050935348,
+          "p95_ms": 5.532606423366811,
+          "peak_allocated_bytes": 241355264
+        },
+        "dense_after": {
+          "mean_ms": 6.52915471388648,
+          "p95_ms": 6.690961227286607,
+          "peak_allocated_bytes": 315181056
+        },
+        "dense_before": {
+          "mean_ms": 6.457427493296564,
+          "p95_ms": 6.575291918125004,
+          "peak_allocated_bytes": 315181056
+        },
+        "gather": {
+          "mean_ms": 2.8073074218506613,
+          "p95_ms": 2.8665567049756646,
+          "peak_allocated_bytes": 216345600
+        },
+        "masked": {
+          "mean_ms": 6.5560285312434035,
+          "p95_ms": 6.644829886499792,
+          "peak_allocated_bytes": 315181056
+        }
+      }
+    },
+    {
+      "max_abs_error": 4.57763671875e-05,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "selected_cell_fraction": 0.6399999856948853,
+      "tile": 32,
+      "timings": {
+        "crop": {
+          "mean_ms": 5.071230395697057,
+          "p95_ms": 5.237875389866531,
+          "peak_allocated_bytes": 312913408
+        },
+        "dense_after": {
+          "mean_ms": 6.525177764706314,
+          "p95_ms": 6.618451129179448,
+          "peak_allocated_bytes": 315181056
+        },
+        "dense_before": {
+          "mean_ms": 6.457343519044419,
+          "p95_ms": 6.535887101199478,
+          "peak_allocated_bytes": 315181056
+        },
+        "gather": {
+          "mean_ms": 4.638113120260338,
+          "p95_ms": 4.610074940137565,
+          "peak_allocated_bytes": 296358912
+        },
+        "masked": {
+          "mean_ms": 6.570680804240207,
+          "p95_ms": 6.678200315218419,
+          "peak_allocated_bytes": 315181056
+        }
+      }
+    },
+    {
+      "max_abs_error": 9.918212890625e-05,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "selected_cell_fraction": 0.1168253943324089,
+      "tile": 32,
+      "timings": {
+        "crop": {
+          "mean_ms": 5.734795914031565,
+          "p95_ms": 6.933245109394187,
+          "peak_allocated_bytes": 172367360
+        },
+        "dense_after": {
+          "mean_ms": 6.552927359007299,
+          "p95_ms": 6.616968126036227,
+          "peak_allocated_bytes": 315181056
+        },
+        "dense_before": {
+          "mean_ms": 6.454803647163014,
+          "p95_ms": 6.500615703407675,
+          "peak_allocated_bytes": 315181056
+        },
+        "gather": {
+          "mean_ms": 2.580544430141648,
+          "p95_ms": 2.87407950963825,
+          "peak_allocated_bytes": 176891904
+        },
+        "masked": {
+          "mean_ms": 6.597421877086163,
+          "p95_ms": 6.699604680761695,
+          "peak_allocated_bytes": 315181056
+        }
+      }
+    },
+    {
+      "max_abs_error": 3.814697265625e-05,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "selected_cell_fraction": 0.2844444215297699,
+      "tile": 32,
+      "timings": {
+        "crop": {
+          "mean_ms": 11.02448042947799,
+          "p95_ms": 12.717445380985735,
+          "peak_allocated_bytes": 182579200
+        },
+        "dense_after": {
+          "mean_ms": 6.546277723585566,
+          "p95_ms": 6.750584987457842,
+          "peak_allocated_bytes": 315181056
+        },
+        "dense_before": {
+          "mean_ms": 6.601950176991522,
+          "p95_ms": 6.691326736472547,
+          "peak_allocated_bytes": 315181056
+        },
+        "gather": {
+          "mean_ms": 2.906072271677355,
+          "p95_ms": 3.715738526079803,
+          "peak_allocated_bytes": 212660224
+        },
+        "masked": {
+          "mean_ms": 6.643230747431517,
+          "p95_ms": 6.810911186039447,
+          "peak_allocated_bytes": 315181056
+        }
+      }
+    },
+    {
+      "max_abs_error": 3.814697265625e-05,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "selected_cell_fraction": 0.5377777814865112,
+      "tile": 32,
+      "timings": {
+        "crop": {
+          "mean_ms": 13.364452837655941,
+          "p95_ms": 15.439116372726856,
+          "peak_allocated_bytes": 204274176
+        },
+        "dense_after": {
+          "mean_ms": 6.481676641851664,
+          "p95_ms": 6.6015525022521615,
+          "peak_allocated_bytes": 315181056
+        },
+        "dense_before": {
+          "mean_ms": 6.587640879054864,
+          "p95_ms": 6.5943559049628675,
+          "peak_allocated_bytes": 315181056
+        },
+        "gather": {
+          "mean_ms": 4.115936656792958,
+          "p95_ms": 4.081119131296873,
+          "peak_allocated_bytes": 276613120
+        },
+        "masked": {
+          "mean_ms": 6.611707077051203,
+          "p95_ms": 6.7499863798730075,
+          "peak_allocated_bytes": 315181056
+        }
+      }
+    }
+  ],
+  "repeats": 30,
+  "scope": "Update only, synthetic packed input/masks, same weights and GPU sequential comparisons.",
+  "seed": 303,
+  "status": "COMPLETED"
+}

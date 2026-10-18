@@ -1,0 +1,35 @@
+{
+  "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+  "dense_wrapper_prediction_max_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "gather_precision": {
+    "atol": 0.0005,
+    "caveat": "Floating point equivalence gate, not a claim of prediction/AP identity.",
+    "max_abs_error": 0.025390625,
+    "max_relative_rms": 1e-06,
+    "previous_atol_failed_elements": 1,
+    "relative_rms_error": 3.218798951820645e-07,
+    "rtol": 0.0001,
+    "selected_elements": 143360
+  },
+  "real_weight_crop_max_error": 0.0,
+  "real_weight_crop_stats": {
+    "actual_write_fraction": 0.02222222089767456,
+    "crop_area_ratio_before_fallback": 0.032063492063492065,
+    "executed_input_area_ratio": 0.032063492063492065,
+    "fallback": false,
+    "requested_fraction": 0.0001190476177725941,
+    "selected_fraction": 0.02222222089767456,
+    "tiles": 3
+  },
+  "real_weight_gather_max_error": 0.025390625,
+  "status": "PASSED"
+}
