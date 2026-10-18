@@ -1,10 +1,25 @@
 import unittest
 import torch
-from opencood.models.sub_modules.int_light_repair import LightRepair,repair_input_request
+from opencood.models.sub_modules.int_light_repair import LightRepair,repair_input_request,make_repairs
 from opencood.models.sub_modules.int_cache_repair import refresh_tiles
 
 
 class LightRepairTests(unittest.TestCase):
+    def test_decoded_repair_uses_same_grid_evidence_and_learns_residual(self):
+        torch.manual_seed(11)
+        module=make_repairs('decoded')[0]
+        first=torch.randn(1,128,9,13,requires_grad=True)
+        old=torch.randn(1,256,9,13);valid=torch.ones(1,1,9,13,dtype=torch.bool)
+        valid[...,-1,-1]=False
+        x,request=repair_input_request(first,old,valid,torch.zeros_like(valid),0)
+        self.assertTrue(torch.equal(x[:,:128],first))
+        self.assertTrue(torch.equal(module(x),old))
+        self.assertEqual(int(request.sum()),1)
+        torch.nn.init.normal_(module.net[-1].weight,std=.02)
+        module(x).square().mean().backward()
+        self.assertGreater(float(first.grad.abs().sum()),0.)
+        self.assertGreater(float(module.net[-1].weight.grad.abs().sum()),0.)
+
     def test_identity_init_and_actual_cropped_parity(self):
         torch.manual_seed(7)
         module=LightRepair(256).eval();x=torch.randn(1,385,25,63)

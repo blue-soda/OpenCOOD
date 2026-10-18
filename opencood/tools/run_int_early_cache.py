@@ -287,6 +287,7 @@ def main():
     p.add_argument('--cache-kind',choices=['stages','decoded'],default='stages')
     p.add_argument('--mode',choices=['gru'],default='gru')
     p.add_argument('--repair-policy',choices=['local','dense'],default='local')
+    p.add_argument('--repair-target',choices=['stages','decoded'],default='stages')
     p.add_argument('--repair-checkpoint');p.add_argument('--repair-period',type=int,choices=[1,2,3],default=2)
     p.add_argument('--repair-ablation',choices=['none','zero-residual','original'],default='none')
     p.add_argument('--profile-stages',action='store_true',help='Diagnostic prefix with stage spans; learned-eval only')
@@ -301,6 +302,7 @@ def main():
         p.error('Training supports period2 local/dense or period3 dense')
     if a.stage=='learned-repair' and a.repair_ablation!='none':
         p.error('Ablations are evaluation-only')
+    if a.repair_target=='decoded' and a.repair_policy!='dense':p.error('Decoded repair is dense-only')
     if a.worker:
         try:
             worker(a)

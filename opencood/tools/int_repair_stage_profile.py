@@ -13,7 +13,7 @@ class RepairStageProfiler:
         for i in range(3):targets.append(('stage%d'%(i+1),getattr(model.backbone.resnet,'layer%d'%i),'forward'))
         if model.shrink_flag:targets.append(('shrink',model.shrink_conv,'forward'))
         if model.use_dir:targets.append(('direction',model.dir_head,'forward'))
-        for i,module in enumerate(repairs):targets.append(('repair%d'%(i+2),module,'forward'))
+        for i,module in enumerate(repairs):targets.append(('repair_decoded' if len(repairs)==1 else 'repair%d'%(i+2),module,'forward'))
         for name,obj,attr in targets:
             original=getattr(obj,attr);self.saved.append((obj,attr,original))
             setattr(obj,attr,self.wrap(name,original))

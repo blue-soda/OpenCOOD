@@ -1,0 +1,282 @@
+{
+  "caveats": [
+    "Reloaded frozen detector and repair checkpoint; period1 is paired all-original-stage control.",
+    "Period2 skips original deep stages on every partial frame; local=actual tile crops, dense=whole small repair modules.",
+    "stage_means combines different module input areas, not backbone MAC reduction.",
+    "Timing includes model/gate/warp/cache/repair/decoder/head but excludes IO/voxelization/postprocess.",
+    "Use sequential runs on the same GPU after both training jobs finish; one timing pair is not a stability study.",
+    "Period3 evaluation with period3-trained weights; matched interval. Up to two partial frames use the same full anchor, age below 0.25s; repaired outputs are never written into the anchor.",
+    "Diagnostic prefix; not full-validation accuracy or production latency evidence.",
+    "Disjoint top-level CUDA event spans can include device idle time waiting for host launches; not pure kernel compute or utilization.",
+    "Host call durations include asynchronous launch and possible blocking; do not add host and CUDA spans.",
+    "Other span includes deep-cache alignment, input assembly, bookkeeping and instrumentation gaps.",
+    "No stage-level synchronization; one synchronization at model-step end. Instrumentation adds overhead."
+  ],
+  "content_calibration_sha256": null,
+  "content_threshold": null,
+  "labels": 61,
+  "metrics": {
+    "bev_ap30": 0.952221016449904,
+    "bev_ap50": 0.9286339637907391,
+    "bev_ap70": 0.8615634729037102
+  },
+  "model_step_ms_mean": 27.858740990845167,
+  "model_step_ms_p50": 26.07989846728742,
+  "model_step_ms_p95": 32.75726764695719,
+  "oracle_index": null,
+  "oracle_stage0": false,
+  "original_deep_stage_call_fraction": 0.33984375,
+  "partial_frames": 169,
+  "partial_labeled_frames": 40,
+  "peak_gpu_bytes": 454190592,
+  "periodic_last": 0,
+  "periodic_refresh_counts": null,
+  "repair_ablation": "none",
+  "repair_checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_dense_period3/epoch_006/repairs.pth",
+  "repair_checkpoint_sha256": "6c1b2e8ccc2dfbf8935f8470c4932f9613cd849754542732a53c796690a72c7c",
+  "repair_epoch": 6,
+  "repair_period": 3,
+  "repair_policy": "dense",
+  "reset_frames": 10,
+  "scans": 256,
+  "scope": "Engineering prefix only; not a full validation result",
+  "seconds": 13.137562074931338,
+  "stage_means": [
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "crop_area_ratio_before_fallback": 1.0,
+      "executed_input_area_ratio": 1.0,
+      "fallback": 0.0,
+      "requested_fraction": 1.0,
+      "selected_fraction": 1.0,
+      "tiles": 1.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "crop_area_ratio_before_fallback": 1.0,
+      "executed_input_area_ratio": 1.0,
+      "fallback": 0.0,
+      "requested_fraction": 1.0,
+      "selected_fraction": 1.0,
+      "tiles": 1.0
+    }
+  ],
+  "stage_profile": {
+    "caveats": [
+      "Diagnostic prefix; not full-validation accuracy or production latency evidence.",
+      "Disjoint top-level CUDA event spans can include device idle time waiting for host launches; not pure kernel compute or utilization.",
+      "Host call durations include asynchronous launch and possible blocking; do not add host and CUDA spans.",
+      "Other span includes deep-cache alignment, input assembly, bookkeeping and instrumentation gaps.",
+      "No stage-level synchronization; one synchronization at model-step end. Instrumentation adds overhead."
+    ],
+    "groups": {
+      "all": {
+        "cuda_span_ms": 27.61673106216803,
+        "frames": 246,
+        "other_cuda_span_ms": 1.7940615041681178,
+        "stages": {
+          "classification": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.04759102535805082,
+            "host_call_ms": 0.1777979437398111
+          },
+          "decode": {
+            "calls": 1.0,
+            "cuda_span_ms": 5.440457902303556,
+            "host_call_ms": 1.0706358485120704
+          },
+          "direction": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.046129951844128166,
+            "host_call_ms": 0.13529955091454635
+          },
+          "fm": {
+            "calls": 1.0,
+            "cuda_span_ms": 6.00414075308699,
+            "host_call_ms": 3.077944803119796
+          },
+          "pillar": {
+            "calls": 1.0,
+            "cuda_span_ms": 1.4883293688781862,
+            "host_call_ms": 1.1807156743754337
+          },
+          "regression": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.047241366627376255,
+            "host_call_ms": 0.14399200568081644
+          },
+          "repair2": {
+            "calls": 0.6626016260162602,
+            "cuda_span_ms": 0.46770159379253545,
+            "host_call_ms": 0.49965872383880905
+          },
+          "repair3": {
+            "calls": 0.6626016260162602,
+            "cuda_span_ms": 0.3651850401628308,
+            "host_call_ms": 0.3899125177867529
+          },
+          "scatter": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.5468368128063233,
+            "host_call_ms": 0.8338722466619882
+          },
+          "shrink": {
+            "calls": 1.0,
+            "cuda_span_ms": 4.562694251052732,
+            "host_call_ms": 0.7615906481699246
+          },
+          "stage1": {
+            "calls": 1.0,
+            "cuda_span_ms": 3.054800133395001,
+            "host_call_ms": 2.2420016925675963
+          },
+          "stage2": {
+            "calls": 0.33739837398373984,
+            "cuda_span_ms": 1.4425079609320415,
+            "host_call_ms": 0.9276428462452884
+          },
+          "stage3": {
+            "calls": 0.33739837398373984,
+            "cuda_span_ms": 2.3090533977601586,
+            "host_call_ms": 1.1039255026016173
+          }
+        }
+      },
+      "refresh": {
+        "cuda_span_ms": 31.907457167843738,
+        "frames": 83,
+        "other_cuda_span_ms": 0.09828856686152608,
+        "stages": {
+          "classification": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.047807229884776724,
+            "host_call_ms": 0.18853173277015428
+          },
+          "decode": {
+            "calls": 1.0,
+            "cuda_span_ms": 5.078793272914656,
+            "host_call_ms": 1.0779097322823412
+          },
+          "direction": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.04614168742155454,
+            "host_call_ms": 0.1357120029762926
+          },
+          "fm": {
+            "calls": 1.0,
+            "cuda_span_ms": 5.904692454510425,
+            "host_call_ms": 2.968836314864008
+          },
+          "pillar": {
+            "calls": 1.0,
+            "cuda_span_ms": 1.434318265282964,
+            "host_call_ms": 1.1219695934195475
+          },
+          "regression": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.04740009717194431,
+            "host_call_ms": 0.14570146148283797
+          },
+          "scatter": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.5229185535965195,
+            "host_call_ms": 0.811841207029051
+          },
+          "shrink": {
+            "calls": 1.0,
+            "cuda_span_ms": 4.567681542362076,
+            "host_call_ms": 0.7185846123934151
+          },
+          "stage1": {
+            "calls": 1.0,
+            "cuda_span_ms": 3.04033002508692,
+            "host_call_ms": 2.2394279584692542
+          },
+          "stage2": {
+            "calls": 1.0,
+            "cuda_span_ms": 4.275385040834726,
+            "host_call_ms": 2.7493992792330233
+          },
+          "stage3": {
+            "calls": 1.0,
+            "cuda_span_ms": 6.843700431915651,
+            "host_call_ms": 3.2718755860240702
+          }
+        }
+      },
+      "repair": {
+        "cuda_span_ms": 25.43188279976874,
+        "frames": 163,
+        "other_cuda_span_ms": 2.6575532452506154,
+        "stages": {
+          "classification": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.047480933482478734,
+            "host_call_ms": 0.17233227202497378
+          },
+          "decode": {
+            "calls": 1.0,
+            "cuda_span_ms": 5.6246184191089466,
+            "host_call_ms": 1.0669319690462271
+          },
+          "direction": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.04612397605930369,
+            "host_call_ms": 0.13508952931255286
+          },
+          "fm": {
+            "calls": 1.0,
+            "cuda_span_ms": 6.054780070767081,
+            "host_call_ms": 3.133503113090535
+          },
+          "pillar": {
+            "calls": 1.0,
+            "cuda_span_ms": 1.5158319553714588,
+            "host_call_ms": 1.2106293229603329
+          },
+          "regression": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.04716054064455939,
+            "host_call_ms": 0.14312154659144352
+          },
+          "repair2": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.7058563930856669,
+            "host_call_ms": 0.7540861721739082
+          },
+          "repair3": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.551138158773352,
+            "host_call_ms": 0.5884569286843019
+          },
+          "scatter": {
+            "calls": 1.0,
+            "cuda_span_ms": 0.5590160490910699,
+            "host_call_ms": 0.8450905061069808
+          },
+          "shrink": {
+            "calls": 1.0,
+            "cuda_span_ms": 4.560154710079264,
+            "host_call_ms": 0.7834894271236073
+          },
+          "stage1": {
+            "calls": 1.0,
+            "cuda_span_ms": 3.062168348054944,
+            "host_call_ms": 2.2433122442863835
+          }
+        }
+      }
+    },
+    "warmup_discarded": 10
+  },
+  "state_bytes": 35884800,
+  "status": "COMPLETED",
+  "support_profile": false,
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+  "uncovered_fraction_mean": null,
+  "zero_uncovered": false
+}

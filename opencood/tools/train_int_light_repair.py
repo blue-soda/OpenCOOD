@@ -12,6 +12,7 @@ from opencood.models.sub_modules.int_local_cache import LocalCacheDetector,local
 from opencood.models.sub_modules.int_early_cache import early_descriptor
 from opencood.models.sub_modules.int_cache_repair import tile_mask,expand_tiles
 from opencood.models.sub_modules.int_feature_memory import warp_bev
+from opencood.models.sub_modules.int_decoded_repair import DecodedCacheDetector
 from opencood.tools.run_int_cache_repair import evaluate
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
@@ -29,7 +30,10 @@ def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
     assert contract['source_policy']==policy
     assert contract['teacher_checkpoint_sha256']==provenance['checkpoint']['sha256']
     assert contract['repair_policy']==a.repair_policy
-    repairs=make_repairs().cuda().eval();repairs.load_state_dict(saved['repairs'],strict=True)
+    target=getattr(a,'repair_target','stages')
+    assert contract.get('repair_target','stages')==target
+    detector=DecodedCacheDetector if target=='decoded' else LocalCacheDetector
+    repairs=make_repairs(target).cuda().eval();repairs.load_state_dict(saved['repairs'],strict=True)
     assert sum(p.numel() for p in repairs.parameters())==contract['trainable_parameters']
     ablation=getattr(a,'repair_ablation','none')
     if ablation=='zero-residual':
@@ -44,10 +48,10 @@ def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
     assert engineering_report['status']=='PASSED'
     if a.repair_period==3:
         assert a.repair_policy=='dense' and ablation=='none'
-        engineering(model,cfg,rows,repairs,policy['selected']['threshold'],out,True,period=3)
+        engineering(model,cfg,rows,repairs,policy['selected']['threshold'],out,True,period=3,target=target)
     profiling=getattr(a,'profile_stages',False)
     a.stage='pilot' if profiling else 'full';a.engineering=str(run/'engineering.json')
-    wrapper=LocalCacheDetector(model,cfg,policy['selected']['threshold'],period=a.repair_period,
+    wrapper=detector(model,cfg,policy['selected']['threshold'],period=a.repair_period,
                               repair_modules=repairs,repair_dense=a.repair_policy=='dense')
     if ablation=='original':wrapper=OriginalDetectorControl(model)
     torch.cuda.reset_peak_memory_stats()
@@ -64,7 +68,7 @@ def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
     frames=[json.loads(s) for s in (out/'frames.jsonl').read_text().splitlines()]
     partial=[r for r in frames if r['local_partial']]
     report.update(repair_policy=a.repair_policy,repair_period=a.repair_period,repair_checkpoint=str(checkpoint),
-        repair_ablation=ablation,
+        repair_ablation=ablation,repair_target=target,
         repair_checkpoint_sha256=digest(checkpoint),repair_epoch=saved['epoch'],
         partial_frames=len(partial),partial_labeled_frames=sum(r['supervised'] for r in partial),
         original_deep_stage_call_fraction=1-len(partial)/len(frames),
@@ -81,10 +85,11 @@ def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
         training_period=contract.get('repair_period',2)
         report['caveats'].append('Period3 evaluation with period%d-trained weights; %s. Up to two partial frames use the same full anchor, age below 0.25s; repaired outputs are never written into the anchor.' % (training_period,'matched interval' if training_period==3 else 'zero-shot interval extrapolation'))
     if profiling:report['caveats'].extend(report['stage_profile']['caveats'])
+    if target=='decoded':report['caveats'].append('Decoded cache: one repair module replaces original stages2/3 plus multiscale decode and shrink on partial frames; cached features are at the detection-head input.')
     return report
 
 
-def training_pair(first,targets,teacher,cache,meta,repairs,bounds,threshold,dense=False):
+def training_pair(first,targets,teacher,cache,meta,repairs,bounds,threshold,dense=False,target='stages'):
     if dense:
         changed=torch.zeros_like(first[:,:1],dtype=torch.bool)
     else:
@@ -94,29 +99,34 @@ def training_pair(first,targets,teacher,cache,meta,repairs,bounds,threshold,dens
     outputs=[];loss=first.new_zeros(())
     for index,repair in enumerate(repairs,1):
         old,valid=warp_bev(cache['values'][index-1],cache['pose'],meta['pose'],bounds)
-        inputs,request=repair_input_request(first,old,valid,changed,index)
+        inputs,request=repair_input_request(first,old,valid,changed,0 if target=='decoded' else index)
         written=expand_tiles(tile_mask(request,4),4,old.shape[-2:])
         # Dense training is allowed; measured inference uses actual crop execution.
         prediction=repair(inputs) if dense else torch.where(written,repair(inputs),old)
-        target=targets[index-1]
-        weight=1+4*F.adaptive_avg_pool2d(teacher['psm'].sigmoid().amax(1,keepdim=True),target.shape[-2:])
-        loss=loss+((prediction-target).square()*weight).mean()/target.square().mean().clamp_min(1e-4)
+        reference=targets[index-1]
+        weight=1+4*F.adaptive_avg_pool2d(teacher['psm'].sigmoid().amax(1,keepdim=True),reference.shape[-2:])
+        loss=loss+((prediction-reference).square()*weight).mean()/reference.square().mean().clamp_min(1e-4)
         outputs.append(prediction)
     return outputs,loss
 
 
-def engineering(model,cfg,rows,repairs,threshold,out,dense=False,period=2):
+def engineering(model,cfg,rows,repairs,threshold,out,dense=False,period=2,target='stages'):
     test=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],
                         stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     (out/'unit_tests.log').write_bytes(test.stdout)
     if test.returncode:raise RuntimeError('INT tests failed')
-    full=LocalCacheDetector(model,cfg,threshold,period=1,repair_modules=repairs,repair_dense=dense)
-    partial=LocalCacheDetector(model,cfg,threshold,period=period,verify=True,repair_modules=repairs,repair_dense=dense)
-    states=[None,None,None];errors=[];crop_errors=[];deep_calls=[0,0];opportunities=0;max_partial_depth=0
+    detector=DecodedCacheDetector if target=='decoded' else LocalCacheDetector
+    full=detector(model,cfg,threshold,period=1,repair_modules=repairs,repair_dense=dense)
+    partial=detector(model,cfg,threshold,period=period,verify=True,repair_modules=repairs,repair_dense=dense)
+    counted=[getattr(model.backbone.resnet,'layer%d'%(i+1)) for i in range(2)]
+    if target=='decoded':
+        counted.append(model.backbone.deblocks[0])
+        if model.shrink_flag:counted.append(model.shrink_conv)
+    states=[None,None,None];errors=[];crop_errors=[];deep_calls=[0]*len(counted);opportunities=0;max_partial_depth=0
     def hit(i):
         def callback(module,inputs,output):deep_calls[i]+=1
         return callback
-    hooks=[getattr(model.backbone.resnet,'layer%d'%(i+1)).register_forward_hook(hit(i)) for i in range(2)]
+    hooks=[module.register_forward_hook(hit(i)) for i,module in enumerate(counted)]
     _,stream=loader(rows[:8],cfg,2,303)
     try:
         with torch.no_grad():
@@ -130,7 +140,7 @@ def engineering(model,cfg,rows,repairs,threshold,out,dense=False,period=2):
                 previous=None if states[2] is None else states[2]['cache']
                 actual,states[2],info=partial.step(ego,states[2],meta)
                 calls=[a-b for a,b in zip(deep_calls,before)]
-                assert calls==([0,0] if info['local_partial'] else [1,1])
+                assert calls==([0]*len(counted) if info['local_partial'] else [1]*len(counted))
                 if info['local_partial']:
                     assert states[2]['cache']['stamp']==previous['stamp']
                     assert all(x is y for x,y in zip(states[2]['cache']['values'],previous['values']))
@@ -142,14 +152,17 @@ def engineering(model,cfg,rows,repairs,threshold,out,dense=False,period=2):
     finally:
         for hook in hooks:hook.remove()
     if period==3:assert max_partial_depth==2, 'Engineering prefix must exercise two repairs from one anchor'
-    report=dict(status='PASSED',period=period,max_partial_depth=max_partial_depth,full_refresh_errors=errors,crop_errors=crop_errors,
+    report=dict(status='PASSED',period=period,repair_target=target,checked_full_path_modules=len(counted),
+                max_partial_depth=max_partial_depth,full_refresh_errors=errors,crop_errors=crop_errors,
                 partial_frames_with_zero_original_deep_stage_calls=opportunities)
     write_json(out/'engineering.json',report)
 
 
 def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
     threshold=policy['selected']['threshold'];bounds=cfg['model']['args']['lidar_range']
-    torch.manual_seed(303);repairs=make_repairs().cuda().eval()
+    target=getattr(a,'repair_target','stages')
+    detector=DecodedCacheDetector if target=='decoded' else LocalCacheDetector
+    torch.manual_seed(303);repairs=make_repairs(target).cuda().eval()
     period=a.repair_period
     assert period in (2,3) and (period==2 or a.repair_policy=='dense')
     initialization=None
@@ -163,17 +176,18 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
         initial=torch.load(str(initial_path),map_location='cpu')
         assert initial['contract']['teacher_checkpoint_sha256']==provenance['checkpoint']['sha256']
         assert initial['contract']['source_policy']==policy and initial['contract']['repair_policy']==a.repair_policy
+        assert initial['contract'].get('repair_target','stages')==target
         repairs.load_state_dict(initial['repairs'],strict=True)
         initialization=dict(checkpoint=str(initial_path),sha256=initial_best['sha256'],
                             source_period=initial['contract'].get('repair_period',2),source_epoch=initial['epoch'],
                             optimizer='Fresh optimizer/scheduler; not an interrupted-run resume')
     for parameter in model.parameters():parameter.requires_grad_(False)
     dense=a.repair_policy=='dense'
-    engineering(model,cfg,val_rows,repairs,threshold,out,dense,period=period)
+    engineering(model,cfg,val_rows,repairs,threshold,out,dense,period=period,target=target)
     optimizer=torch.optim.AdamW(repairs.parameters(),lr=1e-3,weight_decay=1e-4)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=1,
                                                        threshold=.001,threshold_mode='abs',min_lr=1e-5)
-    contract=dict(source_policy=policy,repair_policy=a.repair_policy,repair_period=period,initialization=initialization,
+    contract=dict(source_policy=policy,repair_policy=a.repair_policy,repair_target=target,repair_period=period,initialization=initialization,
         seed=303,epochs_min=5,epochs_max=20,patience=5,min_delta=.001,
         optimizer='AdamW',initial_lr=.001,weight_decay=.0001,
         teacher_checkpoint_sha256=provenance['checkpoint']['sha256'],
@@ -182,12 +196,16 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
         loss='Normalized feature MSE weighted by frozen teacher objectness + 0.1 weighted cls/reg output smooth L1',
         protocol='Full-frame anchors alternate with at most %d repair frames, age below 0.25s; original model always eval/frozen; no augmentation or artificial delays' % (period-1),
         inference='Independent stage2/3 residual repair; local=tile4 radius1 crops, dense=whole small module without gate; no original deep stages or teacher on repair frames')
+    if target=='decoded':contract['inference']='One dense repair of warped head-input cache from current stage1 and validity; no original stages2/3, multiscale decode or shrink on repair frames'
     write_json(out/'training_contract.json',contract)
     best=-1.;significant=-1.;stale=0;history=[];captured={}
     def capture(i):
         def callback(module,inputs,output):captured[i]=output.detach()
         return callback
     hooks=[getattr(model.backbone.resnet,'layer%d'%i).register_forward_hook(capture(i)) for i in range(3)]
+    if target=='decoded':
+        def capture_decoded(module,inputs):captured['decoded']=inputs[0].detach()
+        hooks.append(model.cls_head.register_forward_pre_hook(capture_decoded))
     try:
         for epoch in range(1,21):
             repairs.train();state=cache=None;losses=[];started=time.monotonic();updates=0
@@ -198,16 +216,19 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
                 ego=to_device(sample['ego'],torch.device('cuda'))
                 with torch.no_grad():
                     teacher,state,info=model.step(ego,state,meta)
-                    first=captured[0];targets=[captured[1],captured[2]]
+                    first=captured[0];targets=[captured['decoded']] if target=='decoded' else [captured[1],captured[2]]
                     full=cache is None or bool(info['reset']) or cache['frames']>=period-1 or (int(meta['timestamp_us'])-cache['stamp'])/1e6>=.25
                     if full:
                         cache=dict(values=targets,desc=early_descriptor(first,4),pose=meta['pose'],
                                    stamp=int(meta['timestamp_us']),frames=0)
                 if not full:
                     optimizer.zero_grad(set_to_none=True)
-                    outputs,loss=training_pair(first,targets,teacher,cache,meta,repairs,bounds,threshold,dense)
-                    features=model.backbone.decode_multiscale_feature([first]+outputs)
-                    if model.shrink_flag:features=model.shrink_conv(features)
+                    outputs,loss=training_pair(first,targets,teacher,cache,meta,repairs,bounds,threshold,dense,target)
+                    if target=='decoded':
+                        features=outputs[0]
+                    else:
+                        features=model.backbone.decode_multiscale_feature([first]+outputs)
+                        if model.shrink_flag:features=model.shrink_conv(features)
                     predictions=dict(psm=model.cls_head(features),rm=model.reg_head(features))
                     weight=1+4*teacher['psm'].sigmoid().amax(1,keepdim=True)
                     for key in predictions:
@@ -230,12 +251,12 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
             torch.save(dict(repairs=repairs.state_dict(),epoch=epoch,contract=contract),str(checkpoint))
             write_json(out/'status.json',dict(status='RUNNING',phase='full_validation',epoch=epoch))
             a.stage='full';a.engineering=str(out/'engineering.json')
-            wrapper=LocalCacheDetector(model,cfg,threshold,period=period,repair_modules=repairs,repair_dense=dense)
+            wrapper=detector(model,cfg,threshold,period=period,repair_modules=repairs,repair_dense=dense)
             torch.cuda.reset_peak_memory_stats()
             report=evaluate(a,model,cfg,val_rows,epoch_dir,wrapper)
             records=[json.loads(s) for s in (epoch_dir/'frames.jsonl').read_text().splitlines()]
             partial=[r for r in records if r['local_partial']]
-            report.update(repair_checkpoint_sha256=digest(checkpoint),epoch=epoch,repair_policy=a.repair_policy,repair_period=period,
+            report.update(repair_checkpoint_sha256=digest(checkpoint),epoch=epoch,repair_policy=a.repair_policy,repair_period=period,repair_target=target,
                 partial_frames=len(partial),partial_labeled_frames=sum(r['supervised'] for r in partial),
                 original_deep_stage_call_fraction=1-len(partial)/len(records),
                 caveats=['Learned ANN repair, not independent SNN benefit. Only repair modules trained; source detector frozen.',

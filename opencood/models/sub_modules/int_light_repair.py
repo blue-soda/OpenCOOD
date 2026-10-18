@@ -24,5 +24,6 @@ def repair_input_request(first,old,valid,changed,index):
     return torch.cat([evidence,old,valid.to(old.dtype)],1),request | ~valid
 
 
-def make_repairs():
-    return nn.ModuleList([LightRepair(256),LightRepair(512)])
+def make_repairs(target='stages'):
+    if target not in ('stages','decoded'):raise ValueError(target)
+    return nn.ModuleList([LightRepair(256)] if target=='decoded' else [LightRepair(256),LightRepair(512)])
