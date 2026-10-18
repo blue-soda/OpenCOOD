@@ -180,7 +180,10 @@ def worker(a):
     a.stage = 'calibrate' if requested == 'local-profile' else 'pilot'
     model,cfg,val,provenance = setup(a)
     write_json(out/'provenance.json',provenance)
-    if requested == 'learned-eval':
+    if requested == 'decoded-diagnostic':
+        from opencood.tools.diagnose_int_decoded_repair import diagnose
+        write_json(out/'report.json',diagnose(a,model,cfg,val,out,provenance))
+    elif requested == 'learned-eval':
         from opencood.tools.train_int_light_repair import evaluate_saved
         source=Path(a.source_suite)
         original=json.loads((source/'provenance.json').read_text())
@@ -282,7 +285,7 @@ def worker(a):
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--root',required=True);p.add_argument('--output',required=True)
-    p.add_argument('--gpu',type=int,required=True);p.add_argument('--stage',choices=['suite','full','local-profile','local-suite','learned-repair','learned-eval'],default='suite')
+    p.add_argument('--gpu',type=int,required=True);p.add_argument('--stage',choices=['suite','full','local-profile','local-suite','learned-repair','learned-eval','decoded-diagnostic'],default='suite')
     p.add_argument('--source-suite');p.add_argument('--gate',choices=['gru','stage1'],default='gru')
     p.add_argument('--cache-kind',choices=['stages','decoded'],default='stages')
     p.add_argument('--mode',choices=['gru'],default='gru')
@@ -295,7 +298,7 @@ def main():
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.stage in ('full','local-profile','local-suite','learned-repair','learned-eval') and not a.source_suite:
         p.error('Full evaluation requires the original suite with frozen policies and passed checks')
-    if a.stage=='learned-eval' and not a.repair_checkpoint:
+    if a.stage in ('learned-eval','decoded-diagnostic') and not a.repair_checkpoint:
         p.error('learned-eval requires a completed training checkpoint')
     if a.profile_stages and a.stage!='learned-eval':p.error('Stage profiling is evaluation-only')
     if a.stage=='learned-repair' and (a.repair_period==1 or (a.repair_period==3 and a.repair_policy!='dense')):
