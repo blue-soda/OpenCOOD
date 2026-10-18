@@ -213,8 +213,9 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
         assert source_provenance['contract']==provenance['contract']
         assert source_provenance['checkpoint']['sha256']==provenance['checkpoint']['sha256']
         saved=torch.load(str(resume_path),map_location='cpu')
-        assert saved['history']==json.loads((source/'history.json').read_text())
-        assert saved['contract']==json.loads((source/'training_contract.json').read_text())
+        # JSON stringifies integer keys (e.g. repair depth 1/2); checkpoint dictionaries do not.
+        assert json.loads(json.dumps(saved['history']))==json.loads((source/'history.json').read_text())
+        assert json.loads(json.dumps(saved['contract']))==json.loads((source/'training_contract.json').read_text())
         final_path=source/('epoch_%03d'%saved['epoch'])/'repairs.pth'
         final=torch.load(str(final_path),map_location='cpu')
         assert all(torch.equal(v,final['repairs'][k]) for k,v in saved['repairs'].items())
