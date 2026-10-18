@@ -1,0 +1,17 @@
+{
+  "pid": 19494,
+  "gpu": 5,
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_cached_update_parts",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--checkpoint",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_010/student.pth",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_cached_parts_e10"
+  ],
+  "created": 1792363324.0522335,
+  "code_commit": "dff157083aef813b47ed54a72ee627d2ec3e664e"
+}

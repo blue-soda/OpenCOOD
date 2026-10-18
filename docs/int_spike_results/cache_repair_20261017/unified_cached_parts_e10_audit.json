@@ -1,0 +1,37 @@
+{
+  "checkpoint_sha256": "bdd3335e50f02d75c9ec85a442b24e8a2973943a5118ea9dd181513846a1645f",
+  "runs": {
+    "dense_after": {
+      "scans": 512,
+      "labels": 255,
+      "AP70": 0.3664507890015803,
+      "mean_ms": 19.158338779116058
+    },
+    "dense_before": {
+      "scans": 512,
+      "labels": 255,
+      "AP70": 0.3664507890015803,
+      "mean_ms": 18.858151586885857
+    },
+    "masked_period3": {
+      "scans": 512,
+      "labels": 255,
+      "AP70": 0.36645105406144196,
+      "mean_ms": 19.667610360506135
+    },
+    "period2": {
+      "scans": 512,
+      "labels": 255,
+      "AP70": 0.3664510626780592,
+      "mean_ms": 18.257982236707946
+    },
+    "period3": {
+      "scans": 512,
+      "labels": 255,
+      "AP70": 0.36645105406144196,
+      "mean_ms": 18.209105561138596
+    }
+  },
+  "caveat": "Saved report/frame audit, not independent AP recomputation.",
+  "dense_before_after_AP_equal": true
+}

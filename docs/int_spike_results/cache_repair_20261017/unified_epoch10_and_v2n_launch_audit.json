@@ -1,0 +1,562 @@
+{
+  "training": [
+    {
+      "name": "unified_bev_dense_resume_v1",
+      "best": {
+        "ap70": 0.6008050909287055,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_resume_v1/epoch_055/student.pth",
+        "epoch": 55,
+        "sha256": "7ac4ef9fc695915313e700ef171fc841827f729b476aaca21bebfd2ec9c57d22"
+      },
+      "status": {
+        "epoch": 58,
+        "labels": 2290,
+        "mean_loss": 0.24051377846809724,
+        "phase": "train",
+        "scans": 4200,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1110
+      },
+      "checked": [
+        {
+          "epoch": 52,
+          "ap70": 0.598312083259868,
+          "checkpoint_sha256": "6761cc3cd95a9cfb3cb7afbbd028e059e5bed4fa2f3e0cde6977c0a2c8f904bc",
+          "max_loss": 0.8763651584994308,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 53,
+          "ap70": 0.5976095951936743,
+          "checkpoint_sha256": "72252e9203fcd0ada4da032d79a06c98609a37060eb0079529b93f7f29559b17",
+          "max_loss": 0.8557060382330285,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 54,
+          "ap70": 0.600289145469904,
+          "checkpoint_sha256": "c5fe3fb124215228247e873aea1f93b50769c51052fb2f07e6d0d8940fa74313",
+          "max_loss": 0.8609967001685599,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 55,
+          "ap70": 0.6008050909287055,
+          "checkpoint_sha256": "7ac4ef9fc695915313e700ef171fc841827f729b476aaca21bebfd2ec9c57d22",
+          "max_loss": 0.848807456074377,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 56,
+          "ap70": 0.598915169474907,
+          "checkpoint_sha256": "043ea7e4f59b2cc97bf8491b5a226505993f76f96ede3098ae3605f0d4b14983",
+          "max_loss": 0.823594686576699,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 57,
+          "ap70": 0.5986406750499872,
+          "checkpoint_sha256": "efc4c27d645bcea4001231aaae4e5f605d21d4183def2eaed821629c21cbeeee",
+          "max_loss": 0.8303227786998704,
+          "loss_gt100": 0
+        }
+      ]
+    },
+    {
+      "name": "unified_bev_v2_recurrent",
+      "best": {
+        "ap70": 0.28028584483716357,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_011/student.pth",
+        "epoch": 11,
+        "sha256": "6ed3a291e5207ced0f76030a1ffffd26e0519587e024ac8868f3c02b5ee93781"
+      },
+      "status": {
+        "epoch": 12,
+        "labels": 2049,
+        "mean_loss": 0.7175227234150976,
+        "phase": "train",
+        "scans": 3800,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1003
+      },
+      "checked": [
+        {
+          "epoch": 8,
+          "ap70": 0.25148044299669087,
+          "checkpoint_sha256": "ae945db5e2b9c7553256ef7f7a7aa4b37af63d0f108022236c858e629720ef30",
+          "max_loss": 4.489644803943463,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 9,
+          "ap70": 0.27624645833332634,
+          "checkpoint_sha256": "bd0f7d31fc9dfd428106c7c8561fdb4b8136917f9e7d1b871bed3867295eaf08",
+          "max_loss": 4.692246391379006,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 10,
+          "ap70": 0.27687219149760156,
+          "checkpoint_sha256": "bdd3335e50f02d75c9ec85a442b24e8a2973943a5118ea9dd181513846a1645f",
+          "max_loss": 4.648812355466523,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 11,
+          "ap70": 0.28028584483716357,
+          "checkpoint_sha256": "6ed3a291e5207ced0f76030a1ffffd26e0519587e024ac8868f3c02b5ee93781",
+          "max_loss": 4.112677169129476,
+          "loss_gt100": 0
+        }
+      ]
+    },
+    {
+      "name": "unified_bev_v2_reset",
+      "best": {
+        "ap70": 0.30860252429590557,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_reset/epoch_011/student.pth",
+        "epoch": 11,
+        "sha256": "63084fd8b4ec3eba4216145b2c2d5976ca1cc3135e28fdd176c2e7014172cc73"
+      },
+      "status": {
+        "epoch": 12,
+        "labels": 4389,
+        "mean_loss": 0.6957031681308916,
+        "phase": "train",
+        "scans": 8000,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 2108
+      },
+      "checked": [
+        {
+          "epoch": 8,
+          "ap70": 0.2446976061876215,
+          "checkpoint_sha256": "eeac28d3b36f699e62df5a3759000d45449e789eeead313ea35b0565bea8abe6",
+          "max_loss": 4.513165022604949,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 9,
+          "ap70": 0.2540169503082906,
+          "checkpoint_sha256": "d6d9e8f608674264c82dab6001dea3594f97a55939737976b450c096be6e43aa",
+          "max_loss": 4.081395021711764,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 10,
+          "ap70": 0.26406314731000713,
+          "checkpoint_sha256": "77787a674d4620a9d3e17251606cefc4f88f66490f9493659db9dd1caf8ad94b",
+          "max_loss": 3.7411572339153754,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 11,
+          "ap70": 0.30860252429590557,
+          "checkpoint_sha256": "63084fd8b4ec3eba4216145b2c2d5976ca1cc3135e28fdd176c2e7014172cc73",
+          "max_loss": 4.095936002193808,
+          "loss_gt100": 0
+        }
+      ]
+    }
+  ],
+  "v1_epoch10": {
+    "ap70": 0.31039470018272053,
+    "epoch": 10,
+    "labels": 4678,
+    "loss": 0.5449955744507671,
+    "lr": 0.001,
+    "scans": 8593,
+    "seconds": 720.9488715170883,
+    "stale_epochs": 0,
+    "updates": 2262
+  },
+  "current_scale_train_prefix": {
+    "1": {
+      "target_rms": 203.0947494506836,
+      "current_rms": 199.52197265625,
+      "residual_rms": 5.229870796203613,
+      "stale_rms": 30.35069465637207,
+      "delta_rms": 15.666285514831543
+    },
+    "7": {
+      "target_rms": 3166.367431640625,
+      "current_rms": 3161.3453369140625,
+      "residual_rms": 26.07069969177246,
+      "stale_rms": 485.9787292480469,
+      "delta_rms": 311.2532501220703
+    }
+  },
+  "new_controls": [
+    {
+      "name": "unified_bev_v2n_recurrent",
+      "status": {
+        "epoch": 1,
+        "labels": 290,
+        "mean_loss": 1.7611768961082597,
+        "phase": "train",
+        "scans": 600,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 161
+      },
+      "engineering": {
+        "caveat": "New model: finite predictions/shape/causality, not parity with the teacher. Crop equivalence is a unit test, not an active sparse policy.",
+        "core_conv_macs": {
+          "cls_head": 12902400,
+          "context": 3902976000,
+          "dir_head": 25804800,
+          "observation": 4541644800,
+          "readout": 1651507200,
+          "reg_head": 90316800,
+          "update": 18998784000
+        },
+        "core_conv_macs_total": 29223936000,
+        "core_state_sha256": "faf1ecce3978be6e92d16a300dc2bc581beafea4dabc56af5f32f12dd94d4a1a",
+        "cost_scope": "One real frame, core Conv2d only; excludes Pillar, warp, normalization, activation, interpolation and data movement; not measured latency.",
+        "frames": [
+          {
+            "frame": "011050",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011051",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011052",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011053",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011054",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011056",
+            "reset": "scene",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011057",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011058",
+            "reset": null,
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          }
+        ],
+        "memory_policy": "recurrent",
+        "original_spatial_calls": [
+          0,
+          0,
+          0
+        ],
+        "state_bytes": 25804800,
+        "status": "PASSED",
+        "trainable_parameters": 2471508,
+        "update_radius": 2,
+        "variant": "v2n"
+      },
+      "contract": {
+        "architecture": "Pillar64 frozen; residual observation128 stride2; two downsample context stages192/256 with dilated residual blocks; single256 state; radius2 residual gated update with cellwise channel normalization; pointwise256 readout and trainable detection heads; normalize current shortcut with non-affine LayerNorm",
+        "current_branch": "Non-affine per-cell channel LayerNorm after current projection, before residual addition; no added parameters; all other V2 architecture/initialization unchanged",
+        "data_contract": {
+          "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+          "fm_only_epochs": 1,
+          "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+          "lr": 0.0001,
+          "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+          "min_delta": 0.001,
+          "min_epochs": 20,
+          "mode": "gru",
+          "patience": 10,
+          "seed": 303,
+          "state_policy": "whole-segment/tbptt/v1",
+          "tbptt_steps": 4
+        },
+        "distillation_weight": 0.2,
+        "epochs_max": 60,
+        "epochs_min": 5,
+        "frozen_parameters": 768,
+        "future_sparse": "Radius2 update crop parity only, given full precomputed evidence; observation/context/readout remain dense; no active selector",
+        "initial_lr": 0.001,
+        "loss": "Mean GT detection loss over labelled frames + .2 mean foreground head distillation over all frames in each TBPTT window; no teacher feature target",
+        "memory_policy": "recurrent",
+        "min_delta": 0.001,
+        "optimizer": "AdamW",
+        "patience": 5,
+        "protocol": "Dense every-frame state update; memory_policy=recurrent; no augmentation/delay; same segment/gap resets and TBPTT windows as v1; no teacher state or periodic refresh",
+        "seed": 303,
+        "tbptt": 4,
+        "teacher_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+        "train_scans": 8593,
+        "trainable_parameters": 2471508,
+        "val_scans": 5794,
+        "version": "unified_bev_dense_v2n",
+        "weight_decay": 0.0001
+      },
+      "launch": {
+        "code_commit": "c5d2f9ba26c39f405328a8ade5e1c14e7a1ef5ad",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-m",
+          "opencood.tools.run_int_unified_bev",
+          "--root",
+          "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_recurrent",
+          "--gpu",
+          "6",
+          "--epochs",
+          "60",
+          "--variant",
+          "v2n",
+          "--memory-policy",
+          "recurrent",
+          "--worker"
+        ],
+        "created_unix": 1792363436.6075234,
+        "gpu": 6,
+        "pid": 21006
+      },
+      "finite_windows_observed": 171
+    },
+    {
+      "name": "unified_bev_v2n_reset",
+      "status": {
+        "epoch": 1,
+        "labels": 148,
+        "mean_loss": 1.349517820778652,
+        "phase": "train",
+        "scans": 400,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 108
+      },
+      "engineering": {
+        "caveat": "New model: finite predictions/shape/causality, not parity with the teacher. Crop equivalence is a unit test, not an active sparse policy.",
+        "core_conv_macs": {
+          "cls_head": 12902400,
+          "context": 3902976000,
+          "dir_head": 25804800,
+          "observation": 4541644800,
+          "readout": 1651507200,
+          "reg_head": 90316800,
+          "update": 18998784000
+        },
+        "core_conv_macs_total": 29223936000,
+        "core_state_sha256": "faf1ecce3978be6e92d16a300dc2bc581beafea4dabc56af5f32f12dd94d4a1a",
+        "cost_scope": "One real frame, core Conv2d only; excludes Pillar, warp, normalization, activation, interpolation and data movement; not measured latency.",
+        "frames": [
+          {
+            "frame": "011050",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011051",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011052",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011053",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011054",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011056",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011057",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          },
+          {
+            "frame": "011058",
+            "reset": "initial",
+            "state_shape": [
+              1,
+              256,
+              100,
+              252
+            ]
+          }
+        ],
+        "memory_policy": "reset",
+        "original_spatial_calls": [
+          0,
+          0,
+          0
+        ],
+        "state_bytes": 25804800,
+        "status": "PASSED",
+        "trainable_parameters": 2471508,
+        "update_radius": 2,
+        "variant": "v2n"
+      },
+      "contract": {
+        "architecture": "Pillar64 frozen; residual observation128 stride2; two downsample context stages192/256 with dilated residual blocks; single256 state; radius2 residual gated update with cellwise channel normalization; pointwise256 readout and trainable detection heads; normalize current shortcut with non-affine LayerNorm",
+        "current_branch": "Non-affine per-cell channel LayerNorm after current projection, before residual addition; no added parameters; all other V2 architecture/initialization unchanged",
+        "data_contract": {
+          "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+          "fm_only_epochs": 1,
+          "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+          "lr": 0.0001,
+          "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+          "min_delta": 0.001,
+          "min_epochs": 20,
+          "mode": "gru",
+          "patience": 10,
+          "seed": 303,
+          "state_policy": "whole-segment/tbptt/v1",
+          "tbptt_steps": 4
+        },
+        "distillation_weight": 0.2,
+        "epochs_max": 60,
+        "epochs_min": 5,
+        "frozen_parameters": 768,
+        "future_sparse": "Radius2 update crop parity only, given full precomputed evidence; observation/context/readout remain dense; no active selector",
+        "initial_lr": 0.001,
+        "loss": "Mean GT detection loss over labelled frames + .2 mean foreground head distillation over all frames in each TBPTT window; no teacher feature target",
+        "memory_policy": "reset",
+        "min_delta": 0.001,
+        "optimizer": "AdamW",
+        "patience": 5,
+        "protocol": "Dense every-frame state update; memory_policy=reset; no augmentation/delay; same segment/gap resets and TBPTT windows as v1; no teacher state or periodic refresh",
+        "seed": 303,
+        "tbptt": 4,
+        "teacher_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+        "train_scans": 8593,
+        "trainable_parameters": 2471508,
+        "val_scans": 5794,
+        "version": "unified_bev_dense_v2n",
+        "weight_decay": 0.0001
+      },
+      "launch": {
+        "code_commit": "c5d2f9ba26c39f405328a8ade5e1c14e7a1ef5ad",
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-m",
+          "opencood.tools.run_int_unified_bev",
+          "--root",
+          "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_reset",
+          "--gpu",
+          "7",
+          "--epochs",
+          "60",
+          "--variant",
+          "v2n",
+          "--memory-policy",
+          "reset",
+          "--worker"
+        ],
+        "created_unix": 1792363440.167664,
+        "gpu": 7,
+        "pid": 21157
+      },
+      "finite_windows_observed": 160
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "checkpoint_sha256": "bdd3335e50f02d75c9ec85a442b24e8a2973943a5118ea9dd181513846a1645f",
+  "parts_max_abs_error": 9.1552734375e-05,
+  "period1_prediction_max_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "status": "PASSED"
+}
