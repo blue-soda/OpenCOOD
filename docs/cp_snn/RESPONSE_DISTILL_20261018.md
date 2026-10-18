@@ -44,3 +44,16 @@ main实现85c0210已push。181直连GitHub先TLS失败、一次有界重试超�
 - [launch.json](results/response_distill_20261018/launch.json)，SHA256 `8fef867c8b92e8cd3db4c86a7378280976fb931b56b9146f947093e2457744de`。
 
 - [startup_snapshot.json](results/response_distill_20261018/startup_snapshot.json)，SHA256 `0b3338e6eb9abac380a1b63f1667750129daf850ce47ae85c09468e20daa7ccb`。
+
+
+## 训练中期核验（北京时间2026-10-18 17:49）
+
+四组完整零适配推理与CPU复算全部通过：1738帧/28622GT、预测哈希、BEV/3D精确复算及原始AP门槛均通过；最大AP70差为ANN KD0的−0.002384个百分点，在预登记0.02个百分点内，不称为跨运行输出完全一致。已自动进入10轮训练，四组均完成5轮并正在第6轮验证，教师完整state、学生解码器和BN摘要均已核验至第5轮不变。当前健康运行，尚无最佳模型的最终实际通信与独立复核，不据中期best作蒸馏有效性结论。
+
+实测每轮训练加验证约12—13分钟，仍在6小时硬上限内。保持90分钟跟进，不缩短轮询，不增加实验或调参。
+
+证据：
+
+- [zero_summary.json](results/response_distill_20261018/zero_summary.json)，SHA256 `f6a0006fb6ecc71680dcab39581fbc7373f3c620482b2ffd1a9a2396bc443e43`。
+
+- [progress_20261018_1749.json](results/response_distill_20261018/progress_20261018_1749.json)，SHA256 `0f470d4ee78a473feff71b2fa4056e9e940011ff35aec33744270c8ed2071678`。
