@@ -1,0 +1,52 @@
+{
+  "caveat": "Early learning, not convergence; checks full exposure, finite gradients, hashes and summaries, not independent AP recomputation.",
+  "epochs": [
+    {
+      "epoch": 1,
+      "metrics": {
+        "bev_ap30": 0.44712713851416075,
+        "bev_ap50": 0.2910104524658845,
+        "bev_ap70": 0.07317998829026608
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 2,
+      "metrics": {
+        "bev_ap30": 0.5793714178754781,
+        "bev_ap50": 0.40709728053424216,
+        "bev_ap70": 0.08952630771582198
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    }
+  ],
+  "history": [
+    {
+      "ap70": 0.07317998829026608,
+      "epoch": 1,
+      "labels": 4678,
+      "loss": 1.128135343987249,
+      "lr": 0.001,
+      "scans": 8593,
+      "seconds": 822.5692662079819,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.08952630771582198,
+      "epoch": 2,
+      "labels": 4678,
+      "loss": 0.895215082826768,
+      "lr": 0.001,
+      "scans": 8593,
+      "seconds": 723.6535756317899,
+      "stale_epochs": 0,
+      "updates": 2262
+    }
+  ],
+  "status": "PASSED"
+}

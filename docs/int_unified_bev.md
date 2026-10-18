@@ -47,3 +47,10 @@
 当前活动实验unified_bev_dense_v1，181 GPU0 PID16151，目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1，已进入epoch1训练600/8593扫描、290标注、161次TBPTT更新；loss/梯度有限。尚未产生完整验证AP，不以训练loss或模块数量宣称精度或加速。启动/工程/契约归档docs/int_spike_results/cache_repair_20261017/unified_bev_dense_v1_*。Verification Status更新为ENGINEERING_VERIFIED / TRAINING_IN_PROGRESS。
 下一轮检查本目录status/history/best和PID，重点核验首次完整5794/1738验证及学生状态自主递归；训练期间所有速度只作诊断，正式比较需完成后独立重载。旧decoded_foreground_period3_resume_v2在GPU7第31轮验证，最佳epoch30 AP70=66.68412%，仍单独按平台规则完成，勿混用两条路线checkpoint/训练契约。现有75.82349%候选保留。
 当前路线级自动任务仍为90分钟（推进时序感知，仅完成异常通知），覆盖长训练；首个完整epoch后按实际每轮耗时及平台接近程度调整。无参数更新或日志长期不推进需查进程，不能单凭GPU利用率低判定失败。
+
+## 2026-10-18 19:12首次完整验证与历史干预诊断
+unified_bev_dense_v1完成epoch1/2，完整AP30/50/70分别44.7127/29.1010/7.3180%和57.9371/40.7097/8.9526%，epoch3验证进行中。精度很低，不能称可用或更快；从随机状态表示/读出学习的前两轮仍在改善、stale0，尚未满足最少轮次或平台条件，不提前截断。两轮完整8593训练扫描/4678标注/2262个TBPTT更新、5794验证扫描/1738标注，帧顺序、有限梯度、权重SHA、状态独立与无原主干调用记录审计通过（非从框独立重算AP），归档unified_bev_early_audit.json。
+为区分“历史写回直接损害预测”与“当前网络尚未学好”，在GPU5对固定epoch2（SHA=50f3f090394aa1d79a33e2aecf52bb82727afc7ad1c92175ad1fbd31d9b067ae）做256帧/61标签teacher/student/student_reset诊断，目录unified_bev_diagnostic_e2，已COMPLETED。学生正常历史AP30/50/70=68.9434/62.0515/14.1781%，每帧清空=64.2656/55.8714/9.0593%，教师=95.4993/93.1639/86.1646%；正常历史GT损失0.8951低于清空0.9372，状态RMS范围0.1622–0.1961，没有数值爆炸。该前缀不支持“历史在当前测试中整体有害”，但不能排除长序列累积问题，也不能由此断定容量是唯一瓶颈。严格IoU定位仍弱，先观察学习曲线，再考虑空间上下文/容量或监督。清空只是当前权重上的干预，不是另训单帧基线；这些前缀AP不可与完整AP混排。归档unified_bev_diagnostic_e2_report.json。
+诊断入口为原run_int_unified_bev加--checkpoint <不可变权重> --diagnostic，不改训练作业，不为低早期AP直接并发启动多个随意加宽模型。下一次读取dense_v1完整history，若平台仍差，优先诊断定位误差和模型容量，再设计单因素修订。
+
+同轮补充：unified_bev_dense_v1第3轮完整AP70=15.03632498%，较第2轮8.95263%继续改善，进入第4轮；完整epoch3报告归档unified_bev_epoch003_report.json。仍远未达到可用精度，继续既定训练，不据这三轮宣称架构优劣或调整验证阈值。首个诊断已完成，GPU5已释放，不重复运行。旧decoded_foreground_period3_resume_v2第34轮AP70=66.81960186%（SHA=35680aee6b451beb1573b659bf563b5532c85f86babe06e1cca80a1ddd471412），相对显著改善参照超过0.001，stale由4重置0，LR1e-5，已进入第35轮；因此本轮没有按平台停止，不能把此前接近停止当作已收敛。保持90分钟定时，下一次重点看旧方案是否到40上限或平台、新基线完整学习曲线。若旧方案到40轮仍仅小幅改善且远低于75.82349%保留候选，不自动无限续训，应完成独立重载评估并将算力优先用于新路线。

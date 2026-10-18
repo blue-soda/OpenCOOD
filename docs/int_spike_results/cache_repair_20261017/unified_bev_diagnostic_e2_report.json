@@ -1,0 +1,43 @@
+{
+  "caveats": [
+    "256-frame diagnostic prefix only; not full AP, convergence or latency evidence.",
+    "Reset is an inference intervention on a temporal checkpoint, not a separately trained single-frame baseline.",
+    "Teacher is an independent stream; no teacher values are injected into the student."
+  ],
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1/epoch_002/student.pth",
+  "checkpoint_sha256": "50f3f090394aa1d79a33e2aecf52bb82727afc7ad1c92175ad1fbd31d9b067ae",
+  "labels": 61,
+  "mean_detections": {
+    "student": 15.344262295081966,
+    "student_reset": 17.147540983606557,
+    "teacher": 12.459016393442623
+  },
+  "mean_gt_loss": {
+    "student": 0.8950693306191729,
+    "student_reset": 0.9371990711340458,
+    "teacher": 0.35758759963622283
+  },
+  "metrics": {
+    "student": {
+      "ap30": 0.6894341231286534,
+      "ap50": 0.6205145981976906,
+      "ap70": 0.14178061234255487
+    },
+    "student_reset": {
+      "ap30": 0.6426563133493352,
+      "ap50": 0.5587137937884324,
+      "ap70": 0.09059291874120338
+    },
+    "teacher": {
+      "ap30": 0.9549927266869173,
+      "ap50": 0.9316390259497906,
+      "ap70": 0.8616458207993445
+    }
+  },
+  "scans": 256,
+  "state_rms_range": [
+    0.1621592491865158,
+    0.1961161345243454
+  ],
+  "status": "COMPLETED"
+}
