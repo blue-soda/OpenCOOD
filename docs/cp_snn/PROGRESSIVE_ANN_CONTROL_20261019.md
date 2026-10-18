@@ -56,3 +56,10 @@ snn初始state SHA256 `54a9bc255e6b53fdab55e31160daf25ae4013639abc1eb79c95858e7c
 ann初始state SHA256 `b2321f9a0fe6fb21ffac662d4a084048ed24592a49fb45654e455850df3f5711`；三前缀两帧累计字节为[[6951, 7601], [12312, 12996], [16882, 18088]]。仅接口样本，不是全量平均。
 
 启动代码`e5226f3aa14e497d3920fd0a4f6f99344ec3b98a`，coordinator PID22808；audit SHA256 `8fa7e8767a5877d36a38da432edc3af79ad89874c5570ab31a44f4d6146d434e`。证据：[audit.json](results/progressive_family_round1_20261019/audit.json)、[launch.json](results/progressive_family_round1_20261019/launch.json)。任务目录按上文记录；下轮先检查round_status、zero_summary、adapt10_summary，不重复启动。
+
+
+## 训练中检查（2026-10-19 04:28）
+
+两家族全量零适配阶段已完成，流水线进入各10轮训练。04:28快照两组均完成6轮、正在验证第7轮；编码器、ANN BEV/连续头及BN冻结校验均通过至第6轮。当前完整第三前缀最佳AP70为SNN 58.22768%、量化ANN 59.16325%，均来自epoch6，仅为训练中指标，尚未完成最终真实通信与CPU独立复核，不能据此宣告阶段目标或等码率优势。保持既定预算与90分钟跟进，等待两组10轮和最终复核；不追加训练或排序/位宽搜索。
+
+零适配归档：[zero_summary.json](results/progressive_family_round1_20261019/zero_summary.json)，SHA256 `d1fa0144e7056ed7e47bd0158f46e1f015e0a8ea72705b89036b10ae32e3be62`；运行快照：[progress_20261019_0430.json](results/progressive_family_round1_20261019/progress_20261019_0430.json)。最终仍按同一最佳完整前缀checkpoint评估三前缀及关闭路端，保留强ANN Residual对照。

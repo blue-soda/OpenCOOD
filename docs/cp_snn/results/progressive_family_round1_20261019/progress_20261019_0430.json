@@ -1,0 +1,110 @@
+{
+  "captured_unix": 1792355283.3097496,
+  "root": "/data1/tzm/workspace/diagnostics/e3dsnn_progressive_family_round1_20261019",
+  "round_status": {
+    "state": "running",
+    "stage": "adapt10",
+    "supervisors": {
+      "snn_adapt10": 28465,
+      "ann_adapt10": 28466
+    }
+  },
+  "groups": {
+    "snn": {
+      "progress.json": {
+        "state": "validating",
+        "epoch": 7
+      },
+      "best_ap70_metrics.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 28740,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7546450064997585,
+          "0.5": 0.7066239678465438,
+          "0.7": 0.5822768248552597
+        },
+        "epoch": 6,
+        "train_loss": 1.2808462858149414,
+        "train_samples": 4678,
+        "seconds": 605.6631848730613,
+        "train_loss_components": {
+          "fused_detection_loss": 0.6157167176134829,
+          "prefix_1_detection_loss": 0.6164258359686653,
+          "prefix_2_detection_loss": 0.6146756943571058,
+          "prefix_3_detection_loss": 0.616048622514676,
+          "ego_detection_loss": 0.6651295682014576
+        }
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "current_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "verified_through_epoch": 6,
+        "passed": true
+      },
+      "frozen_decoder.json": {
+        "initial_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "current_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "verified_through_epoch": 6,
+        "passed": true
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "current_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "verified_through_epoch": 6,
+        "passed": true
+      }
+    },
+    "ann": {
+      "progress.json": {
+        "state": "validating",
+        "epoch": 7
+      },
+      "best_ap70_metrics.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 29356,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7664090921093097,
+          "0.5": 0.7166402965022476,
+          "0.7": 0.5916325145981418
+        },
+        "epoch": 6,
+        "train_loss": 1.203391737426608,
+        "train_samples": 4678,
+        "seconds": 596.86412466201,
+        "train_loss_components": {
+          "fused_detection_loss": 0.5760325254953853,
+          "prefix_1_detection_loss": 0.5770678649671513,
+          "prefix_2_detection_loss": 0.5753722555036863,
+          "prefix_3_detection_loss": 0.5756574560153168,
+          "ego_detection_loss": 0.6273592119312207
+        }
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+        "current_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+        "verified_through_epoch": 6,
+        "passed": true
+      },
+      "frozen_decoder.json": {
+        "initial_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+        "current_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+        "verified_through_epoch": 6,
+        "passed": true
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "ce82e780b9490efd094dabc379102a9646beb394e58b0dcd5897fbaaabac5678",
+        "current_sha256": "ce82e780b9490efd094dabc379102a9646beb394e58b0dcd5897fbaaabac5678",
+        "verified_through_epoch": 6,
+        "passed": true
+      }
+    }
+  }
+}
