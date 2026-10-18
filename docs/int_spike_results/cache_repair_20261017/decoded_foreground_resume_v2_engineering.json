@@ -1,0 +1,19 @@
+{
+  "checked_full_path_modules": 4,
+  "crop_errors": [],
+  "full_refresh_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "max_partial_depth": 2,
+  "partial_frames_with_zero_original_deep_stage_calls": 5,
+  "period": 3,
+  "repair_target": "decoded",
+  "status": "PASSED"
+}

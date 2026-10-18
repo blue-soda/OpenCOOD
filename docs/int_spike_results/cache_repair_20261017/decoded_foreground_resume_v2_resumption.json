@@ -1,0 +1,17 @@
+{
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/decoded_foreground_period3/latest.pth",
+  "checkpoint_sha256": "2c2aa4287e24038ae2529c0cf60d455a8ede135ae5b84e07d68a65b062e0e4b8",
+  "next_epoch": 21,
+  "prior_best": {
+    "ap70": 0.6499120889891279,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/decoded_foreground_period3/epoch_020/repairs.pth",
+    "epoch": 20,
+    "sha256": "7abbf14721213faaae8de8e7708d16ccbeaa6c3700f5e0ca3bf60eae7ed90141"
+  },
+  "prior_epochs": 20,
+  "randomness": "Epoch loader uses 303+epoch; repair modules have no stochastic layers and detector is eval. Legacy checkpoints do not store RNG state; bitwise whole-run equivalence is not claimed.",
+  "restored_lr": 0.00025,
+  "restored_stale": 0,
+  "source": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/decoded_foreground_period3",
+  "state": "repair weights, AdamW moments/steps, LR scheduler, best/significant/stale/history"
+}
