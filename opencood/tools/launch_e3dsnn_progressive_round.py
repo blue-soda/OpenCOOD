@@ -73,7 +73,7 @@ def make_jobs(root,group,stage):
 
 def summarize(root,stage):
     audit=read(root/'audit.json');report=dict(stage=stage,groups={})
-    for group in GROUPS:
+    for group in audit['groups']:
         name=group+'_'+stage;assert read(root/(name+'_pipeline.json'))['state']=='complete'
         checkpoint=root/group/'initial.pth' if stage=='zero' else root/name/'best_ap70.pth'
         entry=dict(checkpoint_sha256=sha(checkpoint),prefixes={})
@@ -95,11 +95,11 @@ def summarize(root,stage):
             state=torch.load(str(checkpoint),map_location='cpu')
             initial=torch.load(str(root/group/'initial.pth'),map_location='cpu')
             changed=any(not torch.equal(state[k],v) for k,v in initial.items() if k.startswith('progressive_sender.'))
-            if group.startswith('frozen'):assert not changed
+            if group.startswith('frozen') or group in ('snn','ann'):assert not changed
             entry['selected_sender_weights_changed']=changed
             del state,initial;gc.collect()
         report['groups'][group]=entry
-    if stage=='zero':
+    if stage=='zero' and set(report['groups'])==set(GROUPS):
         for residual in ('keep','clear'):
             for prefix in ('p1','p2','p3'):
                 a=report['groups']['frozen_'+residual]['prefixes'][prefix]
