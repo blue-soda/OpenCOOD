@@ -1,0 +1,90 @@
+{
+  "source_summary_sha256": "23c302026f41cbc13599bd1b9ed31b32e10b419add153f4813848726adc08ae7",
+  "groups": {
+    "ann_geometry": {
+      "initial_sha256": "10c6a2b324f0ada60aaab7f6ac0afb729056c48ceffc5d4d7ff249bcffcde78d",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "config_sha256": {
+        "": "f750345d92357de49d4931efa0dd90877e765d2ce04a937e7d18a389a33223d7",
+        "_ego": "3bd3a150786592c245314bcb6d40d891f9af6f789c37c591777e7a61ede2922c"
+      },
+      "gradient_l1": 41.81971777230501,
+      "packet_bytes": [
+        14571,
+        16603
+      ],
+      "direct_wire_exact": true,
+      "geometry_native_exact": true,
+      "empty_received_equals_ego": null,
+      "frozen_encoder_decoder_bn": true,
+      "parameters": 3094997,
+      "trainable_parameters": 74433,
+      "discarded_step_loss": 1.3611440134735833
+    },
+    "ann_received": {
+      "initial_sha256": "10c6a2b324f0ada60aaab7f6ac0afb729056c48ceffc5d4d7ff249bcffcde78d",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "config_sha256": {
+        "": "d627e677800cf1d6c9707ab8d93f8a57ac3ba07a0162a9ad7bab282406da6bdf",
+        "_ego": "66d151ee3f5eef25220b0123fd6a66626f63694f2809b2e2e222165a2e1b4b2d"
+      },
+      "gradient_l1": 43.951661340892315,
+      "packet_bytes": [
+        14571,
+        16603
+      ],
+      "direct_wire_exact": true,
+      "geometry_native_exact": false,
+      "empty_received_equals_ego": true,
+      "frozen_encoder_decoder_bn": true,
+      "parameters": 3094997,
+      "trainable_parameters": 74433,
+      "discarded_step_loss": 1.3773747969547072
+    },
+    "snn_geometry": {
+      "initial_sha256": "10c6a2b324f0ada60aaab7f6ac0afb729056c48ceffc5d4d7ff249bcffcde78d",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "config_sha256": {
+        "": "80eea9efcb10a5fb3fdfcec48d7b56c2e6585d613714f7d9cb405250ab44dce3",
+        "_ego": "2ee2451dd40f1414f03ebd12c93d6a9952d9d9ce31fcd6099250c6553172bd60"
+      },
+      "gradient_l1": 19.952984215691686,
+      "packet_bytes": [
+        14571,
+        16603
+      ],
+      "direct_wire_exact": true,
+      "geometry_native_exact": true,
+      "empty_received_equals_ego": null,
+      "frozen_encoder_decoder_bn": true,
+      "parameters": 3094997,
+      "trainable_parameters": 74433,
+      "discarded_step_loss": 1.3767236530643556
+    },
+    "snn_received": {
+      "initial_sha256": "10c6a2b324f0ada60aaab7f6ac0afb729056c48ceffc5d4d7ff249bcffcde78d",
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "config_sha256": {
+        "": "765710520195fcee7bb29ccdafbcd8addf20c560ce7c559021878e01127761a0",
+        "_ego": "514182f96130f88770fb639fb62250e249fb44660725c034837b16371ebcadf9"
+      },
+      "gradient_l1": 20.62677190452814,
+      "packet_bytes": [
+        14571,
+        16603
+      ],
+      "direct_wire_exact": true,
+      "geometry_native_exact": false,
+      "empty_received_equals_ego": true,
+      "frozen_encoder_decoder_bn": true,
+      "parameters": 3094997,
+      "trainable_parameters": 74433,
+      "discarded_step_loss": 1.3935467251263285
+    }
+  },
+  "passed": true
+}

@@ -1,0 +1,143 @@
+{
+  "captured_unix": 1792290391.3477778,
+  "round_status": {
+    "state": "running",
+    "stage": "zero",
+    "supervisors": {
+      "message_ann_geometry_zero": 7877,
+      "message_ann_received_zero": 7878,
+      "message_snn_geometry_zero": 7879,
+      "message_snn_received_zero": 7881
+    }
+  },
+  "groups": {
+    "ann_geometry": {
+      "pipeline": {
+        "state": "running",
+        "job": "message_ann_geometry_zero_on",
+        "child_pid": 7880,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/ann_geometry.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/ann_geometry_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/message_ann_geometry_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 7877,
+        "updated_unix": 1792290372.7672977
+      },
+      "saved_prediction_files": 0
+    },
+    "ann_received": {
+      "pipeline": {
+        "state": "running",
+        "job": "message_ann_received_zero_on",
+        "child_pid": 7882,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/ann_received.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/ann_received_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/message_ann_received_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 7878,
+        "updated_unix": 1792290372.7794676
+      },
+      "saved_prediction_files": 0
+    },
+    "snn_geometry": {
+      "pipeline": {
+        "state": "running",
+        "job": "message_snn_geometry_zero_on",
+        "child_pid": 7883,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/snn_geometry.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/snn_geometry_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/message_snn_geometry_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 7879,
+        "updated_unix": 1792290372.7926664
+      },
+      "saved_prediction_files": 0
+    },
+    "snn_received": {
+      "pipeline": {
+        "state": "running",
+        "job": "message_snn_received_zero_on",
+        "child_pid": 7884,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/snn_received.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/snn_received_initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018/message_snn_received_zero_on",
+          "--eval-3d",
+          "--save-predictions",
+          "--packet-roundtrip",
+          "--fusion-diagnostics"
+        ],
+        "supervisor_pid": 7881,
+        "updated_unix": 1792290372.8123
+      },
+      "saved_prediction_files": 0
+    }
+  }
+}

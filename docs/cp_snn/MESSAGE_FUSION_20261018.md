@@ -38,3 +38,16 @@ received组将融合输入中的c替为m，残差门控由max_z(c)替为u：delt
 按AP70选best，最终开/关路端、真实逐帧bytes/P95、3D AP、CPU精确复算和GT诊断；冻结摘要每轮及best检查。四组零适配和原有较优点均保留，不用训练后结果覆盖。原ann_geometry为重现控制，若训练有差异如实报告，不为强行一致调参。
 
 根目录/data1/tzm/workspace/diagnostics/e3dsnn_message_fusion_round1_20261018，入口launch_e3dsnn_message_fusion。计划181 GPU1/2/3/4，逐卡空闲核验；训练6h，其他每项1h超时，失败不自动重试或终止其他任务。四组最终复核后退出。如果无清晰AP收益则停止此支撑组合，不扩展支撑超参数；若有收益保留候选并设计匹配量化ANN机制消融及稳健性验证，仍不能仅凭对几何mask的提升宣称SNN独有优势。
+
+## 实现、审计与启动事实
+
+main提交45a54e9f62960492bb32d9cc7eb99ac27285ff73，本地和181各43项检查通过。真实两帧四组审计通过：直接路径与真实消息解码预测相同；geometry分别与既有ANN/Count4融合实现相同；received空消息与ego预测严格一致。四组总参数均3,094,997，可训练参数均74,433，编码器/ANN BEV/连续头/BN摘要一致且丢弃优化步后不变，融合梯度有限非零。两帧包长均14571/16603字节，不存在额外支撑mask发送。
+
+181 GPU1/2/3/4空闲核验后已启动，协调PID7467，四组zero监督PID7877/7878/7879/7881。当前执行全量零适配，门槛通过后自动各训练10轮，再完成开/关路端与独立复算。此处不提前宣称新方案训练完成或精度提升。
+
+启动证据原始字节已核验、取回并镜像：
+
+- [audit.json](results/message_fusion_20261018/audit.json)，SHA256 315507e4d678556794a562c86b6b8ef02307244ce521dedceca85b2009d9257b。
+- [launch.json](results/message_fusion_20261018/launch.json)，SHA256 f74da7b71735e89476ec7caf225d7147a35a8de75ba3a1d609fba0d9decd9d95。
+- [startup_snapshot.json](results/message_fusion_20261018/startup_snapshot.json)，SHA256 07473d1a989400665ba3a0cfc365b8eae78c50202b3f9d19a5aa61e3253c48b8，记录刚启动的评估进程，捕获时尚未写出逐帧预测。
+- 同目录保存八份配置和监督脚本，配置SHA见audit；supervise.py SHA256 3a661c319d8dde0949d14dff1e9134199f6993d426d4d3f9f23c0576b4b2bd84。
