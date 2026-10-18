@@ -72,3 +72,8 @@ class ProgressiveSender(nn.Module):
         context=F.avg_pool3d(normalized,3,stride=1,padding=1,count_include_pad=False)
         scores=self.score(torch.cat((normalized,context),1))
         return balanced_partition(counts,scores,packets,self.temperature)
+
+
+def l1_partition(counts,packets=3):
+    """Inference-only control: highest total Count4 activity first, stable ties."""
+    return balanced_partition(counts,counts.sum(1,keepdim=True),packets)

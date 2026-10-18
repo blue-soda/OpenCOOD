@@ -7,7 +7,7 @@ from opencood.models.fuse_modules.e3dsnn_progressive import (
     MessageContract,ProgressiveMembraneFusion,split_counts)
 from opencood.utils import count4_compact_packet as compact
 from opencood.utils.e3dsnn_transplant import encoder_digest
-from opencood.models.fuse_modules.e3dsnn_progressive_sender import ProgressiveSender
+from opencood.models.fuse_modules.e3dsnn_progressive_sender import ProgressiveSender,l1_partition
 
 
 class E3dsnnProgressiveDetector(E3dsnnBudget):
@@ -26,7 +26,7 @@ class E3dsnnProgressiveDetector(E3dsnnBudget):
         self.fusion_activation_kind='count4'
         self.message_support_kind='received'
         self.sender_ranking='progressive_'+self.sender_order
-        if self.sender_order not in ('spatial','frozen','learned'):raise ValueError('Unknown sender order')
+        if self.sender_order not in ('spatial','frozen','learned','l1'):raise ValueError('Unknown sender order')
         if self.sender_order!='spatial':self.progressive_sender=ProgressiveSender()
         for name,p in self.named_parameters():
             p.requires_grad_(name.startswith('membrane_fusion.basis.') or
@@ -60,6 +60,7 @@ class E3dsnnProgressiveDetector(E3dsnnBudget):
             tuple(self.origin),tuple(self.step),tuple(int(x) for x in data['timestamps_us'][index].detach().cpu().tolist()))
 
     def forward(self,data):
+        if self.training and self.sender_order=='l1':raise ValueError('L1 order substitution is an evaluation-only diagnostic')
         if self.training and (self.packet_roundtrip or self.readout_prefix!=self.progressive_packets):
             raise ValueError('Train all prefixes on differentiable messages; wire replay is eval-only')
         b=data['object_bbx_mask'].shape[0]
@@ -80,6 +81,7 @@ class E3dsnnProgressiveDetector(E3dsnnBudget):
         values=budget_features(road.indices,road.features,self.activation,self.budget_codec)
         road=road.replace_feature(values).dense()
         partition=split_counts if self.sender_order=='spatial' else self.progressive_sender
+        if self.sender_order=='l1':partition=l1_partition
         chunks=[partition(road[i:i+1],self.progressive_packets) for i in range(b)]
         kept=membrane.new_ones(b)
         if self.training and self.message_dropout:

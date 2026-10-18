@@ -1,11 +1,18 @@
 import unittest
 import numpy as np
 import torch
-from opencood.models.fuse_modules.e3dsnn_progressive_sender import balanced_partition,ProgressiveSender
+from opencood.models.fuse_modules.e3dsnn_progressive_sender import balanced_partition,ProgressiveSender,l1_partition
 from opencood.utils import count4_compact_packet as codec
 
 
 class SenderTest(unittest.TestCase):
+    def test_l1_priority_and_ties_preserve_positions(self):
+        x=torch.tensor([[[[[1.,4.,2.,4.,3.,1.]]]]])
+        parts=l1_partition(x)
+        self.assertTrue(torch.equal(parts[0],torch.tensor([[[[[0.,4.,0.,4.,0.,0.]]]]])))
+        self.assertTrue(torch.equal(parts[1],torch.tensor([[[[[0.,0.,2.,0.,3.,0.]]]]])))
+        self.assertTrue(torch.equal(sum(parts),x))
+
     def test_disjoint_nested_exact_and_codec(self):
         torch.manual_seed(4)
         for n in (0,1,2,3,14):
