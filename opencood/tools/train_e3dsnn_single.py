@@ -243,7 +243,7 @@ def execute(args, output_dir):
         'progressive': dict(packets=model.progressive_packets,readout_prefix=model.readout_prefix,
             sender_order=model.sender_order,retain_residual=model.membrane_fusion.retain_residual,
             adaptive_gate=model.membrane_fusion.adaptive_gate,geometry_dtype='float64',
-            sender_score_head=('Count4 sum; trained scorer bypassed' if model.sender_order=='l1'
+            sender_score_head=('decoded feature sum; trained scorer bypassed' if model.sender_order=='l1'
                 else 'continuous 1x1 convolutions with local mean context'))
             if hasattr(model,'membrane_fusion') else None,
         'freeze_encoder': getattr(model, 'freeze_encoder', False),
