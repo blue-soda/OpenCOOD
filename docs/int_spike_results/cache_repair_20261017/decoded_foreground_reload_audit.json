@@ -1,0 +1,36 @@
+{
+  "ap_reloaded_exactly": true,
+  "best": {
+    "ap70": 0.668522239788626,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/decoded_foreground_period3_resume_v2/epoch_038/repairs.pth",
+    "epoch": 38,
+    "sha256": "8b332e362f57aca8eb2602fb91315b1ccad041f0ddbb3351e43732652e68280c"
+  },
+  "caveat": "Complete independent weight reload; AP not independently recomputed from saved boxes. Concurrent other-GPU training prevents treating time as a paired speed comparison.",
+  "engineering": {
+    "checked_full_path_modules": 4,
+    "crop_errors": [],
+    "full_refresh_errors": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_partial_depth": 2,
+    "partial_frames_with_zero_original_deep_stage_calls": 5,
+    "period": 3,
+    "repair_target": "decoded",
+    "status": "PASSED"
+  },
+  "exposure": {
+    "labels": 1738,
+    "partial_frames": 3789,
+    "partial_labeled_frames": 1146,
+    "scans": 5794
+  },
+  "status": "PASSED"
+}

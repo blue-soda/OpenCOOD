@@ -1,0 +1,61 @@
+{
+  "caveats": [
+    "Reloaded frozen detector and repair checkpoint; period1 is paired all-original-stage control.",
+    "Period2 skips original deep stages on every partial frame; local=actual tile crops, dense=whole small repair modules.",
+    "stage_means combines different module input areas, not backbone MAC reduction.",
+    "Timing includes model/gate/warp/cache/repair/decoder/head but excludes IO/voxelization/postprocess.",
+    "Use sequential runs on the same GPU after both training jobs finish; one timing pair is not a stability study.",
+    "Period3 evaluation with period3-trained weights; matched interval. Up to two partial frames use the same full anchor, age below 0.25s; repaired outputs are never written into the anchor.",
+    "Decoded cache: one repair module replaces original stages2/3 plus multiscale decode and shrink on partial frames; cached features are at the detection-head input."
+  ],
+  "content_calibration_sha256": null,
+  "content_threshold": null,
+  "labels": 1738,
+  "metrics": {
+    "bev_ap30": 0.8593470930290438,
+    "bev_ap50": 0.8314435315165687,
+    "bev_ap70": 0.668522239788626
+  },
+  "model_step_ms_mean": 19.103526491040615,
+  "model_step_ms_p50": 12.697670492343605,
+  "model_step_ms_p95": 33.506238565314554,
+  "oracle_index": null,
+  "oracle_stage0": false,
+  "original_deep_stage_call_fraction": 0.3460476354849845,
+  "partial_frames": 3789,
+  "partial_labeled_frames": 1146,
+  "peak_gpu_bytes": 473705984,
+  "periodic_last": 0,
+  "periodic_refresh_counts": null,
+  "repair_ablation": "none",
+  "repair_checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/decoded_foreground_period3_resume_v2/epoch_038/repairs.pth",
+  "repair_checkpoint_sha256": "8b332e362f57aca8eb2602fb91315b1ccad041f0ddbb3351e43732652e68280c",
+  "repair_epoch": 38,
+  "repair_period": 3,
+  "repair_policy": "dense",
+  "repair_target": "decoded",
+  "reset_frames": 214,
+  "scans": 5794,
+  "scope": "Fixed-weight inference intervention; full validation",
+  "seconds": 282.9169888878241,
+  "stage_means": [
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 0.34604763548498446,
+      "executed_input_area_ratio": 0.34604763548498446
+    },
+    {
+      "actual_write_fraction": 0.34604763548498446,
+      "executed_input_area_ratio": 0.34604763548498446
+    }
+  ],
+  "state_bytes": 52012800,
+  "status": "COMPLETED",
+  "support_profile": false,
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+  "uncovered_fraction_mean": null,
+  "zero_uncovered": false
+}
