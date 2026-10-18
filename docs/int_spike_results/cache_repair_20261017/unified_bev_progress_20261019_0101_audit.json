@@ -1,0 +1,175 @@
+{
+  "best": {
+    "ap70": 0.5395246845654446,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1/epoch_029/student.pth",
+    "epoch": 29,
+    "sha256": "aca59d4a586d11e5245c2ade9c4893384a4e143aab3c8f11d6e779f07fd73d5f"
+  },
+  "caveat": "Intermediate training; incremental full exposure/hash audit, not convergence or independent AP recomputation.",
+  "history": [
+    {
+      "ap70": 0.5145383982427718,
+      "epoch": 24,
+      "labels": 4678,
+      "loss": 0.383963383966379,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 735.4542310880497,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5169060466196216,
+      "epoch": 25,
+      "labels": 4678,
+      "loss": 0.37503717207993903,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 720.645924563054,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5265984347823163,
+      "epoch": 26,
+      "labels": 4678,
+      "loss": 0.3635947732728116,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 727.6156604790594,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5308694366945779,
+      "epoch": 27,
+      "labels": 4678,
+      "loss": 0.3566433929792439,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 737.6642053020187,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5305203644315337,
+      "epoch": 28,
+      "labels": 4678,
+      "loss": 0.35062157276828093,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 715.4174885021057,
+      "stale_epochs": 1,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5395246845654446,
+      "epoch": 29,
+      "labels": 4678,
+      "loss": 0.3453578893521654,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 712.1640748570208,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5346302729556426,
+      "epoch": 30,
+      "labels": 4678,
+      "loss": 0.34085853324149046,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 709.6278295328375,
+      "stale_epochs": 1,
+      "updates": 2262
+    }
+  ],
+  "new_epochs": [
+    {
+      "epoch": 24,
+      "metrics": {
+        "bev_ap30": 0.7942736860847456,
+        "bev_ap50": 0.7554400035555453,
+        "bev_ap70": 0.5145383982427718
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 25,
+      "metrics": {
+        "bev_ap30": 0.7990984876154075,
+        "bev_ap50": 0.7591974459762191,
+        "bev_ap70": 0.5169060466196216
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 26,
+      "metrics": {
+        "bev_ap30": 0.7962190263140049,
+        "bev_ap50": 0.7585894374138828,
+        "bev_ap70": 0.5265984347823163
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 27,
+      "metrics": {
+        "bev_ap30": 0.7946907349482922,
+        "bev_ap50": 0.7581825179057426,
+        "bev_ap70": 0.5308694366945779
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 28,
+      "metrics": {
+        "bev_ap30": 0.7926038645674894,
+        "bev_ap50": 0.7550743704636105,
+        "bev_ap70": 0.5305203644315337
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 29,
+      "metrics": {
+        "bev_ap30": 0.8022540752566953,
+        "bev_ap50": 0.7657065237722044,
+        "bev_ap70": 0.5395246845654446
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 30,
+      "metrics": {
+        "bev_ap30": 0.7924843123079258,
+        "bev_ap50": 0.7568872921210105,
+        "bev_ap70": 0.5346302729556426
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    }
+  ],
+  "observed_status": {
+    "epoch": 31,
+    "phase": "full_validation",
+    "status": "RUNNING"
+  },
+  "prior_audit": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1/progress_audit_20261018_2332.json",
+  "prior_audit_sha256": "b4995f8ebc86468bed28cd6436e85775fe06077e9a3e853fad3df64d7bdcb5dc",
+  "status": "PASSED"
+}
