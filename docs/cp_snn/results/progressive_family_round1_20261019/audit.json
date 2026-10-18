@@ -1,0 +1,167 @@
+{
+  "groups": {
+    "snn": {
+      "started_unix": 1792349704.127253,
+      "source_sha256": "f5ece651e3a8a039a52d3bf27bc503605bb34e14654202c4acafd548082c3f35",
+      "frames": [
+        "000010",
+        "000011"
+      ],
+      "road_frames": [
+        "006689",
+        "006690"
+      ],
+      "prefixes": [
+        {
+          "prefix": 1,
+          "packet_bytes": [
+            6558,
+            7341
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 2,
+          "packet_bytes": [
+            12284,
+            13665
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 3,
+          "packet_bytes": [
+            17417,
+            19302
+          ],
+          "direct_wire_exact": true
+        }
+      ],
+      "scope": "Augmented train frames 0/1; discarded optimization step; no AP estimate.",
+      "code_commit": "83fb5f4d2ddcf65bd158da517117f796240df753",
+      "sender_order": "l1",
+      "retain_residual": true,
+      "family": "snn",
+      "parameters": 3164662,
+      "trainable_parameters": 65536,
+      "initial_sha256": "54a9bc255e6b53fdab55e31160daf25ae4013639abc1eb79c95858e7cf386a39",
+      "config_sha256": "864204c800c26206921034282e899f5c8da5933254918678c7135f0ccf645d26",
+      "geometry_arithmetic": "float64 inverse/grid; float32 interpolation/features",
+      "pose_orthogonality_max_error": 7.804479618123139e-07,
+      "preactivation_readout_matches_frozen_encoder": true,
+      "repeated_forward_has_no_state_leak": true,
+      "batch_isolation_max_response_error": 0.0,
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "bn_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+      "gradient_l1": {
+        "membrane_fusion.basis.weight": 38.91230773925781,
+        "membrane_fusion.gate.weight": 16.627578735351562
+      },
+      "loss_components": {
+        "fused_detection_loss": 0.8981654072011664,
+        "prefix_1_detection_loss": 0.8494396638937824,
+        "prefix_2_detection_loss": 0.9051752488948619,
+        "prefix_3_detection_loss": 0.9398813088148551,
+        "ego_detection_loss": 0.8663495411763953
+      },
+      "frozen_encoder_decoder_bn": true,
+      "states_not_checkpointed": true,
+      "full_dropout_all_prefixes_equal_local_readout": true,
+      "passed": true,
+      "finished_unix": 1792349705.4633687,
+      "config_hashes": {
+        "p1": "409bd5528a9470b1891347a40cc5ed39137c3de35d3223046185548f40480de0",
+        "p2": "84dbf68d2e366f1a5318abf792a21e7ce27c776dd77a4924125a705d02a33fc8",
+        "p3": "864204c800c26206921034282e899f5c8da5933254918678c7135f0ccf645d26",
+        "off": "1aad443707f75351d0f11acfcd3a9e4a450dea8b24dd6cabf5bd3e26e3313645"
+      },
+      "budget_codec": {
+        "bits": 3,
+        "keep_fraction": 0.25
+      }
+    },
+    "ann": {
+      "started_unix": 1792349718.264522,
+      "source_sha256": "de51d9aa54dc19e4b553f83dbe1b575c9b55e96d62b8359fe8b8f3b6e436d925",
+      "frames": [
+        "000010",
+        "000011"
+      ],
+      "road_frames": [
+        "006689",
+        "006690"
+      ],
+      "prefixes": [
+        {
+          "prefix": 1,
+          "packet_bytes": [
+            6951,
+            7601
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 2,
+          "packet_bytes": [
+            12312,
+            12996
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 3,
+          "packet_bytes": [
+            16882,
+            18088
+          ],
+          "direct_wire_exact": true
+        }
+      ],
+      "scope": "Augmented train frames 0/1; discarded optimization step; no AP estimate.",
+      "code_commit": "83fb5f4d2ddcf65bd158da517117f796240df753",
+      "sender_order": "l1",
+      "retain_residual": true,
+      "family": "ann",
+      "parameters": 3164662,
+      "trainable_parameters": 65536,
+      "initial_sha256": "b2321f9a0fe6fb21ffac662d4a084048ed24592a49fb45654e455850df3f5711",
+      "config_sha256": "7a0e81508b79e536338cf4fdab5b7504225983f5c9a1e5403b30aef6e6042205",
+      "geometry_arithmetic": "float64 inverse/grid; float32 interpolation/features",
+      "pose_orthogonality_max_error": 7.804479618123139e-07,
+      "preactivation_readout_matches_frozen_encoder": true,
+      "repeated_forward_has_no_state_leak": true,
+      "batch_isolation_max_response_error": 0.0,
+      "encoder_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+      "decoder_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+      "bn_sha256": "ce82e780b9490efd094dabc379102a9646beb394e58b0dcd5897fbaaabac5678",
+      "gradient_l1": {
+        "membrane_fusion.basis.weight": 28.405040740966797,
+        "membrane_fusion.gate.weight": 9.216303825378418
+      },
+      "loss_components": {
+        "fused_detection_loss": 0.9623944226297053,
+        "prefix_1_detection_loss": 0.9431235203463082,
+        "prefix_2_detection_loss": 0.9729956828773856,
+        "prefix_3_detection_loss": 0.9710640646654223,
+        "ego_detection_loss": 0.8595859903092647
+      },
+      "frozen_encoder_decoder_bn": true,
+      "states_not_checkpointed": true,
+      "full_dropout_all_prefixes_equal_local_readout": true,
+      "passed": true,
+      "finished_unix": 1792349719.6208386,
+      "config_hashes": {
+        "p1": "264957249d29dc594c7e26e8337e6313ac5b2695d527c5a92dbfc73b79701823",
+        "p2": "7dc679688dbe74ab37c210091a053947c19e7bf226115d1fd2dd734890a15697",
+        "p3": "7a0e81508b79e536338cf4fdab5b7504225983f5c9a1e5403b30aef6e6042205",
+        "off": "1123dbfc7d4b0d9324b32f6e457c6ce36048b5653eb71eea6b3e756040bda8ce"
+      },
+      "budget_codec": {
+        "bits": 2,
+        "keep_fraction": 0.5
+      }
+    }
+  },
+  "passed": true
+}
