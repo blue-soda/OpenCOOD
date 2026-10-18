@@ -81,6 +81,31 @@ def prepare(coords, features, activation, options, scores=None):
 
 def encode(coords, features, metadata, activation, options, scores=None):
     coords, codes, scales = prepare(coords, features, activation, options, scores)
+    return encode_prepared(coords,codes,scales,metadata,activation,options)
+
+
+def encode_prepared(coords,codes,scales,metadata,activation,options):
+    """Serialize already selected codes with unchanged sender-frame scales.
+
+    Progressive fragments must share the original per-channel scales. Re-running
+    prepare on each decoded fragment changes the quantization and its content.
+    """
+    validate_options(options)
+    coords,codes,scales=np.asarray(coords),np.asarray(codes),np.asarray(scales)
+    if (coords.shape!=(len(codes),3) or codes.shape!=(len(coords),128) or
+            not np.isfinite(coords).all() or np.any(coords!=np.floor(coords)) or
+            np.any(coords<0) or np.any(coords>=65536) or len(np.unique(coords,axis=0))!=len(coords)):
+        raise ValueError('Invalid prepared coordinates/codes shape')
+    if (not np.isfinite(codes).all() or np.any(codes!=np.floor(codes)) or
+            np.any(codes<0) or np.any(codes>=2**options['bits']) or
+            np.any(~np.any(codes!=0,axis=1)) or scales.shape!=(128,) or
+            not np.isfinite(scales).all() or np.any(scales<=0)):
+        raise ValueError('Invalid prepared code values or scales')
+    if activation=='count4':
+        if options['bits']!=3 or np.any(codes>4) or not np.all(scales==1):
+            raise ValueError('Invalid prepared Count4 contract')
+    elif activation!='relu':raise ValueError('Unknown prepared activation')
+    coords,codes,scales=coords.astype('<u2'),codes.astype(np.uint8),scales.astype('<f4')
     bits = options['bits']
     # Same two candidate transports for both model families, actual ZIP bytes.
     candidates = []

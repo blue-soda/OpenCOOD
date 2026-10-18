@@ -75,8 +75,10 @@ class ProgressiveMembraneFusion(nn.Module):
     Current prototype intentionally accepts batch=1 and one sender. Caller must
     open a new state per frame. Different source/ego grid definitions are rejected.
     """
-    def __init__(self,channels=128,retain_residual=True,adaptive_gate=False):
+    def __init__(self,channels=128,retain_residual=True,adaptive_gate=False,readout='count4'):
         super().__init__();self.channels=channels
+        if readout not in ('count4','relu'):raise ValueError('Unknown progressive readout')
+        self.readout_kind=readout
         self.retain_residual=retain_residual;self.adaptive_gate=adaptive_gate
         self.basis=nn.Conv3d(channels,channels,1,bias=False)
         self.gate=nn.Conv3d(3*channels,channels,1,bias=False)
@@ -89,12 +91,15 @@ class ProgressiveMembraneFusion(nn.Module):
         if x.shape!=(1,self.channels)+contract.shape_zyx or not torch.isfinite(x).all():
             raise ValueError('Wrong frame batch, channels, grid shape or nonfinite features')
 
+    def readout(self,value):
+        return count_readout(value) if self.readout_kind=='count4' else torch.relu(value)
+
     def begin(self,ego_precount,contract,source_to_ego,encoder_sha256,channel_basis):
         if contract.encoder_sha256!=encoder_sha256 or contract.channel_basis!=channel_basis:
             raise ValueError('Sender/receiver feature bases do not match')
         self._shape(ego_precount,contract);check_transform(source_to_ego)
         if source_to_ego.device!=ego_precount.device:raise ValueError('Transform device mismatch')
-        u=self.basis(ego_precount);q=count_readout(u)
+        u=self.basis(ego_precount);q=self.readout(u)
         return FrameState(self,contract,source_to_ego.detach().clone(),q,
                           u-q if self.retain_residual else torch.zeros_like(u))
 
@@ -107,7 +112,8 @@ class ProgressiveMembraneFusion(nn.Module):
         self._shape(counts,contract)
         if counts.device!=state.output.device or counts.dtype!=state.output.dtype:
             raise ValueError('Message dtype/device mismatch')
-        if torch.any((counts<0)|(counts>4)|(counts!=torch.floor(counts))):
+        if torch.any(counts<0):raise ValueError('Nonnegative decoded messages required')
+        if self.readout_kind=='count4' and torch.any((counts>4)|(counts!=torch.floor(counts))):
             raise ValueError('Wire message must contain Count4 integer values')
         # Align complete 3D positions before basis mapping; never align after Z folding.
         aligned,coverage=warp_volume(counts,source_to_ego,contract.origin_xyz,contract.step_xyz,
@@ -117,7 +123,7 @@ class ProgressiveMembraneFusion(nn.Module):
         if self.adaptive_gate:
             current=current*(2*torch.sigmoid(self.gate(torch.cat((state.output,state.residual,current),1))))
         candidate=state.output+state.residual+current
-        q=count_readout(candidate)
+        q=self.readout(candidate)
         residual=candidate-q if self.retain_residual else torch.zeros_like(candidate)
         # No received support means exact identity; packet omission is not evidence of free space.
         q=torch.where(supported,q,state.output)
