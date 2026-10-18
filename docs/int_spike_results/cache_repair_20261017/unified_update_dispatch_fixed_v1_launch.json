@@ -1,0 +1,17 @@
+{
+  "pid": 33344,
+  "gpu": 7,
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.profile_int_unified_update",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_update_dispatch_fixed_v1",
+    "--layout",
+    "fixed",
+    "--crop-batch",
+    "32"
+  ],
+  "created_unix": 1792351815.7385397,
+  "code_commit": "43f9c41bb84032d7924689a4a193eb28877ef638"
+}

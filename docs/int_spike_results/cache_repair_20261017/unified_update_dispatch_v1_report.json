@@ -1,0 +1,902 @@
+{
+  "caveats": [
+    "Random weights/inputs and synthetic masks, not trained detector latency.",
+    "Excludes encoder, selector, history warp, cache bookkeeping and readout/head.",
+    "Screen fragmented crop overhead only; actual sequence paired measurements remain required."
+  ],
+  "device": "NVIDIA GeForce RTX 3090",
+  "packed_shape": [
+    1,
+    513,
+    100,
+    252
+  ],
+  "records": [
+    {
+      "execution": "dense",
+      "mean_ms": 6.866854941472411,
+      "p50_ms": 6.72729907091707,
+      "p95_ms": 7.013831764925273,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 8
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.704423007089645,
+      "p50_ms": 7.313919020816684,
+      "p95_ms": 8.470422134269032,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.1053968220949173,
+        "crop_area_ratio_before_fallback": 0.13904761904761906,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.1053968220949173,
+        "selected_fraction": 0.1053968220949173,
+        "tiles": 2
+      },
+      "tile": 8
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 5.091049266047776,
+      "p50_ms": 4.538809531368315,
+      "p95_ms": 7.1730487048625955,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.1053968220949173,
+        "crop_area_ratio_before_fallback": 0.13904761904761906,
+        "executed_input_area_ratio": 0.13904761904761906,
+        "fallback": false,
+        "requested_fraction": 0.1053968220949173,
+        "selected_fraction": 0.1053968220949173,
+        "tiles": 2
+      },
+      "tile": 8
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.7503704922273755,
+      "p50_ms": 6.649358896538615,
+      "p95_ms": 7.028938317671419,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 8
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.580766314640641,
+      "p50_ms": 7.5091124745085835,
+      "p95_ms": 7.964877877384424,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.26031744480133057,
+        "crop_area_ratio_before_fallback": 0.2914285714285714,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.26031744480133057,
+        "selected_fraction": 0.26031744480133057,
+        "tiles": 2
+      },
+      "tile": 8
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 4.650578228756785,
+      "p50_ms": 4.400157020427287,
+      "p95_ms": 5.184252455364915,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.26031744480133057,
+        "crop_area_ratio_before_fallback": 0.2914285714285714,
+        "executed_input_area_ratio": 0.2914285714285714,
+        "fallback": false,
+        "requested_fraction": 0.26031744480133057,
+        "selected_fraction": 0.26031744480133057,
+        "tiles": 2
+      },
+      "tile": 8
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.6552091971971095,
+      "p50_ms": 6.596974446438253,
+      "p95_ms": 6.762167473789305,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 8
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.557592797093093,
+      "p50_ms": 7.431581965647638,
+      "p95_ms": 8.188140392303467,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 0.5206348896026611,
+        "crop_area_ratio_before_fallback": 0.5619047619047619,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.5206348896026611,
+        "selected_fraction": 0.5206348896026611,
+        "tiles": 2
+      },
+      "tile": 8
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 5.041583767160773,
+      "p50_ms": 4.904795438051224,
+      "p95_ms": 5.676472559571267,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 0.5206348896026611,
+        "crop_area_ratio_before_fallback": 0.5619047619047619,
+        "executed_input_area_ratio": 0.5619047619047619,
+        "fallback": false,
+        "requested_fraction": 0.5206348896026611,
+        "selected_fraction": 0.5206348896026611,
+        "tiles": 2
+      },
+      "tile": 8
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.858256761915982,
+      "p50_ms": 6.60481455270201,
+      "p95_ms": 8.69343540398404,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 8
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.5263117789290845,
+      "p50_ms": 7.454446982592344,
+      "p95_ms": 7.768231374211609,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.09904761612415314,
+        "crop_area_ratio_before_fallback": 0.20095238095238097,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.09904761612415314,
+        "selected_fraction": 0.09904761612415314,
+        "tiles": 31
+      },
+      "tile": 8
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 20.750779297668487,
+      "p50_ms": 20.022035110741854,
+      "p95_ms": 25.001695239916444,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.09904761612415314,
+        "crop_area_ratio_before_fallback": 0.20095238095238097,
+        "executed_input_area_ratio": 0.20095238095238097,
+        "fallback": false,
+        "requested_fraction": 0.09904761612415314,
+        "selected_fraction": 0.09904761612415314,
+        "tiles": 31
+      },
+      "tile": 8
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.642966833896935,
+      "p50_ms": 6.647136411629617,
+      "p95_ms": 6.833095441106707,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 8
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.646445999853313,
+      "p50_ms": 7.578592514619231,
+      "p95_ms": 8.00938931060955,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.24888888001441956,
+        "crop_area_ratio_before_fallback": 0.4882539682539683,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.24888888001441956,
+        "selected_fraction": 0.24888888001441956,
+        "tiles": 70
+      },
+      "tile": 8
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 40.85534606128931,
+      "p50_ms": 38.77686650957912,
+      "p95_ms": 48.53822274599224,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.24888888001441956,
+        "crop_area_ratio_before_fallback": 0.4882539682539683,
+        "executed_input_area_ratio": 0.4882539682539683,
+        "fallback": false,
+        "requested_fraction": 0.24888888001441956,
+        "selected_fraction": 0.24888888001441956,
+        "tiles": 70
+      },
+      "tile": 8
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.671598739922047,
+      "p50_ms": 6.6658505238592625,
+      "p95_ms": 6.775171204935759,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 8
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.594010734464973,
+      "p50_ms": 7.563828956335783,
+      "p95_ms": 7.860677794087678,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "crop_area_ratio_before_fallback": 0.8976190476190476,
+        "executed_input_area_ratio": 1.0,
+        "fallback": true,
+        "requested_fraction": 0.4965079128742218,
+        "selected_fraction": 0.4965079128742218,
+        "tiles": 100
+      },
+      "tile": 8
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 7.464704487938434,
+      "p50_ms": 7.4485394870862365,
+      "p95_ms": 7.653563586063683,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "crop_area_ratio_before_fallback": 0.8976190476190476,
+        "executed_input_area_ratio": 1.0,
+        "fallback": true,
+        "requested_fraction": 0.4965079128742218,
+        "selected_fraction": 0.4965079128742218,
+        "tiles": 100
+      },
+      "tile": 8
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.675295578315854,
+      "p50_ms": 6.680053425952792,
+      "p95_ms": 6.766099971719086,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 16
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.4397937511093915,
+      "p50_ms": 7.384736905805767,
+      "p95_ms": 7.705530780367553,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.11174602806568146,
+        "crop_area_ratio_before_fallback": 0.12714285714285714,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.11174602806568146,
+        "selected_fraction": 0.11174602806568146,
+        "tiles": 1
+      },
+      "tile": 16
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 2.5805508252233267,
+      "p50_ms": 2.427686587907374,
+      "p95_ms": 2.7168912813067454,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.11174602806568146,
+        "crop_area_ratio_before_fallback": 0.12714285714285714,
+        "executed_input_area_ratio": 0.12714285714285714,
+        "fallback": false,
+        "requested_fraction": 0.11174602806568146,
+        "selected_fraction": 0.11174602806568146,
+        "tiles": 1
+      },
+      "tile": 16
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.647456844802946,
+      "p50_ms": 6.640715524554253,
+      "p95_ms": 6.754926615394652,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 16
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.498934573959559,
+      "p50_ms": 7.455279468558729,
+      "p95_ms": 7.74663892807439,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.28190475702285767,
+        "crop_area_ratio_before_fallback": 0.33396825396825397,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.28190475702285767,
+        "selected_fraction": 0.28190475702285767,
+        "tiles": 2
+      },
+      "tile": 16
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 5.19516704371199,
+      "p50_ms": 5.148326046764851,
+      "p95_ms": 5.536807980388403,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.28190475702285767,
+        "crop_area_ratio_before_fallback": 0.33396825396825397,
+        "executed_input_area_ratio": 0.33396825396825397,
+        "fallback": false,
+        "requested_fraction": 0.28190475702285767,
+        "selected_fraction": 0.28190475702285767,
+        "tiles": 2
+      },
+      "tile": 16
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.716413039248437,
+      "p50_ms": 6.679981481283903,
+      "p95_ms": 6.865851813927293,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 16
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.8017660533078015,
+      "p50_ms": 7.498599006794393,
+      "p95_ms": 8.44185246387497,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 0.5612698197364807,
+        "crop_area_ratio_before_fallback": 0.6031746031746031,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.5612698197364807,
+        "selected_fraction": 0.5612698197364807,
+        "tiles": 2
+      },
+      "tile": 16
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 5.287246417719871,
+      "p50_ms": 4.961736500263214,
+      "p95_ms": 7.196536392439158,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 0.5612698197364807,
+        "crop_area_ratio_before_fallback": 0.6031746031746031,
+        "executed_input_area_ratio": 0.6031746031746031,
+        "fallback": false,
+        "requested_fraction": 0.5612698197364807,
+        "selected_fraction": 0.5612698197364807,
+        "tiles": 2
+      },
+      "tile": 16
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.708112696651369,
+      "p50_ms": 6.677792989648879,
+      "p95_ms": 6.926172354724258,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 16
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.72735244827345,
+      "p50_ms": 7.606411469168961,
+      "p95_ms": 8.28222236596048,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.10158729553222656,
+        "crop_area_ratio_before_fallback": 0.1465079365079365,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.10158729553222656,
+        "selected_fraction": 0.10158729553222656,
+        "tiles": 9
+      },
+      "tile": 16
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 12.033722759224474,
+      "p50_ms": 11.655718553811312,
+      "p95_ms": 14.328262058552358,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.10158729553222656,
+        "crop_area_ratio_before_fallback": 0.1465079365079365,
+        "executed_input_area_ratio": 0.1465079365079365,
+        "fallback": false,
+        "requested_fraction": 0.10158729553222656,
+        "selected_fraction": 0.10158729553222656,
+        "tiles": 9
+      },
+      "tile": 16
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.736350187566131,
+      "p50_ms": 6.646867492236197,
+      "p95_ms": 6.829908653162421,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 16
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.517002464737743,
+      "p50_ms": 7.475871010683477,
+      "p95_ms": 7.877373427618295,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.25904759764671326,
+        "crop_area_ratio_before_fallback": 0.36873015873015874,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.25904759764671326,
+        "selected_fraction": 0.25904759764671326,
+        "tiles": 18
+      },
+      "tile": 16
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 18.65991670638323,
+      "p50_ms": 16.783330007456243,
+      "p95_ms": 24.080096906982362,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.25904759764671326,
+        "crop_area_ratio_before_fallback": 0.36873015873015874,
+        "executed_input_area_ratio": 0.36873015873015874,
+        "fallback": false,
+        "requested_fraction": 0.25904759764671326,
+        "selected_fraction": 0.25904759764671326,
+        "tiles": 18
+      },
+      "tile": 16
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.698773254174739,
+      "p50_ms": 6.593003403395414,
+      "p95_ms": 6.920031632762403,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 16
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.500655320473015,
+      "p50_ms": 7.418813067488372,
+      "p95_ms": 7.771009113639594,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 0.4952380657196045,
+        "crop_area_ratio_before_fallback": 0.6747619047619048,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.4952380657196045,
+        "selected_fraction": 0.4952380657196045,
+        "tiles": 25
+      },
+      "tile": 16
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 32.516434870194644,
+      "p50_ms": 31.292924424633384,
+      "p95_ms": 36.12750900210814,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 0.4952380657196045,
+        "crop_area_ratio_before_fallback": 0.6747619047619048,
+        "executed_input_area_ratio": 0.6747619047619048,
+        "fallback": false,
+        "requested_fraction": 0.4952380657196045,
+        "selected_fraction": 0.4952380657196045,
+        "tiles": 25
+      },
+      "tile": 16
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.6433595842681825,
+      "p50_ms": 6.628033937886357,
+      "p95_ms": 6.7237161681987345,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 32
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.556634349748492,
+      "p50_ms": 7.404093514196575,
+      "p95_ms": 7.919146609492602,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.12190476059913635,
+        "crop_area_ratio_before_fallback": 0.1322222222222222,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.12190476059913635,
+        "selected_fraction": 0.12190476059913635,
+        "tiles": 1
+      },
+      "tile": 32
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 3.341429226566106,
+      "p50_ms": 2.949926070868969,
+      "p95_ms": 4.982486553490163,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.12190476059913635,
+        "crop_area_ratio_before_fallback": 0.1322222222222222,
+        "executed_input_area_ratio": 0.1322222222222222,
+        "fallback": false,
+        "requested_fraction": 0.12190476059913635,
+        "selected_fraction": 0.12190476059913635,
+        "tiles": 1
+      },
+      "tile": 32
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.763687892816961,
+      "p50_ms": 6.648885551840067,
+      "p95_ms": 6.939239951316268,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 32
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.530849147588015,
+      "p50_ms": 7.349227904342115,
+      "p95_ms": 8.149853779468685,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.3199999928474426,
+        "crop_area_ratio_before_fallback": 0.34,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.3199999928474426,
+        "selected_fraction": 0.3199999928474426,
+        "tiles": 1
+      },
+      "tile": 32
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 3.0986138968728483,
+      "p50_ms": 3.0749376164749265,
+      "p95_ms": 3.3583076088689268,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.3199999928474426,
+        "crop_area_ratio_before_fallback": 0.34,
+        "executed_input_area_ratio": 0.34,
+        "fallback": false,
+        "requested_fraction": 0.3199999928474426,
+        "selected_fraction": 0.3199999928474426,
+        "tiles": 1
+      },
+      "tile": 32
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.78830937249586,
+      "p50_ms": 6.6244956105947495,
+      "p95_ms": 6.972758506890388,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 32
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.587049435824156,
+      "p50_ms": 7.340094540268183,
+      "p95_ms": 7.843924069311473,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 0.6399999856948853,
+        "crop_area_ratio_before_fallback": 0.66,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.6399999856948853,
+        "selected_fraction": 0.6399999856948853,
+        "tiles": 1
+      },
+      "tile": 32
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 5.2230776636861265,
+      "p50_ms": 5.083490977995098,
+      "p95_ms": 5.380812787916513,
+      "pattern": "cluster",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 0.6399999856948853,
+        "crop_area_ratio_before_fallback": 0.66,
+        "executed_input_area_ratio": 0.66,
+        "fallback": false,
+        "requested_fraction": 0.6399999856948853,
+        "selected_fraction": 0.6399999856948853,
+        "tiles": 1
+      },
+      "tile": 32
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.615996512118727,
+      "p50_ms": 6.578964996151626,
+      "p95_ms": 6.708832969889046,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 32
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.295482140034437,
+      "p50_ms": 7.24041392095387,
+      "p95_ms": 7.588489644695073,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.1168253943324089,
+        "crop_area_ratio_before_fallback": 0.14,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.1168253943324089,
+        "selected_fraction": 0.1168253943324089,
+        "tiles": 3
+      },
+      "tile": 32
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 5.79780483385548,
+      "p50_ms": 5.635674460791051,
+      "p95_ms": 6.0125785530544835,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.1,
+      "stats": {
+        "actual_write_fraction": 0.1168253943324089,
+        "crop_area_ratio_before_fallback": 0.14,
+        "executed_input_area_ratio": 0.14,
+        "fallback": false,
+        "requested_fraction": 0.1168253943324089,
+        "selected_fraction": 0.1168253943324089,
+        "tiles": 3
+      },
+      "tile": 32
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.664588383864611,
+      "p50_ms": 6.592885009013116,
+      "p95_ms": 6.75985710695386,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 32
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.5469027971848845,
+      "p50_ms": 7.41571350954473,
+      "p95_ms": 8.177712617907675,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.2844444215297699,
+        "crop_area_ratio_before_fallback": 0.34,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.2844444215297699,
+        "selected_fraction": 0.2844444215297699,
+        "tiles": 6
+      },
+      "tile": 32
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 11.432092369068414,
+      "p50_ms": 11.04564405977726,
+      "p95_ms": 13.85375657118857,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.25,
+      "stats": {
+        "actual_write_fraction": 0.2844444215297699,
+        "crop_area_ratio_before_fallback": 0.34,
+        "executed_input_area_ratio": 0.34,
+        "fallback": false,
+        "requested_fraction": 0.2844444215297699,
+        "selected_fraction": 0.2844444215297699,
+        "tiles": 6
+      },
+      "tile": 32
+    },
+    {
+      "execution": "dense",
+      "mean_ms": 6.638890202157199,
+      "p50_ms": 6.575135514140129,
+      "p95_ms": 6.742789782583714,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 1.0,
+        "executed_input_area_ratio": 1.0
+      },
+      "tile": 32
+    },
+    {
+      "execution": "masked_dense",
+      "mean_ms": 7.258197164628655,
+      "p50_ms": 7.209613104350865,
+      "p95_ms": 7.520903903059661,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 0.5377777814865112,
+        "crop_area_ratio_before_fallback": 0.6252380952380953,
+        "executed_input_area_ratio": 1.0,
+        "fallback": false,
+        "requested_fraction": 0.5377777814865112,
+        "selected_fraction": 0.5377777814865112,
+        "tiles": 9
+      },
+      "tile": 32
+    },
+    {
+      "execution": "sparse",
+      "mean_ms": 13.884827599395066,
+      "p50_ms": 13.322909944690764,
+      "p95_ms": 15.796954371035103,
+      "pattern": "scattered",
+      "requested_tile_fraction": 0.5,
+      "stats": {
+        "actual_write_fraction": 0.5377777814865112,
+        "crop_area_ratio_before_fallback": 0.6252380952380953,
+        "executed_input_area_ratio": 0.6252380952380953,
+        "fallback": false,
+        "requested_fraction": 0.5377777814865112,
+        "selected_fraction": 0.5377777814865112,
+        "tiles": 9
+      },
+      "tile": 32
+    }
+  ],
+  "repeats": 20,
+  "scope": "Synthetic update-module execution including crop planning/dispatch, no inference accuracy",
+  "seed": 303,
+  "status": "COMPLETED"
+}

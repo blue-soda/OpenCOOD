@@ -65,3 +65,11 @@ MAC来自相同64×200×504输入：v1用CPU形状探针、v2用首个真实帧C
 两条v2初始核心张量SHA均为faf1ecce3978be6e92d16a300dc2bc581beafea4dabc56af5f32f12dd94d4a1a，契约差异仅memory_policy及对应protocol文本。时序作业GPU3 PID27008，已训练800/8593扫描、216更新；单帧作业GPU4 PID27158，已训练600/8593扫描、161更新。逐帧日志进一步核验219/214个已完成窗口的总损失、KD、存在标签时GT与梯度均有限，并确认单帧每帧重置、时序存在跨帧状态。仅证明启动与更新成功，尚无完整验证AP；早期loss不作为胜负结论。
 
 证据归档docs/int_spike_results/cache_repair_20261017/unified_bev_v2_launch_audit_20261019.json及各作业launch/engineering/training_contract。v1在GPU0继续原续训，不中断。本路线现有自动任务从90分钟调为60分钟，仍使用“推进时序感知，仅完成异常通知”；每轮同时检查三条作业，按v2首个完整epoch耗时及5/10轮诊断节点调整，不能再只检查v1而忽略新实验。若有健康进展不重复通知，完成/异常及时报告。
+
+### 2026-10-19 状态更新局部执行已实现，先检验真实延迟
+按用户授权新增SelectiveUnifiedBEV和run_int_unified_sparse：缓存最近实际更新时的证据，训练前1024扫描固定q50/q75阈值，强制新视野/age>=0.5s更新，半径2裁剪、未选区复用状态；空间编码/上下文/读出仍稠密，缓存含参考证据与年龄增至51,710,400字节。71项INT测试通过，包含未选区零调用、累计age、场景/因果、整图包装器、局部与masked_dense及固定块批处理等价。详细契约与命令见docs/int_unified_sparse.md。
+已提交两条固定epoch1真实序列试验：unified_sparse_e1_t16（181 GPU5 PID31448）、unified_sparse_e1_t32（GPU6 PID31625），各自同GPU顺序dense_before/sparse_q50/masked_q75/sparse_q75/dense_after，512验证扫描；等源v2时序epoch1权重及完整报告写完自动开始。早期前缀仅工程/延迟筛查，不是最终精度结论，后续用训练更充分的固定权重做全5794验证。
+GPU7另完成原合并矩形与固定块batch32的更新模块短测：25%请求tile、tile16零散布局，原裁剪18.660ms，固定块11.518ms，仍慢于整图约6.6–6.7ms；tile32连续区域原裁剪3.099ms可比整图6.76ms低。说明碎片化调度可抵消计算量节省，面积回退规则不足以保证加速。固定块保留为可选对照，不扩大为全量实验；GPU7已释放。原两条真实试验继续，以实际区域布局及全模型时间判断，不能把微基准当整网加速。证据unified_update_dispatch_v1_report.json与unified_update_dispatch_fixed_v1_report.json。
+当前还需监控原GPU0 v1续训、GPU3 v2时序和GPU4 v2单帧，勿重复启动。automation暂改20分钟捕获短试验完成，完成后恢复60分钟；仍只完成/异常通知。所有源码已main push/181 pull（局部实现a1e40af、微基准2b255f7、固定块改进43f9c41）。
+
+同轮真实启动确认：GPU5/6两条试验均已完成等待并通过真实权重工程验收，源epoch1 SHA=46d336a1dba40f0fd1824d01400f8edd5c4962f84d4d7b261de7de652b14db7f；各8帧全更新包装器预测误差0、实际裁剪选中区误差0。训练前1024帧校准已完成：tile16 q50/q75=0.15568511/0.21653467，tile32=0.16081000/0.21256878，已进入dense_before真实序列评估。归档unified_sparse_launch_audit_20261019.json及两条engineering/selective_engineering。源v2 epoch1完整AP70仅3.36844%，明显仍处于早期学习；本轮前缀结果仅用于执行/机制筛查，不可当作可用模型的精度保持证据。后续在v2第5/10轮按既定节点同时检查时序/单帧学习曲线，再决定较充分权重上的完整局部评估，不在本轮据单个早期epoch下架构结论。

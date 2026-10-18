@@ -1,0 +1,26 @@
+{
+  "code_commit": "a1e40afb29926102b4761e0c6e05329adee22258",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_unified_sparse",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--checkpoint",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_001/student.pth",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_sparse_e1_t32",
+    "--gpu",
+    "6",
+    "--tile",
+    "32",
+    "--frames",
+    "512",
+    "--calibration-frames",
+    "1024",
+    "--worker"
+  ],
+  "created_unix": 1792351607.4057248,
+  "gpu": 6,
+  "pid": 31625
+}

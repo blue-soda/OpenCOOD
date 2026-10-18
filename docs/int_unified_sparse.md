@@ -4,7 +4,7 @@
 - Origin Skill: academic-research-suite / experiment-agent
 - Origin Mode: plan / run
 - Origin Date: 2026-10-19（Asia/Shanghai）
-- Verification Status: IMPLEMENTED / 待服务器工程及真实帧实验
+- Verification Status: 71项INT测试通过 / 调度短测完成 / 真实序列试验已提交
 - Version Label: unified_selective_update_v1
 
 ## 目标和范围
@@ -46,3 +46,21 @@ python -m opencood.tools.run_int_unified_sparse --root /data1/tzm/workspace/diag
 ```
 
 输出包含launch/provenance/engineering/selective_engineering/calibration/experiment_contract、逐帧记录、各对照report和总report。读状态和日志核验实际执行，不以进程启动等同实验完成。现有路线级定时覆盖所有训练与局部试验；在短实验完成节点适当缩短间隔，稳定长训练时再放宽。
+
+## 2026-10-19 调度短测已发现碎片化瓶颈
+实现a1e40af、微基准2b255f7及固定块改进43f9c41均经本地main提交/push、181 pull；原70项及新增固定块批处理等价共71项INT测试通过。真实序列GPU5 PID31448（tile16）、GPU6 PID31625（tile32）已提交，等待v2时序epoch1不可变checkpoint及完整epoch报告写完后自动执行，最长等待30分钟，不修改源训练。
+
+同时在空闲GPU7完成两个短测unified_update_dispatch_v1和unified_update_dispatch_fixed_v1，输入为随机513×100×252 packed特征、随机初始化的实际ResidualStateUpdate，seed303；每种条件预热5次，同步计时20次。仅测更新模块与裁剪规划/调度，不含观测、选择器、warp及读出，无检测精度含义。
+
+| 25%请求tile的场景 | 整图更新约ms | 原合并矩形裁剪ms | 固定块batch32裁剪ms |
+|---|---:|---:|---:|
+| tile16连续成片 | 6.65–6.71 | 5.195 | 10.721 |
+| tile16零散 | 6.62–6.74 | 18.660 | 11.518 |
+| tile32连续成片 | 6.72–6.76 | 3.099 | 8.488 |
+| tile32零散 | 6.66–6.67 | 11.432 | 10.462 |
+
+原tile16零散裁剪实际输入面积仅整图36.9%，仍明显更慢；面积不足以预测延迟。固定块降低部分碎片化调度开销，但重复halo和多组边界形状增加代价，依然未胜整图且损害连续区域表现。固定块实现作为显式layout=fixed、crop_batch=32可选对照保留，原默认merged/batch8保持；不因“有优化代码”就宣称加速，也不据此新增固定块全量训练。GPU7短测完成后释放。真正序列仍先执行原tile16/32试验，后续按实际区域布局/耗时判断是否需限制碎片数、按延迟回退或换执行内核。
+
+两个report及launch归档docs/int_spike_results/cache_repair_20261017/unified_update_dispatch{_fixed}_v1_*。路线级定时暂从60分钟改20分钟以捕获短试验完成，提示词不变“推进时序感知，仅完成异常通知”；短试验结束后回到60分钟或根据5/10轮训练节点调整。
+
+同轮真实启动确认：GPU5/6两条试验均已完成等待并通过真实权重工程验收，源epoch1 SHA=46d336a1dba40f0fd1824d01400f8edd5c4962f84d4d7b261de7de652b14db7f；各8帧全更新包装器预测误差0、实际裁剪选中区误差0。训练前1024帧校准已完成：tile16 q50/q75=0.15568511/0.21653467，tile32=0.16081000/0.21256878，已进入dense_before真实序列评估。归档unified_sparse_launch_audit_20261019.json及两条engineering/selective_engineering。源v2 epoch1完整AP70仅3.36844%，明显仍处于早期学习；本轮前缀结果仅用于执行/机制筛查，不可当作可用模型的精度保持证据。后续在v2第5/10轮按既定节点同时检查时序/单帧学习曲线，再决定较充分权重上的完整局部评估，不在本轮据单个早期epoch下架构结论。
