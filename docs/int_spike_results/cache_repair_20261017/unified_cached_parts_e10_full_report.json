@@ -1,0 +1,286 @@
+{
+  "checkpoint_sha256": "bdd3335e50f02d75c9ec85a442b24e8a2973943a5118ea9dd181513846a1645f",
+  "masked_gather_ap_equal": true,
+  "masked_gather_write_counts_equal": true,
+  "reports": {
+    "dense_after": {
+      "caveats": [
+        "Fixed early checkpoint, no sparse training; prefix AP is not full validation AP.",
+        "Cache includes actual previous state, residual/gate logits and age; current projection/readout stay dense.",
+        "Same GPU sequential model timing includes cache/warp/repair/current/readout, other GPUs may be training.",
+        "Policy differs from freezing final state; compare with controls in this run, not older epoch results."
+      ],
+      "checkpoint_sha256": "bdd3335e50f02d75c9ec85a442b24e8a2973943a5118ea9dd181513846a1645f",
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "labels": 1738,
+      "metrics": {
+        "bev_ap30": 0.7011839709455482,
+        "bev_ap50": 0.5914303117789323,
+        "bev_ap70": 0.27687219149760156
+      },
+      "model_step_ms_mean": 19.253057967191936,
+      "model_step_ms_p50": 18.919713445939124,
+      "model_step_ms_p95": 22.57008472224697,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 714469888,
+      "period": null,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "repair": null,
+      "reset_frames": 214,
+      "scans": 5794,
+      "scope": "Fixed-weight inference intervention; full validation",
+      "seconds": 304.7020186148584,
+      "source_epoch": 10,
+      "stage_means": [
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        }
+      ],
+      "state_bytes": 25804800,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    },
+    "dense_before": {
+      "caveats": [
+        "Fixed early checkpoint, no sparse training; prefix AP is not full validation AP.",
+        "Cache includes actual previous state, residual/gate logits and age; current projection/readout stay dense.",
+        "Same GPU sequential model timing includes cache/warp/repair/current/readout, other GPUs may be training.",
+        "Policy differs from freezing final state; compare with controls in this run, not older epoch results."
+      ],
+      "checkpoint_sha256": "bdd3335e50f02d75c9ec85a442b24e8a2973943a5118ea9dd181513846a1645f",
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "labels": 1738,
+      "metrics": {
+        "bev_ap30": 0.7011839709455482,
+        "bev_ap50": 0.5914303117789323,
+        "bev_ap70": 0.27687219149760156
+      },
+      "model_step_ms_mean": 19.513625395902913,
+      "model_step_ms_p50": 19.3236640188843,
+      "model_step_ms_p95": 22.460632363799956,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 766948864,
+      "period": null,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "repair": null,
+      "reset_frames": 214,
+      "scans": 5794,
+      "scope": "Fixed-weight inference intervention; full validation",
+      "seconds": 320.89081504312344,
+      "source_epoch": 10,
+      "stage_means": [
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        }
+      ],
+      "state_bytes": 25804800,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    },
+    "masked_period3": {
+      "caveats": [
+        "Fixed early checkpoint, no sparse training; prefix AP is not full validation AP.",
+        "Cache includes actual previous state, residual/gate logits and age; current projection/readout stay dense.",
+        "Same GPU sequential model timing includes cache/warp/repair/current/readout, other GPUs may be training.",
+        "Policy differs from freezing final state; compare with controls in this run, not older epoch results."
+      ],
+      "checkpoint_sha256": "bdd3335e50f02d75c9ec85a442b24e8a2973943a5118ea9dd181513846a1645f",
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "labels": 1738,
+      "metrics": {
+        "bev_ap30": 0.7011841073179742,
+        "bev_ap50": 0.5914301081292401,
+        "bev_ap70": 0.2768740193829247
+      },
+      "model_step_ms_mean": 20.682924656179072,
+      "model_step_ms_p50": 20.370526472106576,
+      "model_step_ms_p95": 23.93409053329378,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "parts_summary": {
+        "parts_anchor": 0.34518467380048323,
+        "parts_fallback": 0.0008629616845012082,
+        "parts_input_support_fraction": 1.0,
+        "parts_write_fraction": 0.3904750716967671
+      },
+      "peak_gpu_bytes": 818222080,
+      "period": 3,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "repair": "masked_dense",
+      "reset_frames": 214,
+      "scans": 5794,
+      "scope": "Fixed-weight inference intervention; full validation",
+      "seconds": 314.31694030808285,
+      "source_epoch": 10,
+      "stage_means": [
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        }
+      ],
+      "state_bytes": 77515200,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    },
+    "period2": {
+      "caveats": [
+        "Fixed early checkpoint, no sparse training; prefix AP is not full validation AP.",
+        "Cache includes actual previous state, residual/gate logits and age; current projection/readout stay dense.",
+        "Same GPU sequential model timing includes cache/warp/repair/current/readout, other GPUs may be training.",
+        "Policy differs from freezing final state; compare with controls in this run, not older epoch results."
+      ],
+      "checkpoint_sha256": "bdd3335e50f02d75c9ec85a442b24e8a2973943a5118ea9dd181513846a1645f",
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "labels": 1738,
+      "metrics": {
+        "bev_ap30": 0.7011840633174876,
+        "bev_ap50": 0.5914302005562981,
+        "bev_ap70": 0.2768734249209495
+      },
+      "model_step_ms_mean": 18.668525647328533,
+      "model_step_ms_p50": 18.5551909962669,
+      "model_step_ms_p95": 22.687698947265737,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "parts_summary": {
+        "parts_anchor": 0.5093199861926131,
+        "parts_fallback": 0.0,
+        "parts_input_support_fraction": 0.5489873194168998,
+        "parts_write_fraction": 0.5425521428491065
+      },
+      "peak_gpu_bytes": 818679808,
+      "period": 2,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "repair": "gather",
+      "reset_frames": 214,
+      "scans": 5794,
+      "scope": "Fixed-weight inference intervention; full validation",
+      "seconds": 304.8250421488192,
+      "source_epoch": 10,
+      "stage_means": [
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        }
+      ],
+      "state_bytes": 77515200,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    },
+    "period3": {
+      "caveats": [
+        "Fixed early checkpoint, no sparse training; prefix AP is not full validation AP.",
+        "Cache includes actual previous state, residual/gate logits and age; current projection/readout stay dense.",
+        "Same GPU sequential model timing includes cache/warp/repair/current/readout, other GPUs may be training.",
+        "Policy differs from freezing final state; compare with controls in this run, not older epoch results."
+      ],
+      "checkpoint_sha256": "bdd3335e50f02d75c9ec85a442b24e8a2973943a5118ea9dd181513846a1645f",
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "labels": 1738,
+      "metrics": {
+        "bev_ap30": 0.7011841073179742,
+        "bev_ap50": 0.5914301081292401,
+        "bev_ap70": 0.2768740193829247
+      },
+      "model_step_ms_mean": 18.235184202870137,
+      "model_step_ms_p50": 17.954726587049663,
+      "model_step_ms_p95": 22.26469563320279,
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "parts_summary": {
+        "parts_anchor": 0.34518467380048323,
+        "parts_fallback": 0.0008629616845012082,
+        "parts_input_support_fraction": 0.39907690241663146,
+        "parts_write_fraction": 0.3904750716967671
+      },
+      "peak_gpu_bytes": 818639872,
+      "period": 3,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "repair": "gather",
+      "reset_frames": 214,
+      "scans": 5794,
+      "scope": "Fixed-weight inference intervention; full validation",
+      "seconds": 301.90715784812346,
+      "source_epoch": 10,
+      "stage_means": [
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        }
+      ],
+      "state_bytes": 77515200,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    }
+  },
+  "status": "COMPLETED"
+}

@@ -1,0 +1,40 @@
+{
+  "scope": "First 32 training scans; dense-history one-step diagnostic; CPU v2n versus archived GPU v2, not AP or latency",
+  "runs": {
+    "unified_state_gate_diagnostic_e1": {
+      "checkpoint_sha256": "46d336a1dba40f0fd1824d01400f8edd5c4962f84d4d7b261de7de652b14db7f",
+      "frames": 32,
+      "valid_history_frames": 30,
+      "always_gt99": 98,
+      "always_lt01": 119,
+      "channel_frame_range_lt01": 256,
+      "median_current_rms": 199.22409057617188,
+      "median_residual_rms": 5.229830980300903
+    },
+    "unified_v2n_gate_e1_cpu32": {
+      "checkpoint_sha256": "cbe70401580dac5d8bfc47ec0ca8138881b712ed7629b530175a654971b8fbc1",
+      "frames": 32,
+      "valid_history_frames": 30,
+      "always_gt99": 27,
+      "always_lt01": 4,
+      "channel_frame_range_lt01": 256,
+      "median_current_rms": 1.0,
+      "median_residual_rms": 4.479209899902344
+    },
+    "unified_v2n_gate_e3_cpu32": {
+      "checkpoint_sha256": "4e0c5b2f75e3a1e2a9738bc22e0a9355f5b3ae3942f95a1c0344785b48a39c7e",
+      "frames": 32,
+      "valid_history_frames": 30,
+      "always_gt99": 16,
+      "always_lt01": 1,
+      "channel_frame_range_lt01": 252,
+      "median_current_rms": 1.0,
+      "median_residual_rms": 2.6499857902526855
+    }
+  },
+  "checks": [
+    "Matching ordered frames, segments, supervision",
+    "All three source checkpoint SHA256 match reports",
+    "Gate values finite; 30 comparable history frames"
+  ]
+}

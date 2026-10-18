@@ -1,0 +1,22 @@
+{
+  "pid": 40495,
+  "device": "cpu",
+  "threads": 2,
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.diagnose_int_unified_state",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--checkpoint",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_recurrent/epoch_003/student.pth",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_v2n_gate_e3_cpu32",
+    "--device",
+    "cpu",
+    "--frames",
+    "32"
+  ],
+  "created": 1792367140.4129722,
+  "code_commit": "3c1bc0884b42bb3b609514b0a9dd35af3f9a3f39"
+}

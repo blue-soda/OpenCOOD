@@ -56,7 +56,8 @@ def run(a,out):
                 if previous is not None and info['reset'] is None:
                     aligned,valid=warp_bev(previous['evidence'],previous['pose'],sample['meta']['pose'],student.bounds)
                     valid=valid & packed[:,-1:].bool()
-                    # Bias cancels; weight is the model's existing cheap current path.
+                    # Use the actual current path, including v2n normalization.
+                    # Bias cancellation applies only to the linear v2 path.
                     current=student.core.update.current_value(evidence)
                     delta=current-student.core.update.current_value(aligned)
                     corrected=old+delta;target=state['value']

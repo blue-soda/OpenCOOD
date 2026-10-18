@@ -1,0 +1,235 @@
+{
+  "full_cached_parts": {
+    "checkpoint_sha256": "bdd3335e50f02d75c9ec85a442b24e8a2973943a5118ea9dd181513846a1645f",
+    "scans": 5794,
+    "labels": 1738,
+    "manifest_order_verified": true,
+    "dense_AP_equal": true,
+    "masked_gather_AP_equal": true,
+    "write_fallback_counts_equal": true
+  },
+  "training": [
+    {
+      "name": "unified_bev_dense_resume_v1",
+      "best": {
+        "ap70": 0.6029912981338538,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_resume_v1/epoch_058/student.pth",
+        "epoch": 58,
+        "sha256": "d11dfd78e93e8bdf091173acfae946a50a0a32727be0c97a6f0b5806cf639b26"
+      },
+      "status": {
+        "status": "COMPLETED"
+      },
+      "checked": [
+        {
+          "epoch": 58,
+          "ap70": 0.6029912981338538,
+          "sha256": "d11dfd78e93e8bdf091173acfae946a50a0a32727be0c97a6f0b5806cf639b26",
+          "max_loss": 0.8442878464558008,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 59,
+          "ap70": 0.601593300795949,
+          "sha256": "e673a3c8ecaedf870a67bd49efb67885a7b5505254cca26ad13b9d0077b26d4d",
+          "max_loss": 0.8285160623721797,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 60,
+          "ap70": 0.6018569618421644,
+          "sha256": "76b8e99a15e9e2aa38bf17a505da4959850745a97f522e3d8a5745612b1db663",
+          "max_loss": 0.8149249294782841,
+          "loss_gt100": 0
+        }
+      ]
+    },
+    {
+      "name": "unified_bev_v2_recurrent",
+      "best": {
+        "ap70": 0.28028584483716357,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_011/student.pth",
+        "epoch": 11,
+        "sha256": "6ed3a291e5207ced0f76030a1ffffd26e0519587e024ac8868f3c02b5ee93781"
+      },
+      "status": {
+        "epoch": 15,
+        "labels": 3912,
+        "mean_loss": 0.6908855310797122,
+        "phase": "train",
+        "scans": 7200,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1898
+      },
+      "checked": [
+        {
+          "epoch": 12,
+          "ap70": 0.26704977312455364,
+          "sha256": "5b3a02c0d382b9fce769d51e60eba5f81b1a6a751c0167f0007a9a5894a1e33f",
+          "max_loss": 4.18335427448473,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 13,
+          "ap70": 0.2537211906256659,
+          "sha256": "657b1e7a43a99cc10c3f47d99821f2451c641528a42afdb39716f8f113410943",
+          "max_loss": 3.8465517943090557,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 14,
+          "ap70": 0.26482514222573145,
+          "sha256": "d7900005de2b92129ab3f7a68f7f3c6febcaaa6536cb449afa997aa9f5d81768",
+          "max_loss": 3.725247103837165,
+          "loss_gt100": 0
+        }
+      ]
+    },
+    {
+      "name": "unified_bev_v2_reset",
+      "best": {
+        "ap70": 0.3716252126448055,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_reset/epoch_015/student.pth",
+        "epoch": 15,
+        "sha256": "932d85cb9d6c7599e42d2f6c89524b79f17d858c81ebd0f434958802382a9593"
+      },
+      "status": {
+        "epoch": 16,
+        "labels": 105,
+        "mean_loss": 0.5411586488053494,
+        "phase": "train",
+        "scans": 200,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 54
+      },
+      "checked": [
+        {
+          "epoch": 12,
+          "ap70": 0.32935412574487843,
+          "sha256": "f28e4be0decd67dee0798af83a967224bb572834e402d3f42875e1ce29ce13fd",
+          "max_loss": 3.8180029487032248,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 13,
+          "ap70": 0.346963798093933,
+          "sha256": "b8e951968665cd0efe9d0a70bc61e419474b0d4e0cc3686a822497f4166b99ff",
+          "max_loss": 3.304740457787167,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 14,
+          "ap70": 0.3558814282165881,
+          "sha256": "9876b2e94b6d1effe47ebfb8121a3a38c2e05cdbc14f893cc7d39c1a18aa872f",
+          "max_loss": 3.426385988325348,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 15,
+          "ap70": 0.3716252126448055,
+          "sha256": "932d85cb9d6c7599e42d2f6c89524b79f17d858c81ebd0f434958802382a9593",
+          "max_loss": 3.2258661540133398,
+          "loss_gt100": 0
+        }
+      ]
+    },
+    {
+      "name": "unified_bev_v2n_recurrent",
+      "best": {
+        "ap70": 0.10138486819883077,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_recurrent/epoch_003/student.pth",
+        "epoch": 3,
+        "sha256": "4e0c5b2f75e3a1e2a9738bc22e0a9355f5b3ae3942f95a1c0344785b48a39c7e"
+      },
+      "status": {
+        "epoch": 4,
+        "labels": 2011,
+        "mean_loss": 0.8589349821121288,
+        "phase": "train",
+        "scans": 3600,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 952
+      },
+      "checked": [
+        {
+          "epoch": 1,
+          "ap70": 0.0280793498779316,
+          "sha256": "cbe70401580dac5d8bfc47ec0ca8138881b712ed7629b530175a654971b8fbc1",
+          "max_loss": 25.175024807240348,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 2,
+          "ap70": 0.0663801155765363,
+          "sha256": "15b31bfdcb7af62cb51f93d684097f07de2e4e416d9eb60f8839a7597de9f4bc",
+          "max_loss": 18.013496842223155,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 3,
+          "ap70": 0.10138486819883077,
+          "sha256": "4e0c5b2f75e3a1e2a9738bc22e0a9355f5b3ae3942f95a1c0344785b48a39c7e",
+          "max_loss": 4.5682655799502925,
+          "loss_gt100": 0
+        }
+      ]
+    },
+    {
+      "name": "unified_bev_v2n_reset",
+      "best": {
+        "ap70": 0.059465188872350846,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_reset/epoch_003/student.pth",
+        "epoch": 3,
+        "sha256": "363d22acf468f36a021204393307c1bfd5fad304d9b4060a0bb209204d523d13"
+      },
+      "status": {
+        "epoch": 4,
+        "labels": 2049,
+        "mean_loss": 0.8603538908147281,
+        "phase": "train",
+        "scans": 3800,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1003
+      },
+      "checked": [
+        {
+          "epoch": 1,
+          "ap70": 0.021218401610336307,
+          "sha256": "53190416ece7342529e3c17f1ba9053a3c49714e2d13e0fcf2668a8b86ebed2a",
+          "max_loss": 27.321582666137875,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 2,
+          "ap70": 0.03453535267045783,
+          "sha256": "455bd337cc060822dbd49e78fb7c47f393308f796e53dfa4fd8f5b893918d363",
+          "max_loss": 8.274207538688529,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 3,
+          "ap70": 0.059465188872350846,
+          "sha256": "363d22acf468f36a021204393307c1bfd5fad304d9b4060a0bb209204d523d13",
+          "max_loss": 6.523858345951307,
+          "loss_gt100": 0
+        }
+      ]
+    }
+  ],
+  "v1_stop": {
+    "best": {
+      "ap70": 0.6029912981338538,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_resume_v1/epoch_058/student.pth",
+      "epoch": 58,
+      "sha256": "d11dfd78e93e8bdf091173acfae946a50a0a32727be0c97a6f0b5806cf639b26"
+    },
+    "epochs": 60,
+    "status": "COMPLETED",
+    "stop_reason": "max_epochs_not_proof_of_convergence"
+  },
+  "caveat": "Stored reports and frame/hash audit, not independent AP recomputation."
+}
