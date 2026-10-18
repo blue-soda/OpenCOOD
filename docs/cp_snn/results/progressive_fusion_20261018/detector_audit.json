@@ -1,0 +1,60 @@
+{
+  "started_unix": 1792322996.211463,
+  "source_sha256": "f5ece651e3a8a039a52d3bf27bc503605bb34e14654202c4acafd548082c3f35",
+  "frames": [
+    "000010",
+    "000011"
+  ],
+  "road_frames": [
+    "006689",
+    "006690"
+  ],
+  "prefixes": [
+    {
+      "prefix": 1,
+      "packet_bytes": [
+        6155,
+        6235
+      ],
+      "direct_wire_exact": true
+    },
+    {
+      "prefix": 2,
+      "packet_bytes": [
+        11970,
+        13147
+      ],
+      "direct_wire_exact": true
+    },
+    {
+      "prefix": 3,
+      "packet_bytes": [
+        17598,
+        19498
+      ],
+      "direct_wire_exact": true
+    }
+  ],
+  "scope": "Augmented train frames 0/1; discarded optimization step; no AP estimate.",
+  "code_commit": "f91e99555255764cb5e7ccd59d291a994e4d450b",
+  "geometry_arithmetic": "float64 inverse/grid; float32 interpolation/features",
+  "pose_orthogonality_max_error": 7.804479618123139e-07,
+  "repeated_forward_has_no_state_leak": true,
+  "batch_isolation_max_response_error": 0.0,
+  "gradient_l1": {
+    "membrane_fusion.basis.weight": 38.996543884277344,
+    "membrane_fusion.gate.weight": 13.370344161987305
+  },
+  "loss_components": {
+    "fused_detection_loss": 0.8937304221896913,
+    "prefix_1_detection_loss": 0.8446110344214012,
+    "prefix_2_detection_loss": 0.8968672218540509,
+    "prefix_3_detection_loss": 0.939713010293622,
+    "ego_detection_loss": 0.8663495411763953
+  },
+  "frozen_encoder_decoder_bn": true,
+  "states_not_checkpointed": true,
+  "full_dropout_all_prefixes_equal_local_readout": true,
+  "passed": true,
+  "finished_unix": 1792322997.702228
+}

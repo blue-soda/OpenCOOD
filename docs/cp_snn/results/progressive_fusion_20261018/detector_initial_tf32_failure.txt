@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/data1/tzm/workspace/OpenCOOD/opencood/tools/audit_e3dsnn_progressive_detector.py", line 96, in <module>
+    args=parser.parse_args();audit(args.root,args.base)
+  File "/data1/tzm/workspace/OpenCOOD/opencood/tools/audit_e3dsnn_progressive_detector.py", line 45, in audit
+    model.readout_prefix=prefix;model.packet_roundtrip=False;direct=model(data)
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/data1/tzm/workspace/OpenCOOD/opencood/models/e3dsnn_progressive_detector.py", line 67, in forward
+    self._encoder_identity,contracts[i].channel_basis) for i in range(b)]
+  File "/data1/tzm/workspace/OpenCOOD/opencood/models/e3dsnn_progressive_detector.py", line 67, in <listcomp>
+    self._encoder_identity,contracts[i].channel_basis) for i in range(b)]
+  File "/data1/tzm/workspace/OpenCOOD/opencood/models/fuse_modules/e3dsnn_progressive.py", line 92, in begin
+    self._shape(ego_precount,contract);check_transform(source_to_ego)
+  File "/data1/tzm/workspace/OpenCOOD/opencood/models/fuse_modules/e3dsnn_progressive.py", line 46, in check_transform
+    raise ValueError('Expected rigid proper rotation')
+ValueError: Expected rigid proper rotation
