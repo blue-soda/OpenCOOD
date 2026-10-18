@@ -1,10 +1,23 @@
 import unittest
 import torch
-from opencood.models.sub_modules.int_light_repair import LightRepair,repair_input_request,make_repairs
+from opencood.models.sub_modules.int_light_repair import LightRepair,repair_input_request,make_repairs,foreground_head_loss
 from opencood.models.sub_modules.int_cache_repair import refresh_tiles
 
 
 class LightRepairTests(unittest.TestCase):
+    def test_foreground_box_loss_is_not_diluted_by_background_area(self):
+        results=[]
+        for width in [2,32]:
+            logits=torch.full((1,2,1,width),-30.);logits[:,0,0,0]=10.
+            teacher=dict(psm=logits,rm=torch.zeros(1,14,1,width))
+            reg=teacher['rm'].clone();reg[:,:7,0,0]=1.;reg.requires_grad_(True)
+            prediction=dict(psm=logits.clone(),rm=reg)
+            loss=foreground_head_loss(prediction,teacher);loss.backward()
+            results.append(float(loss));self.assertGreater(float(reg.grad[:,:7,0,0].sum()),0.)
+            self.assertEqual(float(reg.grad[:,:,0,1:].abs().sum()),0.)
+        self.assertAlmostEqual(results[0],results[1],places=6)
+        self.assertGreater(results[0],.49)
+
     def test_decoded_repair_uses_same_grid_evidence_and_learns_residual(self):
         torch.manual_seed(11)
         module=make_repairs('decoded')[0]

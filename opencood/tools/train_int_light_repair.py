@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.nn import functional as F
-from opencood.models.sub_modules.int_light_repair import make_repairs,repair_input_request
+from opencood.models.sub_modules.int_light_repair import make_repairs,repair_input_request,foreground_head_loss
 from opencood.models.sub_modules.int_local_cache import LocalCacheDetector,local_change_mask,OriginalDetectorControl
 from opencood.models.sub_modules.int_early_cache import early_descriptor
 from opencood.models.sub_modules.int_cache_repair import tile_mask,expand_tiles
@@ -163,6 +163,7 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
     target=getattr(a,'repair_target','stages')
     detector=DecodedCacheDetector if target=='decoded' else LocalCacheDetector
     torch.manual_seed(303);repairs=make_repairs(target).cuda().eval()
+    loss_mode=getattr(a,'repair_loss','legacy')
     period=a.repair_period
     assert period in (2,3) and (period==2 or a.repair_policy=='dense')
     initialization=None
@@ -197,6 +198,9 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
         protocol='Full-frame anchors alternate with at most %d repair frames, age below 0.25s; original model always eval/frozen; no augmentation or artificial delays' % (period-1),
         inference='Independent stage2/3 residual repair; local=tile4 radius1 crops, dense=whole small module without gate; no original deep stages or teacher on repair frames')
     if target=='decoded':contract['inference']='One dense repair of warped head-input cache from current stage1 and validity; no original stages2/3, multiscale decode or shrink on repair frames'
+    contract['repair_loss']=loss_mode
+    if loss_mode=='foreground':
+        contract['loss']='0.1 feature loss + foreground-mass-normalized box SmoothL1(beta=1/9) + 0.1 foreground logit SmoothL1 + 0.1 dense logit SmoothL1 + 0.1 foreground direction KL; soft weights=teacher sigmoid squared'
     write_json(out/'training_contract.json',contract)
     best=-1.;significant=-1.;stale=0;history=[];captured={}
     def capture(i):
@@ -230,9 +234,13 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
                         features=model.backbone.decode_multiscale_feature([first]+outputs)
                         if model.shrink_flag:features=model.shrink_conv(features)
                     predictions=dict(psm=model.cls_head(features),rm=model.reg_head(features))
-                    weight=1+4*teacher['psm'].sigmoid().amax(1,keepdim=True)
-                    for key in predictions:
-                        loss=loss+.1*(F.smooth_l1_loss(predictions[key],teacher[key],reduction='none')*weight).mean()
+                    if loss_mode=='foreground':
+                        if model.use_dir:predictions['dm']=model.dir_head(features)
+                        loss=.1*loss+foreground_head_loss(predictions,teacher)
+                    else:
+                        weight=1+4*teacher['psm'].sigmoid().amax(1,keepdim=True)
+                        for key in predictions:
+                            loss=loss+.1*(F.smooth_l1_loss(predictions[key],teacher[key],reduction='none')*weight).mean()
                     if not bool(torch.isfinite(loss)):raise RuntimeError('Non-finite repair loss')
                     loss.backward();norm=torch.nn.utils.clip_grad_norm_(repairs.parameters(),5.)
                     if not bool(torch.isfinite(norm)):raise RuntimeError('Non-finite repair gradients')

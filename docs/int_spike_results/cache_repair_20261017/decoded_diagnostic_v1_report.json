@@ -1,0 +1,30 @@
+{
+  "caveats": [
+    "Diagnostic prefix with teacher and multiple passes; not timing or full-validation evidence.",
+    "Checkpoint is an immutable saved epoch; originating training may still be running.",
+    "Training replay uses independently captured teacher full anchors and the actual training_pair function."
+  ],
+  "checkpoint_sha256": "c35fbb66a901de887f4f1b4ad018b419d7c763b11c6e172e9049d19c0135405f",
+  "labels": 61,
+  "metrics": {
+    "teacher": {
+      "ap30": 0.9549927266869173,
+      "ap50": 0.9316390259497906,
+      "ap70": 0.8616458207993445
+    },
+    "trained": {
+      "ap30": 0.9260345914672589,
+      "ap50": 0.7951328528802932,
+      "ap70": 0.2570997900351576
+    },
+    "zero_residual": {
+      "ap30": 0.8762438242802316,
+      "ap50": 0.7586601192793672,
+      "ap70": 0.5936969555662418
+    }
+  },
+  "partial_frames": 169,
+  "scans": 256,
+  "status": "COMPLETED",
+  "train_inference_max_error": 0.0
+}

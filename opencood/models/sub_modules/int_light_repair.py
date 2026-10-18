@@ -27,3 +27,21 @@ def repair_input_request(first,old,valid,changed,index):
 def make_repairs(target='stages'):
     if target not in ('stages','decoded'):raise ValueError(target)
     return nn.ModuleList([LightRepair(256)] if target=='decoded' else [LightRepair(256),LightRepair(512)])
+
+
+def foreground_head_loss(predictions,teacher):
+    """Normalize box/direction supervision by teacher foreground mass, not area."""
+    confidence=teacher['psm'].detach().sigmoid().square()
+    mass=confidence.sum().clamp_min(1.)
+    cls=F.smooth_l1_loss(predictions['psm'],teacher['psm'].detach(),reduction='none')
+    loss=.1*cls.mean()+.1*(cls*confidence).sum()/mass
+    batch,anchors,height,width=confidence.shape
+    reg=F.smooth_l1_loss(predictions['rm'],teacher['rm'].detach(),reduction='none',beta=1./9.)
+    reg=reg.reshape(batch,anchors,-1,height,width).mean(2)
+    loss=loss+(reg*confidence).sum()/mass
+    if 'dm' in predictions:
+        student=predictions['dm'].reshape(batch,anchors,-1,height,width)
+        reference=teacher['dm'].detach().reshape_as(student).softmax(2)
+        direction=F.kl_div(student.log_softmax(2),reference,reduction='none').sum(2)
+        loss=loss+.1*(direction*confidence).sum()/mass
+    return loss

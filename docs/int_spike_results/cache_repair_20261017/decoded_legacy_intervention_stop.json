@@ -1,0 +1,10 @@
+{
+  "previous_status": {
+    "epoch": 8,
+    "phase": "full_validation",
+    "status": "RUNNING"
+  },
+  "pid": 16130,
+  "reason": "Train/inference parity is exact, but learned decoded repair sharply degrades AP70 versus warp-only on the same diagnostic prefix; stop to revise foreground supervision. Not a convergence result.",
+  "time_unix": 1792298167.152005
+}

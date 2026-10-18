@@ -228,3 +228,19 @@ matched顺序比较完成：原GRU AP70=75.873610%、平均32.2585/P50=32.2052/P
 随后256帧分段短诊断完成，修正帧decode+shrink约10.18ms、FM6.05ms、第一级3.06ms、原两个小模块1.26ms；插桩跨度仅定位开销。按用户授权的“缓存解码后特征”方向新增decoded修正：当前第一级+对齐头前历史+valid，经单个41,984参数模块直接进入冻结检测头，修正帧不执行原二/三级/多尺度解码/shrink；保留period3锚点与0.25s上限，预计缓存状态52,012,800字节。此新模型尚无完整精度/性能结果。
 当前唯一活动实验light_repair_decoded_period3，181 GPU7 PID16130，代码e593790，60单测通过。真实8帧全刷新误差0；5个修正帧验证四个关键模块零调用、最大连续深度2、锚点不漂移。初始化为零残差，原检测器30,776,212参数冻结，只训练41,984参数；训练8593/验证5794、完整AP平台停止规则同前。目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_decoded_period3，launch/engineering/contract已归档light_repair_decoded_period3_*。下轮读status/history/best，尤其第一轮全量AP与两种修正深度更新；不重复任何已完成的训练/benchmark/profile。训练健康则保持，不提前按短训截断；完成后对比保留三级缓存候选，必要时同GPU重测。当前benchmark的matched suite只支持三级缓存两种周期；decoded完成后需扩展独立比较入口或直接learned-eval加--repair-target decoded，不能把其权重当stages加载。
 automation改回90分钟覆盖数小时训练，提示词“推进时序感知，仅完成异常通知”不变；事件临近再缩短。
+
+## 解码后修正发生严重定位退化：保留失败证据，修订前景监督
+
+旧light_repair_decoded_period3在epoch1–7完整验证AP70仅20.7793/23.4545/23.4712/24.8299/26.0205/25.6344/25.3962%，loss却从0.0714降至0.0637。不能视作正常波动。诊断decoded_diagnostic_v1（GPU0、固定epoch5、256帧61标注）比较原教师/训练修正/零残差，并独立用实际training_pair重放同锚点：训练与推理逐元素最大误差0，排除这段轨迹上的路径不一致。
+
+| 同一256帧诊断 | AP30% | AP50% | AP70% |
+| --- | ---: | ---: | ---: |
+| 原教师 | 95.4993 | 93.1639 | 86.1646 |
+| 训练修正 | 92.6035 | 79.5133 | 25.7100 |
+| 零残差历史复用 | 87.6244 | 75.8660 | 59.3697 |
+
+训练修正改善低IoU指标却损害严格定位；不能根据小特征/输出MSE声称检测保持。旧损失按整图平均、前景最多约5倍权重，可能让大量背景掩盖物体框误差；这是待验证的损失假设，并未证实唯一原因，也不排除头前特征对几何误差更敏感。保留原主干缓存period3候选75.82349%，不受影响。
+
+已核验launch PID16130的cmdline、实验路径及独立进程组后停止旧decoded训练（当时epoch8验证中），目录status=STOPPED，未称收敛、不删除checkpoint；intervention_stop记录原因与原状态。归档decoded_diagnostic_v1_report、decoded_legacy_history、decoded_legacy_intervention_stop。第8轮可能是不完整验证，不能作为完整结果引用。
+
+下一组decoded_foreground_period3保持架构/种子/数据/周期/冻结模型不变、重新零残差初始化，仅改变蒸馏目标：教师sigmoid平方作为每个anchor的软前景权重，框SmoothL1(beta=1/9)按前景权重总量归一；0.1前景logit损失+0.1整图logit损失兼顾目标与背景，0.1前景方向KL，原特征损失降为0.1。没有依据验证集扫置信阈值，软权重无需二值阈值。新增测试确保扩大无目标背景面积不会稀释前景框梯度。只有完整检测AP恢复才能支持损失解释；若仍退化，重新审视缓存位置/几何语义，不继续按下降loss盲目训练。
