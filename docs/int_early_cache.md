@@ -244,3 +244,8 @@ automation改回90分钟覆盖数小时训练，提示词“推进时序感知�
 已核验launch PID16130的cmdline、实验路径及独立进程组后停止旧decoded训练（当时epoch8验证中），目录status=STOPPED，未称收敛、不删除checkpoint；intervention_stop记录原因与原状态。归档decoded_diagnostic_v1_report、decoded_legacy_history、decoded_legacy_intervention_stop。第8轮可能是不完整验证，不能作为完整结果引用。
 
 下一组decoded_foreground_period3保持架构/种子/数据/周期/冻结模型不变、重新零残差初始化，仅改变蒸馏目标：教师sigmoid平方作为每个anchor的软前景权重，框SmoothL1(beta=1/9)按前景权重总量归一；0.1前景logit损失+0.1整图logit损失兼顾目标与背景，0.1前景方向KL，原特征损失降为0.1。没有依据验证集扫置信阈值，软权重无需二值阈值。新增测试确保扩大无目标背景面积不会稀释前景框梯度。只有完整检测AP恢复才能支持损失解释；若仍退化，重新审视缓存位置/几何语义，不继续按下降loss盲目训练。
+
+### 2026-10-18 decoded定位退化与前景监督对照接续
+旧decoded训练出现严重异常：完整AP70最佳仅26.0205%（epoch5），不能接受。256帧同轨迹诊断教师/训练修正/零残差AP70分别86.1646/25.7100/59.3697%，训练修正AP50反而优于零残差；实际training_pair与推理逐元素差0。证据指向定位精度被损害，当前首先检验整图平均损失过度偏重背景这一假设，尚未证实唯一原因。已验证进程组后停止旧light_repair_decoded_period3于epoch8验证阶段，status=STOPPED，保留权重及原日志；不称收敛，不引用不完整epoch8。旧诊断decoded_diagnostic_v1已完成，无活动进程。三级缓存period3的75.82349%及16.81%平均模型节省仍是保留候选。
+新唯一活动实验decoded_foreground_period3：181 GPU7 PID34243，代码3a5a54b，61单测通过，真实8帧全刷新误差0、5修正帧四关键模块零调用及两步锚点验收通过。模型/数据/周期/种子不变，41,984修正参数重新零残差初始化，只调整前景归一蒸馏（教师概率平方软权重、box beta1/9、前景与背景分类、方向KL及较小特征项）；不把旧模型坏权重带入。目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/decoded_foreground_period3，启动/工程/契约归档decoded_foreground_period3_*。下一轮重点看第一/二轮完整AP是否恢复与loss有限，不能只看loss下降；若仍严重退化，继续诊断几何语义/目标框误差，不盲目扩训。正常情况下遵循原完整训练/验证与平台停止规则。历史matched/profile/diagnostic及原三级缓存训练均已结束，不重复启动。
+异常处理后将automation从90分钟暂改30分钟，尽早检查新目标的第一轮检测结果；健康且方向有效后放宽，提示词仍“推进时序感知，仅完成异常通知”。
