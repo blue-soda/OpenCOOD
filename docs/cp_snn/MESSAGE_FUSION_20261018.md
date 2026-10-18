@@ -51,3 +51,9 @@ main提交45a54e9f62960492bb32d9cc7eb99ac27285ff73，本地和181各43项检查�
 - [launch.json](results/message_fusion_20261018/launch.json)，SHA256 f74da7b71735e89476ec7caf225d7147a35a8de75ba3a1d609fba0d9decd9d95。
 - [startup_snapshot.json](results/message_fusion_20261018/startup_snapshot.json)，SHA256 07473d1a989400665ba3a0cfc365b8eae78c50202b3f9d19a5aa61e3253c48b8，记录刚启动的评估进程，捕获时尚未写出逐帧预测。
 - 同目录保存八份配置和监督脚本，配置SHA见audit；supervise.py SHA256 3a661c319d8dde0949d14dff1e9134199f6993d426d4d3f9f23c0576b4b2bd84。
+
+## 零适配复核与训练状态（2026-10-18 11:48 CST）
+
+四组1738帧零适配及BEV/3D CPU精确复算、GT/预测哈希门槛全部通过。ann_geometry/ann_received/snn_geometry/snn_received的零适配AP70分别为59.80104/59.66470/59.51457/59.22287%。ann_geometry与旧参考最大AP差0.00001421pp；跨独立运行逐帧通信最大绝对差20字节、平均绝对差最多0.023015字节，均在预设范围内，不将实际运行说成逐帧完全相同。
+
+四组已自动进入训练，检查时均完成7轮、正在第8/10轮，编码器、ANN BEV/连续头和BN冻结摘要通过至第7轮，流水线健康。尚未完成最终训练后通信与预测复算，不用中间AP决定下一轮或修改预算。原始[zero_summary.json](results/message_fusion_20261018/zero_summary.json)已取回并核对SHA256：0e60f38669061b7d4d14b26526855e506a5d3cc4bdef6cb38b8ef20fb9b21844。
