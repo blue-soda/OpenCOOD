@@ -1,0 +1,332 @@
+{
+  "started_unix": 1792320532.5379417,
+  "git_commit": "b722282222d123c44d1caff18cd28d20d5ff0629",
+  "source_checkpoint_sha256": "f5ece651e3a8a039a52d3bf27bc503605bb34e14654202c4acafd548082c3f35",
+  "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+  "frames": [
+    {
+      "index": 0,
+      "contract": {
+        "receiver_frame": "000211",
+        "sender_frame": "007410",
+        "sender_id": "infrastructure",
+        "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "channel_basis": "shared-3d-output-v1",
+        "shape_zyx": [
+          3,
+          50,
+          126
+        ],
+        "origin_xyz": [
+          -100.7,
+          -39.9,
+          -2.65
+        ],
+        "step_xyz": [
+          1.6,
+          1.6,
+          1.6
+        ],
+        "timestamps_us": [
+          1626155287082532,
+          1626155287061164
+        ]
+      },
+      "compact_bytes": 13861,
+      "legacy_bytes": 14785,
+      "three_packet_bytes": [
+        5989,
+        5932,
+        6019
+      ],
+      "wire_exact": true,
+      "precount_matches_legacy": true,
+      "integrated_current_max_error": 8.881784197001252e-16,
+      "count_differences_at_rounding_boundary": 0
+    },
+    {
+      "index": 248,
+      "contract": {
+        "receiver_frame": "003148",
+        "sender_frame": "011324",
+        "sender_id": "infrastructure",
+        "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "channel_basis": "shared-3d-output-v1",
+        "shape_zyx": [
+          3,
+          50,
+          126
+        ],
+        "origin_xyz": [
+          -100.7,
+          -39.9,
+          -2.65
+        ],
+        "step_xyz": [
+          1.6,
+          1.6,
+          1.6
+        ],
+        "timestamps_us": [
+          1626160149698757,
+          1626160149708913
+        ]
+      },
+      "compact_bytes": 15848,
+      "legacy_bytes": 16888,
+      "three_packet_bytes": [
+        6671,
+        6414,
+        6892
+      ],
+      "wire_exact": true,
+      "precount_matches_legacy": true,
+      "integrated_current_max_error": 1.7763568394002505e-15,
+      "count_differences_at_rounding_boundary": 0
+    },
+    {
+      "index": 496,
+      "contract": {
+        "receiver_frame": "004127",
+        "sender_frame": "009384",
+        "sender_id": "infrastructure",
+        "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "channel_basis": "shared-3d-output-v1",
+        "shape_zyx": [
+          3,
+          50,
+          126
+        ],
+        "origin_xyz": [
+          -100.7,
+          -39.9,
+          -2.65
+        ],
+        "step_xyz": [
+          1.6,
+          1.6,
+          1.6
+        ],
+        "timestamps_us": [
+          1626160653701868,
+          1626160653678402
+        ]
+      },
+      "compact_bytes": 14487,
+      "legacy_bytes": 15529,
+      "three_packet_bytes": [
+        6201,
+        6081,
+        6335
+      ],
+      "wire_exact": true,
+      "precount_matches_legacy": true,
+      "integrated_current_max_error": 1.7763568394002505e-15,
+      "count_differences_at_rounding_boundary": 0
+    },
+    {
+      "index": 744,
+      "contract": {
+        "receiver_frame": "010875",
+        "sender_frame": "016880",
+        "sender_id": "infrastructure",
+        "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "channel_basis": "shared-3d-output-v1",
+        "shape_zyx": [
+          3,
+          50,
+          126
+        ],
+        "origin_xyz": [
+          -100.7,
+          -39.9,
+          -2.65
+        ],
+        "step_xyz": [
+          1.6,
+          1.6,
+          1.6
+        ],
+        "timestamps_us": [
+          1626167054422032,
+          1626167054410528
+        ]
+      },
+      "compact_bytes": 16262,
+      "legacy_bytes": 17425,
+      "three_packet_bytes": [
+        6674,
+        6434,
+        7045
+      ],
+      "wire_exact": true,
+      "precount_matches_legacy": true,
+      "integrated_current_max_error": 1.7763568394002505e-15,
+      "count_differences_at_rounding_boundary": 0
+    },
+    {
+      "index": 992,
+      "contract": {
+        "receiver_frame": "011827",
+        "sender_frame": "014665",
+        "sender_id": "infrastructure",
+        "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "channel_basis": "shared-3d-output-v1",
+        "shape_zyx": [
+          3,
+          50,
+          126
+        ],
+        "origin_xyz": [
+          -100.7,
+          -39.9,
+          -2.65
+        ],
+        "step_xyz": [
+          1.6,
+          1.6,
+          1.6
+        ],
+        "timestamps_us": [
+          1626232293675457,
+          1626232293648270
+        ]
+      },
+      "compact_bytes": 14996,
+      "legacy_bytes": 16099,
+      "three_packet_bytes": [
+        5953,
+        6194,
+        6866
+      ],
+      "wire_exact": true,
+      "precount_matches_legacy": true,
+      "integrated_current_max_error": 1.7763568394002505e-15,
+      "count_differences_at_rounding_boundary": 0
+    },
+    {
+      "index": 1240,
+      "contract": {
+        "receiver_frame": "014302",
+        "sender_frame": "012852",
+        "sender_id": "infrastructure",
+        "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "channel_basis": "shared-3d-output-v1",
+        "shape_zyx": [
+          3,
+          50,
+          126
+        ],
+        "origin_xyz": [
+          -100.7,
+          -39.9,
+          -2.65
+        ],
+        "step_xyz": [
+          1.6,
+          1.6,
+          1.6
+        ],
+        "timestamps_us": [
+          1626234647482896,
+          1626234647507001
+        ]
+      },
+      "compact_bytes": 13096,
+      "legacy_bytes": 14064,
+      "three_packet_bytes": [
+        5673,
+        5660,
+        5705
+      ],
+      "wire_exact": true,
+      "precount_matches_legacy": true,
+      "integrated_current_max_error": 1.7763568394002505e-15,
+      "count_differences_at_rounding_boundary": 0
+    },
+    {
+      "index": 1488,
+      "contract": {
+        "receiver_frame": "018887",
+        "sender_frame": "004228",
+        "sender_id": "infrastructure",
+        "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "channel_basis": "shared-3d-output-v1",
+        "shape_zyx": [
+          3,
+          50,
+          126
+        ],
+        "origin_xyz": [
+          -100.7,
+          -39.9,
+          -2.65
+        ],
+        "step_xyz": [
+          1.6,
+          1.6,
+          1.6
+        ],
+        "timestamps_us": [
+          1626245124121322,
+          1626245124109240
+        ]
+      },
+      "compact_bytes": 18771,
+      "legacy_bytes": 20281,
+      "three_packet_bytes": [
+        6960,
+        8628,
+        7179
+      ],
+      "wire_exact": true,
+      "precount_matches_legacy": true,
+      "integrated_current_max_error": 1.7763568394002505e-15,
+      "count_differences_at_rounding_boundary": 0
+    },
+    {
+      "index": 1737,
+      "contract": {
+        "receiver_frame": "019992",
+        "sender_frame": "004668",
+        "sender_id": "infrastructure",
+        "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "channel_basis": "shared-3d-output-v1",
+        "shape_zyx": [
+          3,
+          50,
+          126
+        ],
+        "origin_xyz": [
+          -100.7,
+          -39.9,
+          -2.65
+        ],
+        "step_xyz": [
+          1.6,
+          1.6,
+          1.6
+        ],
+        "timestamps_us": [
+          1626246791627629,
+          1626246791598387
+        ]
+      },
+      "compact_bytes": 16668,
+      "legacy_bytes": 18044,
+      "three_packet_bytes": [
+        6058,
+        7932,
+        6564
+      ],
+      "wire_exact": true,
+      "precount_matches_legacy": true,
+      "integrated_current_max_error": 1.7763568394002505e-15,
+      "count_differences_at_rounding_boundary": 0
+    }
+  ],
+  "scope": "Eight fixed validation frames, shared frozen Count4 encoder, untrained receiver, fixed spatial partitions. No AP claim. Algebra audit uses float64.",
+  "passed": true,
+  "finished_unix": 1792320535.2131898,
+  "frozen_source_unchanged": true
+}
