@@ -1,0 +1,161 @@
+{
+  "caveat": "Incremental frame/order/count and checkpoint audit; not independent AP recomputation or convergence proof.",
+  "runs": [
+    {
+      "best": {
+        "ap70": 0.5835246998785031,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_resume_v1/epoch_045/student.pth",
+        "epoch": 45,
+        "sha256": "0f1b37df60a9342a71a87f174a757f5848a5020efacbe4043461d01314fbaa2f"
+      },
+      "last_history": {
+        "ap70": 0.5835246998785031,
+        "epoch": 45,
+        "labels": 4678,
+        "loss": 0.27736807584567325,
+        "lr": 0.00025,
+        "scans": 8593,
+        "seconds": 792.5140237160958,
+        "stale_epochs": 0,
+        "updates": 2262
+      },
+      "name": "unified_bev_dense_resume_v1",
+      "new_epochs_checked": [
+        {
+          "ap70": 0.5544895591446405,
+          "checkpoint_sha256": "0c23e9ea9640895dd1cf3bd2dcada9b422ba4033fba08f7477fa97d8c4e683d4",
+          "epoch": 41
+        },
+        {
+          "ap70": 0.5781247667260951,
+          "checkpoint_sha256": "59fbec84a7fe35fa53b0fe626bbcae40eaea694fcdb204ce7206c51a9d2c3734",
+          "epoch": 42
+        },
+        {
+          "ap70": 0.5815877766130938,
+          "checkpoint_sha256": "741f5a4c3ded0d57927c993ad0628fb4c00b094102fe253b44b1cd3aaf65857e",
+          "epoch": 43
+        },
+        {
+          "ap70": 0.5816570410667516,
+          "checkpoint_sha256": "46532ee4d0fad112724606b20084af9c257c4d1a585e45e379c9a1872e928725",
+          "epoch": 44
+        },
+        {
+          "ap70": 0.5835246998785031,
+          "checkpoint_sha256": "0f1b37df60a9342a71a87f174a757f5848a5020efacbe4043461d01314fbaa2f",
+          "epoch": 45
+        }
+      ],
+      "status": {
+        "epoch": 46,
+        "labels": 4038,
+        "mean_loss": 0.27486454161162077,
+        "phase": "train",
+        "scans": 7400,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1949
+      }
+    },
+    {
+      "best": {
+        "ap70": 0.08964219965806569,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_003/student.pth",
+        "epoch": 3,
+        "sha256": "2f5f1a00e8e89189fe6b823f35fedde5844acac1ce79e45c3b20823ac74fc60f"
+      },
+      "last_history": {
+        "ap70": 0.08964219965806569,
+        "epoch": 3,
+        "labels": 4678,
+        "loss": 1.0300407641193476,
+        "lr": 0.001,
+        "mean_labelled_window_gt": 1.4385465688809755,
+        "mean_window_kd": 0.4122851847693206,
+        "scans": 8593,
+        "seconds": 1141.2293983430136,
+        "stale_epochs": 0,
+        "updates": 2262
+      },
+      "name": "unified_bev_v2_recurrent",
+      "new_epochs_checked": [
+        {
+          "ap70": 0.03368437667819003,
+          "checkpoint_sha256": "46d336a1dba40f0fd1824d01400f8edd5c4962f84d4d7b261de7de652b14db7f",
+          "epoch": 1
+        },
+        {
+          "ap70": 0.0659300667614291,
+          "checkpoint_sha256": "ca9145f629e5abcd269d0c4df7622328ca25bb3e577a01597c7f876d48821a85",
+          "epoch": 2
+        },
+        {
+          "ap70": 0.08964219965806569,
+          "checkpoint_sha256": "2f5f1a00e8e89189fe6b823f35fedde5844acac1ce79e45c3b20823ac74fc60f",
+          "epoch": 3
+        }
+      ],
+      "status": {
+        "epoch": 4,
+        "labels": 2755,
+        "mean_loss": 0.9484032058007126,
+        "phase": "train",
+        "scans": 5200,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1370
+      }
+    },
+    {
+      "best": {
+        "ap70": 0.1343730051081991,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_reset/epoch_003/student.pth",
+        "epoch": 3,
+        "sha256": "583fbfcd0b6b39c4f951105bcd00e9ec98e6d663bf9b7f7b1a848b71312fe0c9"
+      },
+      "last_history": {
+        "ap70": 0.1343730051081991,
+        "epoch": 3,
+        "labels": 4678,
+        "loss": 142.4536644647506,
+        "lr": 0.001,
+        "mean_labelled_window_gt": 216.13644638850042,
+        "mean_window_kd": 0.413094379146156,
+        "scans": 8593,
+        "seconds": 1079.9001548420638,
+        "stale_epochs": 0,
+        "updates": 2262
+      },
+      "name": "unified_bev_v2_reset",
+      "new_epochs_checked": [
+        {
+          "ap70": 0.03687847480892136,
+          "checkpoint_sha256": "9e2ef8685b9b6b7e70b7534f6c6f63e83a0854658f2bdf14ca49614d1d5bd376",
+          "epoch": 1
+        },
+        {
+          "ap70": 0.08450548662288004,
+          "checkpoint_sha256": "933a564d247afa8bb17260e20cff46f6c6b0f4a109aa9347a10b065f51ff46de",
+          "epoch": 2
+        },
+        {
+          "ap70": 0.1343730051081991,
+          "checkpoint_sha256": "583fbfcd0b6b39c4f951105bcd00e9ec98e6d663bf9b7f7b1a848b71312fe0c9",
+          "epoch": 3
+        }
+      ],
+      "status": {
+        "epoch": 4,
+        "labels": 3705,
+        "mean_loss": 0.9367156448173795,
+        "phase": "train",
+        "scans": 6800,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1793
+      }
+    }
+  ],
+  "status": "PASSED"
+}

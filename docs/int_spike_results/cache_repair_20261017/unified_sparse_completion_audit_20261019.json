@@ -1,0 +1,152 @@
+{
+  "caveat": "Early epoch1 and 512-frame prefix only. Verified recorded frames/hash/metrics agreement, not independent AP recomputation from saved boxes. Other GPUs trained concurrently.",
+  "experiments": [
+    {
+      "calibration_scans": 1024,
+      "checkpoint_sha256": "46d336a1dba40f0fd1824d01400f8edd5c4962f84d4d7b261de7de652b14db7f",
+      "checks": [
+        {
+          "ap70": 0.051978955571434345,
+          "labels": 255,
+          "mean_ms": 20.78709756886861,
+          "mode": "dense_after",
+          "p95_ms": 24.13469939492643,
+          "scans": 512,
+          "update_summary": null
+        },
+        {
+          "ap70": 0.051978955571434345,
+          "labels": 255,
+          "mean_ms": 21.65420056066561,
+          "mode": "dense_before",
+          "p95_ms": 25.371146923862398,
+          "scans": 512,
+          "update_summary": null
+        },
+        {
+          "ap70": 0.04428611064671115,
+          "labels": 255,
+          "mean_ms": 23.64632481777766,
+          "mode": "masked_q75",
+          "p95_ms": 27.83424573717639,
+          "scans": 512,
+          "update_summary": {
+            "actual_write_fraction": 0.4865575273288414,
+            "crop_area_ratio_before_fallback": 0.5946831597222222,
+            "executed_input_area_ratio": 1.0,
+            "fallback": 0.1640625,
+            "tiles": 15.654296875
+          }
+        },
+        {
+          "ap70": 0.048456167433938234,
+          "labels": 255,
+          "mean_ms": 36.87827990240087,
+          "mode": "sparse_q50",
+          "p95_ms": 51.772554486524314,
+          "scans": 512,
+          "update_summary": {
+            "actual_write_fraction": 0.6910118898376822,
+            "crop_area_ratio_before_fallback": 0.769967757936508,
+            "executed_input_area_ratio": 0.7967844742063492,
+            "fallback": 0.29296875,
+            "tiles": 17.673828125
+          }
+        },
+        {
+          "ap70": 0.04428611064671115,
+          "labels": 255,
+          "mean_ms": 35.32123695261242,
+          "mode": "sparse_q75",
+          "p95_ms": 46.41810782486573,
+          "scans": 512,
+          "update_summary": {
+            "actual_write_fraction": 0.4865575273288414,
+            "crop_area_ratio_before_fallback": 0.5946831597222222,
+            "executed_input_area_ratio": 0.5806978546626984,
+            "fallback": 0.1640625,
+            "tiles": 15.654296875
+          }
+        }
+      ],
+      "dense_after_before_ratio": 0.9599568227250986,
+      "dense_repeat_metrics_equal": true,
+      "masked_sparse_metrics_equal": true,
+      "name": "unified_sparse_e1_t16"
+    },
+    {
+      "calibration_scans": 1024,
+      "checkpoint_sha256": "46d336a1dba40f0fd1824d01400f8edd5c4962f84d4d7b261de7de652b14db7f",
+      "checks": [
+        {
+          "ap70": 0.051978955571434345,
+          "labels": 255,
+          "mean_ms": 20.58947189484697,
+          "mode": "dense_after",
+          "p95_ms": 24.037582520395517,
+          "scans": 512,
+          "update_summary": null
+        },
+        {
+          "ap70": 0.051978955571434345,
+          "labels": 255,
+          "mean_ms": 21.221969804014137,
+          "mode": "dense_before",
+          "p95_ms": 25.141565850935876,
+          "scans": 512,
+          "update_summary": null
+        },
+        {
+          "ap70": 0.03354706351543561,
+          "labels": 255,
+          "mean_ms": 23.269401479185934,
+          "mode": "masked_q75",
+          "p95_ms": 26.514463673811406,
+          "scans": 512,
+          "update_summary": {
+            "actual_write_fraction": 0.5426884758344386,
+            "crop_area_ratio_before_fallback": 0.5885540674603175,
+            "executed_input_area_ratio": 1.0,
+            "fallback": 0.130859375,
+            "tiles": 6.0234375
+          }
+        },
+        {
+          "ap70": 0.047003897061464996,
+          "labels": 255,
+          "mean_ms": 27.353180987496984,
+          "mode": "sparse_q50",
+          "p95_ms": 35.250779055058956,
+          "scans": 512,
+          "update_summary": {
+            "actual_write_fraction": 0.7290674441028386,
+            "crop_area_ratio_before_fallback": 0.7460373263888889,
+            "executed_input_area_ratio": 0.781438492063492,
+            "fallback": 0.310546875,
+            "tiles": 6.443359375
+          }
+        },
+        {
+          "ap70": 0.03354706351543561,
+          "labels": 255,
+          "mean_ms": 27.696596617175942,
+          "mode": "sparse_q75",
+          "p95_ms": 34.806254191789776,
+          "scans": 512,
+          "update_summary": {
+            "actual_write_fraction": 0.5426884758344386,
+            "crop_area_ratio_before_fallback": 0.5885540674603175,
+            "executed_input_area_ratio": 0.5973412698412699,
+            "fallback": 0.130859375,
+            "tiles": 6.0234375
+          }
+        }
+      ],
+      "dense_after_before_ratio": 0.9701960791100772,
+      "dense_repeat_metrics_equal": true,
+      "masked_sparse_metrics_equal": true,
+      "name": "unified_sparse_e1_t32"
+    }
+  ],
+  "status": "PASSED"
+}

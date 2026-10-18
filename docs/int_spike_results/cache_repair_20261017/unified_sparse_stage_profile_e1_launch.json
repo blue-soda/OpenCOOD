@@ -1,0 +1,17 @@
+{
+  "pid": 47310,
+  "gpu": 5,
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.profile_int_unified_sparse_stages",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--pilot-root",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_sparse_stage_profile_e1"
+  ],
+  "created_unix": 1792354688.941793,
+  "code_commit": "76d9f02268ba05ad7b424e3cfbab0c3ed7bdf5b8"
+}
