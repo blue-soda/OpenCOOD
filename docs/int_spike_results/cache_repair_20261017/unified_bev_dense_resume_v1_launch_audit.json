@@ -1,0 +1,139 @@
+{
+  "caveat": "Start verification, not completed epoch41 validation; saved RNG fields are not explicitly restored, so no bitwise continuation claim.",
+  "completed_updates_observed": 190,
+  "contract_only_change": "epochs_max 40 -> 60",
+  "engineering": {
+    "caveat": "New model: finite predictions/shape/causality, not parity with the teacher. Crop equivalence is a unit test, not an active sparse policy.",
+    "frames": [
+      {
+        "frame": "011050",
+        "reset": "initial",
+        "state_shape": [
+          1,
+          128,
+          100,
+          252
+        ]
+      },
+      {
+        "frame": "011051",
+        "reset": null,
+        "state_shape": [
+          1,
+          128,
+          100,
+          252
+        ]
+      },
+      {
+        "frame": "011052",
+        "reset": null,
+        "state_shape": [
+          1,
+          128,
+          100,
+          252
+        ]
+      },
+      {
+        "frame": "011053",
+        "reset": null,
+        "state_shape": [
+          1,
+          128,
+          100,
+          252
+        ]
+      },
+      {
+        "frame": "011054",
+        "reset": null,
+        "state_shape": [
+          1,
+          128,
+          100,
+          252
+        ]
+      },
+      {
+        "frame": "011056",
+        "reset": "scene",
+        "state_shape": [
+          1,
+          128,
+          100,
+          252
+        ]
+      },
+      {
+        "frame": "011057",
+        "reset": null,
+        "state_shape": [
+          1,
+          128,
+          100,
+          252
+        ]
+      },
+      {
+        "frame": "011058",
+        "reset": null,
+        "state_shape": [
+          1,
+          128,
+          100,
+          252
+        ]
+      }
+    ],
+    "original_spatial_calls": [
+      0,
+      0,
+      0
+    ],
+    "state_bytes": 12902400,
+    "status": "PASSED",
+    "update_radius": 2
+  },
+  "inherited_history_and_best_equal": true,
+  "launch": {
+    "code_commit": "b2ac8e5dff135639314456bd4efe4fc2795e8c1c",
+    "command": [
+      "/data1/tzm/miniconda3/envs/opencood/bin/python",
+      "-m",
+      "opencood.tools.run_int_unified_bev",
+      "--root",
+      "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+      "--output",
+      "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_resume_v1",
+      "--gpu",
+      "0",
+      "--epochs",
+      "60",
+      "--resume",
+      "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1/latest.pth",
+      "--worker"
+    ],
+    "created_unix": 1792350348.9292417,
+    "gpu": 0,
+    "pid": 24739
+  },
+  "observed_status": {
+    "epoch": 41,
+    "labels": 290,
+    "mean_loss": 0.27074424781756856,
+    "phase": "train",
+    "scans": 600,
+    "status": "RUNNING",
+    "total_scans": 8593,
+    "updates": 161
+  },
+  "recorded_train_scans": 710,
+  "resumption": {
+    "checkpoint_sha256": "4e9fc66b86eb9f5a56a82df9066076389cd533c2aaf17fb97947553ad68c6150",
+    "next_epoch": 41,
+    "source": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1"
+  },
+  "status": "PASSED",
+  "unit_tests": 64
+}

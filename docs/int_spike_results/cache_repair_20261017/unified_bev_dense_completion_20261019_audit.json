@@ -1,0 +1,104 @@
+{
+  "caveat": "Incremental frame/hash audit and CPU optimizer/scheduler restore. Not independent AP recomputation, not convergence, and no bitwise RNG-continuity claim.",
+  "history": [
+    {
+      "ap70": 0.5470344089052104,
+      "epoch": 39,
+      "labels": 4678,
+      "loss": 0.31284685223335357,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 712.8151068268344,
+      "stale_epochs": 1,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5522190729235434,
+      "epoch": 40,
+      "labels": 4678,
+      "loss": 0.31119716101882156,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 714.8827788301278,
+      "stale_epochs": 2,
+      "updates": 2262
+    }
+  ],
+  "incremental_checks": [
+    {
+      "checkpoint_sha256": "ca5c570dda121b8989c8ad362bd5036d7600e54188faf76f5815e16dc75cfddb",
+      "epoch": 39,
+      "metrics": {
+        "bev_ap30": 0.7998629212150461,
+        "bev_ap50": 0.7634468949209249,
+        "bev_ap70": 0.5470344089052104
+      },
+      "train_labels": 4678,
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_labels": 1738,
+      "val_scans": 5794
+    },
+    {
+      "checkpoint_sha256": "326c7bae16dda77ac2dc1a8f02e7f23ebcaa83d73fd2983832d3beceedfc76e1",
+      "epoch": 40,
+      "metrics": {
+        "bev_ap30": 0.8047087320523082,
+        "bev_ap50": 0.7684303958020688,
+        "bev_ap70": 0.5522190729235434
+      },
+      "train_labels": 4678,
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_labels": 1738,
+      "val_scans": 5794
+    }
+  ],
+  "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+  "prior_audit": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1/progress_audit_20261019_0233.json",
+  "prior_audit_sha256": "c5207cd240b8581f0802c6c52f34b5073cc957343387db8e289de9bea65a4b34",
+  "report": {
+    "best": {
+      "ap70": 0.5596106401184161,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1/epoch_038/student.pth",
+      "epoch": 38,
+      "sha256": "a2e897420a60fae4b7607056c08e05b9d3c3a231f5f52a8c5d088ac7569af483"
+    },
+    "epochs": 40,
+    "status": "COMPLETED",
+    "stop_reason": "max_epochs_not_proof_of_convergence"
+  },
+  "resume_preflight": {
+    "epoch": 40,
+    "latest_sha256": "4e9fc66b86eb9f5a56a82df9066076389cd533c2aaf17fb97947553ad68c6150",
+    "lr": 0.0005,
+    "model_equals_immutable": true,
+    "next_epoch": 41,
+    "optimizer_states": 30,
+    "scheduler": {
+      "_last_lr": [
+        0.0005
+      ],
+      "best": 0.5596106401184161,
+      "cooldown": 0,
+      "cooldown_counter": 0,
+      "eps": 1e-08,
+      "factor": 0.5,
+      "last_epoch": 40,
+      "min_lrs": [
+        1e-05
+      ],
+      "mode": "max",
+      "mode_worse": "-Infinity",
+      "num_bad_epochs": 2,
+      "patience": 2,
+      "threshold": 0.001,
+      "threshold_mode": "abs",
+      "verbose": false
+    },
+    "significant": 0.5596106401184161,
+    "stale": 2
+  },
+  "source": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1",
+  "status": "PASSED"
+}
