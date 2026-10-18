@@ -289,12 +289,14 @@ def main():
     p.add_argument('--repair-policy',choices=['local','dense'],default='local')
     p.add_argument('--repair-checkpoint');p.add_argument('--repair-period',type=int,choices=[1,2,3],default=2)
     p.add_argument('--repair-ablation',choices=['none','zero-residual','original'],default='none')
+    p.add_argument('--profile-stages',action='store_true',help='Diagnostic prefix with stage spans; learned-eval only')
     p.add_argument('--train-frames',type=int,default=1024);p.add_argument('--frames',type=int,default=256)
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.stage in ('full','local-profile','local-suite','learned-repair','learned-eval') and not a.source_suite:
         p.error('Full evaluation requires the original suite with frozen policies and passed checks')
     if a.stage=='learned-eval' and not a.repair_checkpoint:
         p.error('learned-eval requires a completed training checkpoint')
+    if a.profile_stages and a.stage!='learned-eval':p.error('Stage profiling is evaluation-only')
     if a.stage=='learned-repair' and (a.repair_period==1 or (a.repair_period==3 and a.repair_policy!='dense')):
         p.error('Training supports period2 local/dense or period3 dense')
     if a.stage=='learned-repair' and a.repair_ablation!='none':

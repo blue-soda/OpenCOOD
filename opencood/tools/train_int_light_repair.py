@@ -45,12 +45,22 @@ def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
     if a.repair_period==3:
         assert a.repair_policy=='dense' and ablation=='none'
         engineering(model,cfg,rows,repairs,policy['selected']['threshold'],out,True,period=3)
-    a.stage='full';a.engineering=str(run/'engineering.json')
+    profiling=getattr(a,'profile_stages',False)
+    a.stage='pilot' if profiling else 'full';a.engineering=str(run/'engineering.json')
     wrapper=LocalCacheDetector(model,cfg,policy['selected']['threshold'],period=a.repair_period,
                               repair_modules=repairs,repair_dense=a.repair_policy=='dense')
     if ablation=='original':wrapper=OriginalDetectorControl(model)
     torch.cuda.reset_peak_memory_stats()
-    report=evaluate(a,model,cfg,rows,out,wrapper)
+    if profiling:
+        from opencood.tools.int_repair_stage_profile import RepairStageProfiler
+        profiler=RepairStageProfiler(wrapper,model,repairs)
+        try:
+            report=evaluate(a,model,cfg,rows,out,profiler)
+        finally:
+            profiler.close()
+        report['stage_profile']=profiler.summary()
+    else:
+        report=evaluate(a,model,cfg,rows,out,wrapper)
     frames=[json.loads(s) for s in (out/'frames.jsonl').read_text().splitlines()]
     partial=[r for r in frames if r['local_partial']]
     report.update(repair_policy=a.repair_policy,repair_period=a.repair_period,repair_checkpoint=str(checkpoint),
@@ -70,6 +80,7 @@ def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
     if a.repair_period==3:
         training_period=contract.get('repair_period',2)
         report['caveats'].append('Period3 evaluation with period%d-trained weights; %s. Up to two partial frames use the same full anchor, age below 0.25s; repaired outputs are never written into the anchor.' % (training_period,'matched interval' if training_period==3 else 'zero-shot interval extrapolation'))
+    if profiling:report['caveats'].extend(report['stage_profile']['caveats'])
     return report
 
 

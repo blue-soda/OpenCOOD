@@ -200,3 +200,17 @@ light_repair_dense_period3已完成epoch1–7，epoch8训练正常。每轮5621�
 ### 2026-10-18 period3匹配训练完成，顺序比较已启动
 light_repair_dense_period3共9epoch，按平台停止（stale8，LR6.25e-5）；最佳epoch6 AP70=75.82348968%，比period3外推75.78903024%高0.03446个百分点，比原GRU75.87361046%低0.05012个百分点。改进幅度小、单种子工程证据，不宣称统计显著。每轮完整8593训练扫描、5621更新（第1/2修正2855/2766），完整验证5794/1738、3789修正帧含1146标注帧。两项period2/3各9轮的帧/标签/缓存锚点/年龄/修正暴露/权重哈希/最佳选择及停止条件审计通过；并未从检测框另算AP。训练审计归档light_repair_matched_training_audit.json。
 light_repair_matched_benchmark_v1已在181 GPU7启动，PID7233，启动代码45a54e9（比较入口7c17677，后续无关研究提交保留）。依次原model.step、period2-best、period3-best，三项完整验证、独立权重加载及AP一致性检查；原路径控制已RUNNING。目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_matched_benchmark_v1，启动归档light_repair_matched_benchmark_launch.json。下一轮读取status/results与dense_period3/engineering.json，审计后用同轮平均/P50/P95比较并形成阶段结论；未完成前不使用训练期耗时替代。30分钟轮询暂保留以覆盖约15–20分钟复测结束。此前所有训练均已完成，勿继续恢复或重复训练。
+
+## 匹配训练后的同轮完整比较完成
+
+light_repair_matched_benchmark_v1完成，三项5794扫描/1738标注，重载AP与各best完全一致，帧顺序、缓存锚点、年龄、标签暴露和权重哈希审计通过。归档light_repair_matched_benchmark_results.json。
+
+| 配置 | AP70% | 平均模型ms | P50 ms | P95 ms | 跳过原二/三级帧数 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 原GRU model.step | 75.873610 | 32.2585 | 32.2052 | 33.9496 | 0 |
+| period2整图修正 | 75.791153 | 28.3107 | 30.8255 | 33.6233 | 2843 |
+| period3匹配修正 | 75.823490 | 26.8356 | 24.4660 | 32.8378 | 3789 |
+
+当前保留period3匹配修正作为工程候选：与原GRU相比AP低0.05012个百分点，平均模型时间减少16.81%，P95减少3.27%，状态增加9,676,800字节；比period2平均时间减少5.21%，AP高0.03234个百分点。单种子、单轮配对，不称统计显著、端到端提速或SNN收益。FM、第一级、解码与头仍全帧计算，尚未预测目标运动；全刷新帧仍决定大部分尾延迟。
+
+下一步不继续扫刷新间隔，先定位候选剩余开销：新增--profile-stages诊断，按全刷新/修正帧分别记录pillar/scatter/FM/三级主干/两个修正/多尺度解码/shrink/头的互不嵌套CUDA事件跨度和host调用时间。前256验证扫描仅做短诊断，剔除10热身；模型步结束同步，不逐层同步。CUDA跨度可能含等待host发射的空闲，不等于纯kernel计算；host与CUDA时间不能相加，仪器自身有开销，不能代替上述无分段插桩的完整性能表。未分配跨度包含深缓存warp/组装/管理等，需按实际结果决定优先优化第一级、解码或记忆模块，避免靠理想MAC猜测。
