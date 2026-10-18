@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from opencood.models.sub_modules.int_unified_bev import UnifiedBEVCoreV2
 from opencood.models.sub_modules.int_unified_sparse import SelectiveUnifiedBEV
+from opencood.models.sub_modules.int_cache_repair import refresh_tiles
 
 
 class SelectiveUnifiedTests(unittest.TestCase):
@@ -63,6 +64,17 @@ class SelectiveUnifiedTests(unittest.TestCase):
                 self.assertTrue(torch.equal(a['reference'],b['reference']))
                 partial=partial or 0<ia['reused_fraction']<1
             self.assertTrue(partial)
+
+    def test_fixed_tile_batch_and_merged_plan_match_without_fallback(self):
+        x=torch.randn(1,513,19,27);x[:,-1:]=1;old=x[:,256:512]
+        mask=torch.zeros_like(old[:,:1],dtype=torch.bool)
+        mask[...,0,0]=True;mask[...,8,8]=True;mask[...,8,12]=True;mask[...,-1,-1]=True
+        with torch.no_grad():
+            merged,wm,_=refresh_tiles(self.core.update,x,old,mask,1,2,4,allow_fallback=False)
+            fixed,wf,_=refresh_tiles(self.core.update,x,old,mask,1,2,4,allow_fallback=False,layout='fixed',batch_size=32)
+        self.assertTrue(torch.equal(wm,wf))
+        self.assertTrue(torch.allclose(merged,fixed,atol=2e-5,rtol=2e-5))
+        self.assertTrue(torch.equal(fixed[~wf.expand_as(fixed)],old[~wf.expand_as(old)]))
 
 
 if __name__=='__main__':unittest.main()

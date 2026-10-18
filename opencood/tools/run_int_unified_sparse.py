@@ -48,7 +48,8 @@ def integration(a,student,cfg,rows,out):
         finally:hook.remove()
         x=captured[0];expected=student.core.update(x);mask=torch.zeros_like(expected[:,:1],dtype=torch.bool)
         mask[...,0,0]=True;mask[...,50,126]=True;mask[...,-1,-1]=True
-        actual,written,stats=refresh_tiles(student.core.update,x,torch.zeros_like(expected),mask,1,2,a.tile,allow_fallback=False)
+        actual,written,stats=refresh_tiles(student.core.update,x,torch.zeros_like(expected),mask,1,2,a.tile,allow_fallback=False,
+                                         layout=a.layout,batch_size=a.crop_batch)
         selected=written.expand_as(actual);error=float((actual-expected).abs()[selected].max())
         assert torch.allclose(actual[selected],expected[selected],atol=1e-4,rtol=1e-4)
         assert torch.equal(actual[~selected],torch.zeros_like(actual[~selected]))
@@ -74,7 +75,7 @@ def calibrate(a,student,cfg,rows,out):
     values=np.concatenate(values);assert np.isfinite(values).all()
     thresholds={name:float(np.quantile(values,q)) for name,q in [('q50',.5),('q75',.75)]}
     result=dict(status='COMPLETED',split='train',scans=len(chosen),eligible_tiles=len(values),thresholds=thresholds,
-        tile=a.tile,max_age=a.max_age,fallback_fraction=.8,checkpoint_sha256=digest(Path(a.checkpoint)),
+        tile=a.tile,max_age=a.max_age,fallback_fraction=.8,layout=a.layout,crop_batch=a.crop_batch,checkpoint_sha256=digest(Path(a.checkpoint)),
         descriptor='Tile RMS evidence difference / max current/reference RMS; all evidence channels; no GT or current full-update output',
         caveat='Fixed training prefix, dense-history calibration; quantiles are not guaranteed update budgets under accumulated sparse history.')
     write_json(out/'calibration.json',result)
@@ -101,6 +102,7 @@ def worker(a):
     calibration=calibrate(a,student,cfg,train,out)
     write_json(out/'experiment_contract.json',dict(checkpoint=a.checkpoint,checkpoint_sha256=digest(Path(a.checkpoint)),
         source_epoch=saved['epoch'],source_training_contract=saved['contract'],tile=a.tile,max_cell_age=a.max_age,
+        layout=a.layout,crop_batch=a.crop_batch,
         calibration=calibration,validation_scans=len(val) if a.frames==0 else min(a.frames,len(val)),
         rule='Fixed thresholds from training prefix; force unseen/aged cells; fallback if halo crop input area>=.8; no feature training',
         timing='Same GPU sequential runs, dense control before/after; includes selector/cache/warp/crops/readout; other GPUs may be active'))
@@ -112,7 +114,8 @@ def worker(a):
         write_json(out/'status.json',dict(status='RUNNING',phase=name))
         subprocess.run(['nvidia-smi','--query-gpu=index,memory.used,utilization.gpu','--format=csv'],
                        stdout=(directory/'gpu_snapshot.csv').open('w'),check=True)
-        wrapper=student if mode is None else SelectiveUnifiedBEV(student,calibration['thresholds'][q],a.tile,a.max_age,mode)
+        wrapper=student if mode is None else SelectiveUnifiedBEV(student,calibration['thresholds'][q],a.tile,a.max_age,mode,
+                                                               layout=a.layout,batch_size=a.crop_batch)
         a.stage='full' if a.frames==0 else 'pilot'
         torch.cuda.reset_peak_memory_stats()
         report=evaluate(a,teacher,cfg,val,directory,wrapper)
@@ -149,6 +152,7 @@ def main():
     p.add_argument('--tile',type=int,choices=[8,16,32],default=16);p.add_argument('--max-age',type=float,default=.5)
     p.add_argument('--frames',type=int,default=512,help='Validation prefix; 0 selects full validation')
     p.add_argument('--calibration-frames',type=int,default=1024);p.add_argument('--wait-minutes',type=float,default=30.)
+    p.add_argument('--layout',choices=['merged','fixed'],default='merged');p.add_argument('--crop-batch',type=int,default=8)
     p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.frames<0 or a.calibration_frames<8 or a.max_age<=0:p.error('Invalid frame/age limits')
     if a.worker:

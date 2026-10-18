@@ -12,6 +12,7 @@ from opencood.tools.run_int_ego import write_json
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--output',required=True);p.add_argument('--repeats',type=int,default=20)
+    p.add_argument('--layout',choices=['merged','fixed'],default='merged');p.add_argument('--crop-batch',type=int,default=8)
     a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
     torch.manual_seed(303);torch.backends.cudnn.benchmark=False;torch.backends.cudnn.deterministic=True
     torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
@@ -29,7 +30,7 @@ def main():
                     for execution in ['dense','masked_dense','sparse']:
                         def run():
                             if execution=='dense':return module(x),None,dict(executed_input_area_ratio=1.,actual_write_fraction=1.)
-                            return refresh_tiles(module,x,old,mask,1,2,tile,execution=execution)
+                            return refresh_tiles(module,x,old,mask,1,2,tile,execution=execution,layout=a.layout,batch_size=a.crop_batch)
                         for _ in range(5):run()
                         times=[]
                         for _ in range(a.repeats):
@@ -39,6 +40,7 @@ def main():
                             mean_ms=float(np.mean(times)),p50_ms=float(np.median(times)),p95_ms=float(np.percentile(times,95)),stats=stats)
                         records.append(row);print(json.dumps(row),flush=True)
     write_json(out/'report.json',dict(status='COMPLETED',repeats=a.repeats,seed=303,device=torch.cuda.get_device_name(),
+        layout=a.layout,crop_batch=a.crop_batch,
         packed_shape=list(x.shape),records=records,scope='Synthetic update-module execution including crop planning/dispatch, no inference accuracy',
         caveats=['Random weights/inputs and synthetic masks, not trained detector latency.',
                  'Excludes encoder, selector, history warp, cache bookkeeping and readout/head.',

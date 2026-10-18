@@ -19,12 +19,13 @@ class SelectiveUnifiedBEV:
     All three cached maps share the last frame's coordinates and are warped together.
     Selection never reads GT, teacher predictions, or a dense current state update.
     """
-    def __init__(self,student,threshold,tile=16,max_age=.5,execution='sparse',fallback_fraction=.8):
+    def __init__(self,student,threshold,tile=16,max_age=.5,execution='sparse',fallback_fraction=.8,layout='merged',batch_size=8):
         if student.memory_policy!='recurrent':raise ValueError('Selective updates require recurrent weights')
         if execution not in ('sparse','masked_dense','full'):raise ValueError('Unknown execution')
         if not math.isfinite(threshold) or threshold<0 or tile<1 or max_age<=0:raise ValueError('Invalid gate')
         self.student=student;self.threshold=threshold;self.tile=tile;self.max_age=max_age
         self.execution=execution;self.fallback_fraction=fallback_fraction
+        self.layout=layout;self.batch_size=batch_size
         self.last_scores=None;self.last_eligible=None
 
     def step(self,data,state,meta):
@@ -63,7 +64,7 @@ class SelectiveUnifiedBEV:
                        crop_area_ratio_before_fallback=1.,requested_fraction=1.,selected_fraction=1.)
         else:
             value,written,stats=refresh_tiles(core.update,packed,old,requested,1,core.update.radius,
-                self.tile,self.fallback_fraction,execution=self.execution)
+                self.tile,self.fallback_fraction,execution=self.execution,layout=self.layout,batch_size=self.batch_size)
         reference=torch.where(written,evidence,reference)
         age=torch.where(written,torch.zeros_like(age),age)
         new=dict(value=value.detach(),reference=reference.detach(),age=age.detach(),pose=meta['pose'],

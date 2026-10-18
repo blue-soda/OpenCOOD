@@ -104,7 +104,7 @@ Backward dependency propagation includes both main and residual branches.
 
 
 def refresh_tiles(module, x, cached, requested, stride, radius, tile=8,
-                  fallback_fraction=.8, allow_fallback=True, execution='sparse'):
+                  fallback_fraction=.8, allow_fallback=True, execution='sparse',layout='merged',batch_size=8):
     """Run only selected stage-output tiles, batching equal-shaped input crops.
 
 Only eval-mode local convolutional modules are supported. radius is the full
@@ -115,13 +115,15 @@ intermediate BN offsets would then produce a different boundary condition.
     if module.training or x.shape[0] != 1:
         raise ValueError('Frozen eval modules and batch=1 are required')
     if execution not in ('sparse','masked_dense'):raise ValueError('Unknown tile execution')
+    if layout not in ('merged','fixed') or batch_size<1:raise ValueError('Invalid crop layout/batch')
     h, w = x.shape[-2:]
     oh, ow = cached.shape[-2:]
     assert (oh, ow) == ((h+stride-1)//stride, (w+stride-1)//stride)
     assert requested.shape == cached[:, :1].shape
     active = tile_mask(requested, tile)
     written = expand_tiles(active, tile, (oh, ow))
-    regions = rectangles(active)
+    regions = (rectangles(active) if layout=='merged' else
+               [[y,x,y+1,x+1] for y,row in enumerate(active[0,0].cpu().tolist()) for x,on in enumerate(row) if on])
     jobs = []
     area = 0
     for ty, tx, ey, ex in regions:
@@ -149,8 +151,8 @@ intermediate BN offsets would then produce a different boundary condition.
     for job in jobs:
         groups.setdefault((job[6]-job[4], job[7]-job[5]), []).append(job)
     for group in groups.values():
-        for start in range(0, len(group), 8):
-            batch = group[start:start+8]
+        for start in range(0, len(group), batch_size):
+            batch = group[start:start+batch_size]
             crops = torch.cat([x[..., j[4]:j[6], j[5]:j[7]] for j in batch], 0)
             result = module(crops)
             for i, (y0,x0,y1,x1,iy0,ix0,_,_) in enumerate(batch):
