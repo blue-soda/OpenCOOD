@@ -1,0 +1,28 @@
+{
+  "code_commit": "7b1fef4d80927422da2df4d8892e604fe235c8b0",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_early_cache",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_dense_period3",
+    "--gpu",
+    "7",
+    "--stage",
+    "learned-repair",
+    "--source-suite",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/early_four_way_v2",
+    "--repair-policy",
+    "dense",
+    "--repair-period",
+    "3",
+    "--repair-checkpoint",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_dense/epoch_005/repairs.pth",
+    "--worker"
+  ],
+  "created_unix": 1792283000.104089,
+  "gpu": 7,
+  "pid": 55573
+}
