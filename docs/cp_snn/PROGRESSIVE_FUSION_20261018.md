@@ -55,3 +55,12 @@
 181直连GitHub返回空响应，本地已push后用同提交bundle执行服务器ff-only pull，未改服务器网络配置。该原型全部新增文件，不修改正在运行的KD代码路径。
 
 原始证据：[audit.json](results/progressive_fusion_20261018/audit.json)，SHA256 `cb525b2a75bf2527acffccc96eda0328ad1127e24ba6c96c3870f488f213e5a3`。
+
+
+## 检测接口集成准备（2026-10-18）
+
+新增E3dsnnProgressiveDetector：共享冻结编码器提取本地precount和路端Count4，batch内逐样本独立状态，三批前缀各经固定ANN BEV与连续头。训练损失取三个前缀检测损失均值，并仅加一次ego辅助监督；真实dropout整帧覆盖所有批次。评估可指定1/2/3前缀，只统计实际已发送各包总字节。数据集新增真实road_frame_ids，禁止用车端帧ID冒充路端帧。
+
+共享通道映射与状态门控可训练，3D编码器、ANN BEV/头及BN均固定；旧Residual模块仅为旧checkpoint映射保留且不参与forward，不以总参数数目声称匹配计算。每次forward局部生成/关闭状态，不写入checkpoint。当前发送顺序仍固定空间分包，学习式发送尚未实现，不能称三部分均已完成。
+
+本地21项检查通过。下一门槛为181真实增强batch2：各前缀直接/序列化输出精确一致、缓存特征下逐样本/批量执行对应、重复forward不泄露状态、多前缀损失梯度仅到预期模块、全dropout严格回到本地读出。审计优化步丢弃，尚未启动新训练或报告AP。

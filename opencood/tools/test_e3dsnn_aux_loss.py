@@ -24,6 +24,16 @@ class AuxLossTest(unittest.TestCase):
         output['ego_output'] = {k: torch.tensor([float('nan')]) for k in ('psm', 'rm', 'dm')}
         with self.assertRaises(ValueError): detection_loss(output, {}, criterion, 1.)
 
+    def test_prefix_mean_and_aux_counted_once(self):
+        a=torch.tensor([2.],requires_grad=True);b=torch.tensor([4.],requires_grad=True)
+        ego=torch.tensor([3.],requires_grad=True)
+        response=lambda x:{k:x for k in ('psm','rm','dm')}
+        output=dict(response(b),prefix_outputs=[response(a),response(b)],ego_output=response(ego))
+        loss,parts=detection_loss(output,{},lambda o,_:o['psm'].square().sum(),1.)
+        self.assertEqual(float(loss),19.)
+        loss.backward();self.assertEqual(float(a.grad),2.);self.assertEqual(float(b.grad),4.)
+        self.assertEqual(float(ego.grad),6.);self.assertEqual(parts['prefix_1_detection_loss'],4.)
+
 
 if __name__ == '__main__':
     unittest.main()

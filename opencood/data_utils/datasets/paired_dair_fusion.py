@@ -122,7 +122,8 @@ class PairedDAIRFusion(LateFusionDatasetDAIR):
             'anchor_box': anchor, 'processed_lidar': processed[0], 'road_lidar': processed[1],
             'label_dict': self.post_processor.generate_label(gt_box_center=centers, anchors=anchor, mask=mask),
             'road_to_ego': transform.astype(np.float32), 'frame_id': fid,
-            'timestamps_us': self.timestamps[fid], 'road_z_shift': shift}
+            'timestamps_us': self.timestamps[fid], 'road_z_shift': shift,
+            'road_frame_id': Path(info['infrastructure_pointcloud_path']).stem}
         return {'ego': result}
 
     def collate_batch_train(self, batch):
@@ -132,6 +133,7 @@ class PairedDAIRFusion(LateFusionDatasetDAIR):
             'road_lidar': self.pre_processor.collate_batch([r['road_lidar'] for r in rows]),
             'road_to_ego': torch.from_numpy(np.stack([r['road_to_ego'] for r in rows])),
             'frame_ids': [r['frame_id'] for r in rows],
+            'road_frame_ids': [r['road_frame_id'] for r in rows],
             'timestamps_us': torch.tensor([r['timestamps_us'] for r in rows], dtype=torch.int64),
             'object_ids': rows[0]['object_ids'],
             'transformation_matrix': torch.eye(4), 'transformation_matrix_clean': torch.eye(4)})
