@@ -240,6 +240,11 @@ def execute(args, output_dir):
         'train_encoder': getattr(model, 'train_encoder', None),
         'message_support': getattr(model, 'message_support_kind', 'geometry'),
         'sender_ranking': getattr(model, 'sender_ranking', 'l1'),
+        'progressive': dict(packets=model.progressive_packets,readout_prefix=model.readout_prefix,
+            sender_order=model.sender_order,retain_residual=model.membrane_fusion.retain_residual,
+            adaptive_gate=model.membrane_fusion.adaptive_gate,geometry_dtype='float64',
+            sender_score_head='continuous 1x1 convolutions with local mean context')
+            if hasattr(model,'membrane_fusion') else None,
         'freeze_encoder': getattr(model, 'freeze_encoder', False),
         'trainable_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
         'freeze_detector': getattr(model, 'freeze_detector', False),

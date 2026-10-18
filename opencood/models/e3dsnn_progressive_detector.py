@@ -23,6 +23,9 @@ class E3dsnnProgressiveDetector(E3dsnnBudget):
             retain_residual=bool(args.get('retain_membrane_residual',True)),
             adaptive_gate=bool(args.get('adaptive_membrane_gate',False)))
         self.sender_order=args.get('sender_order','spatial')
+        self.fusion_activation_kind='count4'
+        self.message_support_kind='received'
+        self.sender_ranking='progressive_'+self.sender_order
         if self.sender_order not in ('spatial','frozen','learned'):raise ValueError('Unknown sender order')
         if self.sender_order!='spatial':self.progressive_sender=ProgressiveSender()
         for name,p in self.named_parameters():

@@ -77,6 +77,7 @@ def audit(root,base,sender_order='spatial',retain_residual=True):
     model.encode_membrane=encode_membrane;model.encode_lidar=encode
     model.packet_roundtrip=False;model.readout_prefix=3;model.train()
     enc,dec,bn=encoder_digest(model),decoder_digest(model),bn_digest(model)
+    report.update(encoder_sha256=enc,decoder_sha256=dec,bn_sha256=bn)
     criterion=train_utils.create_loss(cfg).cuda();optimizer=train_utils.setup_optimizer(cfg,model)
     model.message_dropout=0.;optimizer.zero_grad(set_to_none=True)
     output,loss=checked_forward(model,criterion,batch)
