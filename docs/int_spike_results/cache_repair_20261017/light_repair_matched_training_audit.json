@@ -1,0 +1,372 @@
+{
+  "caveat": "Validates manifests, summaries and hashes; does not independently recompute AP from boxes.",
+  "runs": {
+    "dense": {
+      "best": {
+        "ap70": 0.7579115347856362,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_dense/epoch_005/repairs.pth",
+        "epoch": 5,
+        "sha256": "f25dcac44f35527732857aa1642271d033e893ab0915568f127be333a1b53007"
+      },
+      "epochs": [
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 2843,
+          "partial_labeled_frames": 852,
+          "scans": 5794
+        }
+      ],
+      "history": [
+        {
+          "ap70": 0.7576422345828263,
+          "epoch": 1,
+          "lr": 0.001,
+          "seconds": 720.7393748709001,
+          "stale_epochs": 0,
+          "train_loss": 0.2851130423813882,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.757305163333221,
+          "epoch": 2,
+          "lr": 0.001,
+          "seconds": 722.0131493250374,
+          "stale_epochs": 1,
+          "train_loss": 0.2708962075491629,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7575308524993136,
+          "epoch": 3,
+          "lr": 0.0005,
+          "seconds": 723.2818093700334,
+          "stale_epochs": 2,
+          "train_loss": 0.26839434497455167,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7578030871333283,
+          "epoch": 4,
+          "lr": 0.0005,
+          "seconds": 729.1341586830094,
+          "stale_epochs": 3,
+          "train_loss": 0.26665146529145495,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7579115347856362,
+          "epoch": 5,
+          "lr": 0.00025,
+          "seconds": 727.9929045699537,
+          "stale_epochs": 4,
+          "train_loss": 0.26599917095793774,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7577704932662289,
+          "epoch": 6,
+          "lr": 0.00025,
+          "seconds": 723.68996246811,
+          "stale_epochs": 5,
+          "train_loss": 0.2654995220141298,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7575795654661654,
+          "epoch": 7,
+          "lr": 0.000125,
+          "seconds": 723.0973520071711,
+          "stale_epochs": 6,
+          "train_loss": 0.2651874832711982,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7578207598910784,
+          "epoch": 8,
+          "lr": 0.000125,
+          "seconds": 723.750566751929,
+          "stale_epochs": 7,
+          "train_loss": 0.26501232868644614,
+          "updates": 4225
+        },
+        {
+          "ap70": 0.7578908031199545,
+          "epoch": 9,
+          "lr": 6.25e-05,
+          "seconds": 723.6552258441225,
+          "stale_epochs": 8,
+          "train_loss": 0.26482297173618563,
+          "updates": 4225
+        }
+      ]
+    },
+    "dense_period3": {
+      "best": {
+        "ap70": 0.7582348967543591,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_dense_period3/epoch_006/repairs.pth",
+        "epoch": 6,
+        "sha256": "6c1b2e8ccc2dfbf8935f8470c4932f9613cd849754542732a53c796690a72c7c"
+      },
+      "epochs": [
+        {
+          "labels": 1738,
+          "partial_frames": 3789,
+          "partial_labeled_frames": 1146,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 3789,
+          "partial_labeled_frames": 1146,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 3789,
+          "partial_labeled_frames": 1146,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 3789,
+          "partial_labeled_frames": 1146,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 3789,
+          "partial_labeled_frames": 1146,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 3789,
+          "partial_labeled_frames": 1146,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 3789,
+          "partial_labeled_frames": 1146,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 3789,
+          "partial_labeled_frames": 1146,
+          "scans": 5794
+        },
+        {
+          "labels": 1738,
+          "partial_frames": 3789,
+          "partial_labeled_frames": 1146,
+          "scans": 5794
+        }
+      ],
+      "history": [
+        {
+          "ap70": 0.7577474609169347,
+          "epoch": 1,
+          "lr": 0.001,
+          "seconds": 800.0452721000183,
+          "stale_epochs": 0,
+          "train_loss": 0.31974169216802206,
+          "train_loss_by_depth": {
+            "1": 0.270213081140965,
+            "2": 0.37086395698445307
+          },
+          "updates": 5621,
+          "updates_by_depth": {
+            "1": 2855,
+            "2": 2766
+          }
+        },
+        {
+          "ap70": 0.7578655760081823,
+          "epoch": 2,
+          "lr": 0.001,
+          "seconds": 772.9350711770821,
+          "stale_epochs": 1,
+          "train_loss": 0.3179134330839009,
+          "train_loss_by_depth": {
+            "1": 0.2698650207546672,
+            "2": 0.3675078716956009
+          },
+          "updates": 5621,
+          "updates_by_depth": {
+            "1": 2855,
+            "2": 2766
+          }
+        },
+        {
+          "ap70": 0.7578844946484761,
+          "epoch": 3,
+          "lr": 0.0005,
+          "seconds": 796.0490553828422,
+          "stale_epochs": 2,
+          "train_loss": 0.3172123392779109,
+          "train_loss_by_depth": {
+            "1": 0.26958147738057137,
+            "2": 0.36637579217628563
+          },
+          "updates": 5621,
+          "updates_by_depth": {
+            "1": 2855,
+            "2": 2766
+          }
+        },
+        {
+          "ap70": 0.7579988252124346,
+          "epoch": 4,
+          "lr": 0.0005,
+          "seconds": 791.1410260680132,
+          "stale_epochs": 3,
+          "train_loss": 0.3159639550403776,
+          "train_loss_by_depth": {
+            "1": 0.26856472997448283,
+            "2": 0.36488831786146564
+          },
+          "updates": 5621,
+          "updates_by_depth": {
+            "1": 2855,
+            "2": 2766
+          }
+        },
+        {
+          "ap70": 0.7579323131487651,
+          "epoch": 5,
+          "lr": 0.00025,
+          "seconds": 764.595147238113,
+          "stale_epochs": 4,
+          "train_loss": 0.31521975325665386,
+          "train_loss_by_depth": {
+            "1": 0.26825049069894386,
+            "2": 0.3637003189118462
+          },
+          "updates": 5621,
+          "updates_by_depth": {
+            "1": 2855,
+            "2": 2766
+          }
+        },
+        {
+          "ap70": 0.7582348967543591,
+          "epoch": 6,
+          "lr": 0.00025,
+          "seconds": 749.2011999490205,
+          "stale_epochs": 5,
+          "train_loss": 0.3147098132868272,
+          "train_loss_by_depth": {
+            "1": 0.2677318147910456,
+            "2": 0.3631993959713741
+          },
+          "updates": 5621,
+          "updates_by_depth": {
+            "1": 2855,
+            "2": 2766
+          }
+        },
+        {
+          "ap70": 0.7580652023723639,
+          "epoch": 7,
+          "lr": 0.000125,
+          "seconds": 751.2921561021358,
+          "stale_epochs": 6,
+          "train_loss": 0.3144366556088964,
+          "train_loss_by_depth": {
+            "1": 0.2675674079543864,
+            "2": 0.36281398823855154
+          },
+          "updates": 5621,
+          "updates_by_depth": {
+            "1": 2855,
+            "2": 2766
+          }
+        },
+        {
+          "ap70": 0.7580854575755315,
+          "epoch": 8,
+          "lr": 0.000125,
+          "seconds": 752.680218949914,
+          "stale_epochs": 7,
+          "train_loss": 0.31425102798672805,
+          "train_loss_by_depth": {
+            "1": 0.2673449491922158,
+            "2": 0.36266637685091185
+          },
+          "updates": 5621,
+          "updates_by_depth": {
+            "1": 2855,
+            "2": 2766
+          }
+        },
+        {
+          "ap70": 0.7580331618490557,
+          "epoch": 9,
+          "lr": 6.25e-05,
+          "seconds": 752.265864612069,
+          "stale_epochs": 8,
+          "train_loss": 0.31407882936472487,
+          "train_loss_by_depth": {
+            "1": 0.26724592427969396,
+            "2": 0.3624186500508287
+          },
+          "updates": 5621,
+          "updates_by_depth": {
+            "1": 2855,
+            "2": 2766
+          }
+        }
+      ]
+    }
+  },
+  "status": "PASSED"
+}

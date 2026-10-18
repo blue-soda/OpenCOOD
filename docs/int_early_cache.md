@@ -196,3 +196,7 @@ period3外推AP70=75.789030%、平均模型27.3383ms；同轮原路径75.873610%
 ### 健康训练检查与完成后比较入口
 light_repair_dense_period3已完成epoch1–7，epoch8训练正常。每轮5621次更新（第1/2修正深度2855/2766）；当前最佳epoch6 AP70=75.82348968%，仍是中间结果。epoch7 LR=1.25e-4、stale6，尚不满足LR<=1e-4停止条件，不提前停止或重启。每轮约12.5–13.3分钟，若平台持续预计约两轮内满足门槛，因此本次将定时由90分钟暂改30分钟以覆盖结束事件，提示词与仅完成/异常通知不变。
 准备benchmark_int_light_repair --suite matched入口：只在dense_period3完成后，审计period2/3训练来源、全部完整验证、权重与两种修正深度更新，再同一空闲GPU顺序比较原model.step、period2-best、period3-best。每项独立重载，AP须复现，period3增加工程锚点/跳算核验。预计新目录light_repair_matched_benchmark_v1；尚未启动，勿在训练期间争用GPU。完成后依据同轮平均/P50/P95、AP及状态量决定保留方案，不把当前训练日志时间当最终性能结论。
+
+### 2026-10-18 period3匹配训练完成，顺序比较已启动
+light_repair_dense_period3共9epoch，按平台停止（stale8，LR6.25e-5）；最佳epoch6 AP70=75.82348968%，比period3外推75.78903024%高0.03446个百分点，比原GRU75.87361046%低0.05012个百分点。改进幅度小、单种子工程证据，不宣称统计显著。每轮完整8593训练扫描、5621更新（第1/2修正2855/2766），完整验证5794/1738、3789修正帧含1146标注帧。两项period2/3各9轮的帧/标签/缓存锚点/年龄/修正暴露/权重哈希/最佳选择及停止条件审计通过；并未从检测框另算AP。训练审计归档light_repair_matched_training_audit.json。
+light_repair_matched_benchmark_v1已在181 GPU7启动，PID7233，启动代码45a54e9（比较入口7c17677，后续无关研究提交保留）。依次原model.step、period2-best、period3-best，三项完整验证、独立权重加载及AP一致性检查；原路径控制已RUNNING。目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_matched_benchmark_v1，启动归档light_repair_matched_benchmark_launch.json。下一轮读取status/results与dense_period3/engineering.json，审计后用同轮平均/P50/P95比较并形成阶段结论；未完成前不使用训练期耗时替代。30分钟轮询暂保留以覆盖约15–20分钟复测结束。此前所有训练均已完成，勿继续恢复或重复训练。

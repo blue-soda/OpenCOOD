@@ -1,0 +1,22 @@
+{
+  "code_commit": "45a54e9f62960492bb32d9cc7eb99ac27285ff73",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.benchmark_int_light_repair",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--training-root",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_matched_benchmark_v1",
+    "--gpu",
+    "7",
+    "--suite",
+    "matched",
+    "--worker"
+  ],
+  "created_unix": 1792290361.5488534,
+  "gpu": 7,
+  "pid": 7233
+}
