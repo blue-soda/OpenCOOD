@@ -1,0 +1,12 @@
+{
+  "gpus": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "git_commit": "645d5517c3c3f44f148a5f14c6f2ed1b53237286",
+  "audit_sha256": "a71bf7ee7690ed43256b18ae753cd4476c7ace859185ce3e3c9556f92d78270b",
+  "started_unix": 1792328014.9654891,
+  "training_cap_seconds": 21600
+}
