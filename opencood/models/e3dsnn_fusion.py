@@ -84,6 +84,9 @@ class E3dsnnFusion(E3dsnnSingle):
     def fusion_support(self, road, transform, coverage):
         return coverage
 
+    def packet_row_scores(self, sparse):
+        return None
+
     def forward(self, data):
         if self.message_codec is not None and (self.training or not self.packet_roundtrip):
             raise ValueError('Rate probes require eval with actual packet roundtrip')
@@ -105,6 +108,7 @@ class E3dsnnFusion(E3dsnnSingle):
         if self.packet_roundtrip:
             if self.training:
                 raise ValueError('Serialization is eval-only; train on differentiable sender features')
+            row_scores = self.packet_row_scores(road_sparse)
             road = torch.zeros_like(ego)
             matrices = []
             for i in range(b):
@@ -118,7 +122,8 @@ class E3dsnnFusion(E3dsnnSingle):
                     from opencood.utils import quantized_feature_packet
                     codec, codec_args = quantized_feature_packet, (self.wire_options(),)
                 packet = codec.encode(road_sparse.indices[active, 1:].cpu().numpy(),
-                    road_sparse.features[active].detach().cpu().numpy(), meta, self.activation, *codec_args)
+                    road_sparse.features[active].detach().cpu().numpy(), meta, self.activation, *codec_args,
+                    **({'scores': row_scores[active.detach().cpu().numpy()]} if row_scores is not None else {}))
                 coords, values, received = codec.decode(packet, self.activation, *codec_args)
                 if received != meta:
                     raise ValueError('Packet metadata changed')

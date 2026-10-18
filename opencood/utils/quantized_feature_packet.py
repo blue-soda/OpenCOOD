@@ -37,7 +37,7 @@ def unpack(payload, count, bits):
             (1 << np.arange(bits, dtype=np.uint8))).sum(1).astype(np.uint8)
 
 
-def prepare(coords, features, activation, options):
+def prepare(coords, features, activation, options, scores=None):
     """Return deterministic retained coordinates, codes, and transmitted scales."""
     validate_options(options)
     coords, features = np.asarray(coords), np.asarray(features, dtype=np.float32)
@@ -49,11 +49,16 @@ def prepare(coords, features, activation, options):
         raise ValueError('Invalid coordinates')
     if not np.isfinite(features).all() or np.any(features < 0):
         raise ValueError('Expected finite nonnegative sender features')
+    if scores is not None:
+        scores = np.asarray(scores, dtype=np.float64)
+        if scores.shape != (len(features),) or not np.isfinite(scores).all():
+            raise ValueError('Expected finite sender-local row scores')
     keep = np.any(features != 0, axis=1)
     coords, features = coords[keep], features[keep]
+    if scores is not None: scores = scores[keep]
     # Coordinate tie-break makes selection independent of sparse CUDA row order.
     if len(coords):
-        score = features.sum(1, dtype=np.float64)
+        score = features.sum(1, dtype=np.float64) if scores is None else scores
         order = np.lexsort((coords[:, 2], coords[:, 1], coords[:, 0], -score))
         order = order[:int(math.ceil(len(order) * options['keep_fraction']))]
         coords, features = coords[order], features[order]
@@ -74,8 +79,8 @@ def prepare(coords, features, activation, options):
     return coords[order], codes[order], scales
 
 
-def encode(coords, features, metadata, activation, options):
-    coords, codes, scales = prepare(coords, features, activation, options)
+def encode(coords, features, metadata, activation, options, scores=None):
+    coords, codes, scales = prepare(coords, features, activation, options, scores)
     bits = options['bits']
     # Same two candidate transports for both model families, actual ZIP bytes.
     candidates = []
