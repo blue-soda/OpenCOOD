@@ -229,6 +229,7 @@ def execute(args, output_dir):
         'message_codec': getattr(model, 'message_codec', None),
         'budget_codec': getattr(model, 'budget_codec', None),
         'train_encoder': getattr(model, 'train_encoder', None),
+        'message_support': getattr(model, 'message_support_kind', 'geometry'),
         'freeze_encoder': getattr(model, 'freeze_encoder', False),
         'trainable_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
         'freeze_detector': getattr(model, 'freeze_detector', False),

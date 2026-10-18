@@ -81,6 +81,9 @@ class E3dsnnFusion(E3dsnnSingle):
     def wire_options(self):
         return self.message_codec
 
+    def fusion_support(self, road, transform, coverage):
+        return coverage
+
     def forward(self, data):
         if self.message_codec is not None and (self.training or not self.packet_roundtrip):
             raise ValueError('Rate probes require eval with actual packet roundtrip')
@@ -127,7 +130,8 @@ class E3dsnnFusion(E3dsnnSingle):
         else:
             road = road_sparse.dense()
         aligned, coverage = warp_volume(road, transform, self.origin, self.step)
-        road_bev, mask = aligned.flatten(1, 2), coverage.flatten(1, 2)
+        road_bev = aligned.flatten(1, 2)
+        mask = self.fusion_support(road, transform, coverage).flatten(1, 2)
         if self.training and self.message_dropout:
             keep = (torch.rand(b, 1, 1, 1, device=ego.device) >= self.message_dropout).to(ego.dtype)
             road_bev, mask = road_bev * keep, mask * keep
