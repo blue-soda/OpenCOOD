@@ -3,12 +3,26 @@ from dataclasses import replace
 import numpy as np
 import torch
 from opencood.models.fuse_modules.e3dsnn_progressive import (
-    MessageContract,ProgressiveMembraneFusion,split_counts,count_readout)
+    MessageContract,ProgressiveMembraneFusion,split_counts,count_readout,check_transform)
 from opencood.utils import count4_compact_packet as compact
 from opencood.utils import quantized_feature_packet as legacy
 
 
 class ProgressiveTest(unittest.TestCase):
+    def test_pose_validation_with_cuda_tf32(self):
+        devices=['cpu']+(['cuda'] if torch.cuda.is_available() else [])
+        previous=torch.backends.cuda.matmul.allow_tf32
+        try:
+            torch.backends.cuda.matmul.allow_tf32=True
+            for device in devices:
+                angle=.731;co=np.cos(angle);si=np.sin(angle)
+                pose=torch.tensor([[[co,-si,0,2],[si,co,0,-3],[0,0,1,.2],[0,0,0,1]]],
+                                  dtype=torch.float32,device=device)
+                check_transform(pose)
+                wrong=pose.clone();wrong[:,:3,:3]*=1.001
+                with self.assertRaises(ValueError):check_transform(wrong)
+        finally:torch.backends.cuda.matmul.allow_tf32=previous
+
     def fixture(self,channels=2,**kwargs):
         c=MessageContract('vehicle-A','road-A','infra','a'*64,'encoder-output-v1',
                           (3,5,5),(-2.,-2.,-1.),(1.,1.,1.),(1000,1010))

@@ -41,8 +41,11 @@ class MessageContract:
 def check_transform(matrix):
     if matrix.shape!=(1,4,4) or not torch.isfinite(matrix).all():
         raise ValueError('Expected finite single-frame SE(3) matrix')
-    rotation=matrix[0,:3,:3];eye=torch.eye(3,device=matrix.device,dtype=matrix.dtype)
-    if not torch.allclose(rotation.T@rotation,eye,atol=1e-5,rtol=1e-5) or not torch.allclose(torch.det(rotation),matrix.new_tensor(1.),atol=1e-5,rtol=1e-5):
+    # This is a geometric validity check, not a neural-network matmul. CUDA TF32
+    # can make a valid float32 calibration look nonorthogonal by ~5e-4.
+    # Check in float64 without changing the pose used for warping or global flags.
+    rotation=matrix[0,:3,:3].double();eye=torch.eye(3,device=matrix.device,dtype=rotation.dtype)
+    if not torch.allclose(rotation.T@rotation,eye,atol=1e-5,rtol=1e-5) or not torch.allclose(torch.det(rotation),rotation.new_tensor(1.),atol=1e-5,rtol=1e-5):
         raise ValueError('Expected rigid proper rotation')
     if not torch.equal(matrix[0,3],matrix.new_tensor([0,0,0,1])):
         raise ValueError('Invalid homogeneous transform')
