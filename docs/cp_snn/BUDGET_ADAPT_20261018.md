@@ -50,3 +50,9 @@
 - [launch.json](results/budget_adapt_20261018/launch.json)：1d55939181cdcbb0d8e3d18fef84fae6ec1c97f66a615d549eda8ad3d09ca441。
 - [startup_snapshot.json](results/budget_adapt_20261018/startup_snapshot.json)：4a988dfdf947e6635c1e80dd04c3f27d7d84273d915bb509e2adfda6b2e18842。
 - 同目录保存八份配置和supervise.py；配置SHA见audit，监督脚本SHA为3a661c319d8dde0949d14dff1e9134199f6993d426d4d3f9f23c0576b4b2bd84。
+
+## 零适配门槛通过，训练中（2026-10-18 08:52 CST检查）
+
+四组1738帧零适配评估、CPU精确复算、GT/预测哈希核验全部通过，自动进入10轮训练。SNN两组及a_joint的AP30/50/70与原参考完全一致；a_fusion最大偏差0.005744个百分点，低于预设0.02pp门槛，未证明独立CUDA运行的微小差异机制。SNN零适配AP70=59.80106%，均值16005.119字节；a_fusion/a_joint分别为60.90092%/60.89717%，15530.530/15530.501字节。
+
+检查时四组均已完成7轮，正在第8轮；冻结BEV/连续头与BN摘要通过至第7轮。流水线健康，无需重启或追加实验。尚无最终训练后逐帧通信与独立复核，不将中间最佳AP写成结论。原始[zero_summary.json](results/budget_adapt_20261018/zero_summary.json)已取回并核对SHA256：7f263cc0656054fa8f663b960c0aaacd108da6676a9ab35ec4b86bb2e885bcc6。
