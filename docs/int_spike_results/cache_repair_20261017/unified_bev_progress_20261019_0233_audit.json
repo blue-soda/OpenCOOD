@@ -1,0 +1,202 @@
+{
+  "best": {
+    "ap70": 0.5596106401184161,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1/epoch_038/student.pth",
+    "epoch": 38,
+    "sha256": "a2e897420a60fae4b7607056c08e05b9d3c3a231f5f52a8c5d088ac7569af483"
+  },
+  "caveat": "Intermediate training; incremental full exposure/hash audit, not convergence or independent AP recomputation.",
+  "history": [
+    {
+      "ap70": 0.5440944083759544,
+      "epoch": 31,
+      "labels": 4678,
+      "loss": 0.34051077825121395,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 716.3417571359314,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5352949976347104,
+      "epoch": 32,
+      "labels": 4678,
+      "loss": 0.33371077950801653,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 711.3401057501324,
+      "stale_epochs": 1,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5421891751887502,
+      "epoch": 33,
+      "labels": 4678,
+      "loss": 0.3319449782730731,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 713.5231550978497,
+      "stale_epochs": 2,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5458143371905045,
+      "epoch": 34,
+      "labels": 4678,
+      "loss": 0.32724639729172633,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 720.2422082240228,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5432884533980319,
+      "epoch": 35,
+      "labels": 4678,
+      "loss": 0.3241612592810058,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 714.9269747948274,
+      "stale_epochs": 1,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5498661717967778,
+      "epoch": 36,
+      "labels": 4678,
+      "loss": 0.3223722678920978,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 716.3140516171698,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5421439550426219,
+      "epoch": 37,
+      "labels": 4678,
+      "loss": 0.3186982651330307,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 721.8244540498126,
+      "stale_epochs": 1,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.5596106401184161,
+      "epoch": 38,
+      "labels": 4678,
+      "loss": 0.3154225080546939,
+      "lr": 0.0005,
+      "scans": 8593,
+      "seconds": 713.57620481099,
+      "stale_epochs": 0,
+      "updates": 2262
+    }
+  ],
+  "new_epochs": [
+    {
+      "epoch": 31,
+      "metrics": {
+        "bev_ap30": 0.8047897951075095,
+        "bev_ap50": 0.7678318364524145,
+        "bev_ap70": 0.5440944083759544
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 32,
+      "metrics": {
+        "bev_ap30": 0.7970755093453447,
+        "bev_ap50": 0.7581043233549511,
+        "bev_ap70": 0.5352949976347104
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 33,
+      "metrics": {
+        "bev_ap30": 0.8047994532758244,
+        "bev_ap50": 0.7685740503284884,
+        "bev_ap70": 0.5421891751887502
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 34,
+      "metrics": {
+        "bev_ap30": 0.8070282884616016,
+        "bev_ap50": 0.7701974089156112,
+        "bev_ap70": 0.5458143371905045
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 35,
+      "metrics": {
+        "bev_ap30": 0.7996135800526917,
+        "bev_ap50": 0.7628750848285969,
+        "bev_ap70": 0.5432884533980319
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 36,
+      "metrics": {
+        "bev_ap30": 0.8034830731363141,
+        "bev_ap50": 0.7665121835449679,
+        "bev_ap70": 0.5498661717967778
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 37,
+      "metrics": {
+        "bev_ap30": 0.8090791030193817,
+        "bev_ap50": 0.7708750722559466,
+        "bev_ap70": 0.5421439550426219
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 38,
+      "metrics": {
+        "bev_ap30": 0.8060166379796686,
+        "bev_ap50": 0.7709314943309021,
+        "bev_ap70": 0.5596106401184161
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    }
+  ],
+  "observed_status": {
+    "epoch": 39,
+    "labels": 4496,
+    "mean_loss": 0.3164790594853847,
+    "phase": "train",
+    "scans": 8200,
+    "status": "RUNNING",
+    "total_scans": 8593,
+    "updates": 2159
+  },
+  "prior_audit": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1/progress_audit_20261019_0101.json",
+  "prior_audit_sha256": "a2aa74797701057c09ee6a4971f60ba5f3ba38e3a4dbff0064600043faa9ca18",
+  "status": "PASSED"
+}
