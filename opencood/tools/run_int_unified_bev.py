@@ -1,5 +1,6 @@
 """Train a direct-readout recurrent BEV baseline, before adding selective updates."""
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -28,13 +29,23 @@ def engineering(student,teacher,cfg,rows,out):
         return callback
     modules=[teacher.backbone.resnet,teacher.backbone.deblocks[0],teacher.shrink_conv]
     hooks=[m.register_forward_hook(hit(i)) for i,m in enumerate(modules)]
-    student.eval();state=None;records=[]
+    student.eval();state=None;records=[];conv_macs={};cost_hooks=[]
+    def count_conv(name):
+        def callback(module,inputs,output):
+            group=name.split('.')[0]
+            macs=output.numel()*(module.in_channels//module.groups)*module.kernel_size[0]*module.kernel_size[1]
+            conv_macs[group]=conv_macs.get(group,0)+macs
+        return callback
+    for name,module in student.core.named_modules():
+        if isinstance(module,torch.nn.Conv2d):cost_hooks.append(module.register_forward_hook(count_conv(name)))
     _,stream=loader(rows[:8],cfg,2,303)
     try:
         with torch.no_grad():
             for sample in stream:
                 ego=to_device(sample['ego'],torch.device('cuda'))
                 pred,state,info=student.step(ego,state,sample['meta'])
+                for hook in cost_hooks:hook.remove()
+                cost_hooks=[]
                 assert all(torch.isfinite(v).all() for v in pred.values())
                 assert pred['psm'].shape[-2:]==ego['anchor_box'].shape[:2]
                 assert calls==[0,0,0]
@@ -42,8 +53,16 @@ def engineering(student,teacher,cfg,rows,out):
                                     state_shape=list(state['value'].shape)))
     finally:
         for hook in hooks:hook.remove()
+        for hook in cost_hooks:hook.remove()
     assert not any('backbone' in name or 'feature_memory' in name for name,_ in student.named_modules())
+    weight_hash=hashlib.sha256()
+    for name,value in sorted(student.core.state_dict().items()):
+        weight_hash.update(name.encode());weight_hash.update(value.detach().cpu().contiguous().numpy().tobytes())
     report=dict(status='PASSED',frames=records,original_spatial_calls=calls,
+                variant=student.variant,memory_policy=student.memory_policy,core_state_sha256=weight_hash.hexdigest(),
+                trainable_parameters=sum(p.numel() for p in student.parameters() if p.requires_grad),
+                core_conv_macs=conv_macs,core_conv_macs_total=sum(conv_macs.values()),
+                cost_scope='One real frame, core Conv2d only; excludes Pillar, warp, normalization, activation, interpolation and data movement; not measured latency.',
                 state_bytes=info['state_bytes'],update_radius=student.core.update.radius,
                 caveat='New model: finite predictions/shape/causality, not parity with the teacher. Crop equivalence is a unit test, not an active sparse policy.')
     write_json(out/'engineering.json',report)
@@ -55,6 +74,7 @@ def validate(a,student,teacher,cfg,rows,directory):
     torch.cuda.reset_peak_memory_stats()
     report=evaluate(a,teacher,cfg,rows,directory,student)
     report['scope']='Unified-state dense-update full validation'
+    report['variant']=student.variant;report['memory_policy']=student.memory_policy
     report['caveats']=[
         'All state cells are updated each frame. No selective-update or sparsity speedup is claimed.',
         'Own frozen Pillar encoder, observation/context, recurrent update, readout and heads only; no old GRU, ResNet or multiscale decoder.',
@@ -66,6 +86,7 @@ def validate(a,student,teacher,cfg,rows,directory):
 def train_epoch(a,student,teacher,cfg,rows,optimizer,criterion,epoch,directory,out):
     student.train();teacher.eval();state=teacher_state=None
     ends=window_ends(rows,4);distilled=[];supervised=[];losses=[];labels=updates=0
+    gt_windows=[];kd_windows=[]
     _,stream=loader(rows,cfg,4,303+epoch)
     optimizer.zero_grad(set_to_none=True)
     with (directory/'train_frames.jsonl').open('x',buffering=1) as log:
@@ -84,14 +105,19 @@ def train_epoch(a,student,teacher,cfg,rows,optimizer,criterion,epoch,directory,o
                 if not bool(torch.isfinite(detection)):raise RuntimeError('Non-finite supervised detection loss')
                 supervised.append(detection);labels+=1
             if index in ends:
-                loss=.2*torch.stack(distilled).mean()
-                if supervised:loss=loss+torch.stack(supervised).mean()
+                kd_mean=torch.stack(distilled).mean();loss=.2*kd_mean
+                gt_mean=torch.stack(supervised).mean() if supervised else None
+                if gt_mean is not None:loss=loss+gt_mean
                 loss.backward()
                 norm=torch.nn.utils.clip_grad_norm_(student.core.parameters(),5.)
                 if not bool(torch.isfinite(norm)):raise RuntimeError('Non-finite unified gradients')
                 optimizer.step();optimizer.zero_grad(set_to_none=True)
                 losses.append(float(loss.detach()));updates+=1
                 record.update(window_end=True,loss=losses[-1],gradient_norm=float(norm))
+                if a.variant=='v2':
+                    kd_windows.append(float(kd_mean.detach()))
+                    if gt_mean is not None:gt_windows.append(float(gt_mean.detach()))
+                    record.update(kd_loss=kd_windows[-1],gt_loss=float(gt_mean.detach()) if gt_mean is not None else None)
                 state=dict(state,value=state['value'].detach());distilled=[];supervised=[]
             log.write(json.dumps(record)+'\n')
             if (index+1)%200==0:
@@ -102,7 +128,9 @@ def train_epoch(a,student,teacher,cfg,rows,optimizer,criterion,epoch,directory,o
     assert updates==len(ends) and not distilled and not supervised
     assert all(p.grad is None for p in teacher.parameters())
     assert all(p.grad is None for p in student.pillar_vfe.parameters())
-    return dict(scans=len(rows),labels=labels,updates=updates,loss=float(np.mean(losses)))
+    result=dict(scans=len(rows),labels=labels,updates=updates,loss=float(np.mean(losses)))
+    if a.variant=='v2':result.update(mean_labelled_window_gt=float(np.mean(gt_windows)),mean_window_kd=float(np.mean(kd_windows)))
+    return result
 
 
 def worker(a):
@@ -114,12 +142,14 @@ def worker(a):
     write_json(out/'provenance.json',provenance)
     runtime=json.loads((Path(a.root)/'full_gru'/'effective_runtime.json').read_text())['arguments']
     train_rows=json.loads(Path(runtime['manifest']).read_text())['train']
-    torch.manual_seed(303);student=UnifiedBEVDetector(teacher,cfg).cuda()
+    torch.manual_seed(303);student=UnifiedBEVDetector(teacher,cfg,a.variant,a.memory_policy).cuda()
     a.engineering=str(out/'engineering.json')
     if a.checkpoint:
         saved=torch.load(a.checkpoint,map_location='cpu')
         assert saved['contract']['teacher_sha256']==provenance['checkpoint']['sha256']
         assert saved['contract']['data_contract']==provenance['contract']
+        assert saved['contract']['version']=='unified_bev_dense_'+a.variant
+        assert saved['contract'].get('memory_policy','recurrent')==a.memory_policy
         student.load_state_dict(saved['model'],strict=True)
         engineering(student,teacher,cfg,val,out)
         if a.diagnostic:
@@ -141,6 +171,11 @@ def worker(a):
         loss='Mean GT detection loss over labelled frames + .2 mean foreground head distillation over all frames in each TBPTT window; no teacher feature target',
         protocol='Dense every-frame autoregressive state writeback; student state only; no augmentation/delay; reset by segment or gap>.25s; no periodic teacher refresh',
         future_sparse='Radius2 crop parity only; no learned selector, skipped state cells or coarse-context caching in this baseline')
+    if a.variant=='v2':
+        contract.update(version='unified_bev_dense_v2',memory_policy=a.memory_policy,
+            architecture='Pillar64 frozen; residual observation128 stride2; two downsample context stages192/256 with dilated residual blocks; single256 state; radius2 residual gated update with cellwise channel normalization; pointwise256 readout and trainable detection heads',
+            protocol='Dense every-frame state update; memory_policy='+a.memory_policy+'; no augmentation/delay; same segment/gap resets and TBPTT windows as v1; no teacher state or periodic refresh',
+            future_sparse='Radius2 update crop parity only, given full precomputed evidence; observation/context/readout remain dense; no active selector')
     optimizer=torch.optim.AdamW(student.core.parameters(),lr=.001,weight_decay=.0001)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=2,
         threshold=.001,threshold_mode='abs',min_lr=1e-5)
@@ -192,10 +227,13 @@ def main():
     p.add_argument('--root',required=True);p.add_argument('--output',required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--epochs',type=int,default=40)
     p.add_argument('--checkpoint');p.add_argument('--resume');p.add_argument('--worker',action='store_true')
+    p.add_argument('--variant',choices=['v1','v2'],default='v1')
+    p.add_argument('--memory-policy',choices=['recurrent','reset'],default='recurrent')
     p.add_argument('--diagnostic',action='store_true',help='256-frame teacher/student/reset diagnostic; requires checkpoint')
     a=p.parse_args();out=Path(a.output)
     if a.epochs<5 or (a.checkpoint and a.resume):p.error('At least five epochs; evaluation and resume are exclusive')
     if a.diagnostic and not a.checkpoint:p.error('Diagnostic requires an immutable checkpoint')
+    if a.variant=='v1' and a.memory_policy!='recurrent':p.error('Reset-policy training is a v2 control')
     if a.worker:
         try:worker(a)
         except Exception as exc:
