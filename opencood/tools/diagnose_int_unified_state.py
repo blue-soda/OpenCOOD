@@ -57,6 +57,11 @@ def run(a,out):
                     delta=current-student.core.update.current(aligned)
                     corrected=old+delta;target=state['value']
                     retain=captured['net'][:,256:].sigmoid()*packed[:,-1:]
+                    if bool(valid.any()):
+                        record['gate_channel_means']=retain[0,:,valid[0,0]].mean(1).cpu().tolist()
+                        logits=captured['net'][:,256:][valid.expand_as(retain)]
+                        record['gate_logit_abs_mean']=float(logits.abs().mean())
+                        record['gate_logit_abs_max']=float(logits.abs().max())
                     scopes={'valid':valid}
                     if row['supervised']:
                         positive=data['label_dict']['pos_equal_one']
@@ -88,8 +93,15 @@ def run(a,out):
                 mean_retain=float(np.mean([x['retain_mean'] for x in values])),
                 mean_retain_lt01=float(np.mean([x['retain_lt01'] for x in values])),
                 mean_retain_gt99=float(np.mean([x['retain_gt99'] for x in values])))
+    gates=np.asarray([r['gate_channel_means'] for r in records if 'gate_channel_means' in r])
+    gate_summary=dict(frames=len(gates),channels=gates.shape[1],
+        always_frame_mean_gt99=int((gates.min(0)>.99).sum()),always_frame_mean_lt01=int((gates.max(0)<.01).sum()),
+        frame_mean_range_lt01=int(((gates.max(0)-gates.min(0))<.01).sum()),
+        channel_min_frame_mean=gates.min(0).tolist(),channel_max_frame_mean=gates.max(0).tolist(),
+        mean_logit_abs=float(np.mean([r['gate_logit_abs_mean'] for r in records if 'gate_logit_abs_mean' in r])),
+        max_logit_abs=max(r['gate_logit_abs_max'] for r in records if 'gate_logit_abs_max' in r))
     write_json(out/'report.json',dict(status='COMPLETED',checkpoint=str(source),checkpoint_sha256=sha,split='train',
-        frames=len(records),seed=303,summary=summaries,
+        frames=len(records),seed=303,summary=summaries,gate_channels=gate_summary,
         caveats=['One-step dense-history diagnostic, not a recursive selective implementation, latency test or AP result.',
                  'Raw state RMS is sensitive to feature scale and is not equivalent to detection accuracy.',
                  'Untrained fixed unit delta gain; no validation-label or threshold selection.',
