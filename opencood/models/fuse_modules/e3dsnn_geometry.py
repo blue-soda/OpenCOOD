@@ -12,7 +12,7 @@ def encoded_grid(voxel_size, lidar_range):
     return origin, step  # xyz, not zyx
 
 
-def warp_volume(source, source_to_ego, origin_xyz, step_xyz):
+def warp_volume(source, source_to_ego, origin_xyz, step_xyz, geometry_dtype=None):
     """Pull source [B,C,D,H,W] into ego; returns values and domain coverage.
 
     Both grids use the declared local physical origin/step. The transform
@@ -22,19 +22,22 @@ def warp_volume(source, source_to_ego, origin_xyz, step_xyz):
     b, _, d, h, w = source.shape
     if source_to_ego.shape != (b, 4, 4) or not torch.isfinite(source_to_ego).all():
         raise ValueError('Expected finite [B,4,4] sender-to-ego transforms')
-    z, y, x = torch.meshgrid(*(torch.arange(n, dtype=source.dtype, device=source.device)
+    # Optional high precision geometry keeps CUDA TF32 out of pose/grid arithmetic.
+    # Legacy callers retain their original arithmetic for reproducible baselines.
+    geometry_dtype = source.dtype if geometry_dtype is None else geometry_dtype
+    z, y, x = torch.meshgrid(*(torch.arange(n, dtype=geometry_dtype, device=source.device)
                               for n in (d, h, w)))
     indices = torch.stack((x, y, z), -1)
-    origin = source.new_tensor(origin_xyz)
-    step = source.new_tensor(step_xyz)
+    origin = torch.tensor(origin_xyz, dtype=geometry_dtype, device=source.device)
+    step = torch.tensor(step_xyz, dtype=geometry_dtype, device=source.device)
     if (step <= 0).any():
         raise ValueError('Grid step must be positive')
     xyz = indices * step + origin
     homogeneous = torch.cat((xyz, torch.ones_like(xyz[..., :1])), -1).reshape(-1, 4)
-    inverse = torch.inverse(source_to_ego.to(source.dtype))
+    inverse = torch.inverse(source_to_ego.to(geometry_dtype))
     local = torch.matmul(homogeneous[None], inverse.transpose(1, 2))[..., :3]
     q = (local - origin) / step
-    grid = (2 * (q + .5) / source.new_tensor([w, h, d]) - 1).reshape(b, d, h, w, 3)
+    grid = (2 * (q + .5) / origin.new_tensor([w, h, d]) - 1).reshape(b, d, h, w, 3).to(source.dtype)
     result = F.grid_sample(source, grid, mode='bilinear', padding_mode='zeros', align_corners=False)
     coverage = F.grid_sample(torch.ones_like(source[:, :1]), grid,
                              mode='bilinear', padding_mode='zeros', align_corners=False)

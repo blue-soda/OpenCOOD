@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import time
 import random
+import subprocess
 import numpy as np
 import torch
 import spconv.pytorch as spconv
@@ -36,6 +37,10 @@ def audit(root,base):
     model.load_legacy(torch.load(str(checkpoint),map_location='cpu'))
     report=dict(started_unix=time.time(),source_sha256=sha(checkpoint),frames=data['frame_ids'],
         road_frames=data['road_frame_ids'],prefixes=[],scope='Augmented train frames 0/1; discarded optimization step; no AP estimate.')
+    rotation=data['road_to_ego'][:,:3,:3].double()
+    report.update(code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
+        geometry_arithmetic='float64 inverse/grid; float32 interpolation/features',
+        pose_orthogonality_max_error=float((rotation.transpose(1,2)@rotation-torch.eye(3,device='cuda')).abs().max()))
     encode_membrane=model.encode_membrane;encode=model.encode_lidar
     with torch.no_grad():
         ego,membrane=encode_membrane(data['processed_lidar'],2);road=encode(data['road_lidar'],2)

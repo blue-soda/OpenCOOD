@@ -6,6 +6,7 @@ from opencood.models.fuse_modules.e3dsnn_progressive import (
     MessageContract,ProgressiveMembraneFusion,split_counts,count_readout,check_transform)
 from opencood.utils import count4_compact_packet as compact
 from opencood.utils import quantized_feature_packet as legacy
+from opencood.models.fuse_modules.e3dsnn_geometry import warp_volume
 
 
 class ProgressiveTest(unittest.TestCase):
@@ -19,6 +20,10 @@ class ProgressiveTest(unittest.TestCase):
                 pose=torch.tensor([[[co,-si,0,2],[si,co,0,-3],[0,0,1,.2],[0,0,0,1]]],
                                   dtype=torch.float32,device=device)
                 check_transform(pose)
+                source=torch.arange(125,dtype=torch.float32,device=device).reshape(1,1,5,5,5)
+                actual,_=warp_volume(source,pose,(-2.,-2.,-2.),(1.,1.,1.),geometry_dtype=torch.float64)
+                expected,_=warp_volume(source.double(),pose.double(),(-2.,-2.,-2.),(1.,1.,1.))
+                self.assertTrue(torch.allclose(actual.double(),expected,atol=2e-5,rtol=1e-5))
                 wrong=pose.clone();wrong[:,:3,:3]*=1.001
                 with self.assertRaises(ValueError):check_transform(wrong)
         finally:torch.backends.cuda.matmul.allow_tf32=previous

@@ -110,7 +110,8 @@ class ProgressiveMembraneFusion(nn.Module):
         if torch.any((counts<0)|(counts>4)|(counts!=torch.floor(counts))):
             raise ValueError('Wire message must contain Count4 integer values')
         # Align complete 3D positions before basis mapping; never align after Z folding.
-        aligned,coverage=warp_volume(counts,source_to_ego,contract.origin_xyz,contract.step_xyz)
+        aligned,coverage=warp_volume(counts,source_to_ego,contract.origin_xyz,contract.step_xyz,
+                                     geometry_dtype=torch.float64)
         supported=(aligned!=0).any(1,keepdim=True)&(coverage>0)
         current=self.basis(aligned)
         if self.adaptive_gate:
