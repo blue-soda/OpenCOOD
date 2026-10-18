@@ -98,6 +98,7 @@ class E3dsnnFusion(E3dsnnSingle):
         ego_bev = ego.flatten(1, 2)
         if self.fusion_mode == 'ego' or data.get('disable_road', False):
             result = self.detect_bev(ego_bev)
+            result['message_kept'] = ego.new_zeros(b)
             if data.get('return_spikes', False):
                 result['spike_features'] = ego_sparse.features
             return result
@@ -137,6 +138,7 @@ class E3dsnnFusion(E3dsnnSingle):
         aligned, coverage = warp_volume(road, transform, self.origin, self.step)
         road_bev = aligned.flatten(1, 2)
         mask = self.fusion_support(road, transform, coverage).flatten(1, 2)
+        keep = ego.new_ones(b, 1, 1, 1)
         if self.training and self.message_dropout:
             keep = (torch.rand(b, 1, 1, 1, device=ego.device) >= self.message_dropout).to(ego.dtype)
             road_bev, mask = road_bev * keep, mask * keep
@@ -150,6 +152,7 @@ class E3dsnnFusion(E3dsnnSingle):
                                      self.fusion_activation, self.fusion_readout)
         fused = torch.where(supported > 0, fused, ego_bev)
         result = self.detect_bev(fused)
+        result['message_kept'] = keep.reshape(b).detach()
         if self.training and self.enable_ego_aux:
             # Both lambda=0 and lambda=1 controls execute the same ego branch.
             # Fixed BN buffers prevent an extra pass from changing running stats.

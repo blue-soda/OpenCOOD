@@ -1,6 +1,6 @@
 import unittest
 import torch
-from opencood.utils.e3dsnn_response_distill import response_distillation
+from opencood.utils.e3dsnn_response_distill import response_distillation, add_response_supervision
 
 
 class ResponseDistillTest(unittest.TestCase):
@@ -42,6 +42,26 @@ class ResponseDistillTest(unittest.TestCase):
         with self.assertRaises(ValueError):response_distillation(s,t,l,torch.tensor([1.,.5]))
         l['neg_equal_one'][:,0,0,0]=1
         with self.assertRaises(ValueError):response_distillation(s,t,l,torch.ones(2))
+
+    def test_control_preserves_loss_graph_and_teacher_runs(self):
+        s,l=self.fixture()
+        class Teacher(torch.nn.Module):
+            def __init__(self):
+                super().__init__();self.calls=0
+            def forward(self,data):
+                self.calls+=1
+                return {k:torch.zeros_like(s[k]) for k in ('psm','rm','dm')}
+        teacher=Teacher().eval();s['message_kept']=torch.tensor([1.,0.])
+        original=s['psm'].square().sum();parts={}
+        loss=add_response_supervision(original,parts,s,l,teacher,{},0.)
+        self.assertIs(loss,original);self.assertEqual(teacher.calls,1)
+        expected=torch.autograd.grad(original,s['psm'],retain_graph=True)[0]
+        actual=torch.autograd.grad(loss,s['psm'],retain_graph=True)[0]
+        self.assertTrue(torch.equal(expected,actual))
+        augmented=add_response_supervision(original,parts,s,l,teacher,{},1.)
+        self.assertGreater(float(augmented),float(original))
+        teacher.train()
+        with self.assertRaises(ValueError):add_response_supervision(original,parts,s,l,teacher,{},1.)
 
 
 if __name__=='__main__':unittest.main()

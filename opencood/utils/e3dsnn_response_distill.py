@@ -1,9 +1,60 @@
 """Anchor-aligned response KD, with frozen teacher and explicit dropout mask.
 
-This utility is preparation only; no existing training path calls it by default.
+Enabled only by an explicit response_distillation training configuration.
 """
 import torch
 import torch.nn.functional as F
+
+
+def add_response_supervision(loss, parts, output, labels, teacher, data, weight):
+    """Teacher stays outside student modules/optimizer/checkpoints, including KD=0."""
+    if weight not in (0., 1.):
+        raise ValueError('Registered response KD controls are weight 0 or 1')
+    if teacher.training or any(p.requires_grad for p in teacher.parameters()):
+        raise ValueError('Teacher must be frozen and in eval mode')
+    with torch.no_grad():
+        target = teacher(data)
+    kd, components = response_distillation(output, target, labels, output['message_kept'])
+    parts.update({k: float(v.detach()) for k, v in components.items()})
+    parts.update(kd_loss=float(kd.detach()), kd_weight=weight,
+                 message_kept_fraction=float(output['message_kept'].float().mean()))
+    return loss if weight == 0. else loss + kd
+
+
+def state_digest(model):
+    import hashlib
+    digest = hashlib.sha256()
+    for key, value in sorted(model.state_dict().items()):
+        array = value.detach().cpu().contiguous().numpy()
+        digest.update(key.encode()); digest.update(str(array.dtype).encode())
+        digest.update(str(array.shape).encode()); digest.update(array.tobytes())
+    return digest.hexdigest()
+
+
+def load_teacher(student_config, device):
+    """Validate data/anchor identity, pin source hashes and preserve RNG state."""
+    import hashlib
+    from pathlib import Path
+    from opencood.hypes_yaml.yaml_utils import load_yaml
+    from opencood.tools import train_utils
+    spec = student_config['response_distillation']
+    if spec['weight'] not in (0., 1.): raise ValueError('Unregistered KD weight')
+    for name in ('config', 'checkpoint'):
+        if hashlib.sha256(Path(spec[name]).read_bytes()).hexdigest() != spec[name+'_sha256']:
+            raise ValueError('Teacher source hash mismatch: '+name)
+    config = load_yaml(spec['config'])
+    for key in ('fusion', 'preprocess', 'postprocess', 'root_dir', 'validate_dir', 'data_manifest', 'data_augment'):
+        if config[key] != student_config[key]: raise ValueError('Teacher/student contract differs: '+key)
+    options = config['model']['args']
+    if (config['model']['core_method'] != 'e3dsnn_hybrid' or
+            options['activation'] != 'relu' or options['receiver_activation'] != 'relu' or
+            options['fusion_mode'] != 'residual' or options.get('message_codec') is not None):
+        raise ValueError('Expected full-message ANN hybrid teacher')
+    with torch.random.fork_rng():
+        teacher = train_utils.create_model(config).to(device)
+        teacher.load_state_dict(torch.load(spec['checkpoint'], map_location='cpu'), strict=True)
+    teacher.requires_grad_(False); teacher.eval()
+    return teacher, dict(spec, state_sha256=state_digest(teacher))
 
 
 def response_distillation(student, teacher, labels, sample_mask, temperature=2.):

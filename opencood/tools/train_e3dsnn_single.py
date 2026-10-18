@@ -56,7 +56,7 @@ def seed_worker(worker_id):
     np.random.seed(seed)
 
 
-def checked_forward(model, criterion, batch):
+def checked_forward(model, criterion, batch, teacher=None, kd_weight=0.):
     output = model(batch['ego'])
     labels = batch['ego']['label_dict']
     assert output['psm'].shape[2:] == labels['pos_equal_one'].shape[1:3], (
@@ -65,6 +65,10 @@ def checked_forward(model, criterion, batch):
     from opencood.utils.e3dsnn_aux_loss import detection_loss
     loss, model.last_loss_components = detection_loss(output, labels, criterion,
         getattr(model, 'ego_aux_weight', 0.))
+    if teacher is not None:
+        from opencood.utils.e3dsnn_response_distill import add_response_supervision
+        loss = add_response_supervision(loss, model.last_loss_components, output, labels,
+                                        teacher, batch['ego'], kd_weight)
     if not torch.isfinite(loss):
         raise FloatingPointError('Nonfinite detection loss')
     return output, loss
@@ -198,6 +202,10 @@ def execute(args, output_dir):
     train_data = build_dataset(cfg, train=True)
     val_data = build_dataset(cfg, train=False)
     model = train_utils.create_model(cfg).cuda()
+    teacher, teacher_manifest = None, None
+    if 'response_distillation' in cfg and args.mode == 'train':
+        from opencood.utils.e3dsnn_response_distill import load_teacher, state_digest
+        teacher, teacher_manifest = load_teacher(cfg, torch.device('cuda'))
     if args.fusion_diagnostics:
         if getattr(model, 'fusion_mode', None) != 'residual' or not args.save_predictions:
             raise ValueError('Fusion diagnostics require residual model and saved predictions')
@@ -213,6 +221,7 @@ def execute(args, output_dir):
     generator = torch.Generator().manual_seed(args.seed)
     manifest = {'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip(),
         'arguments': vars(args), 'config_sha256': hashlib.sha256(Path(args.config).read_bytes()).hexdigest(),
+        'response_distillation': teacher_manifest,
         'split_sha256': {key: hashlib.sha256(Path(cfg[key]).read_bytes()).hexdigest()
                          for key in ('root_dir', 'validate_dir')},
         'data_manifest_sha256': hashlib.sha256(Path(cfg['data_manifest']).read_bytes()).hexdigest(),
@@ -304,6 +313,8 @@ def execute(args, output_dir):
     ap70_tracking_start_epoch = 1
     if args.resume:
         state = torch.load(str(output_dir / 'last.pt'), map_location='cpu')
+        if state.get('response_distillation') != teacher_manifest:
+            raise ValueError('Resume teacher provenance mismatch')
         if state.get('warmup_epochs', 0) != args.warmup_epochs:
             raise ValueError('Resume requires the same fusion warmup schedule')
         if state['config_sha256'] != manifest['config_sha256'] or state['data_manifest_sha256'] != manifest['data_manifest_sha256']:
@@ -345,6 +356,11 @@ def execute(args, output_dir):
         from opencood.utils.e3dsnn_fusion_probe import detector_digest
         frozen_digest = detector_digest(model)
         write_json(output_dir / 'frozen_detector.json', {'initial_sha256': frozen_digest})
+    if getattr(args, 'retain_initial_best', False) and not args.resume:
+        initial = validate(model, val_data, args.workers)
+        initial['epoch'] = 0
+        best = save_best_checkpoints(model, initial, output_dir, best_by_iou, args.selection_iou, best)
+        write_json(output_dir / 'initial_metrics.json', initial)
     for epoch in range(start_epoch, epochs):
         model.train()
         if args.warmup_epochs:
@@ -364,7 +380,8 @@ def execute(args, output_dir):
                 raise ValueError('Unexpected empty training batch')
             batch = train_utils.to_device(batch, torch.device('cuda'))
             optimizer.zero_grad(set_to_none=True)
-            _, loss = checked_forward(model, criterion, batch)
+            _, loss = checked_forward(model, criterion, batch, teacher,
+                                      teacher_manifest['weight'] if teacher_manifest else 0.)
             loss.backward()
             grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 10., error_if_nonfinite=True)
             optimizer.step()
@@ -386,6 +403,12 @@ def execute(args, output_dir):
         metrics.update({'epoch': epoch + 1, 'train_loss': total / samples,
                         'train_samples': samples, 'seconds': time.monotonic() - started})
         metrics['train_loss_components'] = {k: v / samples for k, v in component_totals.items()}
+        if teacher is not None:
+            current_teacher = state_digest(teacher)
+            if current_teacher != teacher_manifest['state_sha256'] or any(p.grad is not None for p in teacher.parameters()):
+                raise RuntimeError('Frozen teacher changed or received gradients')
+            write_json(output_dir / 'frozen_teacher.json', dict(initial_sha256=teacher_manifest['state_sha256'],
+                current_sha256=current_teacher, verified_through_epoch=epoch+1, passed=True))
         if hasattr(model, 'bev_scale_report'):
             report = model.bev_scale_report()
             report['verified_through_epoch'] = epoch + 1
@@ -417,6 +440,7 @@ def execute(args, output_dir):
                 'current_sha256': current_digest, 'verified_through_epoch': epoch + 1, 'passed': True})
         best = save_best_checkpoints(model, metrics, output_dir, best_by_iou, args.selection_iou, best)
         save_torch(output_dir / 'last.pt', {'epoch': epoch + 1, 'model': model.state_dict(), 'warmup_epochs': args.warmup_epochs,
+            'response_distillation': teacher_manifest,
             'config_sha256': manifest['config_sha256'], 'data_manifest_sha256': manifest['data_manifest_sha256'],
             'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(), 'best_ap50': best_by_iou['0.5'],
             'best_by_iou': best_by_iou, 'selection_iou': args.selection_iou,
@@ -453,6 +477,7 @@ def main():
     parser.add_argument('--selection-iou', choices=['0.5', '0.7'], default='0.5',
                         help='Validation BEV IoU for best.pth; retain both AP50/AP70 best snapshots')
     parser.add_argument('--resume', action='store_true')
+    parser.add_argument('--retain-initial-best', action='store_true', help='Include epoch zero in best AP selection')
     args = parser.parse_args()
     if (args.eval_3d or args.save_predictions or args.profile or args.packet_roundtrip or args.fusion_diagnostics) and args.mode != 'eval':
         parser.error('--eval-3d, --save-predictions and --profile require eval mode')
