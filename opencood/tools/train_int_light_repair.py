@@ -68,7 +68,8 @@ def evaluate_saved(a,model,cfg,rows,out,policy,provenance):
     if ablation=='original':
         report['caveats'].append('Direct original model.step; no deep cache or repair execution. Only existing FM state is retained. Loaded repair modules are unused.')
     if a.repair_period==3:
-        report['caveats'].append('Zero-shot period3 diagnostic with period2-trained weights. Up to two partial frames use the same full anchor, age below 0.25s; repaired outputs are never written into the anchor. Not a matched-training final result.')
+        training_period=contract.get('repair_period',2)
+        report['caveats'].append('Period3 evaluation with period%d-trained weights; %s. Up to two partial frames use the same full anchor, age below 0.25s; repaired outputs are never written into the anchor.' % (training_period,'matched interval' if training_period==3 else 'zero-shot interval extrapolation'))
     return report
 
 
@@ -138,19 +139,37 @@ def engineering(model,cfg,rows,repairs,threshold,out,dense=False,period=2):
 def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
     threshold=policy['selected']['threshold'];bounds=cfg['model']['args']['lidar_range']
     torch.manual_seed(303);repairs=make_repairs().cuda().eval()
+    period=a.repair_period
+    assert period in (2,3) and (period==2 or a.repair_policy=='dense')
+    initialization=None
+    if a.repair_checkpoint:
+        initial_path=Path(a.repair_checkpoint);initial_run=initial_path.parent.parent
+        assert json.loads((initial_run/'status.json').read_text())['status']=='COMPLETED'
+        initial_best=json.loads((initial_run/'best.json').read_text())
+        assert initial_best['checkpoint']==str(initial_path) and initial_best['sha256']==digest(initial_path)
+        initial_provenance=json.loads((initial_run/'provenance.json').read_text())
+        assert initial_provenance['contract']==provenance['contract']
+        initial=torch.load(str(initial_path),map_location='cpu')
+        assert initial['contract']['teacher_checkpoint_sha256']==provenance['checkpoint']['sha256']
+        assert initial['contract']['source_policy']==policy and initial['contract']['repair_policy']==a.repair_policy
+        repairs.load_state_dict(initial['repairs'],strict=True)
+        initialization=dict(checkpoint=str(initial_path),sha256=initial_best['sha256'],
+                            source_period=initial['contract'].get('repair_period',2),source_epoch=initial['epoch'],
+                            optimizer='Fresh optimizer/scheduler; not an interrupted-run resume')
     for parameter in model.parameters():parameter.requires_grad_(False)
     dense=a.repair_policy=='dense'
-    engineering(model,cfg,val_rows,repairs,threshold,out,dense)
+    engineering(model,cfg,val_rows,repairs,threshold,out,dense,period=period)
     optimizer=torch.optim.AdamW(repairs.parameters(),lr=1e-3,weight_decay=1e-4)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=1,
                                                        threshold=.001,threshold_mode='abs',min_lr=1e-5)
-    contract=dict(source_policy=policy,repair_policy=a.repair_policy,seed=303,epochs_min=5,epochs_max=20,patience=5,min_delta=.001,
+    contract=dict(source_policy=policy,repair_policy=a.repair_policy,repair_period=period,initialization=initialization,
+        seed=303,epochs_min=5,epochs_max=20,patience=5,min_delta=.001,
         optimizer='AdamW',initial_lr=.001,weight_decay=.0001,
         teacher_checkpoint_sha256=provenance['checkpoint']['sha256'],
         train_scans=len(train_rows),val_scans=len(val_rows),trainable_parameters=sum(p.numel() for p in repairs.parameters()),
         frozen_parameters=sum(p.numel() for p in model.parameters()),
         loss='Normalized feature MSE weighted by frozen teacher objectness + 0.1 weighted cls/reg output smooth L1',
-        protocol='Full-frame anchors alternate with one repair frame; original model always eval/frozen; no augmentation or artificial delays',
+        protocol='Full-frame anchors alternate with at most %d repair frames, age below 0.25s; original model always eval/frozen; no augmentation or artificial delays' % (period-1),
         inference='Independent stage2/3 residual repair; local=tile4 radius1 crops, dense=whole small module without gate; no original deep stages or teacher on repair frames')
     write_json(out/'training_contract.json',contract)
     best=-1.;significant=-1.;stale=0;history=[];captured={}
@@ -161,6 +180,7 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
     try:
         for epoch in range(1,21):
             repairs.train();state=cache=None;losses=[];started=time.monotonic();updates=0
+            losses_by_depth={i:[] for i in range(1,period)}
             _,stream=loader(train_rows,cfg,4,303+epoch)
             for index,(row,sample) in enumerate(zip(train_rows,stream)):
                 meta=sample['meta'];assert row['frame']==meta['frame']
@@ -168,10 +188,10 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
                 with torch.no_grad():
                     teacher,state,info=model.step(ego,state,meta)
                     first=captured[0];targets=[captured[1],captured[2]]
-                    full=cache is None or bool(info['reset']) or cache['used'] or (int(meta['timestamp_us'])-cache['stamp'])/1e6>=.25
+                    full=cache is None or bool(info['reset']) or cache['frames']>=period-1 or (int(meta['timestamp_us'])-cache['stamp'])/1e6>=.25
                     if full:
                         cache=dict(values=targets,desc=early_descriptor(first,4),pose=meta['pose'],
-                                   stamp=int(meta['timestamp_us']),used=False)
+                                   stamp=int(meta['timestamp_us']),frames=0)
                 if not full:
                     optimizer.zero_grad(set_to_none=True)
                     outputs,loss=training_pair(first,targets,teacher,cache,meta,repairs,bounds,threshold,dense)
@@ -184,24 +204,27 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
                     if not bool(torch.isfinite(loss)):raise RuntimeError('Non-finite repair loss')
                     loss.backward();norm=torch.nn.utils.clip_grad_norm_(repairs.parameters(),5.)
                     if not bool(torch.isfinite(norm)):raise RuntimeError('Non-finite repair gradients')
-                    optimizer.step();losses.append(float(loss.detach()));updates+=1;cache['used']=True
+                    optimizer.step();losses.append(float(loss.detach()));updates+=1;cache['frames']+=1
+                    losses_by_depth[cache['frames']].append(losses[-1])
                 if (index+1)%200==0:
                     write_json(out/'status.json',dict(status='RUNNING',phase='train',epoch=epoch,scans=index+1,
-                        total_scans=len(train_rows),updates=updates,mean_loss=float(np.mean(losses)) if losses else None))
+                        total_scans=len(train_rows),updates=updates,updates_by_depth={k:len(v) for k,v in losses_by_depth.items()},
+                        mean_loss=float(np.mean(losses)) if losses else None))
                     print('TRAIN',epoch,index+1,'loss',float(np.mean(losses)) if losses else None,flush=True)
             assert index+1==len(train_rows) and updates>0
+            assert all(losses_by_depth.values()), 'Every configured repair depth must be exercised'
             assert all(p.grad is None for p in model.parameters())
             epoch_dir=out/('epoch_%03d'%epoch);epoch_dir.mkdir()
             repairs.eval();checkpoint=epoch_dir/'repairs.pth'
             torch.save(dict(repairs=repairs.state_dict(),epoch=epoch,contract=contract),str(checkpoint))
             write_json(out/'status.json',dict(status='RUNNING',phase='full_validation',epoch=epoch))
             a.stage='full';a.engineering=str(out/'engineering.json')
-            wrapper=LocalCacheDetector(model,cfg,threshold,repair_modules=repairs,repair_dense=dense)
+            wrapper=LocalCacheDetector(model,cfg,threshold,period=period,repair_modules=repairs,repair_dense=dense)
             torch.cuda.reset_peak_memory_stats()
             report=evaluate(a,model,cfg,val_rows,epoch_dir,wrapper)
             records=[json.loads(s) for s in (epoch_dir/'frames.jsonl').read_text().splitlines()]
             partial=[r for r in records if r['local_partial']]
-            report.update(repair_checkpoint_sha256=digest(checkpoint),epoch=epoch,repair_policy=a.repair_policy,
+            report.update(repair_checkpoint_sha256=digest(checkpoint),epoch=epoch,repair_policy=a.repair_policy,repair_period=period,
                 partial_frames=len(partial),partial_labeled_frames=sum(r['supervised'] for r in partial),
                 original_deep_stage_call_fraction=1-len(partial)/len(records),
                 caveats=['Learned ANN repair, not independent SNN benefit. Only repair modules trained; source detector frozen.',
@@ -215,6 +238,8 @@ def train(a,model,cfg,train_rows,val_rows,out,policy,provenance):
             if ap>significant+.001:significant=ap;stale=0
             else:stale+=1
             record=dict(epoch=epoch,train_loss=float(np.mean(losses)),updates=updates,ap70=ap,
+                updates_by_depth={k:len(v) for k,v in losses_by_depth.items()},
+                train_loss_by_depth={k:float(np.mean(v)) for k,v in losses_by_depth.items()},
                 lr=optimizer.param_groups[0]['lr'],seconds=time.monotonic()-started,stale_epochs=stale)
             history.append(record);write_json(out/'history.json',history)
             torch.save(dict(repairs=repairs.state_dict(),optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),

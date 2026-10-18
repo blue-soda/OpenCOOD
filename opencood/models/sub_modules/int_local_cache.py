@@ -55,7 +55,7 @@ ACTUAL stage2 write mask, including a possible full-stage fallback.
         if model.training or model.feature_memory.mode!='gru' or period not in (1,2,3):
             raise ValueError('Frozen GRU and period 1/2/3 required')
         if period==3 and (repair_modules is None or not repair_dense):
-            raise ValueError('Period3 is a dense learned-repair extrapolation diagnostic')
+            raise ValueError('Period3 requires dense learned repair')
         self.model=model;self.bounds=config['model']['args']['lidar_range']
         assert config['model']['args']['base_bev_backbone']['layer_nums']==[3,4,5]
         self.threshold=threshold;self.period=period;self.verify=verify

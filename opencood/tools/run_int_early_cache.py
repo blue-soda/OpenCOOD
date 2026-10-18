@@ -295,8 +295,10 @@ def main():
         p.error('Full evaluation requires the original suite with frozen policies and passed checks')
     if a.stage=='learned-eval' and not a.repair_checkpoint:
         p.error('learned-eval requires a completed training checkpoint')
-    if a.stage=='learned-repair' and a.repair_period!=2:
-        p.error('Training currently supports only period2; period3 is an evaluation diagnostic')
+    if a.stage=='learned-repair' and (a.repair_period==1 or (a.repair_period==3 and a.repair_policy!='dense')):
+        p.error('Training supports period2 local/dense or period3 dense')
+    if a.stage=='learned-repair' and a.repair_ablation!='none':
+        p.error('Ablations are evaluation-only')
     if a.worker:
         try:
             worker(a)

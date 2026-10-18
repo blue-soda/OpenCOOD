@@ -1,0 +1,28 @@
+{
+  "crop_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "full_refresh_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "max_partial_depth": 2,
+  "partial_frames_with_zero_original_deep_stage_calls": 5,
+  "period": 3,
+  "status": "PASSED"
+}
