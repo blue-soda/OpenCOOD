@@ -1,0 +1,278 @@
+{
+  "caveats": [
+    "Instrumented prefix at early checkpoint, not an uninstrumented speed benchmark or AP evaluation.",
+    "CUDA-event spans may include host-induced GPU idle; CPU dispatch is asynchronous and not kernel time.",
+    "Nested stages overlap: evidence includes observation/context; crop_execution includes update/gather/rectangle_plan. Do not sum all columns.",
+    "Selector masks, concatenation and cache writeback outside named spans remain in total wall time. Other GPUs are training."
+  ],
+  "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+  "executor": "gather",
+  "reports": {
+    "dense_after": {
+      "frames": 256,
+      "mean_ms": 19.07762507832329,
+      "measured_frames": 246,
+      "stages": {
+        "context": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 6.733130105218388,
+          "gpu_timeline_ms": 6.230415636931008
+        },
+        "evidence_total": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 8.870995446388436,
+          "gpu_timeline_ms": 8.930408070727092
+        },
+        "observation": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 1.8788887361988305,
+          "gpu_timeline_ms": 2.5122216620096345
+        },
+        "pillar": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 1.8916009154882494,
+          "gpu_timeline_ms": 1.9608127518398006
+        },
+        "readout_heads": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 0.552840075622184,
+          "gpu_timeline_ms": 1.028258312039259
+        },
+        "update_calls": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 2.298226204276751,
+          "gpu_timeline_ms": 6.032342366086758
+        },
+        "warp": {
+          "calls": 0.967479674796748,
+          "cpu_dispatch_ms": 0.7744771901639255,
+          "gpu_timeline_ms": 0.8793371075052556
+        }
+      }
+    },
+    "dense_before": {
+      "frames": 256,
+      "mean_ms": 19.98357897022421,
+      "measured_frames": 246,
+      "stages": {
+        "context": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 7.215960639362352,
+          "gpu_timeline_ms": 6.839420869098446
+        },
+        "evidence_total": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 9.533337381766822,
+          "gpu_timeline_ms": 9.595387827090132
+        },
+        "observation": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 2.028958103430223,
+          "gpu_timeline_ms": 2.5578479427632277
+        },
+        "pillar": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 1.99692364501941,
+          "gpu_timeline_ms": 2.0668140523801974
+        },
+        "readout_heads": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 0.5670034466689922,
+          "gpu_timeline_ms": 1.0370996802802976
+        },
+        "update_calls": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 2.374954902135381,
+          "gpu_timeline_ms": 6.080524494977501
+        },
+        "warp": {
+          "calls": 0.967479674796748,
+          "cpu_dispatch_ms": 0.8183002909191135,
+          "gpu_timeline_ms": 0.9245929109856366
+        }
+      }
+    },
+    "gather16": {
+      "frames": 256,
+      "mean_ms": 18.452401340151646,
+      "measured_frames": 246,
+      "stages": {
+        "change_score": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 0.2203973869573537,
+          "gpu_timeline_ms": 0.4422514426514385
+        },
+        "context": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 6.727898624021469,
+          "gpu_timeline_ms": 6.184256505190842
+        },
+        "crop_execution_total": {
+          "calls": 0.967479674796748,
+          "cpu_dispatch_ms": 3.150860665411484,
+          "gpu_timeline_ms": 4.286805334129954
+        },
+        "evidence_total": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 8.757440836123395,
+          "gpu_timeline_ms": 8.819045991432375
+        },
+        "gather_compute": {
+          "calls": 0.8008130081300813,
+          "cpu_dispatch_ms": 2.040449408738594,
+          "gpu_timeline_ms": 2.5778912499668154
+        },
+        "observation": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 1.783633971874549,
+          "gpu_timeline_ms": 2.45590998680611
+        },
+        "pillar": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 1.7932343251276306,
+          "gpu_timeline_ms": 1.8628878036165626
+        },
+        "readout_heads": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 0.6301455006639405,
+          "gpu_timeline_ms": 1.0937190239991599
+        },
+        "rectangle_plan": {
+          "calls": 0.967479674796748,
+          "cpu_dispatch_ms": 0.06358701417722352,
+          "gpu_timeline_ms": 0.08299069942497625
+        },
+        "update_calls": {
+          "calls": 0.1991869918699187,
+          "cpu_dispatch_ms": 0.4400876700893287,
+          "gpu_timeline_ms": 1.2335181798392194
+        },
+        "warp": {
+          "calls": 0.967479674796748,
+          "cpu_dispatch_ms": 0.725874640388278,
+          "gpu_timeline_ms": 0.8846569109738358
+        }
+      }
+    },
+    "gather32": {
+      "frames": 256,
+      "mean_ms": 19.374459944059694,
+      "measured_frames": 246,
+      "stages": {
+        "change_score": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 0.2239878919747908,
+          "gpu_timeline_ms": 0.5145267100353551
+        },
+        "context": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 6.90339108819248,
+          "gpu_timeline_ms": 6.403296784656804
+        },
+        "crop_execution_total": {
+          "calls": 0.967479674796748,
+          "cpu_dispatch_ms": 3.3075721495277515,
+          "gpu_timeline_ms": 4.659237458453915
+        },
+        "evidence_total": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 9.034100233774057,
+          "gpu_timeline_ms": 9.097353365363144
+        },
+        "gather_compute": {
+          "calls": 0.8211382113821138,
+          "cpu_dispatch_ms": 2.1727330390197355,
+          "gpu_timeline_ms": 3.0289200573432735
+        },
+        "observation": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 1.8733558585730994,
+          "gpu_timeline_ms": 2.507909197148269
+        },
+        "pillar": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 1.8416740742277324,
+          "gpu_timeline_ms": 1.9102790268456065
+        },
+        "readout_heads": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 0.6789661474465355,
+          "gpu_timeline_ms": 1.1121721010867174
+        },
+        "rectangle_plan": {
+          "calls": 0.967479674796748,
+          "cpu_dispatch_ms": 0.049287962492525095,
+          "gpu_timeline_ms": 0.06927804885114111
+        },
+        "update_calls": {
+          "calls": 0.17886178861788618,
+          "cpu_dispatch_ms": 0.4245236353206683,
+          "gpu_timeline_ms": 1.1140569748917246
+        },
+        "warp": {
+          "calls": 0.967479674796748,
+          "cpu_dispatch_ms": 0.7583755021157667,
+          "gpu_timeline_ms": 0.9307826992457475
+        }
+      }
+    },
+    "masked32": {
+      "frames": 256,
+      "mean_ms": 20.79181076023667,
+      "measured_frames": 246,
+      "stages": {
+        "change_score": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 0.21979447957734025,
+          "gpu_timeline_ms": 0.5110967224690972
+        },
+        "context": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 6.554947531880523,
+          "gpu_timeline_ms": 6.034931512382942
+        },
+        "crop_execution_total": {
+          "calls": 0.967479674796748,
+          "cpu_dispatch_ms": 2.859109867841187,
+          "gpu_timeline_ms": 6.618457495681638
+        },
+        "evidence_total": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 8.61457420789402,
+          "gpu_timeline_ms": 8.67710125737074
+        },
+        "observation": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 1.8088864181493598,
+          "gpu_timeline_ms": 2.4603639666627095
+        },
+        "pillar": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 1.8225891138919121,
+          "gpu_timeline_ms": 1.8917324228015373
+        },
+        "readout_heads": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 0.6052425511681089,
+          "gpu_timeline_ms": 1.0916989910893324
+        },
+        "rectangle_plan": {
+          "calls": 0.967479674796748,
+          "cpu_dispatch_ms": 0.04745166317173621,
+          "gpu_timeline_ms": 0.06641912192287969
+        },
+        "update_calls": {
+          "calls": 1.0,
+          "cpu_dispatch_ms": 2.2170605124693696,
+          "gpu_timeline_ms": 6.172395578244838
+        },
+        "warp": {
+          "calls": 0.967479674796748,
+          "cpu_dispatch_ms": 0.722088024769796,
+          "gpu_timeline_ms": 0.8809605209323449
+        }
+      }
+    }
+  },
+  "status": "COMPLETED"
+}

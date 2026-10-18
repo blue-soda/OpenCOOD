@@ -1,0 +1,17 @@
+{
+  "pid": 9851,
+  "gpu": 7,
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.diagnose_int_unified_state",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--checkpoint",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_001/student.pth",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_state_gate_diagnostic_e1"
+  ],
+  "created": 1792359795.9399424,
+  "code_commit": "89e782a794201797ffaaa04c06c6db451a4f36aa"
+}

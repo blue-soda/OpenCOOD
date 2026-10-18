@@ -1,0 +1,43 @@
+{
+  "caveats": [
+    "One-step dense-history diagnostic, not a recursive selective implementation, latency test or AP result.",
+    "Raw state RMS is sensitive to feature scale and is not equivalent to detection accuracy.",
+    "Untrained fixed unit delta gain; no validation-label or threshold selection.",
+    "Foreground means positive anchor cells on labelled training scans; unlabelled cells are not assumed background."
+  ],
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_007/student.pth",
+  "checkpoint_sha256": "491e6c120a72d004c41ce6447e166d816460fe8e7b6f17e04478a8bbe88b70ae",
+  "frames": 256,
+  "seed": 303,
+  "split": "train",
+  "status": "COMPLETED",
+  "summary": {
+    "background": {
+      "fraction_frames_improved": 1.0,
+      "frames": 98,
+      "mean_frame_delta_to_stale": 0.6404989776193764,
+      "mean_retain": 0.7187549629989936,
+      "mean_retain_gt99": 0.718749998175368,
+      "mean_retain_lt01": 0.28125,
+      "median_frame_delta_to_stale": 0.6406468118907612
+    },
+    "foreground": {
+      "fraction_frames_improved": 1.0,
+      "frames": 98,
+      "mean_frame_delta_to_stale": 0.6206779023937603,
+      "mean_retain": 0.7187549642154148,
+      "mean_retain_gt99": 0.7187500048656853,
+      "mean_retain_lt01": 0.28125,
+      "median_frame_delta_to_stale": 0.6235564872998332
+    },
+    "valid": {
+      "fraction_frames_improved": 1.0,
+      "frames": 244,
+      "mean_frame_delta_to_stale": 0.640727283889018,
+      "mean_retain": 0.7187549904233119,
+      "mean_retain_gt99": 0.718750000732844,
+      "mean_retain_lt01": 0.28125,
+      "median_frame_delta_to_stale": 0.6408724128325108
+    }
+  }
+}

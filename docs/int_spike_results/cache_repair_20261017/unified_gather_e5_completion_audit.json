@@ -1,0 +1,194 @@
+{
+  "pilots": [
+    {
+      "name": "unified_gather_e5_t16_retry",
+      "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+      "checked": {
+        "dense_after": {
+          "scans": 512,
+          "labels": 255,
+          "manifest_order_verified": true,
+          "finite_positive_frame_times": true
+        },
+        "dense_before": {
+          "scans": 512,
+          "labels": 255,
+          "manifest_order_verified": true,
+          "finite_positive_frame_times": true
+        },
+        "masked_q75": {
+          "scans": 512,
+          "labels": 255,
+          "manifest_order_verified": true,
+          "finite_positive_frame_times": true
+        },
+        "sparse_q50": {
+          "scans": 512,
+          "labels": 255,
+          "manifest_order_verified": true,
+          "finite_positive_frame_times": true
+        },
+        "sparse_q75": {
+          "scans": 512,
+          "labels": 255,
+          "manifest_order_verified": true,
+          "finite_positive_frame_times": true
+        }
+      },
+      "masked_gather_ap_identical": true,
+      "write_fallback_counts_identical": true,
+      "dense_ap_identical": true,
+      "calibration_train_prefix_verified": true
+    },
+    {
+      "name": "unified_gather_e5_t32",
+      "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+      "checked": {
+        "dense_after": {
+          "scans": 512,
+          "labels": 255,
+          "manifest_order_verified": true,
+          "finite_positive_frame_times": true
+        },
+        "dense_before": {
+          "scans": 512,
+          "labels": 255,
+          "manifest_order_verified": true,
+          "finite_positive_frame_times": true
+        },
+        "masked_q75": {
+          "scans": 512,
+          "labels": 255,
+          "manifest_order_verified": true,
+          "finite_positive_frame_times": true
+        },
+        "sparse_q50": {
+          "scans": 512,
+          "labels": 255,
+          "manifest_order_verified": true,
+          "finite_positive_frame_times": true
+        },
+        "sparse_q75": {
+          "scans": 512,
+          "labels": 255,
+          "manifest_order_verified": true,
+          "finite_positive_frame_times": true
+        }
+      },
+      "masked_gather_ap_identical": true,
+      "write_fallback_counts_identical": true,
+      "dense_ap_identical": true,
+      "calibration_train_prefix_verified": true
+    }
+  ],
+  "training": [
+    {
+      "name": "unified_bev_dense_resume_v1",
+      "best": {
+        "ap70": 0.595032884885526,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_resume_v1/epoch_051/student.pth",
+        "epoch": 51,
+        "sha256": "2c86d730627a72820f03d1808d99d5c002b6c89a2f5160594f7a4a8016144585"
+      },
+      "status": {
+        "epoch": 52,
+        "labels": 4557,
+        "mean_loss": 0.25717228755406313,
+        "phase": "train",
+        "scans": 8400,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 2211
+      },
+      "checked": [
+        {
+          "epoch": 49,
+          "ap70": 0.5869404214325817,
+          "checkpoint_sha256": "da566257560f0497b136b730e3ac33f6580550b9d4906cde2247e87b24e3fb77",
+          "max_loss": 0.9294360036403524,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 50,
+          "ap70": 0.5828075380966351,
+          "checkpoint_sha256": "c1f82e26e5242583269330ab03a34544d2b13bbc4aec6f651b54e5956452a9d2",
+          "max_loss": 0.9152011710142031,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 51,
+          "ap70": 0.595032884885526,
+          "checkpoint_sha256": "2c86d730627a72820f03d1808d99d5c002b6c89a2f5160594f7a4a8016144585",
+          "max_loss": 0.9046906597323041,
+          "loss_gt100": 0
+        }
+      ]
+    },
+    {
+      "name": "unified_bev_v2_recurrent",
+      "best": {
+        "ap70": 0.2269851209993415,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_007/student.pth",
+        "epoch": 7,
+        "sha256": "491e6c120a72d004c41ce6447e166d816460fe8e7b6f17e04478a8bbe88b70ae"
+      },
+      "status": {
+        "epoch": 8,
+        "labels": 3787,
+        "mean_loss": 0.8306157547033852,
+        "phase": "train",
+        "scans": 7000,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1845
+      },
+      "checked": [
+        {
+          "epoch": 6,
+          "ap70": 0.20058216619442876,
+          "checkpoint_sha256": "87cdc6d1de85f08b9a02e269d0f2eecfe744f78e213bd70cfce25154de27da02",
+          "max_loss": 4.2499369968139415,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 7,
+          "ap70": 0.2269851209993415,
+          "checkpoint_sha256": "491e6c120a72d004c41ce6447e166d816460fe8e7b6f17e04478a8bbe88b70ae",
+          "max_loss": 4.403388673718341,
+          "loss_gt100": 0
+        }
+      ]
+    },
+    {
+      "name": "unified_bev_v2_reset",
+      "best": {
+        "ap70": 0.2509206532405103,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_reset/epoch_007/student.pth",
+        "epoch": 7,
+        "sha256": "c642dda94556300269ba05ff33ee7fb40ee682073adcc11ff13f6c009154925c"
+      },
+      "status": {
+        "epoch": 8,
+        "phase": "full_validation",
+        "status": "RUNNING"
+      },
+      "checked": [
+        {
+          "epoch": 6,
+          "ap70": 0.24464542768784686,
+          "checkpoint_sha256": "2e99920a7ad45b6bde79495cc8b1818cdafc1b358124f53e4fdfcd46e4ff723c",
+          "max_loss": 4.6268851517446405,
+          "loss_gt100": 0
+        },
+        {
+          "epoch": 7,
+          "ap70": 0.2509206532405103,
+          "checkpoint_sha256": "c642dda94556300269ba05ff33ee7fb40ee682073adcc11ff13f6c009154925c",
+          "max_loss": 4.413151712780193,
+          "loss_gt100": 0
+        }
+      ]
+    }
+  ],
+  "caveat": "Stored reports and per-frame/count/hash audit, not independent box-level AP recomputation."
+}

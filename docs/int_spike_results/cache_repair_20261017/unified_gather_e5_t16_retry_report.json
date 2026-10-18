@@ -1,0 +1,316 @@
+{
+  "calibration": {
+    "caveat": "Fixed training prefix, dense-history calibration; quantiles are not guaranteed update budgets under accumulated sparse history.",
+    "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+    "crop_batch": 8,
+    "descriptor": "Tile RMS evidence difference / max current/reference RMS; all evidence channels; no GT or current full-update output",
+    "eligible_tiles": 99283,
+    "fallback_fraction": 0.8,
+    "layout": "merged",
+    "max_age": 0.5,
+    "scans": 1024,
+    "split": "train",
+    "status": "COMPLETED",
+    "thresholds": {
+      "q50": 0.17833687365055084,
+      "q75": 0.24650949984788895
+    },
+    "tile": 16
+  },
+  "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+  "dense_before_after_ms_ratio": 0.9910932214220028,
+  "executor": "gather",
+  "masked_sparse_write_masks_counts_agree": true,
+  "reports": {
+    "dense_after": {
+      "caveats": [
+        "Fixed-weight sparse inference intervention; not a trained sparse model or convergence result.",
+        "Evidence encoder/context and readout/head remain dense. Reference+age increase cache and warp costs.",
+        "Same GPU paired sequential model time excludes IO/voxelization/postprocess; other GPU training may influence host load.",
+        "Do not select gate thresholds on validation AP or report prefix AP as full-set AP."
+      ],
+      "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "execution": null,
+      "labels": 255,
+      "metrics": {
+        "bev_ap30": 0.7040786936963241,
+        "bev_ap50": 0.5623858076277248,
+        "bev_ap70": 0.25851171857391125
+      },
+      "model_step_ms_mean": 19.850938528983953,
+      "model_step_ms_p50": 19.693464040756226,
+      "model_step_ms_p95": 22.89826855994761,
+      "name": "dense_after",
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 499958784,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "reset_frames": 17,
+      "scans": 512,
+      "scope": "Early-checkpoint validation prefix; engineering/latency pilot only",
+      "seconds": 42.799033178947866,
+      "source_epoch": 5,
+      "stage_means": [
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        }
+      ],
+      "state_bytes": 25804800,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    },
+    "dense_before": {
+      "caveats": [
+        "Fixed-weight sparse inference intervention; not a trained sparse model or convergence result.",
+        "Evidence encoder/context and readout/head remain dense. Reference+age increase cache and warp costs.",
+        "Same GPU paired sequential model time excludes IO/voxelization/postprocess; other GPU training may influence host load.",
+        "Do not select gate thresholds on validation AP or report prefix AP as full-set AP."
+      ],
+      "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "execution": null,
+      "labels": 255,
+      "metrics": {
+        "bev_ap30": 0.7040786936963241,
+        "bev_ap50": 0.5623858076277248,
+        "bev_ap70": 0.25851171857391125
+      },
+      "model_step_ms_mean": 20.029335384316504,
+      "model_step_ms_p50": 19.690480083227158,
+      "model_step_ms_p95": 23.503555241040885,
+      "name": "dense_before",
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 499958784,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "reset_frames": 17,
+      "scans": 512,
+      "scope": "Early-checkpoint validation prefix; engineering/latency pilot only",
+      "seconds": 42.9888105369173,
+      "source_epoch": 5,
+      "stage_means": [
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        }
+      ],
+      "state_bytes": 25804800,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "zero_uncovered": false
+    },
+    "masked_q75": {
+      "caveats": [
+        "Fixed-weight sparse inference intervention; not a trained sparse model or convergence result.",
+        "Evidence encoder/context and readout/head remain dense. Reference+age increase cache and warp costs.",
+        "Same GPU paired sequential model time excludes IO/voxelization/postprocess; other GPU training may influence host load.",
+        "Do not select gate thresholds on validation AP or report prefix AP as full-set AP."
+      ],
+      "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "execution": "masked_dense",
+      "labels": 255,
+      "max_cell_age": 0.49995100498199463,
+      "metrics": {
+        "bev_ap30": 0.6919673421583142,
+        "bev_ap50": 0.5299618258446148,
+        "bev_ap70": 0.21267865998445928
+      },
+      "model_step_ms_mean": 21.81510767802982,
+      "model_step_ms_p50": 21.77139651030302,
+      "model_step_ms_p95": 25.169251952320334,
+      "name": "masked_q75",
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 603744768,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "reset_frames": 17,
+      "reuse_frames": 411,
+      "scans": 512,
+      "scope": "Early-checkpoint validation prefix; engineering/latency pilot only",
+      "seconds": 43.15987738594413,
+      "source_epoch": 5,
+      "stage_means": [
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        }
+      ],
+      "state_bytes": 51710400,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "update_summary": {
+        "actual_write_fraction": 0.49927578103961423,
+        "crop_area_ratio_before_fallback": 0.6085686383928571,
+        "executed_input_area_ratio": 1.0,
+        "fallback": 0.1640625,
+        "tiles": 16.6484375
+      },
+      "zero_uncovered": false
+    },
+    "sparse_q50": {
+      "caveats": [
+        "Fixed-weight sparse inference intervention; not a trained sparse model or convergence result.",
+        "Evidence encoder/context and readout/head remain dense. Reference+age increase cache and warp costs.",
+        "Same GPU paired sequential model time excludes IO/voxelization/postprocess; other GPU training may influence host load.",
+        "Do not select gate thresholds on validation AP or report prefix AP as full-set AP."
+      ],
+      "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "execution": "gather",
+      "labels": 255,
+      "max_cell_age": 0.4999290108680725,
+      "metrics": {
+        "bev_ap30": 0.7047118790917972,
+        "bev_ap50": 0.5572279554228414,
+        "bev_ap70": 0.24597113955260047
+      },
+      "model_step_ms_mean": 20.034004188795755,
+      "model_step_ms_p50": 19.6797379758209,
+      "model_step_ms_p95": 23.56228200951591,
+      "name": "sparse_q50",
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 603745280,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "reset_frames": 17,
+      "reuse_frames": 322,
+      "scans": 512,
+      "scope": "Early-checkpoint validation prefix; engineering/latency pilot only",
+      "seconds": 42.54344304394908,
+      "source_epoch": 5,
+      "stage_means": [
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        }
+      ],
+      "state_bytes": 51710400,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "update_summary": {
+        "actual_write_fraction": 0.7080406614695676,
+        "crop_area_ratio_before_fallback": 0.7741855778769842,
+        "executed_input_area_ratio": 0.7584988680901006,
+        "fallback": 0.337890625,
+        "tiles": 17.845703125
+      },
+      "zero_uncovered": false
+    },
+    "sparse_q75": {
+      "caveats": [
+        "Fixed-weight sparse inference intervention; not a trained sparse model or convergence result.",
+        "Evidence encoder/context and readout/head remain dense. Reference+age increase cache and warp costs.",
+        "Same GPU paired sequential model time excludes IO/voxelization/postprocess; other GPU training may influence host load.",
+        "Do not select gate thresholds on validation AP or report prefix AP as full-set AP."
+      ],
+      "checkpoint_sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5",
+      "content_calibration_sha256": null,
+      "content_threshold": null,
+      "execution": "gather",
+      "labels": 255,
+      "max_cell_age": 0.49995100498199463,
+      "metrics": {
+        "bev_ap30": 0.6919673421583142,
+        "bev_ap50": 0.5299618258446148,
+        "bev_ap70": 0.21267865998445928
+      },
+      "model_step_ms_mean": 19.887698636635157,
+      "model_step_ms_p50": 19.40313191153109,
+      "model_step_ms_p95": 24.21905364608392,
+      "name": "sparse_q75",
+      "oracle_index": null,
+      "oracle_stage0": false,
+      "peak_gpu_bytes": 603729408,
+      "periodic_last": 0,
+      "periodic_refresh_counts": null,
+      "reset_frames": 17,
+      "reuse_frames": 411,
+      "scans": 512,
+      "scope": "Early-checkpoint validation prefix; engineering/latency pilot only",
+      "seconds": 43.6800954840146,
+      "source_epoch": 5,
+      "stage_means": [
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        },
+        {
+          "actual_write_fraction": 0.0,
+          "executed_input_area_ratio": 0.0
+        }
+      ],
+      "state_bytes": 51710400,
+      "status": "COMPLETED",
+      "support_profile": false,
+      "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+      "uncovered_fraction_mean": null,
+      "update_summary": {
+        "actual_write_fraction": 0.49927578103961423,
+        "crop_area_ratio_before_fallback": 0.6085686383928571,
+        "executed_input_area_ratio": 0.5614899395441171,
+        "fallback": 0.1640625,
+        "tiles": 16.6484375
+      },
+      "zero_uncovered": false
+    }
+  },
+  "source_epoch": 5,
+  "status": "COMPLETED",
+  "tile": 16
+}

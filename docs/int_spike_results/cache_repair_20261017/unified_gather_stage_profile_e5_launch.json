@@ -1,0 +1,21 @@
+{
+  "pid": 5667,
+  "gpu": 5,
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.profile_int_unified_sparse_stages",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--pilot-root",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_gather_stage_profile_e5",
+    "--pilot16",
+    "unified_gather_e5_t16_retry",
+    "--pilot32",
+    "unified_gather_e5_t32"
+  ],
+  "created": 1792359412.6639974,
+  "code_commit": "2bef4e794bcf4b08bf3494fdbfd612cf6f5c1b5a"
+}
