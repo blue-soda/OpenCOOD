@@ -319,3 +319,8 @@ unified_bev_dense_v1已在181 GPU0 PID16151运行，代码6f1e7e0；64单测、8
 
 ### 2026-10-18 19:12检查与接续
 两项训练健康运行：unified_bev_dense_v1（GPU0 PID16151）完成3轮，完整AP70=7.3180/8.9526/15.0363%，现第4轮，尚远低于可用水平但继续改善。固定epoch2的256帧teacher/student/reset诊断已在GPU5完成：正常历史AP70=14.1781%、每帧清空9.0593%，教师86.1646%；正常历史GT损失也更低，状态数值稳定，这段轨迹不支持历史整体有害。前缀不能与完整AP混排；保持训练，详细证据与下一步见int_unified_bev.md。旧decoded_foreground_period3_resume_v2（GPU7 PID55871）第34轮AP70=66.8196%、LR1e-5、stale重置0，已进入第35轮，尚未按平台停止。保留75.82349%/模型平均时间减少16.81%方案；下一次接近旧40轮上限时据边际收益决定收尾，不能自动无限续训。90分钟路线级检查保持，无需用户操作；诊断任务已完成不要重复。
+
+### 2026-10-18 20:38 解码后修正平台结束，新基线继续学习
+旧decoded_foreground_period3_resume_v2已COMPLETED，共39轮（原目录1–20、续训目录21–39），按平台停止：stale5、LR1e-5。最佳epoch38完整AP30/50/70=85.93471/83.14435/66.85222398%，权重SHA=8b332e362f57aca8eb2602fb91315b1ccad041f0ddbb3351e43732652e68280c。相对保留三级缓存75.82349%仍低8.97127个百分点，不能替代、不能将其低精度速度当作有效收益；停止此配置继续加轮数，不宣称全局最优。两段39轮完整帧/标签/2855+2766更新/因果锚点与年龄/权重SHA/best及平台条件审计通过，归档decoded_foreground_completion_audit.json，非从框独立重算AP。
+为完成结果核验，启动独立重载完整验证decoded_foreground_best_reload_v1，181 GPU7 PID35829，--stage learned-eval --repair-target decoded --repair-policy dense --repair-period 3，加载epoch038。源目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017。先复验真实8帧工程再全5794帧；下一次读取status/report/engineering并核对AP=0.668522239788626、权重SHA、帧/标签/锚点曝光，不再恢复旧训练。启动归档decoded_foreground_reload_launch.json。运行环境与GPU0训练并发，不将本次耗时和历史单GPU表直接拼接成速度增益。
+unified_bev_dense_v1（181 GPU0 PID16151）目前第10轮验证，前9轮完整训练/验证与哈希审计通过；最佳epoch8 AP70=28.65318%，epoch9=27.56760%，LR1e-3、stale1，仍需训练，尚不满足停止条件。完整覆盖每轮8593扫描/4678标签/2262窗口、5794验证/1738标签，归档unified_bev_progress_2038_audit.json。不得因原主干零调用或小参数量就宣布新架构有效；先得到精度足够的整图更新基线再做局部执行。上一轮固定epoch2诊断已完成，不重复。路线级90分钟检查继续。

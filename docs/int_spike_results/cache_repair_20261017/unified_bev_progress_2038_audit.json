@@ -1,0 +1,212 @@
+{
+  "best": {
+    "ap70": 0.2865317547704257,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1/epoch_008/student.pth",
+    "epoch": 8,
+    "sha256": "981b7ae2a2345b594f0289d688639b5e3d6bd21be1e1878bc41a21db17bb71f3"
+  },
+  "caveat": "Intermediate training, not convergence; full exposure and hash audit, not independent AP recomputation.",
+  "epochs": [
+    {
+      "epoch": 1,
+      "metrics": {
+        "bev_ap30": 0.44712713851416075,
+        "bev_ap50": 0.2910104524658845,
+        "bev_ap70": 0.07317998829026608
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 2,
+      "metrics": {
+        "bev_ap30": 0.5793714178754781,
+        "bev_ap50": 0.40709728053424216,
+        "bev_ap70": 0.08952630771582198
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 3,
+      "metrics": {
+        "bev_ap30": 0.6231305860245077,
+        "bev_ap50": 0.48404451141092714,
+        "bev_ap70": 0.1503632498406917
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 4,
+      "metrics": {
+        "bev_ap30": 0.672211553641007,
+        "bev_ap50": 0.539763569185411,
+        "bev_ap70": 0.15955162616962654
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 5,
+      "metrics": {
+        "bev_ap30": 0.6915168436050819,
+        "bev_ap50": 0.5727950957081592,
+        "bev_ap70": 0.2269188978360912
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 6,
+      "metrics": {
+        "bev_ap30": 0.7113660379546188,
+        "bev_ap50": 0.6069551416773395,
+        "bev_ap70": 0.23864356784455484
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 7,
+      "metrics": {
+        "bev_ap30": 0.7304192087666447,
+        "bev_ap50": 0.6386580721936345,
+        "bev_ap70": 0.25254997219428965
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 8,
+      "metrics": {
+        "bev_ap30": 0.7293603171156581,
+        "bev_ap50": 0.6452500588821882,
+        "bev_ap70": 0.2865317547704257
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    },
+    {
+      "epoch": 9,
+      "metrics": {
+        "bev_ap30": 0.742774009716386,
+        "bev_ap50": 0.6626980546448712,
+        "bev_ap70": 0.27567596964963315
+      },
+      "train_scans": 8593,
+      "updates": 2262,
+      "val_scans": 5794
+    }
+  ],
+  "history": [
+    {
+      "ap70": 0.07317998829026608,
+      "epoch": 1,
+      "labels": 4678,
+      "loss": 1.128135343987249,
+      "lr": 0.001,
+      "scans": 8593,
+      "seconds": 822.5692662079819,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.08952630771582198,
+      "epoch": 2,
+      "labels": 4678,
+      "loss": 0.895215082826768,
+      "lr": 0.001,
+      "scans": 8593,
+      "seconds": 723.6535756317899,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.1503632498406917,
+      "epoch": 3,
+      "labels": 4678,
+      "loss": 0.8003059640594251,
+      "lr": 0.001,
+      "scans": 8593,
+      "seconds": 724.0173729888629,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.15955162616962654,
+      "epoch": 4,
+      "labels": 4678,
+      "loss": 0.7403571734804572,
+      "lr": 0.001,
+      "scans": 8593,
+      "seconds": 718.9050357518718,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.2269188978360912,
+      "epoch": 5,
+      "labels": 4678,
+      "loss": 0.6965017291966477,
+      "lr": 0.001,
+      "scans": 8593,
+      "seconds": 723.6993928179145,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.23864356784455484,
+      "epoch": 6,
+      "labels": 4678,
+      "loss": 0.6551912015448321,
+      "lr": 0.001,
+      "scans": 8593,
+      "seconds": 724.7037585699,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.25254997219428965,
+      "epoch": 7,
+      "labels": 4678,
+      "loss": 0.6195615739661506,
+      "lr": 0.001,
+      "scans": 8593,
+      "seconds": 728.7212320910767,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.2865317547704257,
+      "epoch": 8,
+      "labels": 4678,
+      "loss": 0.5916217599300627,
+      "lr": 0.001,
+      "scans": 8593,
+      "seconds": 718.403695047833,
+      "stale_epochs": 0,
+      "updates": 2262
+    },
+    {
+      "ap70": 0.27567596964963315,
+      "epoch": 9,
+      "labels": 4678,
+      "loss": 0.567738137900794,
+      "lr": 0.001,
+      "scans": 8593,
+      "seconds": 719.4921650730539,
+      "stale_epochs": 1,
+      "updates": 2262
+    }
+  ],
+  "status": "PASSED"
+}
