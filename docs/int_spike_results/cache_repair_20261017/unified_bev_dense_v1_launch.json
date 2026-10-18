@@ -1,0 +1,20 @@
+{
+  "code_commit": "6f1e7e0213fdef7aad8f5c264229632c8f2981fc",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_unified_bev",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1",
+    "--gpu",
+    "0",
+    "--epochs",
+    "40",
+    "--worker"
+  ],
+  "created_unix": 1792319757.653712,
+  "gpu": 0,
+  "pid": 16151
+}

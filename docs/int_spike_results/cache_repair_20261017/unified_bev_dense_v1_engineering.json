@@ -1,0 +1,93 @@
+{
+  "caveat": "New model: finite predictions/shape/causality, not parity with the teacher. Crop equivalence is a unit test, not an active sparse policy.",
+  "frames": [
+    {
+      "frame": "011050",
+      "reset": "initial",
+      "state_shape": [
+        1,
+        128,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011051",
+      "reset": null,
+      "state_shape": [
+        1,
+        128,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011052",
+      "reset": null,
+      "state_shape": [
+        1,
+        128,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011053",
+      "reset": null,
+      "state_shape": [
+        1,
+        128,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011054",
+      "reset": null,
+      "state_shape": [
+        1,
+        128,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011056",
+      "reset": "scene",
+      "state_shape": [
+        1,
+        128,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011057",
+      "reset": null,
+      "state_shape": [
+        1,
+        128,
+        100,
+        252
+      ]
+    },
+    {
+      "frame": "011058",
+      "reset": null,
+      "state_shape": [
+        1,
+        128,
+        100,
+        252
+      ]
+    }
+  ],
+  "original_spatial_calls": [
+    0,
+    0,
+    0
+  ],
+  "state_bytes": 12902400,
+  "status": "PASSED",
+  "update_radius": 2
+}

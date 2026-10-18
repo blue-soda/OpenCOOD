@@ -41,3 +41,9 @@
 独立验证使用同入口加`--checkpoint <epoch/student.pth>`；续训使用`--resume <旧目录/latest.pth> --epochs <更大总上限>`，要求源作业完整结束且只是到轮数上限。
 
 记录launch/provenance/training_contract/engineering/status/history/best、逐训练和验证帧以及每轮权重。监控检查PID和日志推进；不因耗时波动杀死健康训练，训练期间不发布正式速度比较。继续本地main编辑/push、服务器pull，保留其他研究的文件。既有路线级自动任务保持，首次启动验收后依据实测每轮耗时调整间隔。
+
+## 2026-10-18 首次启动已验收
+实现6f1e7e0已本地main提交/push并由181 pull；64项INT测试通过（新增裁剪同输入一致性、未选区不变、跨帧梯度与因果重置）。真实8帧验收PASSED，状态为1×128×100×252，原ResNet/多尺度解码/shrink调用均0，持久状态12,902,400字节。新模型209,396个可训练参数，冻结Pillar768参数；架构与原30M检测器不同，不作同参数对照。
+当前活动实验unified_bev_dense_v1，181 GPU0 PID16151，目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_dense_v1，已进入epoch1训练600/8593扫描、290标注、161次TBPTT更新；loss/梯度有限。尚未产生完整验证AP，不以训练loss或模块数量宣称精度或加速。启动/工程/契约归档docs/int_spike_results/cache_repair_20261017/unified_bev_dense_v1_*。Verification Status更新为ENGINEERING_VERIFIED / TRAINING_IN_PROGRESS。
+下一轮检查本目录status/history/best和PID，重点核验首次完整5794/1738验证及学生状态自主递归；训练期间所有速度只作诊断，正式比较需完成后独立重载。旧decoded_foreground_period3_resume_v2在GPU7第31轮验证，最佳epoch30 AP70=66.68412%，仍单独按平台规则完成，勿混用两条路线checkpoint/训练契约。现有75.82349%候选保留。
+当前路线级自动任务仍为90分钟（推进时序感知，仅完成异常通知），覆盖长训练；首个完整epoch后按实际每轮耗时及平台接近程度调整。无参数更新或日志长期不推进需查进程，不能单凭GPU利用率低判定失败。
