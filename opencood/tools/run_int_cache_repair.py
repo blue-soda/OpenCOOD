@@ -41,7 +41,7 @@ def setup(a):
     torch.manual_seed(303);np.random.seed(303)
     torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     torch.backends.cudnn.deterministic=True;torch.backends.cudnn.benchmark=False
-    model=PointPillarINT(cfg['model']['args'],a.mode).cuda().eval()
+    model=PointPillarINT(cfg['model']['args'],a.mode).to(torch.device(getattr(a,'device','cuda'))).eval()
     model.load_state_dict(torch.load(best['checkpoint'],map_location='cpu')['model'],strict=True)
     return model,cfg,rows,dict(contract=contract,checkpoint=best,arguments=vars(a),split=split)
 

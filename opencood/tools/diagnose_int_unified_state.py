@@ -18,7 +18,8 @@ from opencood.tools.launch_int_memory import digest
 def main():
     p=argparse.ArgumentParser();p.add_argument('--root',required=True)
     p.add_argument('--checkpoint',required=True);p.add_argument('--output',required=True)
-    p.add_argument('--frames',type=int,default=256);a=p.parse_args()
+    p.add_argument('--frames',type=int,default=256)
+    p.add_argument('--device',choices=['cuda','cpu'],default='cuda');a=p.parse_args()
     out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
     try:run(a,out)
     except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
@@ -34,7 +35,8 @@ def run(a,out):
     assert saved['contract']['data_contract']==provenance['contract']
     variant=saved['contract']['version'].replace('unified_bev_dense_','')
     assert variant in ('v2','v2n')
-    student=UnifiedBEVDetector(teacher,cfg,variant,'recurrent').cuda().eval()
+    device=torch.device(a.device)
+    student=UnifiedBEVDetector(teacher,cfg,variant,'recurrent').to(device).eval()
     student.load_state_dict(saved['model'],strict=True)
     runtime=json.loads((Path(a.root)/'full_gru/effective_runtime.json').read_text())['arguments']
     rows=json.loads(Path(runtime['manifest']).read_text())['train'][:a.frames]
@@ -47,7 +49,7 @@ def run(a,out):
         with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
             for index,(row,sample) in enumerate(zip(rows,stream)):
                 assert sample['meta']['frame']==row['frame']
-                data=to_device(sample['ego'],torch.device('cuda'))
+                data=to_device(sample['ego'],device)
                 _,state,info=student.step(data,state,sample['meta'])
                 packed=captured['packed'];evidence=packed[:,:256];old=packed[:,256:512]
                 record=dict(frame=row['frame'],segment=row['segment'],reset=info['reset'],supervised=row['supervised'])
@@ -103,7 +105,7 @@ def run(a,out):
         mean_logit_abs=float(np.mean([r['gate_logit_abs_mean'] for r in records if 'gate_logit_abs_mean' in r])),
         max_logit_abs=max(r['gate_logit_abs_max'] for r in records if 'gate_logit_abs_max' in r))
     write_json(out/'report.json',dict(status='COMPLETED',checkpoint=str(source),checkpoint_sha256=sha,split='train',
-        frames=len(records),seed=303,variant=variant,summary=summaries,gate_channels=gate_summary,
+        frames=len(records),seed=303,variant=variant,device=a.device,summary=summaries,gate_channels=gate_summary,
         caveats=['One-step dense-history diagnostic, not a recursive selective implementation, latency test or AP result.',
                  'Raw state RMS is sensitive to feature scale and is not equivalent to detection accuracy.',
                  'Untrained fixed unit delta gain; no validation-label or threshold selection.',
