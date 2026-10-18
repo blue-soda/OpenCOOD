@@ -1,0 +1,9 @@
+{
+  "gpus": [
+    1,
+    2
+  ],
+  "code_commit": "32d7bb1b4e174fa454235ab949dde8f0635a6cee",
+  "audit_sha256": "9d4af856a17040b31b32427b713020fd8976d9e48601c483f6d80130c90a0ea9",
+  "started_unix": 1792339059.244776
+}

@@ -1,0 +1,70 @@
+{
+  "source_summary_sha256": "bef0d6dd322c5041d047d26ca07d30378689a45b1150bd4ec7b9cad12c796384",
+  "groups": {
+    "learned_keep": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_progressive_round1_20261018/learned_keep_adapt10/best_ap70.pth",
+      "checkpoint_sha256": "a3c80ad1608fd380dfc593de3f315a57bb1c638eb0e7e20544ea1191c70af598",
+      "prefixes": {
+        "1": {
+          "bytes": [
+            7092,
+            7075
+          ],
+          "exact_direct_wire": true
+        },
+        "2": {
+          "bytes": [
+            12708,
+            12666
+          ],
+          "exact_direct_wire": true
+        },
+        "3": {
+          "bytes": [
+            17636,
+            17744
+          ],
+          "exact_direct_wire": true
+        }
+      },
+      "config_hashes": {
+        "1": "e80cd522bd05a01261f4bc5161b102708552ebebb5bf7711f56392bd6febe455",
+        "2": "be624864d2f34ce1202546ff387251c2360bd531fac8da145a25b28a3fda723d",
+        "3": "ca66fc8fce7ccd09f20809835e48d3c682ea99666f1762a12c6bd3e08a1d742a"
+      }
+    },
+    "learned_clear": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_progressive_round1_20261018/learned_clear_adapt10/best_ap70.pth",
+      "checkpoint_sha256": "601ab04e2c92ba160f23607fbfe2ed106b3a806177af4f603bc300302ece0273",
+      "prefixes": {
+        "1": {
+          "bytes": [
+            7092,
+            7075
+          ],
+          "exact_direct_wire": true
+        },
+        "2": {
+          "bytes": [
+            12708,
+            12666
+          ],
+          "exact_direct_wire": true
+        },
+        "3": {
+          "bytes": [
+            17636,
+            17744
+          ],
+          "exact_direct_wire": true
+        }
+      },
+      "config_hashes": {
+        "1": "13760bba74edb6967d3bb6975f8afb4ab31e530629e2108590d72bc872813eb8",
+        "2": "5ad0a8f1952fd9844cf8493dfc040a55a2cf834a0cbdc6f5afe57e91ab5899e5",
+        "3": "32789b636876d86d3c5d000e55a65e425232c35d0450b2f61cf1b68ebb722257"
+      }
+    }
+  },
+  "passed": true
+}
