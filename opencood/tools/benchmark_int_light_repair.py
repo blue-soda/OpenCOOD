@@ -60,16 +60,23 @@ def worker(a):
     runtime = read(Path(a.root)/'full_gru'/'effective_runtime.json')['arguments']
     rows = read(runtime['manifest'])['val']
     bests, audits = {}, {}
-    for policy in ('local', 'dense'):
+    sources = ('dense','dense_period3') if a.suite=='matched' else ('local','dense')
+    for policy in sources:
         run = source/('light_repair_'+policy)
         assert read(run/'status.json')['status'] == 'COMPLETED'
         history, best = read(run/'history.json'), read(run/'best.json')
+        contract=read(run/'training_contract.json')
+        assert contract.get('repair_period',2)==(3 if policy=='dense_period3' else 2)
         assert read(run/'report.json')['stop_reason'] == 'plateau'
         assert len(history) >= 5 and history[-1]['stale_epochs'] >= 5 and history[-1]['lr'] <= .0001
         assert best['ap70'] == max(h['ap70'] for h in history)
         assert digest(best['checkpoint']) == best['sha256']
         epochs = []
         for h in history:
+            if policy=='dense_period3':
+                assert set(h['updates_by_depth'])=={'1','2'}
+                assert all(v>0 for v in h['updates_by_depth'].values())
+                assert sum(h['updates_by_depth'].values())==h['updates']
             directory = run/('epoch_%03d'%h['epoch'])
             report = read(directory/'report.json')
             assert report['metrics']['bev_ap70'] == h['ap70']
@@ -86,7 +93,11 @@ def worker(a):
                  ('zero_residual', 'dense', 2, 'zero-residual')]
     if a.suite == 'longer':
         cases = [('original', 'dense', 1, 'original'), ('dense_period3', 'dense', 3, 'none')]
-    for name, policy, period, ablation in cases:
+    if a.suite == 'matched':
+        cases = [('original','dense',1,'original'), ('dense_period2','dense',2,'none'),
+                 ('dense_period3','dense_period3',3,'none')]
+    for name, source_key, period, ablation in cases:
+        policy = 'dense' if source_key=='dense_period3' else source_key
         free = int(subprocess.check_output(['nvidia-smi', '-i', str(a.gpu),
                    '--query-gpu=memory.free', '--format=csv,noheader,nounits']).decode().strip())
         assert free > 22000, 'GPU acquired by another job; stop rather than contaminate timings'
@@ -95,7 +106,7 @@ def worker(a):
         command = [sys.executable, '-m', 'opencood.tools.run_int_early_cache', '--root', a.root,
                    '--output', str(target), '--gpu', str(a.gpu), '--stage', 'learned-eval',
                    '--source-suite', str(source/'early_four_way_v2'), '--repair-policy', policy,
-                   '--repair-checkpoint', bests[policy]['checkpoint'], '--repair-period', str(period),
+                   '--repair-checkpoint', bests[source_key]['checkpoint'], '--repair-period', str(period),
                    '--repair-ablation', ablation, '--worker']
         write(out/'status.json', dict(status='RUNNING', phase=name))
         with (target/'run.log').open('x') as log:
@@ -105,12 +116,12 @@ def worker(a):
         assert read(target/'status.json')['status'] == 'COMPLETED'
         exposure = audit_frames(target, rows)
         report = read(target/'report.json')
-        expected = read(Path(a.root)/'full_gru'/'best.json')['bev_ap70'] if period == 1 else bests[policy]['ap70']
-        if ablation != 'zero-residual' and period <= 2:
+        expected = read(Path(a.root)/'full_gru'/'best.json')['bev_ap70'] if period == 1 else bests[source_key]['ap70']
+        if ablation != 'zero-residual' and (period <= 2 or source_key=='dense_period3'):
             assert abs(report['metrics']['bev_ap70']-expected) < 1e-10, 'Reloaded AP mismatch'
         elif ablation == 'zero-residual':
             assert exposure == results['dense']['audit'], 'Intervention changed cache schedule'
-        assert report['repair_checkpoint_sha256'] == bests[policy]['sha256']
+        assert report['repair_checkpoint_sha256'] == bests[source_key]['sha256']
         results[name] = dict(report=report, audit=exposure)
         write(out/'results.json', results)
     write(out/'status.json', dict(status='COMPLETED'))
@@ -121,7 +132,7 @@ def main():
     for key in ('root', 'training-root', 'output'):
         p.add_argument('--'+key, required=True)
     p.add_argument('--gpu', type=int, required=True)
-    p.add_argument('--suite', choices=['standard', 'mechanism', 'longer'], default='standard')
+    p.add_argument('--suite', choices=['standard', 'mechanism', 'longer', 'matched'], default='standard')
     p.add_argument('--worker', action='store_true')
     a = p.parse_args()
     out = Path(a.output)

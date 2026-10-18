@@ -271,3 +271,7 @@ automation改为每45分钟，提示词仍“推进时序感知，仅完成异�
 period3外推AP70=75.789030%、平均模型27.3383ms；同轮原路径75.873610%、32.3648ms，平均下降15.53%。3789/5794帧（65.40%）跳过二/三级，含1146标注帧；工程真实5个修正帧深层零调用、连续两帧同锚点及完整轨迹因果审计通过。AP与period2差仅0.00212个百分点，但跨轮时间不能直接当严格period2/3速度比较。
 新活动训练light_repair_dense_period3：181 GPU7，PID55573，代码7b1fef4；从已完成period2 dense epoch5加载小模块，以period3匹配训练，原检测器冻结，完整训练8593/验证5794，优化器新建，保持平台停止规则。第一/第二修正帧更新次数和loss分别记录；原period2及外推结果保留，若微调不改善则不替代原候选。目录/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_dense_period3。启动时先自动工程验收再训练；下轮读status/engineering/training_contract/history/best，勿把迁移初始化叫作断点恢复。训练完成后重新加载核验，必要时做同GPU顺序period2/3速度对比。
 因进入数小时训练，automation由45分钟改90分钟，提示词仍“推进时序感知，仅完成异常通知”；避免健康训练期间反复静默轮询，预计完成临近再缩短。此前所有验证队列均已完成，不重复轮询。
+
+### 健康训练检查与完成后比较入口
+light_repair_dense_period3已完成epoch1–7，epoch8训练正常。每轮5621次更新（第1/2修正深度2855/2766）；当前最佳epoch6 AP70=75.82348968%，仍是中间结果。epoch7 LR=1.25e-4、stale6，尚不满足LR<=1e-4停止条件，不提前停止或重启。每轮约12.5–13.3分钟，若平台持续预计约两轮内满足门槛，因此本次将定时由90分钟暂改30分钟以覆盖结束事件，提示词与仅完成/异常通知不变。
+准备benchmark_int_light_repair --suite matched入口：只在dense_period3完成后，审计period2/3训练来源、全部完整验证、权重与两种修正深度更新，再同一空闲GPU顺序比较原model.step、period2-best、period3-best。每项独立重载，AP须复现，period3增加工程锚点/跳算核验。预计新目录light_repair_matched_benchmark_v1；尚未启动，勿在训练期间争用GPU。完成后依据同轮平均/P50/P95、AP及状态量决定保留方案，不把当前训练日志时间当最终性能结论。
