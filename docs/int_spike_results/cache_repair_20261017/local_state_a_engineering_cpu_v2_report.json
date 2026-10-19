@@ -1,0 +1,5 @@
+{
+  "scope": "Real-data losses/gradient/migration only; not training or convergence",
+  "status": "ENGINEERING_PASSED",
+  "validation_ap": null
+}

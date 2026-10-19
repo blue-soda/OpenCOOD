@@ -32,4 +32,30 @@ v2n时序及单帧作为已在跑的学习对照保留至既定e20/plateau决策
 
 实现后必须检查：迁移键/权重逐值相同、stride显式改变、输入投影初始化、固定BN、无teacher引用/GRU/decoder/shrink、检测与状态形状、reset/因果、状态对齐网格、可微历史与TBPTT截断、半径4裁剪等价、真实点云GT/蒸馏loss有限和非零梯度。工程检查通过仅说明可以开始训练，不是AP证据。
 
-代码和运行证据将在后续执行记录中补充；本文方案已获用户授权，实现与正式训练无需再次逐项确认。所有代码走本地main提交/push、服务器pull。
+本文方案已获用户授权，实现与正式训练无需再次逐项确认。所有代码走本地main提交/push、服务器pull。
+
+## 实现与首轮工程执行
+
+实现提交c24b15b：opencood/models/sub_modules/int_local_state.py、opencood/tools/run_int_local_state.py、opencood/test/test_int_local_state.py。六项新增测试覆盖参数无共享及迁移相等、当前投影单位初始化、A阶段关闭历史、固定BN与可训练梯度、B阶段历史可微及detach/reset/因果、半径4局部裁剪、教师特征监督detach。97项INT测试通过。学生复制冻结教师权重后显式重新启用空间模块/检测头梯度，Pillar保持冻结。
+
+首个CPU工程任务local_state_a_engineering_cpu_v1因清单最前两帧均无监督标签，在优化器更新前被检查拒绝；这不是模型发散。8dc11fc将工程片段固定选为包含第一个训练标签的连续2帧，片段索引和帧号记录在报告，初始历史为空，不改正式训练清单。修复后重新执行local_state_a_engineering_cpu_v2，工程中的临时优化更新在检查结束后恢复，不能混入正式训练初始权重。
+
+正式A阶段命令已准备，当前未启动；待工程通过且资源确认允许后运行：
+
+```bash
+cd /data1/tzm/workspace/OpenCOOD
+/data1/tzm/miniconda3/envs/opencood/bin/python -m opencood.tools.run_int_local_state \
+  --root /data1/tzm/workspace/diagnostics/int_spiking_gru_20261016 \
+  --output /data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_state_a_dense_v1 \
+  --phase a --device cuda --gpu <确认可用的卡号> --epochs 60 --frames 2
+```
+
+启动器拒绝空闲显存<22000MiB或利用率>5%的GPU，仍须审阅其他研究的协调器/排队任务以排除短暂空隙。工程超时预算30分钟，训练硬预算48小时；每轮保存模型/优化器/调度器/RNG，latest原子替换。当前训练入口尚未提供断点恢复参数，若异常中止应先审核并补充恢复路径，不删除检查点或假称可直接精确恢复。B阶段要求显式提供固定A阶段权重，正式运行B之前还需检查该权重下的真实序列梯度与初始化，当前CPU工程只验收A。
+
+### A阶段真实工程检查已通过
+
+local_state_a_engineering_cpu_v2已完成，PID16110正常结束。采用train清单索引26起的015371/015372两帧（后者有标签），CPU2线程、CUDA禁用。迁移张量相等、state=1×256×100×252、教师/Pillar无梯度、优化器确实改变新投影、检查后完整恢复初始state_dict均通过。可训练参数2,975,252，冻结Pillar参数768；更新输入半径4。完整97项INT测试通过。
+
+初始两帧head KD=1.52736/1.44517，feature KD=0.25961/0.25553；有标签帧监督loss=37.26483，裁剪前总梯度范数273.45837，按5裁剪后完成一次工程优化更新。数值有限不代表初始化已经精确，较大的监督损失再次说明移除GRU/改步长后的表征需要训练适配。此更新已丢弃，不能算作正式训练轮次或AP结果。
+
+证据：docs/int_spike_results/cache_repair_20261017/local_state_a_engineering_cpu_v2_*；首次无标签工程失败也保留为local_state_a_engineering_cpu_v1_failure.json。A正式训练状态为READY_WAITING_GPU_NOT_LAUNCHED。181其它任务仍占用各卡，GPU3另一路研究流水线继续；187各卡仅余1674MiB。本轮只执行有界CPU检查，没有新增GPU任务或更改其它进程。旧v2n两条继续各自完整验证，不把它们的指标记作新架构结果。

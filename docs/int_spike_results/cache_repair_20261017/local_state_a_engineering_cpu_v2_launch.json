@@ -1,0 +1,24 @@
+{
+  "code_commit": "8dc11fc325d0befc6cb1eed629649d87903ce173",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_local_state",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_state_a_engineering_cpu_v2",
+    "--phase",
+    "a",
+    "--device",
+    "cpu",
+    "--engineering-only",
+    "--frames",
+    "2",
+    "--worker"
+  ],
+  "created_unix": 1792387890.3016303,
+  "device": "cpu",
+  "pid": 16110,
+  "timeout_seconds": 1800
+}

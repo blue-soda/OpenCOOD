@@ -1,0 +1,34 @@
+{
+  "status": "READY_WAITING_GPU_NOT_LAUNCHED",
+  "priority": "Current approved architecture: stage A representation migration before new cache experiments",
+  "goal_document": "docs/int_local_state_goal.md",
+  "implementation_commit": "8dc11fc",
+  "engineering_evidence": "local_state_a_engineering_cpu_v2_engineering.json",
+  "source_checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+  "preferred_host": "mindspore-181",
+  "working_directory": "/data1/tzm/workspace/OpenCOOD",
+  "python": "/data1/tzm/miniconda3/envs/opencood/bin/python",
+  "module": "opencood.tools.run_int_local_state",
+  "arguments": {
+    "root": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "output": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_state_a_dense_v1",
+    "phase": "a",
+    "device": "cuda",
+    "epochs": 60,
+    "frames": 2
+  },
+  "assigned_gpu": null,
+  "launch_preconditions": [
+    "Engineering evidence PASSED, source checkpoint hash unchanged, output directory absent",
+    "Explicit GPU selected after inspecting current processes AND pending coordinators; not merely a utilization gap",
+    "At least 22000 MiB free and utilization at most 5 percent; no automatic sharing or termination of other tasks",
+    "Recheck disk reserve and ensure local main changes are pushed and server pulled"
+  ],
+  "next_decisions": [
+    "Record launch PID, actual GPU, commit and effective training contract once started",
+    "Review complete validation at epochs 5, 10 and 20 or earlier actionable anomaly",
+    "Phase B requires a named fixed phase-A checkpoint and real-data sequence gradient checks",
+    "Region skipping experiments remain gated by a reliable dense baseline near original INT precision"
+  ],
+  "caveat": "No GPU training, validation AP, or latency measurement has occurred for this architecture yet"
+}
