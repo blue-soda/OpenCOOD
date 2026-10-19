@@ -54,8 +54,7 @@ def step_losses(student, teacher, ego, meta, state, teacher_state, criterion):
     return detection, head, feature, state, teacher_state, info
 
 
-def engineering(a, student, teacher, cfg, rows, out):
-    initial = copy.deepcopy(student.state_dict())
+def check_migration(student, teacher):
     # Source weights and shape must match before the first optimization step.
     mapping = [('pillar_vfe', teacher.pillar_vfe), ('observation', teacher.backbone.resnet.layer0),
                ('cls_head', teacher.cls_head), ('reg_head', teacher.reg_head)]
@@ -70,6 +69,11 @@ def engineering(a, student, teacher, cfg, rows, out):
     assert student.update.blocks[0].conv1.stride == (1, 1)
     assert teacher.backbone.resnet.layer1[0].conv1.stride == (2, 2)
     assert not hasattr(student, 'feature_memory') and not hasattr(student, 'backbone') and not hasattr(student, 'shrink_conv')
+
+
+def engineering(a, student, teacher, cfg, rows, out):
+    # For B this snapshot must be the named A checkpoint, not raw migration.
+    initial = copy.deepcopy(student.state_dict())
     criterion = PointPillarDirLoss(cfg['loss']['args']).to(a.device)
     student.train()
     optimizer = make_optimizer(student)
@@ -81,6 +85,14 @@ def engineering(a, student, teacher, cfg, rows, out):
         raise ValueError('No supervised frame in the training manifest')
     start = max(0, first_label - a.frames + 1)
     chosen = rows[start:start+a.frames]
+    if a.phase == 'b':
+        # A real uninterrupted four-frame graph, including a supervised target.
+        for start in range(len(rows)-a.frames+1):
+            chosen = rows[start:start+a.frames]
+            if any(r['supervised'] for r in chosen) and window_ends(chosen, a.frames) == {a.frames-1}:
+                break
+        else:
+            raise ValueError('No uninterrupted supervised engineering window')
     _, stream = loader(chosen, cfg, 0, 303)
     for sample in stream:
         meta = sample['meta']
@@ -89,7 +101,8 @@ def engineering(a, student, teacher, cfg, rows, out):
         terms.append((gt if gt is not None else 0) + .2 * head + .5 * feature)
         assert state['value'].shape[-2:] == ego['anchor_box'].shape[:2]
         records.append(dict(frame=meta['frame'],supervised=meta['supervised'],gt=None if gt is None else float(gt.detach()),
-                            head_kd=float(head.detach()),feature_kd=float(feature.detach()),state_shape=list(state['value'].shape)))
+                            head_kd=float(head.detach()),feature_kd=float(feature.detach()),state_shape=list(state['value'].shape),
+                            reset=info['reset']))
         write_json(out/'status.json',dict(status='RUNNING',phase='engineering',frames=len(records),total=a.frames))
     assert any(r['supervised'] for r in records), 'Engineering prefix must include labelled data'
     loss = torch.stack(terms).mean()
@@ -98,9 +111,31 @@ def engineering(a, student, teacher, cfg, rows, out):
     assert torch.isfinite(gradient) and gradient > 0
     assert all(p.grad is None for p in teacher.parameters())
     assert all(p.grad is None for p in student.pillar_vfe.parameters())
+    history_gradient = float(student.update.input_projection.weight.grad[:,128:384].abs().sum())
+    if a.phase == 'b':
+        assert all(r['reset'] is None for r in records[1:]), 'B probe must reuse its own state'
+        assert history_gradient > 0, 'History projection must learn from the real sequence'
     optimizer.step()
     changed = not torch.equal(initial['update.input_projection.weight'], student.update.input_projection.weight.detach())
     assert changed
+    temporal_gradient = None
+    if a.phase == 'b':
+        # At A initialization history weights are zero. After one discarded
+        # probe update, verify the last loss reaches a previous frame's state.
+        optimizer.zero_grad(set_to_none=True)
+        state = teacher_state = None
+        states = []
+        _, stream = loader(chosen, cfg, 0, 303)
+        for sample in stream:
+            ego = to_device(sample['ego'], torch.device(a.device))
+            gt, head, feature, state, teacher_state, _ = step_losses(
+                student, teacher, ego, sample['meta'], state, teacher_state, criterion)
+            state['value'].retain_grad()
+            states.append(state['value'])
+        final_loss = (gt if gt is not None else 0) + .2 * head + .5 * feature
+        final_loss.backward()
+        temporal_gradient = sum(float(v.grad.abs().sum()) for v in states[:-1] if v.grad is not None)
+        assert np.isfinite(temporal_gradient) and temporal_gradient > 0
     student.load_state_dict(initial, strict=True)
     student.zero_grad(set_to_none=True)
     student.eval()
@@ -109,9 +144,12 @@ def engineering(a, student, teacher, cfg, rows, out):
                 selection='First contiguous requested-length window containing a training label; initial state empty',
                 gradient_norm_before_clip=float(gradient),
                 optimizer_step_changed_projection=changed,initial_state_restored=True,
+                initialization='named_phase_a_checkpoint' if a.phase == 'b' else 'raw_teacher_migration',
+                history_projection_gradient_l1=history_gradient,
+                previous_state_gradient_l1_after_probe_update=temporal_gradient,
                 trainable_parameters=sum(p.numel() for p in student.parameters() if p.requires_grad),
                 frozen_parameters=sum(p.numel() for p in student.parameters() if not p.requires_grad),
-                migrated_tensor_equality=True,update_radius=4,
+                migrated_tensor_equality=True,migration_check_scope='Before optional phase-A checkpoint loading',update_radius=4,
                 caveat='Engineering only; no AP or speed claim. Probe optimizer step is discarded before formal training.')
 
 
@@ -192,8 +230,7 @@ def worker(a):
     (out/'unit_tests.log').write_bytes(tests.stdout)
     if tests.returncode:
         raise RuntimeError('INT engineering tests failed')
-    gate = engineering(a,student,teacher,cfg,train,out)
-    write_json(out/'engineering.json',gate)
+    check_migration(student,teacher)
     contract = dict(version=student.version,phase=a.phase,memory_policy=student.memory_policy,
                     teacher_sha256=provenance['checkpoint']['sha256'],data_contract=provenance['contract'],
                     seed=303,tbptt=4,train_scans=len(train),train_labels=sum(r['supervised'] for r in train),
@@ -211,6 +248,8 @@ def worker(a):
         student.load_state_dict(saved['model'],strict=True)
         contract['initialization'] = dict(path=str(source),sha256=digest(source),epoch=saved['epoch'])
     write_json(out/'training_contract.json',contract)
+    gate = engineering(a,student,teacher,cfg,train,out)
+    write_json(out/'engineering.json',gate)
     if a.engineering_only:
         write_json(out/'report.json',dict(status='ENGINEERING_PASSED',validation_ap=None,
                                          scope='Real-data losses/gradient/migration only; not training or convergence'))
@@ -266,6 +305,7 @@ def main():
     a=p.parse_args(); out=Path(a.output)
     if not 2<=a.frames<=8 or not 5<=a.epochs<=60:p.error('Engineering frames 2..8; training epochs 5..60')
     if (a.phase=='b') != bool(a.initialize_from):p.error('Phase B requires a fixed phase-A checkpoint; phase A uses migration')
+    if a.phase=='b' and a.frames != 4:p.error('Phase B engineering requires a real four-frame TBPTT window')
     if a.device=='cpu' and not a.engineering_only:p.error('CPU is restricted to bounded engineering')
     if a.device=='cuda' and a.gpu is None:p.error('CUDA requires explicit GPU')
     timeout=1800 if a.engineering_only else 172800
