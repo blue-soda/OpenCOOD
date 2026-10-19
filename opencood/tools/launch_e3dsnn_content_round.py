@@ -86,7 +86,7 @@ def summarize(root,stage):
             changed=any(not torch.equal(v,state[k]) for k,v in initial.items() if k.startswith('content.'))
             if group.endswith('fixed'):assert not changed
             entry['content_weights_changed']=changed
-    if stage=='zero':
+    if stage=='zero' and set(report['groups'])==set(GROUPS):
         for family in ('snn','ann'):
             a,b=[report['groups'][family+'_'+s]['prefixes'] for s in ('fixed','learn')]
             for prefix in a:
