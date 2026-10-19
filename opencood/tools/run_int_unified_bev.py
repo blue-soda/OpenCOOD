@@ -74,13 +74,17 @@ def validate(a,student,teacher,cfg,rows,directory):
     student.eval()
     torch.cuda.reset_peak_memory_stats()
     report=evaluate(a,teacher,cfg,rows,directory,student)
-    report['scope']='Unified-state dense-update full validation'
+    split=getattr(a,'evaluation_split','val')
+    report['scope']='Unified-state dense-update full validation' if split=='val' else 'Full training-split fit diagnostic; not validation AP'
+    report['evaluation_split']=split
     report['variant']=student.variant;report['memory_policy']=student.memory_policy
     report['caveats']=[
         'All state cells are updated each frame. No selective-update or sparsity speedup is claimed.',
         'Own frozen Pillar encoder, observation/context, recurrent update, readout and heads only; no old GRU, ResNet or multiscale decoder.',
         'No teacher execution or teacher state in validation/inference. Model timing excludes IO/voxelization/postprocess.',
         'Concurrent training throughput is not a paired latency benchmark. Use independent same-GPU sequential evaluation after training.']
+    if split=='train':
+        report['caveats'].append('Fixed-weight evaluation on seen training data, without optimizer updates; train/val distribution differences prevent assigning a gap to overfitting alone.')
     return report
 
 
@@ -152,12 +156,15 @@ def worker(a):
         assert saved['contract']['version']=='unified_bev_dense_'+a.variant
         assert saved['contract'].get('memory_policy','recurrent')==a.memory_policy
         student.load_state_dict(saved['model'],strict=True)
-        engineering(student,teacher,cfg,val,out)
+        evaluation_rows=train_rows if a.evaluation_split=='train' else val
+        provenance['split']=a.evaluation_split
+        write_json(out/'provenance.json',provenance)
+        engineering(student,teacher,cfg,evaluation_rows,out)
         if a.diagnostic:
             from opencood.tools.diagnose_int_unified_bev import diagnose
             report=diagnose(student,teacher,cfg,val,out)
         else:
-            report=validate(a,student,teacher,cfg,val,out)
+            report=validate(a,student,teacher,cfg,evaluation_rows,out)
         report.update(checkpoint=a.checkpoint,checkpoint_sha256=digest(Path(a.checkpoint)))
         write_json(out/'report.json',report)
         write_json(out/'status.json',dict(status='COMPLETED'))
@@ -233,10 +240,14 @@ def main():
     p.add_argument('--checkpoint');p.add_argument('--resume');p.add_argument('--worker',action='store_true')
     p.add_argument('--variant',choices=['v1','v2','v2n'],default='v1')
     p.add_argument('--memory-policy',choices=['recurrent','reset'],default='recurrent')
+    p.add_argument('--evaluation-split',choices=['val','train'],default='val',
+                   help='Train is a fixed-checkpoint fit diagnostic only; never used for training-time model selection')
     p.add_argument('--diagnostic',action='store_true',help='256-frame teacher/student/reset diagnostic; requires checkpoint')
     a=p.parse_args();out=Path(a.output)
     if a.epochs<5 or (a.checkpoint and a.resume):p.error('At least five epochs; evaluation and resume are exclusive')
     if a.diagnostic and not a.checkpoint:p.error('Diagnostic requires an immutable checkpoint')
+    if a.evaluation_split=='train' and (not a.checkpoint or a.diagnostic):
+        p.error('Training-split evaluation requires --checkpoint and cannot combine with --diagnostic')
     if a.variant=='v1' and a.memory_policy!='recurrent':p.error('Reset-policy training is a v2 control')
     if a.worker:
         try:worker(a)

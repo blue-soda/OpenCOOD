@@ -29,5 +29,6 @@
     "No GPU job, PID, AP result or speed result exists for this planned run.",
     "Full CPU engineering tests do not establish real-weight GPU parity or actual speed."
   ],
-  "priority_revision": "2026-10-19: dense baseline accuracy takes priority. Keep this fixed early checkpoint protocol only as a bounded diagnostic if justified by a specific hypothesis; do not automatically launch on the next free GPU."
+  "priority_revision": "Explicit user direction2026-10-19: prioritize a dense detector near INT accuracy that retains an efficient local-execution path. No automatic launch of this early residual/gate cache experiment.",
+  "mainline": "Recompute changed regions; reuse aligned final features elsewhere. Residual/gate reuse is an auxiliary candidate only."
 }

@@ -1,5 +1,7 @@
 # 统一BEV状态更新：变化区域重算与不变区域复用
 
+> 当前执行顺序以[高精度整图基线与区域缓存](int_dense_baseline_priority.md)为准：先建立适合局部执行的高精度整图基线，再比较缓存策略；下文历史结果不代表当前优先级。
+
 ## Material Passport
 - Origin Skill: academic-research-suite / experiment-agent
 - Origin Mode: plan / run
