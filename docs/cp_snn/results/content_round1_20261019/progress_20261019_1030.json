@@ -1,0 +1,122 @@
+{
+  "captured_unix": 1792376939.5818102,
+  "root": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019",
+  "round_status": {
+    "state": "running",
+    "stage": "adapt10",
+    "supervisors": {
+      "snn_fixed_adapt10": 45401,
+      "snn_learn_adapt10": 45402,
+      "ann_fixed_adapt10": 45404,
+      "ann_learn_adapt10": 45406
+    }
+  },
+  "groups": {
+    "snn_fixed": {
+      "progress.json": {
+        "state": "training",
+        "epoch": 10,
+        "epochs": 10,
+        "batch": 551,
+        "batches": 2339,
+        "loss": 1.9087095168795978,
+        "gradient_norm": 0.7100448608398438,
+        "elapsed_seconds": 215.9031124159228
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "current_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "verified_through_epoch": 9,
+        "passed": true
+      },
+      "frozen_decoder.json": {
+        "initial_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "current_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "verified_through_epoch": 9,
+        "passed": true
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "current_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "verified_through_epoch": 9,
+        "passed": true
+      },
+      "active_child_pid": 45403
+    },
+    "snn_learn": {
+      "progress.json": {
+        "state": "validating",
+        "epoch": 9
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "current_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "verified_through_epoch": 8,
+        "passed": true
+      },
+      "frozen_decoder.json": {
+        "initial_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "current_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "verified_through_epoch": 8,
+        "passed": true
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "current_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "verified_through_epoch": 8,
+        "passed": true
+      },
+      "active_child_pid": 45405
+    },
+    "ann_fixed": {
+      "progress.json": {
+        "state": "validating",
+        "epoch": 9
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+        "current_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+        "verified_through_epoch": 8,
+        "passed": true
+      },
+      "frozen_decoder.json": {
+        "initial_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+        "current_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+        "verified_through_epoch": 8,
+        "passed": true
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "ce82e780b9490efd094dabc379102a9646beb394e58b0dcd5897fbaaabac5678",
+        "current_sha256": "ce82e780b9490efd094dabc379102a9646beb394e58b0dcd5897fbaaabac5678",
+        "verified_through_epoch": 8,
+        "passed": true
+      },
+      "active_child_pid": 45407
+    },
+    "ann_learn": {
+      "progress.json": {
+        "state": "validating",
+        "epoch": 9
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+        "current_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+        "verified_through_epoch": 8,
+        "passed": true
+      },
+      "frozen_decoder.json": {
+        "initial_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+        "current_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+        "verified_through_epoch": 8,
+        "passed": true
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "ce82e780b9490efd094dabc379102a9646beb394e58b0dcd5897fbaaabac5678",
+        "current_sha256": "ce82e780b9490efd094dabc379102a9646beb394e58b0dcd5897fbaaabac5678",
+        "verified_through_epoch": 8,
+        "passed": true
+      },
+      "active_child_pid": 45408
+    }
+  }
+}

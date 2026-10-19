@@ -74,3 +74,8 @@ Count3/ANN2bit内容四组全量零适配及CPU BEV/3D、预测/GT哈希复核�
 | ann_learn | 4 | 61.09844 |
 
 原始[zero_summary.json](results/content_round1_20261019/zero_summary.json) SHA256 `f1601166330df42e8031a2925bc6b3cd3ede9fce498a7e8c7700771ad94b5298`，已与181原件核对；[progress_20261019_0900.json](results/content_round1_20261019/progress_20261019_0900.json)保存进度与冻结检查。零适配4组×4种传输/前缀均1738帧、28622GT、CPU精确复算通过；不是新方法训练后的最终结论。
+
+
+## 训练末段检查（2026-10-19 10:30）
+
+10:30检查：内容四组仍健康运行，snn_fixed已进入第10轮，其余三组处于第9轮验证附近；所有组编码器、ANN BEV/连续头及BN冻结检查通过已完成轮次，训练子进程存活。最终adapt10_summary尚未生成，等待既定10轮及完整通信/CPU复核，不据中间指标作路线判断，不追加实验。 快照：[progress_20261019_1030.json](results/content_round1_20261019/progress_20261019_1030.json)。
