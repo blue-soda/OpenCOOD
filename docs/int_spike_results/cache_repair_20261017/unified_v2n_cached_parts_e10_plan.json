@@ -1,5 +1,5 @@
 {
-  "status": "PLANNED_RESOURCE_BLOCKED_NOT_LAUNCHED",
+  "status": "DEFERRED_BASELINE_ACCURACY_FIRST_NOT_LAUNCHED",
   "variant": "v2n",
   "source_epoch": 10,
   "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_recurrent/epoch_010/student.pth",
@@ -23,10 +23,11 @@
   "resource_rule": "Launch only on an otherwise idle GPU with sufficient memory; do not terminate or overlap other tasks on that GPU.",
   "engineering": "83 CPU INT tests passed; require real-weight period1 equality and gathered selected-parts parity before AP evaluation.",
   "selection": "No fitting or threshold tuning on validation. Same previously specified policy as original v2.",
-  "decision": "Compare AP and mean/P95 model latency against both dense controls. If mean lies inside dense drift, do not claim acceleration. If loss/speed tradeoff is unfavorable, diagnose rather than automatically expand to full validation.",
+  "decision": "First diagnose the dense baseline precision gap versus INT. Treat within0.5 AP70 percentage points of75.87361% as the existing provisional engineering target, not a proven attainable result. Once useful accuracy exists, define a fixed-checkpoint paired cache evaluation. Early low-accuracy runs establish mechanisms only.",
   "limitations": [
     "Epoch10 is an early low-accuracy model, not a replacement for the retained75.82349% candidate.",
     "No GPU job, PID, AP result or speed result exists for this planned run.",
     "Full CPU engineering tests do not establish real-weight GPU parity or actual speed."
-  ]
+  ],
+  "priority_revision": "2026-10-19: dense baseline accuracy takes priority. Keep this fixed early checkpoint protocol only as a bounded diagnostic if justified by a specific hypothesis; do not automatically launch on the next free GPU."
 }
