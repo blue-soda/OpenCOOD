@@ -76,7 +76,12 @@ def engineering(a, student, teacher, cfg, rows, out):
     optimizer.zero_grad(set_to_none=True)
     state = teacher_state = None
     terms, records = [], []
-    _, stream = loader(rows[:a.frames], cfg, 0, 303)
+    first_label = next((i for i, row in enumerate(rows) if row['supervised']), None)
+    if first_label is None:
+        raise ValueError('No supervised frame in the training manifest')
+    start = max(0, first_label - a.frames + 1)
+    chosen = rows[start:start+a.frames]
+    _, stream = loader(chosen, cfg, 0, 303)
     for sample in stream:
         meta = sample['meta']
         ego = to_device(sample['ego'], torch.device(a.device))
@@ -100,7 +105,9 @@ def engineering(a, student, teacher, cfg, rows, out):
     student.zero_grad(set_to_none=True)
     student.eval()
     assert all(torch.equal(initial[k], value) for k, value in student.state_dict().items())
-    return dict(status='PASSED',device=a.device,frames=records,gradient_norm_before_clip=float(gradient),
+    return dict(status='PASSED',device=a.device,frames=records,manifest_start_index=start,
+                selection='First contiguous requested-length window containing a training label; initial state empty',
+                gradient_norm_before_clip=float(gradient),
                 optimizer_step_changed_projection=changed,initial_state_restored=True,
                 trainable_parameters=sum(p.numel() for p in student.parameters() if p.requires_grad),
                 frozen_parameters=sum(p.numel() for p in student.parameters() if not p.requires_grad),
