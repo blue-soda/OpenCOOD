@@ -1,0 +1,278 @@
+{
+  "observed_unix": 1792392723.495528,
+  "round_status": {
+    "state": "running",
+    "stage": "adapt10",
+    "supervisor_pid": 19862,
+    "training_started": true
+  },
+  "pipeline": {
+    "state": "running",
+    "job": "joint_adapt10_train",
+    "child_pid": 19863,
+    "command": [
+      "/data1/tzm/miniconda3/envs/opencood/bin/python",
+      "-u",
+      "-m",
+      "opencood.tools.train_e3dsnn_single",
+      "--workers",
+      "2",
+      "--seed",
+      "20260929",
+      "--mode",
+      "train",
+      "--config",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019/joint/p3.yaml",
+      "--checkpoint",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019/joint/initial.pth",
+      "--output",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019/joint_adapt10",
+      "--epochs",
+      "10",
+      "--selection-iou",
+      "0.7",
+      "--retain-initial-best"
+    ],
+    "supervisor_pid": 19862,
+    "updated_unix": 1792388175.983809
+  },
+  "best_metrics": {
+    "samples": 1738,
+    "indexed_samples": 1738,
+    "full_split": true,
+    "predicted_boxes": 29626,
+    "gt_boxes": 28622,
+    "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+    "ap": {
+      "0.3": 0.7629709652588981,
+      "0.5": 0.7133414692556277,
+      "0.7": 0.5834170100532597
+    },
+    "epoch": 7,
+    "train_loss": 1.2775494905239442,
+    "train_samples": 4678,
+    "seconds": 508.049994971836,
+    "train_loss_components": {
+      "fused_detection_loss": 0.6149691380286182,
+      "prefix_1_detection_loss": 0.6158195864538988,
+      "prefix_2_detection_loss": 0.6145838682024147,
+      "prefix_3_detection_loss": 0.6145039594295431,
+      "ego_detection_loss": 0.6625803524953264
+    }
+  },
+  "metrics": [
+    {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 28010,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7233726336128491,
+        "0.5": 0.681722792190411,
+        "0.7": 0.575490061852289
+      },
+      "epoch": 1,
+      "train_loss": 1.3664788537543957,
+      "train_samples": 4678,
+      "seconds": 499.7288384460844,
+      "train_loss_components": {
+        "fused_detection_loss": 0.6825144468502796,
+        "prefix_1_detection_loss": 0.6826819790907793,
+        "prefix_2_detection_loss": 0.6825834359091368,
+        "prefix_3_detection_loss": 0.6822779255509293,
+        "ego_detection_loss": 0.6839644069041124
+      }
+    },
+    {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 29691,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7426113451795311,
+        "0.5": 0.693836817880383,
+        "0.7": 0.5765295937923848
+      },
+      "epoch": 2,
+      "train_loss": 1.3592107518314358,
+      "train_samples": 4678,
+      "seconds": 508.77816076693125,
+      "train_loss_components": {
+        "fused_detection_loss": 0.6719864479108126,
+        "prefix_1_detection_loss": 0.6721583956997644,
+        "prefix_2_detection_loss": 0.6718998346874646,
+        "prefix_3_detection_loss": 0.671901113345209,
+        "ego_detection_loss": 0.6872243039206266
+      }
+    },
+    {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 29932,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7521273521417922,
+        "0.5": 0.7016087523358581,
+        "0.7": 0.5782881029360482
+      },
+      "epoch": 3,
+      "train_loss": 1.3280072723238199,
+      "train_samples": 4678,
+      "seconds": 523.8101568690035,
+      "train_loss_components": {
+        "fused_detection_loss": 0.6478338002014302,
+        "prefix_1_detection_loss": 0.6480084423904153,
+        "prefix_2_detection_loss": 0.6477418652451926,
+        "prefix_3_detection_loss": 0.6477510929686819,
+        "ego_detection_loss": 0.6801734721223901
+      }
+    },
+    {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 29846,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7562255607679562,
+        "0.5": 0.7065905718011496,
+        "0.7": 0.5802131574828645
+      },
+      "epoch": 4,
+      "train_loss": 1.2942475166074408,
+      "train_samples": 4678,
+      "seconds": 522.5794133110903,
+      "train_loss_components": {
+        "fused_detection_loss": 0.6270796640840995,
+        "prefix_1_detection_loss": 0.627371921765672,
+        "prefix_2_detection_loss": 0.626948329465809,
+        "prefix_3_detection_loss": 0.6269187410208187,
+        "ego_detection_loss": 0.6671678525233383
+      }
+    },
+    {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 29919,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7595036374821823,
+        "0.5": 0.7099790516525021,
+        "0.7": 0.5818122597625961
+      },
+      "epoch": 5,
+      "train_loss": 1.3012200242412912,
+      "train_samples": 4678,
+      "seconds": 516.5929732359946,
+      "train_loss_components": {
+        "fused_detection_loss": 0.6282621399193365,
+        "prefix_1_detection_loss": 0.6287689493742333,
+        "prefix_2_detection_loss": 0.6280302544444482,
+        "prefix_3_detection_loss": 0.6279872159393294,
+        "ego_detection_loss": 0.6729578843219538
+      }
+    },
+    {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 29814,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7611492736948907,
+        "0.5": 0.7113930405666844,
+        "0.7": 0.5826185454713407
+      },
+      "epoch": 6,
+      "train_loss": 1.2821125635307469,
+      "train_samples": 4678,
+      "seconds": 512.4060320670251,
+      "train_loss_components": {
+        "fused_detection_loss": 0.6176750972241218,
+        "prefix_1_detection_loss": 0.6185031280077551,
+        "prefix_2_detection_loss": 0.6173405772139274,
+        "prefix_3_detection_loss": 0.6171815864506828,
+        "ego_detection_loss": 0.6644374663066244
+      }
+    },
+    {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 29626,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7629709652588981,
+        "0.5": 0.7133414692556277,
+        "0.7": 0.5834170100532597
+      },
+      "epoch": 7,
+      "train_loss": 1.2775494905239442,
+      "train_samples": 4678,
+      "seconds": 508.049994971836,
+      "train_loss_components": {
+        "fused_detection_loss": 0.6149691380286182,
+        "prefix_1_detection_loss": 0.6158195864538988,
+        "prefix_2_detection_loss": 0.6145838682024147,
+        "prefix_3_detection_loss": 0.6145039594295431,
+        "ego_detection_loss": 0.6625803524953264
+      }
+    },
+    {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 29668,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7635729158477218,
+        "0.5": 0.713625976853425,
+        "0.7": 0.5829981751004534
+      },
+      "epoch": 8,
+      "train_loss": 1.308332107024064,
+      "train_samples": 4678,
+      "seconds": 513.6806781040505,
+      "train_loss_components": {
+        "fused_detection_loss": 0.6281406759943566,
+        "prefix_1_detection_loss": 0.6290215180217822,
+        "prefix_2_detection_loss": 0.6277477090576087,
+        "prefix_3_detection_loss": 0.6276528009036841,
+        "ego_detection_loss": 0.6801914310297061
+      }
+    }
+  ],
+  "freezes": {
+    "frozen_encoder.json": {
+      "initial_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "current_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "verified_through_epoch": 8,
+      "passed": true
+    },
+    "frozen_decoder.json": {
+      "initial_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "current_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "verified_through_epoch": 8,
+      "passed": true
+    },
+    "fixed_bn.json": {
+      "initial_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+      "current_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+      "verified_through_epoch": 8,
+      "passed": true
+    }
+  },
+  "zero_summary_sha256": "154421c5635ec855b3ea6f342231bd2ad2a41ee66c32f509adc5e30940f58d56"
+}

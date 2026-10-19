@@ -1,6 +1,6 @@
 {
   "state": "running",
-  "stage": "zero",
-  "supervisor_pid": 59491,
-  "training_started": false
+  "stage": "adapt10",
+  "supervisor_pid": 19862,
+  "training_started": true
 }
