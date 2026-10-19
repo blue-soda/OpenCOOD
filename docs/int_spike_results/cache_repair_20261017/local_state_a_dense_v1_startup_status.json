@@ -1,0 +1,10 @@
+{
+  "epoch": 1,
+  "labels": 766,
+  "mean_loss": 1.1994323598996768,
+  "phase": "train_a",
+  "scans": 1400,
+  "status": "RUNNING",
+  "total_scans": 8593,
+  "updates": 373
+}

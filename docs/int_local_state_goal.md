@@ -40,14 +40,14 @@ v2n时序及单帧作为已在跑的学习对照保留至既定e20/plateau决策
 
 首个CPU工程任务local_state_a_engineering_cpu_v1因清单最前两帧均无监督标签，在优化器更新前被检查拒绝；这不是模型发散。8dc11fc将工程片段固定选为包含第一个训练标签的连续2帧，片段索引和帧号记录在报告，初始历史为空，不改正式训练清单。修复后重新执行local_state_a_engineering_cpu_v2，工程中的临时优化更新在检查结束后恢复，不能混入正式训练初始权重。
 
-正式A阶段命令已准备，当前未启动；待工程通过且资源确认允许后运行：
+正式A阶段于2026-10-19 13:53（北京时间）在181 GPU0启动，命令为：
 
 ```bash
 cd /data1/tzm/workspace/OpenCOOD
 /data1/tzm/miniconda3/envs/opencood/bin/python -m opencood.tools.run_int_local_state \
   --root /data1/tzm/workspace/diagnostics/int_spiking_gru_20261016 \
   --output /data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_state_a_dense_v1 \
-  --phase a --device cuda --gpu <确认可用的卡号> --epochs 60 --frames 2
+  --phase a --device cuda --gpu 0 --epochs 60 --frames 2
 ```
 
 启动器拒绝空闲显存<22000MiB或利用率>5%的GPU，仍须审阅其他研究的协调器/排队任务以排除短暂空隙。工程超时预算30分钟，训练硬预算48小时；每轮保存模型/优化器/调度器/RNG，latest原子替换。当前训练入口尚未提供断点恢复参数，若异常中止应先审核并补充恢复路径，不删除检查点或假称可直接精确恢复。B阶段要求显式提供固定A阶段权重，正式运行B之前还需检查该权重下的真实序列梯度与初始化，当前CPU工程只验收A。
@@ -58,4 +58,12 @@ local_state_a_engineering_cpu_v2已完成，PID16110正常结束。采用train�
 
 初始两帧head KD=1.52736/1.44517，feature KD=0.25961/0.25553；有标签帧监督loss=37.26483，裁剪前总梯度范数273.45837，按5裁剪后完成一次工程优化更新。数值有限不代表初始化已经精确，较大的监督损失再次说明移除GRU/改步长后的表征需要训练适配。此更新已丢弃，不能算作正式训练轮次或AP结果。
 
-证据：docs/int_spike_results/cache_repair_20261017/local_state_a_engineering_cpu_v2_*；首次无标签工程失败也保留为local_state_a_engineering_cpu_v1_failure.json。A正式训练状态为READY_WAITING_GPU_NOT_LAUNCHED。181其它任务仍占用各卡，GPU3另一路研究流水线继续；187各卡仅余1674MiB。本轮只执行有界CPU检查，没有新增GPU任务或更改其它进程。旧v2n两条继续各自完整验证，不把它们的指标记作新架构结果。
+证据：docs/int_spike_results/cache_repair_20261017/local_state_a_engineering_cpu_v2_*；首次无标签工程失败也保留为local_state_a_engineering_cpu_v1_failure.json。CPU检查完成时GPU不可用，先记录READY_WAITING_GPU_NOT_LAUNCHED；下面记录资源恢复后的实际启动。旧v2n指标不记作新架构结果。
+
+### 2026-10-19 13:53：A阶段正式训练启动
+
+181 GPU0/1/2/4/5恢复空闲，每卡空闲24252MiB、利用率0%；检查计算进程及E3DSNN协调器后，确认后者使用GPU3，保持该任务及GPU6/7旧v2n训练不变。GPU0启动local_state_a_dense_v1，PID31509，实际代码8639a26。源教师SHA复核一致，数据清单/配置契约通过入口检查；磁盘启动前余15GB，后续轮询继续检查余量。
+
+正式任务重新通过97项测试和真实CUDA工程检查：迁移相等、梯度有限、投影更新、工程后恢复初始权重均通过。GPU检查有标签帧GT=37.26485，裁剪前梯度273.47583。已进入A阶段epoch1，观察到400/8593扫描、108次优化更新，平均窗口loss=1.75075；这是训练早期日志，不是验证AP或收敛证据。GPU0约6005MiB、82%利用率。完整启动、工程、数据来源和训练契约归档为local_state_a_dense_v1_*；保持e5/e10/e20决策，不启动区域缓存扫描。
+
+额外空闲GPU1用于此前计划的有界辅助诊断：固定旧v2n时序epoch12权重，对完整train清单只评估不更新。任务unified_bev_v2n_e12_train_fit，PID33348；权重SHA=15a4e443e08de621351e0379597b26b93c8b7dfefea2af92bd220fa2c7fef660，对应既有val AP30/50/70=77.70863%/72.91264%/48.72583%。不追随运行中的best，不以训练集AP选模，也不把训练/验证场景差异直接解释为过拟合。该诊断不占新架构训练GPU，不恢复旧缓存优化。旧v2n时序已完成e14最佳AP70=55.84481%，单帧最佳仍e12的42.56620%，继续至既定e20/plateau审查。

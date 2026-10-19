@@ -1,0 +1,42 @@
+{
+  "caveat": "Engineering only; no AP or speed claim. Probe optimizer step is discarded before formal training.",
+  "device": "cuda",
+  "frames": [
+    {
+      "feature_kd": 0.25961199402809143,
+      "frame": "015371",
+      "gt": null,
+      "head_kd": 1.5273571014404297,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": false
+    },
+    {
+      "feature_kd": 0.2555293142795563,
+      "frame": "015372",
+      "gt": 37.26484645541383,
+      "head_kd": 1.4451744556427002,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": true
+    }
+  ],
+  "frozen_parameters": 768,
+  "gradient_norm_before_clip": 273.475830078125,
+  "initial_state_restored": true,
+  "manifest_start_index": 26,
+  "migrated_tensor_equality": true,
+  "optimizer_step_changed_projection": true,
+  "selection": "First contiguous requested-length window containing a training label; initial state empty",
+  "status": "PASSED",
+  "trainable_parameters": 2975252,
+  "update_radius": 4
+}

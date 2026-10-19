@@ -1,0 +1,26 @@
+{
+  "code_commit": "8639a2684ff42d9af8df2f66f7a92e5c40aa316c",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_unified_bev",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_e12_train_fit",
+    "--gpu",
+    "1",
+    "--variant",
+    "v2n",
+    "--memory-policy",
+    "recurrent",
+    "--checkpoint",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_recurrent/epoch_012/student.pth",
+    "--evaluation-split",
+    "train",
+    "--worker"
+  ],
+  "created_unix": 1792389317.806998,
+  "gpu": 1,
+  "pid": 33348
+}

@@ -1,0 +1,52 @@
+{
+  "caveats": [
+    "All state cells are updated each frame. No selective-update or sparsity speedup is claimed.",
+    "Own frozen Pillar encoder, observation/context, recurrent update, readout and heads only; no old GRU, ResNet or multiscale decoder.",
+    "No teacher execution or teacher state in validation/inference. Model timing excludes IO/voxelization/postprocess.",
+    "Concurrent training throughput is not a paired latency benchmark. Use independent same-GPU sequential evaluation after training."
+  ],
+  "checkpoint_sha256": "15a4e443e08de621351e0379597b26b93c8b7dfefea2af92bd220fa2c7fef660",
+  "content_calibration_sha256": null,
+  "content_threshold": null,
+  "epoch": 12,
+  "labels": 1738,
+  "memory_policy": "recurrent",
+  "metrics": {
+    "bev_ap30": 0.7770863262300044,
+    "bev_ap50": 0.7291263937396548,
+    "bev_ap70": 0.48725829828563144
+  },
+  "model_step_ms_mean": 108.976272028801,
+  "model_step_ms_p50": 40.02135701011866,
+  "model_step_ms_p95": 359.1746269608847,
+  "oracle_index": null,
+  "oracle_stage0": false,
+  "peak_gpu_bytes": 520806912,
+  "periodic_last": 0,
+  "periodic_refresh_counts": null,
+  "reset_frames": 214,
+  "scans": 5794,
+  "scope": "Unified-state dense-update full validation",
+  "seconds": 967.6904247771017,
+  "stage_means": [
+    {
+      "actual_write_fraction": 0.0,
+      "executed_input_area_ratio": 0.0
+    },
+    {
+      "actual_write_fraction": 0.0,
+      "executed_input_area_ratio": 0.0
+    },
+    {
+      "actual_write_fraction": 0.0,
+      "executed_input_area_ratio": 0.0
+    }
+  ],
+  "state_bytes": 25804800,
+  "status": "COMPLETED",
+  "support_profile": false,
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+  "uncovered_fraction_mean": null,
+  "variant": "v2n",
+  "zero_uncovered": false
+}

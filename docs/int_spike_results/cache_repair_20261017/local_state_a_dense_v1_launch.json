@@ -1,0 +1,27 @@
+{
+  "code_commit": "8639a2684ff42d9af8df2f66f7a92e5c40aa316c",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_local_state",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_state_a_dense_v1",
+    "--phase",
+    "a",
+    "--device",
+    "cuda",
+    "--gpu",
+    "0",
+    "--epochs",
+    "60",
+    "--frames",
+    "2",
+    "--worker"
+  ],
+  "created_unix": 1792389235.9869394,
+  "device": "cuda",
+  "pid": 31509,
+  "timeout_seconds": 172800
+}

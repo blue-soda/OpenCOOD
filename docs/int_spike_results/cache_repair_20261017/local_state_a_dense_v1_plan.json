@@ -1,5 +1,5 @@
 {
-  "status": "READY_WAITING_GPU_NOT_LAUNCHED",
+  "status": "RUNNING",
   "priority": "Current approved architecture: stage A representation migration before new cache experiments",
   "goal_document": "docs/int_local_state_goal.md",
   "implementation_commit": "8dc11fc",
@@ -17,7 +17,11 @@
     "epochs": 60,
     "frames": 2
   },
-  "assigned_gpu": null,
+  "assigned_gpu": 0,
+  "pid": 31509,
+  "launch_code_commit": "8639a2684ff42d9af8df2f66f7a92e5c40aa316c",
+  "launch_evidence": "local_state_a_dense_v1_launch.json",
+  "gpu_engineering_evidence": "local_state_a_dense_v1_engineering.json",
   "launch_preconditions": [
     "Engineering evidence PASSED, source checkpoint hash unchanged, output directory absent",
     "Explicit GPU selected after inspecting current processes AND pending coordinators; not merely a utilization gap",
@@ -30,5 +34,5 @@
     "Phase B requires a named fixed phase-A checkpoint and real-data sequence gradient checks",
     "Region skipping experiments remain gated by a reliable dense baseline near original INT precision"
   ],
-  "caveat": "No GPU training, validation AP, or latency measurement has occurred for this architecture yet"
+  "caveat": "GPU engineering PASSED and phase-A epoch 1 is training. No completed validation AP or controlled latency measurement yet."
 }
