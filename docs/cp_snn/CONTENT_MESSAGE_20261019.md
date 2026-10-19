@@ -58,3 +58,19 @@
 两帧接口样本累计字节：SNN三个前缀分别[4510,4845]/[6655,7055]/[8355,8750]，完整两位单包[4737,5110]；ANN为[6266,6986]/[9176,10206]/[11271,12393]，单包[6834,7753]。这已说明重复坐标/包头可能使完整三包明显大于一次完整包，最终必须分别报告；不按名义bit推算通信优势。
 
 实际目录`/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019`，coordinator PID36710，启动代码`dc77d01fd696d05bfca3a28ba82ecfce81ee02bd`。审计[audit.json](results/content_round1_20261019/audit.json) SHA256 `5f976693a0442433a2c5568d7226cedf72633e06b4a70c85637e0a33e3f6a25a`；[launch.json](results/content_round1_20261019/launch.json)；[首次审计失败记录](results/content_round1_20261019/initial_batch_audit_failure.log)保留。首次目录没有训练任务，不应重启；下一次检查v2的round_status、zero_summary和adapt10_summary。四组完成按原预算退出，再判断学习消息内容是否确实产生AP—字节收益。
+
+
+## 零适配复核通过与训练中检查（2026-10-19 09:00）
+
+Count3/ANN2bit内容四组全量零适配及CPU BEV/3D、预测/GT哈希复核通过，已自动进入各10轮训练。09:00快照四组均完成4轮、正在第5轮；编码器、ANN BEV/连续头及BN冻结校验通过至第4轮。尚无最终训练后AP—通信量结果，继续既定预算，不调整宽度、比例或学习率，不追加实验；90分钟跟进保持不变。
+
+以下仅为完整第三前缀训练中最佳指标，未做所选最终权重的真实通信推理/独立复核，不能与初始消息字节拼成AP—通信点。
+
+| 组 | 暂时best轮 | 暂时AP70% |
+|---|---:|---:|
+| snn_fixed | 4 | 58.79152 |
+| snn_learn | 3 | 59.28294 |
+| ann_fixed | 2 | 60.62043 |
+| ann_learn | 4 | 61.09844 |
+
+原始[zero_summary.json](results/content_round1_20261019/zero_summary.json) SHA256 `f1601166330df42e8031a2925bc6b3cd3ede9fce498a7e8c7700771ad94b5298`，已与181原件核对；[progress_20261019_0900.json](results/content_round1_20261019/progress_20261019_0900.json)保存进度与冻结检查。零适配4组×4种传输/前缀均1738帧、28622GT、CPU精确复算通过；不是新方法训练后的最终结论。
