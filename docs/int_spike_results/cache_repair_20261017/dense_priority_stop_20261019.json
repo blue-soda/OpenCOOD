@@ -1,0 +1,58 @@
+{
+  "utc": "2026-10-19T05:03:55.364599Z",
+  "reason": "research_priority_v2n_and_cacheable_high_accuracy_dense_baseline_not_convergence",
+  "jobs": [
+    {
+      "name": "unified_bev_v2_recurrent",
+      "pid": 27008,
+      "process_group": 27008,
+      "members": [
+        27008,
+        61760,
+        61829,
+        61894,
+        61959
+      ],
+      "prior_status": {
+        "epoch": 30,
+        "labels": 598,
+        "mean_loss": 0.5146100557457748,
+        "phase": "train",
+        "scans": 1000,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 270
+      },
+      "preserved_epoch": 29,
+      "latest_contains_optimizer_scheduler": true,
+      "partial_epoch_discarded": 30,
+      "confirmed_stopped": true
+    },
+    {
+      "name": "unified_bev_v2_reset",
+      "pid": 27158,
+      "process_group": 27158,
+      "members": [
+        27158,
+        45398,
+        45474,
+        45538,
+        45604
+      ],
+      "prior_status": {
+        "epoch": 25,
+        "labels": 2994,
+        "mean_loss": 0.5006952146686282,
+        "phase": "train",
+        "scans": 5600,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1475
+      },
+      "preserved_epoch": 24,
+      "latest_contains_optimizer_scheduler": true,
+      "partial_epoch_discarded": 25,
+      "confirmed_stopped": true
+    }
+  ]
+}

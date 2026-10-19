@@ -1,0 +1,477 @@
+{
+  "checked_utc": "2026-10-19T05:03:32.330132Z",
+  "jobs": {
+    "unified_bev_v2_recurrent": {
+      "best": {
+        "ap70": 0.42377537929812237,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_029/student.pth",
+        "epoch": 29,
+        "sha256": "b8112899b913cf511cae109e40fb1fc69424c0182c9ea40ca5ec611be0eb749d"
+      },
+      "last_complete": {
+        "ap70": 0.42377537929812237,
+        "epoch": 29,
+        "labels": 4678,
+        "loss": 0.5234746710226882,
+        "lr": 0.0005,
+        "mean_labelled_window_gt": 0.7333376905554644,
+        "mean_window_kd": 0.2020922748818269,
+        "scans": 8593,
+        "seconds": 1415.9523321879096,
+        "stale_epochs": 0,
+        "updates": 2262
+      },
+      "recent": [
+        {
+          "ap70": 0.383911562402129,
+          "epoch": 24,
+          "labels": 4678,
+          "loss": 0.5719270565311722,
+          "lr": 0.0005,
+          "mean_labelled_window_gt": 0.8034423342416173,
+          "mean_window_kd": 0.21346136623916112,
+          "scans": 8593,
+          "seconds": 1458.4533190999646,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.39208745874722944,
+          "epoch": 25,
+          "labels": 4678,
+          "loss": 0.562543448350703,
+          "lr": 0.0005,
+          "mean_labelled_window_gt": 0.7899355711329383,
+          "mean_window_kd": 0.21102846472809844,
+          "scans": 8593,
+          "seconds": 1444.528181957081,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.3992879853344044,
+          "epoch": 26,
+          "labels": 4678,
+          "loss": 0.552014529409963,
+          "lr": 0.0005,
+          "mean_labelled_window_gt": 0.7748595835386615,
+          "mean_window_kd": 0.20803732183209359,
+          "scans": 8593,
+          "seconds": 1452.2697660608683,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.4046322658516257,
+          "epoch": 27,
+          "labels": 4678,
+          "loss": 0.5418849580248108,
+          "lr": 0.0005,
+          "mean_labelled_window_gt": 0.7600650313035999,
+          "mean_window_kd": 0.20611599648320286,
+          "scans": 8593,
+          "seconds": 1470.6146912609693,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.4185294022856298,
+          "epoch": 28,
+          "labels": 4678,
+          "loss": 0.5314960959262208,
+          "lr": 0.0005,
+          "mean_labelled_window_gt": 0.7449495590219649,
+          "mean_window_kd": 0.20395518216171907,
+          "scans": 8593,
+          "seconds": 1422.046991931973,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.42377537929812237,
+          "epoch": 29,
+          "labels": 4678,
+          "loss": 0.5234746710226882,
+          "lr": 0.0005,
+          "mean_labelled_window_gt": 0.7333376905554644,
+          "mean_window_kd": 0.2020922748818269,
+          "scans": 8593,
+          "seconds": 1415.9523321879096,
+          "stale_epochs": 0,
+          "updates": 2262
+        }
+      ],
+      "status": {
+        "epoch": 30,
+        "labels": 450,
+        "mean_loss": 0.47674015643471773,
+        "phase": "train",
+        "scans": 800,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 216
+      },
+      "last_report_metrics": {
+        "bev_ap30": 0.7654579386537467,
+        "bev_ap50": 0.6963453674741351,
+        "bev_ap70": 0.42377537929812237
+      },
+      "best_sha_verified": true,
+      "last_report_matches_history": true
+    },
+    "unified_bev_v2_reset": {
+      "best": {
+        "ap70": 0.44614106544607357,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_reset/epoch_024/student.pth",
+        "epoch": 24,
+        "sha256": "bbadb055aa064366f7b97b0b5076122b0d27eefaab72459dda051f70a62d5176"
+      },
+      "last_complete": {
+        "ap70": 0.44614106544607357,
+        "epoch": 24,
+        "labels": 4678,
+        "loss": 0.5145571124957892,
+        "lr": 0.001,
+        "mean_labelled_window_gt": 0.719408778688711,
+        "mean_window_kd": 0.20337998800500107,
+        "scans": 8593,
+        "seconds": 3498.1042582900263,
+        "stale_epochs": 0,
+        "updates": 2262
+      },
+      "recent": [
+        {
+          "ap70": 0.40350292071088684,
+          "epoch": 19,
+          "labels": 4678,
+          "loss": 0.9131599244313503,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 1.3192565367546154,
+          "mean_window_kd": 0.2207681422676005,
+          "scans": 8593,
+          "seconds": 1135.959032092942,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.41299713524378096,
+          "epoch": 20,
+          "labels": 4678,
+          "loss": 0.559445481276152,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.7841281156871055,
+          "mean_window_kd": 0.21466574837658703,
+          "scans": 8593,
+          "seconds": 1123.621689290041,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.4221406416768826,
+          "epoch": 21,
+          "labels": 4678,
+          "loss": 0.5459013028112449,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.7644278273320375,
+          "mean_window_kd": 0.21182865287472882,
+          "scans": 8593,
+          "seconds": 1136.4653838470113,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.43288120624127135,
+          "epoch": 22,
+          "labels": 4678,
+          "loss": 0.5435243434354915,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.7605324598890367,
+          "mean_window_kd": 0.21277342604968952,
+          "scans": 8593,
+          "seconds": 3705.924719907809,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.4414318061936576,
+          "epoch": 23,
+          "labels": 4678,
+          "loss": 1.0751014746920458,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 1.5689262224174643,
+          "mean_window_kd": 0.20817741525716005,
+          "scans": 8593,
+          "seconds": 3627.505918344017,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.44614106544607357,
+          "epoch": 24,
+          "labels": 4678,
+          "loss": 0.5145571124957892,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.719408778688711,
+          "mean_window_kd": 0.20337998800500107,
+          "scans": 8593,
+          "seconds": 3498.1042582900263,
+          "stale_epochs": 0,
+          "updates": 2262
+        }
+      ],
+      "status": {
+        "epoch": 25,
+        "labels": 2867,
+        "mean_loss": 0.48941271348858806,
+        "phase": "train",
+        "scans": 5400,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1424
+      },
+      "last_report_metrics": {
+        "bev_ap30": 0.7569301803929934,
+        "bev_ap50": 0.7047265442613687,
+        "bev_ap70": 0.44614106544607357
+      },
+      "best_sha_verified": true,
+      "last_report_matches_history": true
+    },
+    "unified_bev_v2n_recurrent": {
+      "best": {
+        "ap70": 0.48725829828563144,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_recurrent/epoch_012/student.pth",
+        "epoch": 12,
+        "sha256": "15a4e443e08de621351e0379597b26b93c8b7dfefea2af92bd220fa2c7fef660"
+      },
+      "last_complete": {
+        "ap70": 0.48725829828563144,
+        "epoch": 12,
+        "labels": 4678,
+        "loss": 0.512180302155839,
+        "lr": 0.001,
+        "mean_labelled_window_gt": 0.7206651440634247,
+        "mean_window_kd": 0.18735804010567994,
+        "scans": 8593,
+        "seconds": 3280.2566597580444,
+        "stale_epochs": 0,
+        "updates": 2262
+      },
+      "recent": [
+        {
+          "ap70": 0.28766065874877483,
+          "epoch": 7,
+          "labels": 4678,
+          "loss": 0.7027915516727301,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.9895359329710335,
+          "mean_window_kd": 0.2548761004689096,
+          "scans": 8593,
+          "seconds": 1338.682788599981,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.33300209758981186,
+          "epoch": 8,
+          "labels": 4678,
+          "loss": 0.6739120922848888,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.9499309504704071,
+          "mean_window_kd": 0.24091961690670194,
+          "scans": 8593,
+          "seconds": 1343.8905380920041,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.3795423377117398,
+          "epoch": 9,
+          "labels": 4678,
+          "loss": 0.6236518650579193,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.8790351951858572,
+          "mean_window_kd": 0.22311687926003407,
+          "scans": 8593,
+          "seconds": 1330.2477994330693,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.41438982073952374,
+          "epoch": 10,
+          "labels": 4678,
+          "loss": 0.5884414013304387,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.8293538965745596,
+          "mean_window_kd": 0.210692179996181,
+          "scans": 8593,
+          "seconds": 3777.252061879961,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.45490023317718553,
+          "epoch": 11,
+          "labels": 4678,
+          "loss": 0.5456623409138612,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.7683455247580816,
+          "mean_window_kd": 0.19773072865647515,
+          "scans": 8593,
+          "seconds": 3489.8777605330106,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.48725829828563144,
+          "epoch": 12,
+          "labels": 4678,
+          "loss": 0.512180302155839,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.7206651440634247,
+          "mean_window_kd": 0.18735804010567994,
+          "scans": 8593,
+          "seconds": 3280.2566597580444,
+          "stale_epochs": 0,
+          "updates": 2262
+        }
+      ],
+      "status": {
+        "epoch": 13,
+        "labels": 2171,
+        "mean_loss": 0.45315561573552393,
+        "phase": "train",
+        "scans": 4000,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1056
+      },
+      "last_report_metrics": {
+        "bev_ap30": 0.7770863262300044,
+        "bev_ap50": 0.7291263937396548,
+        "bev_ap70": 0.48725829828563144
+      },
+      "best_sha_verified": true,
+      "last_report_matches_history": true
+    },
+    "unified_bev_v2n_reset": {
+      "best": {
+        "ap70": 0.39888504109098794,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_reset/epoch_011/student.pth",
+        "epoch": 11,
+        "sha256": "715deabdb61b5e9ee66fe03ba0aba134eec8063924a454522eacdc5439274272"
+      },
+      "last_complete": {
+        "ap70": 0.39888504109098794,
+        "epoch": 11,
+        "labels": 4678,
+        "loss": 0.6335686104178376,
+        "lr": 0.001,
+        "mean_labelled_window_gt": 0.8941373448592266,
+        "mean_window_kd": 0.22296098856853236,
+        "scans": 8593,
+        "seconds": 4000.8075951419305,
+        "stale_epochs": 0,
+        "updates": 2262
+      },
+      "recent": [
+        {
+          "ap70": 0.1768437901849631,
+          "epoch": 6,
+          "labels": 4678,
+          "loss": 0.7944949154582944,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 1.117169421725446,
+          "mean_window_kd": 0.293026211466492,
+          "scans": 8593,
+          "seconds": 1337.6594754569232,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.16490385480565,
+          "epoch": 7,
+          "labels": 4678,
+          "loss": 0.7587672481294322,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 1.068031475558839,
+          "mean_window_kd": 0.2762259386091186,
+          "scans": 8593,
+          "seconds": 1350.9303179821,
+          "stale_epochs": 1,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.22078222275964904,
+          "epoch": 8,
+          "labels": 4678,
+          "loss": 0.7238861097193293,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 1.020159767522475,
+          "mean_window_kd": 0.2594878971840195,
+          "scans": 8593,
+          "seconds": 1339.4321679251734,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.3159898250286164,
+          "epoch": 9,
+          "labels": 4678,
+          "loss": 0.6977521200843562,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.98396543481264,
+          "mean_window_kd": 0.2480256319520328,
+          "scans": 8593,
+          "seconds": 3110.0078739789315,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.36131923053473214,
+          "epoch": 10,
+          "labels": 4678,
+          "loss": 0.6682599939086337,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.9428738123843409,
+          "mean_window_kd": 0.235902130808006,
+          "scans": 8593,
+          "seconds": 4812.917581210844,
+          "stale_epochs": 0,
+          "updates": 2262
+        },
+        {
+          "ap70": 0.39888504109098794,
+          "epoch": 11,
+          "labels": 4678,
+          "loss": 0.6335686104178376,
+          "lr": 0.001,
+          "mean_labelled_window_gt": 0.8941373448592266,
+          "mean_window_kd": 0.22296098856853236,
+          "scans": 8593,
+          "seconds": 4000.8075951419305,
+          "stale_epochs": 0,
+          "updates": 2262
+        }
+      ],
+      "status": {
+        "epoch": 12,
+        "labels": 1925,
+        "mean_loss": 0.572155526996769,
+        "phase": "train",
+        "scans": 3400,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 899
+      },
+      "last_report_metrics": {
+        "bev_ap30": 0.7359710725130214,
+        "bev_ap50": 0.6433743317365609,
+        "bev_ap70": 0.39888504109098794
+      },
+      "best_sha_verified": true,
+      "last_report_matches_history": true
+    }
+  }
+}
