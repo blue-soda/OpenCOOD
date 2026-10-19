@@ -1,0 +1,19 @@
+{
+  "audit_passed": true,
+  "audit_sha256": "bfe46ec148fae1c9e1cfb21821fe9bcb5b46e4ad4d57bc92fdb639aaf9885222",
+  "plans_verified": [
+    "zero:4 eval+4 replay",
+    "adapt10:train+5 eval+5 replay"
+  ],
+  "free_gpus": [],
+  "blocking_resources": [
+    "GPU 0 is not free: 8047, 16206, 59\n",
+    "GPU 1 is not free: 8041, 16212, 16\n",
+    "GPU 2 is not free: 8041, 16212, 29\n",
+    "GPU 3 is not free: 7613, 16640, 79\n",
+    "GPU 4 is not free: 15690, 8563, 73\n",
+    "GPU 5 is not free: 8041, 16212, 0\n",
+    "GPU 6 is not free: 15724, 8529, 73\n",
+    "GPU 7 is not free: 15720, 8533, 65\n"
+  ]
+}

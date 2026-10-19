@@ -757,3 +757,10 @@ SNN完整两位单包59.28294%/4.76892kB，没有优于首包59.52330%/4.57371kB
 以真实AP—通信判断该联合模型有无协作收益；目标超过固定ANN/SNN单车并保留强ANN/Residual对照，不要求刚初始化就达标。10轮后结项，不自动扩大超参数搜索；再按同初始化/预算登记no-local、clear-interbatch、frozen-order分离消融。首轮单组结果不能当三项各自有效的因果证明。
 
 启动器`opencood/tools/launch_e3dsnn_joint_round.py`：从通过的`e3dsnn_joint_audit_v2_20261019`准备到`/data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019`。当前真实审计完成，训练尚未启动；按后续准备状态决定是否执行`--prepare`，禁止覆盖既有目录或重复launch。后台任务以本路线优先，旧Residual重复种子后移。
+
+
+## 联合模型流水线已准备，等待一张空卡（2026-10-19）
+
+181与本地各19项CPU检查通过，真实点云审计通过。`e3dsnn_joint_round1_20261019`已完成prepare，初始权重/五个配置/真实审计SHA核验通过，零适配4次推理＋4次CPU复算、适配10轮＋5次推理＋5次CPU复算的任务计划已检查。prepared审计SHA `bfe46ec148fae1c9e1cfb21821fe9bcb5b46e4ad4d57bc92fdb639aaf9885222`；[启动前检查](results/joint_membrane_20261019/prelaunch_check.json)、[配置审计](results/joint_membrane_20261019/prepared_audit.json)、[运行状态](results/joint_membrane_20261019/round_status.json)、[服务器CPU检查](results/joint_membrane_20261019/cpu_tests.txt)已归档。
+
+当前八卡均有其他进程，不满足长期训练空卡门槛；状态为prepared，零适配全量推理与正式训练均尚未启动。此前真实点云短审计在GPU2限制20%进程显存预算、180秒上限完成，不代表已获整卡长期训练资源。后续每次优先检查此目录，获得一张空卡后直接运行`python -m opencood.tools.launch_e3dsnn_joint_round --root /data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019 --gpu <空卡>`；不用再次prepare、不等待四卡、也不优先启动旧Residual重复种子。若launch.json已存在先检查任务状态，不重复发起。保持90分钟跟进、无变化静默。

@@ -1,0 +1,17 @@
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/data1/tzm/workspace/OpenCOOD/opencood/tools/audit_e3dsnn_content_detector.py", line 64, in audit
+    model.packet_roundtrip=True;wire=model(data)
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/data1/tzm/workspace/OpenCOOD/opencood/models/e3dsnn_joint_detector.py", line 108, in forward
+    part = wire(part, i, k + 1, 'progressive_voxel_batch')
+  File "/data1/tzm/workspace/OpenCOOD/opencood/models/e3dsnn_joint_detector.py", line 74, in wire
+    packet = codec.encode(coords, features, scales, meta, 'count3', 'full')
+  File "/data1/tzm/workspace/OpenCOOD/opencood/utils/content_feature_packet.py", line 48, in encode
+    _validate(coords, codes, scales, metadata, family, kind)
+  File "/data1/tzm/workspace/OpenCOOD/opencood/utils/content_feature_packet.py", line 28, in _validate
+    raise ValueError('Incomplete content metadata')
+ValueError: Incomplete content metadata

@@ -1,0 +1,97 @@
+{
+  "passed": true,
+  "groups": {
+    "joint": {
+      "family": "snn",
+      "learn_content": true,
+      "joint_membrane": true,
+      "started_unix": 1792385346.3328395,
+      "source": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/snn_learn_adapt10/best_ap70.pth",
+      "source_sha256": "5abdd581b3d31ad11f32c66b290c99f129bda748a79e11d34214250426aa0902",
+      "source_summary_sha256": "a182257ab9d88c60c4dbe238dfb9e9cd8b198817b6266f1426e5741bd65771f3",
+      "initial_sha256": "107451f95c7785d8c67313f464694cc1706d20527164adf9dbe4f27b4aba4259",
+      "config_sha256": "c831bf92581781e64d9cb98955e735fd3130dc5e347256bb5c3c1958cdc0dc6e",
+      "frames": [
+        "000010",
+        "000011"
+      ],
+      "road_frames": [
+        "006689",
+        "006690"
+      ],
+      "prefixes": [
+        {
+          "prefix": 1,
+          "packet_bytes": [
+            2966,
+            3164
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 2,
+          "packet_bytes": [
+            5864,
+            6272
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 3,
+          "packet_bytes": [
+            8988,
+            9481
+          ],
+          "direct_wire_exact": true
+        }
+      ],
+      "code_commit": "29b1aa564c0afb20fcc553484082854fbdc05562",
+      "parameters": 3120631,
+      "trainable_parameters": 25634,
+      "initial_basis_sha256": "bf41b2b1060a52d937069f0a0eabadb984f0b2e3de24afbcb608b59a911f0952",
+      "full_packet_bytes": [
+        4780,
+        5195
+      ],
+      "single_full_packet_equal_three_events": true,
+      "repeated_forward_has_no_state_leak": true,
+      "batch_isolation_max_response_error": 0.0,
+      "local_membrane_perturbation_response_max": 1.2949316501617432,
+      "ego_matches_mature_source_exactly": true,
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "bn_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+      "gradient_l1": {
+        "content.project.weight": 0.2439371645450592,
+        "content.expand.weight": 0.060336049646139145,
+        "joint_receiver.current_scale": 0.003123288741335273,
+        "joint_receiver.local_gate.weight": 0.12035402655601501,
+        "progressive_sender.score.0.weight": 0.0005134328384883702,
+        "progressive_sender.score.0.bias": 8.776981849223375e-05,
+        "progressive_sender.score.2.weight": 5.1970422646263614e-05,
+        "progressive_sender.score.2.bias": 7.408718374790624e-05
+      },
+      "frozen_encoder_decoder_bn": true,
+      "loss_components": {
+        "fused_detection_loss": 0.864119006013474,
+        "prefix_1_detection_loss": 0.8653145107304873,
+        "prefix_2_detection_loss": 0.8659628437985748,
+        "prefix_3_detection_loss": 0.8610796635113604,
+        "ego_detection_loss": 0.8667404240840715
+      },
+      "full_dropout_all_prefixes_equal_ego": true,
+      "passed": true,
+      "finished_unix": 1792385349.7626333,
+      "scope": "Augmented train frames 0/1; audit update discarded; not an AP or mean-byte result",
+      "config_hashes": {
+        "p1": "a387f1ea139f6d7a6588e8a2799ba6fb6ad5a04a78080bc8c1cd0b1292f3f402",
+        "p2": "cc3feac3f66210336400dd68fd6b989e024df8e1e0e1138fac50e98f6926609e",
+        "p3": "c831bf92581781e64d9cb98955e735fd3130dc5e347256bb5c3c1958cdc0dc6e",
+        "off": "a721e38c236125a54da160e7cb8b56091d651678d1064a6f011782d0e6016745",
+        "full": "fb16f3ba10d19e8a9fa10c61e29339638eefcc37ffb822d355e0ec9d98b356b8"
+      }
+    }
+  },
+  "real_audit_path": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_audit_v2_20261019",
+  "real_audit_sha256": "4415f2f6d027130c2538e3f5ec354874e547e0da7bff111a8755a7fc46ae273c"
+}
