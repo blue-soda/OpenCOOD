@@ -192,6 +192,14 @@ def execute(args, output_dir):
     torch.cuda.manual_seed_all(args.seed)
     if not torch.cuda.is_available():
         raise RuntimeError('CUDA required')
+    memory_fraction = os.getenv('OPENCOOD_CUDA_MEMORY_FRACTION')
+    if memory_fraction is not None:
+        memory_fraction = float(memory_fraction)
+        if not np.isfinite(memory_fraction) or not 0 < memory_fraction <= 1:
+            raise ValueError('Invalid CUDA allocator memory fraction')
+        # Apply before constructing CUDA model/tensors. This caps Torch's
+        # caching allocator, not driver contexts or third-party CUDA allocators.
+        torch.cuda.set_per_process_memory_fraction(memory_fraction)
     cfg = load_yaml(args.config)
     if cfg['fusion']['core_method'] not in ('SingleDAIRVehicle', 'PairedDAIRFusion'):
         raise ValueError('This runner requires an explicitly audited single/paired dataset')
@@ -227,6 +235,7 @@ def execute(args, output_dir):
         'data_manifest_sha256': hashlib.sha256(Path(cfg['data_manifest']).read_bytes()).hexdigest(),
         'torch': torch.__version__, 'gpu': torch.cuda.get_device_name(0),
         'gpu_visible': os.getenv('CUDA_VISIBLE_DEVICES'), 'parameters': sum(p.numel() for p in model.parameters()),
+        'cuda_allocator_memory_fraction': memory_fraction,
         'architecture': cfg['model']['core_method'],
         'activation': cfg['model']['args'].get('activation', 'count4'),
         'fusion_readout': getattr(model, 'fusion_readout', 'activated'),

@@ -764,3 +764,14 @@ SNN完整两位单包59.28294%/4.76892kB，没有优于首包59.52330%/4.57371kB
 181与本地各19项CPU检查通过，真实点云审计通过。`e3dsnn_joint_round1_20261019`已完成prepare，初始权重/五个配置/真实审计SHA核验通过，零适配4次推理＋4次CPU复算、适配10轮＋5次推理＋5次CPU复算的任务计划已检查。prepared审计SHA `bfe46ec148fae1c9e1cfb21821fe9bcb5b46e4ad4d57bc92fdb639aaf9885222`；[启动前检查](results/joint_membrane_20261019/prelaunch_check.json)、[配置审计](results/joint_membrane_20261019/prepared_audit.json)、[运行状态](results/joint_membrane_20261019/round_status.json)、[服务器CPU检查](results/joint_membrane_20261019/cpu_tests.txt)已归档。
 
 当前八卡均有其他进程，不满足长期训练空卡门槛；状态为prepared，零适配全量推理与正式训练均尚未启动。此前真实点云短审计在GPU2限制20%进程显存预算、180秒上限完成，不代表已获整卡长期训练资源。后续每次优先检查此目录，获得一张空卡后直接运行`python -m opencood.tools.launch_e3dsnn_joint_round --root /data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019 --gpu <空卡>`；不用再次prepare、不等待四卡、也不优先启动旧Residual重复种子。若launch.json已存在先检查任务状态，不重复发起。保持90分钟跟进、无变化静默。
+
+
+## 用户授权共享GPU，执行门槛更新（2026-10-19）
+
+用户明确允许使用已有进程占用但利用率较低、显存充足的GPU，后续不再把“必须空卡”作为阻塞理由。联合路线优先级和实验协议不变，不停止其他进程。最近5次全卡采样中GPU3利用率9/25/0/8/8%，平均10%，可用16640MiB，明显低于其余卡，选择GPU3。
+
+联合启动器新增显式`--allow-shared --memory-fraction 0.2`：每次准入采样5次（间隔2秒），平均利用率≤50%、每次空余显存≥max(8192MiB,20%整卡容量+2048MiB)。给PyTorch缓存分配器设置20%整卡上限，约4.7GiB；CUDA上下文和第三方分配不受该API完全约束，预留至少2GiB额外空间。准入只控制新阶段启动，不因本任务运行后利用率升高而终止正常工作。
+
+原`e3dsnn_joint_round1_20261019`已prepare，不重建或覆盖。启动命令：`python -m opencood.tools.launch_e3dsnn_joint_round --root /data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019 --gpu 3 --allow-shared --memory-fraction 0.2`。零适配复核通过后自动进入10轮训练；阶段间若外部负载暂不合格，记录waiting_resources并等待，不重做已完成步骤、不重复launch。显存不足或真实任务错误按原规则记录失败，不自动重试。
+
+代码已补低负载、显存不足、高负载、非法比例的准入检查，并保持旧调用默认空卡策略兼容。实际启动状态随后以launch.json、round_status和子进程日志为准。

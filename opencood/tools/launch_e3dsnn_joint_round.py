@@ -1,10 +1,12 @@
 """Audited joint prototype: full zero gate, ten epochs, real-wire final replay.
 
-One free GPU is sufficient. Mechanism ablations follow this first executable
+One suitable GPU is sufficient; explicitly authorized shared use is supported.
+Mechanism ablations follow this first executable
 joint candidate; no old Residual repetition is automatically launched here.
 """
 import argparse
 import copy
+import math
 import os
 from pathlib import Path
 import shutil
@@ -16,6 +18,42 @@ import yaml
 from opencood.tools.launch_e3dsnn_hybrid_round import REPO, read, sha, free_gpu
 from opencood.tools.launch_e3dsnn_content_round import make_jobs, summarize
 from opencood.tools.train_e3dsnn_single import write_json
+
+
+def shared_admission(samples, fraction):
+    """Use several samples, not a momentary idle reading; reserve outside Torch."""
+    if not math.isfinite(fraction) or not 0 < fraction <= .5:
+        raise ValueError('Shared allocator fraction must be in (0, .5]')
+    if len(samples) < 3:
+        raise ValueError('At least three utilization samples required')
+    total = samples[0]['total_mib']
+    if any(s['total_mib'] != total for s in samples):
+        raise ValueError('GPU capacity changed')
+    required = max(8192, math.ceil(total * fraction) + 2048)
+    return dict(accepted=min(s['free_mib'] for s in samples) >= required and
+                sum(s['util_percent'] for s in samples) / len(samples) <= 50,
+                minimum_free_mib=required, allocator_fraction=fraction,
+                mean_util_percent=sum(s['util_percent'] for s in samples) / len(samples),
+                samples=samples)
+
+
+def check_gpu(gpu, allow_shared=False, fraction=.2):
+    if not allow_shared:
+        free_gpu(gpu)
+        return dict(accepted=True, policy='exclusive')
+    samples = []
+    for i in range(5):
+        row = subprocess.check_output(['nvidia-smi', '-i', str(gpu),
+            '--query-gpu=memory.total,memory.free,utilization.gpu',
+            '--format=csv,noheader,nounits']).decode().strip()
+        total, free, util = map(int, row.split(','))
+        samples.append(dict(total_mib=total, free_mib=free, util_percent=util))
+        if i < 4: time.sleep(2)
+    result = shared_admission(samples, fraction)
+    result['policy'] = 'user_authorized_shared'
+    if not result['accepted']:
+        raise RuntimeError('GPU {} shared admission failed: {}'.format(gpu, result))
+    return result
 
 
 def prepare(root, audit_root):
@@ -53,12 +91,25 @@ def coordinate(root):
         setup = read(root / 'launch.json'); gpu = setup['gpu']
         for stage in ('zero', 'adapt10'):
             if stage == 'adapt10': assert read(root / 'zero_summary.json')['passed']
-            free_gpu(gpu)
+            # Other users may become busy between stages. Wait without changing
+            # experiment inputs or restarting completed work; never kill peers.
+            while True:
+                try:
+                    admission = check_gpu(gpu, setup.get('allow_shared', False),
+                                          setup.get('memory_fraction', .2))
+                    break
+                except RuntimeError as error:
+                    write_json(root / 'round_status.json', dict(state='waiting_resources',
+                        stage=stage, gpu=gpu, note=str(error), training_started=False))
+                    time.sleep(60)
+            write_json(root / (stage + '_gpu_admission.json'), admission)
             name, jobs = make_jobs(root, 'joint', stage)
             plan = root / (name + '_plan.json')
             write_json(plan, dict(name=name, jobs=jobs, gpu=gpu))
             env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu), PYTHONPATH=str(REPO),
                        OMP_NUM_THREADS='1', MKL_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1')
+            if setup.get('allow_shared', False):
+                env['OPENCOOD_CUDA_MEMORY_FRACTION'] = str(setup['memory_fraction'])
             with (root / (name + '_supervisor.log')).open('xb') as log:
                 process = subprocess.Popen([sys.executable, str(root / 'supervise.py'), str(plan)],
                     cwd=str(REPO), env=env, stdin=subprocess.DEVNULL, stdout=log,
@@ -74,7 +125,7 @@ def coordinate(root):
         raise
 
 
-def launch(root, gpu):
+def launch(root, gpu, allow_shared=False, memory_fraction=.2):
     audit = read(root / 'audit.json'); assert audit['passed']
     if (root / 'launch.json').exists(): raise FileExistsError('Already attempted')
     entry = audit['groups']['joint']
@@ -82,10 +133,12 @@ def launch(root, gpu):
     for mode, digest in entry['config_hashes'].items():
         assert sha(root / 'joint' / (mode + '.yaml')) == digest
     if shutil.disk_usage(str(root)).free < 6 * 1024**3: raise RuntimeError('Insufficient reserve')
-    free_gpu(gpu)
+    admission = check_gpu(gpu, allow_shared, memory_fraction)
     setup = dict(gpu=gpu, audit_sha256=sha(root / 'audit.json'), started_unix=time.time(),
         code_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=str(REPO)).decode().strip(),
-        training_cap_seconds=21600, per_evaluation_cap_seconds=3600)
+        training_cap_seconds=21600, per_evaluation_cap_seconds=3600,
+        allow_shared=allow_shared, memory_fraction=memory_fraction if allow_shared else None,
+        gpu_admission=admission)
     write_json(root / 'launch.json', setup)
     with (root / 'coordinator.log').open('xb') as log:
         process = subprocess.Popen([sys.executable, '-u', '-m', 'opencood.tools.launch_e3dsnn_joint_round',
@@ -99,8 +152,10 @@ if __name__ == '__main__':
     parser.add_argument('--root', required=True)
     parser.add_argument('--audit-root', default='/data1/tzm/workspace/diagnostics/e3dsnn_joint_audit_v2_20261019')
     parser.add_argument('--gpu', type=int, default=2)
+    parser.add_argument('--allow-shared', action='store_true')
+    parser.add_argument('--memory-fraction', type=float, default=.2)
     parser.add_argument('--prepare', action='store_true'); parser.add_argument('--coordinate', action='store_true')
     args = parser.parse_args(); root = Path(args.root)
     if args.prepare: prepare(root, Path(args.audit_root))
     elif args.coordinate: coordinate(root)
-    else: launch(root, args.gpu)
+    else: launch(root, args.gpu, args.allow_shared, args.memory_fraction)
