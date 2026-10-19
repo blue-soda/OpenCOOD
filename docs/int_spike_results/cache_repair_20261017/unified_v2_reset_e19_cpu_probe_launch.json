@@ -1,0 +1,26 @@
+{
+  "pid": 16201,
+  "device": "cpu",
+  "threads": 2,
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.probe_int_unified_loss",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--checkpoints",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_reset/epoch_018/student.pth",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_reset/epoch_019/student.pth",
+    "--frames",
+    "005885",
+    "005886",
+    "005887",
+    "005888",
+    "--seed",
+    "322",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_v2_reset_e19_cpu_probe"
+  ],
+  "created": 1792374654.4707298,
+  "code_commit": "5a0e5abc726d898f04b9017b0e8e4dbb50e5f0f7"
+}

@@ -1,0 +1,134 @@
+{
+  "3": {
+    "max_loss": 320012.66650163766,
+    "spikes": [
+      {
+        "window": [
+          {
+            "frame": "005901",
+            "segment": "81:0002",
+            "supervised": true,
+            "reset": "initial"
+          },
+          {
+            "frame": "005902",
+            "segment": "81:0002",
+            "supervised": true,
+            "reset": "initial"
+          },
+          {
+            "frame": "005903",
+            "segment": "81:0002",
+            "supervised": true,
+            "reset": "initial"
+          },
+          {
+            "frame": "005904",
+            "segment": "81:0002",
+            "supervised": true,
+            "reset": "initial",
+            "window_end": true,
+            "loss": 320012.66650163766,
+            "gradient_norm": 336691.71875,
+            "kd_loss": 36.733055114746094,
+            "gt_loss": 320005.3198906147
+          }
+        ],
+        "previous_window": {
+          "frame": "005900",
+          "segment": "81:0002",
+          "supervised": true,
+          "reset": "initial",
+          "window_end": true,
+          "loss": 1.9925790502237237,
+          "gradient_norm": 8.369296073913574,
+          "kd_loss": 0.4824068546295166,
+          "gt_loss": 1.896097674827472
+        },
+        "next_window": {
+          "frame": "005908",
+          "segment": "81:0002",
+          "supervised": true,
+          "reset": "initial",
+          "window_end": true,
+          "loss": 1.751966535490786,
+          "gradient_norm": 7.351301193237305,
+          "kd_loss": 0.4291010797023773,
+          "gt_loss": 1.6661463150799622
+        }
+      }
+    ],
+    "mean_without_spikes": 0.9807706844883937
+  },
+  "19": {
+    "max_loss": 775.8656592904024,
+    "spikes": [
+      {
+        "window": [
+          {
+            "frame": "005885",
+            "segment": "81:0002",
+            "supervised": true,
+            "reset": "initial"
+          },
+          {
+            "frame": "005886",
+            "segment": "81:0002",
+            "supervised": true,
+            "reset": "initial"
+          },
+          {
+            "frame": "005887",
+            "segment": "81:0002",
+            "supervised": true,
+            "reset": "initial"
+          },
+          {
+            "frame": "005888",
+            "segment": "81:0002",
+            "supervised": true,
+            "reset": "initial",
+            "window_end": true,
+            "loss": 775.8656592904024,
+            "gradient_norm": 65829.765625,
+            "kd_loss": 0.8785467147827148,
+            "gt_loss": 775.6899499385052
+          }
+        ],
+        "previous_window": {
+          "frame": "005884",
+          "segment": "81:0002",
+          "supervised": true,
+          "reset": "initial",
+          "window_end": true,
+          "loss": 1.3329625181983822,
+          "gradient_norm": 2.321378469467163,
+          "kd_loss": 0.30680757761001587,
+          "gt_loss": 1.2716010004412048
+        },
+        "next_window": {
+          "frame": "005892",
+          "segment": "81:0002",
+          "supervised": true,
+          "reset": "initial",
+          "window_end": true,
+          "loss": 0.9882489743875615,
+          "gradient_norm": 1.6821812391281128,
+          "kd_loss": 0.2748275399208069,
+          "gt_loss": 0.9332834671484582
+        }
+      }
+    ],
+    "mean_without_spikes": 0.5704122466931943
+  },
+  "20": {
+    "max_loss": 3.0569059960854235,
+    "spikes": [],
+    "mean_without_spikes": 0.559445481276152
+  },
+  "21": {
+    "max_loss": 2.9986603472341904,
+    "spikes": [],
+    "mean_without_spikes": 0.5459013028112449
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "scope": "Incremental saved-report, checkpoint and sequence audit before scheduled epoch10 check; no independent AP recomputation",
+  "created_unix": 1792374563.344865,
+  "runs": [
+    {
+      "name": "unified_bev_v2_recurrent",
+      "checked": [
+        {
+          "epoch": 18,
+          "ap70": 0.3112714346907727,
+          "sha256": "bd973cbd0a7b1d609c9725abc83da1434df20b3964f2fbda2ebce3345b6526d3",
+          "loss_gt100": 0,
+          "max_loss": 3.3611095584339457,
+          "lr": 0.0005,
+          "stale": 0
+        },
+        {
+          "epoch": 19,
+          "ap70": 0.3306483659918474,
+          "sha256": "723bd1e48a12d42dd5bc267830c2d4ad6664c308fee1a5b9e5695091e51ff8c8",
+          "loss_gt100": 0,
+          "max_loss": 3.223630426396965,
+          "lr": 0.0005,
+          "stale": 0
+        },
+        {
+          "epoch": 20,
+          "ap70": 0.3418282368906271,
+          "sha256": "78d59c151a08ccdd31a018cb3d5b089f760f80179dfe9f22fc1630a70f563d89",
+          "loss_gt100": 0,
+          "max_loss": 3.1156842462008782,
+          "lr": 0.0005,
+          "stale": 0
+        }
+      ],
+      "status": {
+        "epoch": 21,
+        "phase": "full_validation",
+        "status": "RUNNING"
+      }
+    },
+    {
+      "name": "unified_bev_v2_reset",
+      "checked": [
+        {
+          "epoch": 19,
+          "ap70": 0.40350292071088684,
+          "sha256": "4754552c234f11d01af24c4ff431b8a3b91e575e487ae0086605aa47798969fe",
+          "loss_gt100": 1,
+          "max_loss": 775.8656592904024,
+          "lr": 0.001,
+          "stale": 0
+        },
+        {
+          "epoch": 20,
+          "ap70": 0.41299713524378096,
+          "sha256": "79fda255ff25272651f627bfc207d32b2a89e07d17bcf3554d2f8f7c4791cd87",
+          "loss_gt100": 0,
+          "max_loss": 3.0569059960854235,
+          "lr": 0.001,
+          "stale": 0
+        },
+        {
+          "epoch": 21,
+          "ap70": 0.4221406416768826,
+          "sha256": "766ea67ca12a88b8f3e3b0c4831efa703a43c7818652ce18b24465636f51bf83",
+          "loss_gt100": 0,
+          "max_loss": 2.9986603472341904,
+          "lr": 0.001,
+          "stale": 0
+        }
+      ],
+      "status": {
+        "epoch": 22,
+        "labels": 1689,
+        "mean_loss": 0.6035302491856389,
+        "phase": "train",
+        "scans": 2600,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 688
+      }
+    },
+    {
+      "name": "unified_bev_v2n_recurrent",
+      "checked": [
+        {
+          "epoch": 7,
+          "ap70": 0.28766065874877483,
+          "sha256": "c3872d58158b0e1e1d54fc6fa3b683d5a6250867301df704052cb14676dfbaed",
+          "loss_gt100": 0,
+          "max_loss": 4.0698501077886835,
+          "lr": 0.001,
+          "stale": 0
+        },
+        {
+          "epoch": 8,
+          "ap70": 0.33300209758981186,
+          "sha256": "1eaf06c14e304d60951dbfeb60c9d870f7a2e28bfda1693350080d2215220e53",
+          "loss_gt100": 0,
+          "max_loss": 4.148174066618214,
+          "lr": 0.001,
+          "stale": 0
+        }
+      ],
+      "status": {
+        "epoch": 9,
+        "phase": "full_validation",
+        "status": "RUNNING"
+      }
+    },
+    {
+      "name": "unified_bev_v2n_reset",
+      "checked": [
+        {
+          "epoch": 7,
+          "ap70": 0.16490385480565,
+          "sha256": "a9792e23974614725dc84bfcae084dee80d19e40bbad725315e835137c0a804b",
+          "loss_gt100": 0,
+          "max_loss": 3.7658348893285654,
+          "lr": 0.001,
+          "stale": 1
+        },
+        {
+          "epoch": 8,
+          "ap70": 0.22078222275964904,
+          "sha256": "6ef68370e3db7d91ea22b2dbae576f8542d53d33732eeec87d803035900d1fa3",
+          "loss_gt100": 0,
+          "max_loss": 3.729229741305375,
+          "lr": 0.001,
+          "stale": 0
+        }
+      ],
+      "status": {
+        "epoch": 9,
+        "labels": 4557,
+        "mean_loss": 0.7018963921697393,
+        "phase": "train",
+        "scans": 8400,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 2211
+      }
+    }
+  ]
+}
