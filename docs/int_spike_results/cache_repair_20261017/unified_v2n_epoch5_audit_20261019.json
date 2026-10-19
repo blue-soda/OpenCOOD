@@ -1,0 +1,211 @@
+{
+  "scope": "Incremental checkpoint, full sequence and finite-loss audit; saved metrics, not independent AP recomputation",
+  "created_unix": 1792370967.3158803,
+  "runs": [
+    {
+      "name": "unified_bev_v2_recurrent",
+      "best": {
+        "ap70": 0.3063037222717223,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_recurrent/epoch_017/student.pth",
+        "epoch": 17,
+        "sha256": "99d3e9679e5f172dc081952b7a411b159ac1f5921b5dbb13fe82943b508f1af4"
+      },
+      "checked": [
+        {
+          "epoch": 15,
+          "ap70": 0.29225360516579446,
+          "sha256": "f061772c88e284c88c43ef02184fbe459764c68907555204ff62263f794299fe",
+          "max_loss": 3.415047942683038,
+          "loss_gt100": 0,
+          "lr": 0.0005,
+          "stale": 0
+        },
+        {
+          "epoch": 16,
+          "ap70": 0.2981737729267441,
+          "sha256": "3a4c91092ba076836f3e7a37b166b876916c0a150364f87c0c4ccdc18b575a51",
+          "max_loss": 3.3494313879499726,
+          "loss_gt100": 0,
+          "lr": 0.0005,
+          "stale": 0
+        },
+        {
+          "epoch": 17,
+          "ap70": 0.3063037222717223,
+          "sha256": "99d3e9679e5f172dc081952b7a411b159ac1f5921b5dbb13fe82943b508f1af4",
+          "max_loss": 3.341790197582049,
+          "loss_gt100": 0,
+          "lr": 0.0005,
+          "stale": 0
+        }
+      ],
+      "status": {
+        "epoch": 18,
+        "phase": "full_validation",
+        "status": "RUNNING"
+      }
+    },
+    {
+      "name": "unified_bev_v2_reset",
+      "best": {
+        "ap70": 0.39792431902892716,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2_reset/epoch_018/student.pth",
+        "epoch": 18,
+        "sha256": "f81db9caaeac8d30d257b2ca392f00c209a307917ffe76bea699d1c4df09ed62"
+      },
+      "checked": [
+        {
+          "epoch": 16,
+          "ap70": 0.38190240552188376,
+          "sha256": "a1376567ea726c2de62acad82bd028ec084faf4e43e75fae83e303124199aef8",
+          "max_loss": 3.1459651606598893,
+          "loss_gt100": 0,
+          "lr": 0.001,
+          "stale": 0
+        },
+        {
+          "epoch": 17,
+          "ap70": 0.39302043406394793,
+          "sha256": "1f1977a96fc7d35b40c84e1a8518f583c9c8bc00f4f61150950c4d0c213c9aaf",
+          "max_loss": 3.1636967335216566,
+          "loss_gt100": 0,
+          "lr": 0.001,
+          "stale": 0
+        },
+        {
+          "epoch": 18,
+          "ap70": 0.39792431902892716,
+          "sha256": "f81db9caaeac8d30d257b2ca392f00c209a307917ffe76bea699d1c4df09ed62",
+          "max_loss": 3.1571397565067447,
+          "loss_gt100": 0,
+          "lr": 0.001,
+          "stale": 0
+        }
+      ],
+      "status": {
+        "epoch": 19,
+        "labels": 2641,
+        "mean_loss": 0.5527983903941175,
+        "phase": "train",
+        "scans": 5000,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1319
+      }
+    },
+    {
+      "name": "unified_bev_v2n_recurrent",
+      "best": {
+        "ap70": 0.2539107299806497,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_recurrent/epoch_005/student.pth",
+        "epoch": 5,
+        "sha256": "4c635ca6109adc7ecfc6a2a56d1f81d1266c7d71fd3d4031f23bf92989d60217"
+      },
+      "checked": [
+        {
+          "epoch": 4,
+          "ap70": 0.21106892276338493,
+          "sha256": "bb2ce3910e4b1b60cdab07a53d451393dc113a49895f24978a6a42374817a081",
+          "max_loss": 8.27252262157345,
+          "loss_gt100": 0,
+          "lr": 0.001,
+          "stale": 0
+        },
+        {
+          "epoch": 5,
+          "ap70": 0.2539107299806497,
+          "sha256": "4c635ca6109adc7ecfc6a2a56d1f81d1266c7d71fd3d4031f23bf92989d60217",
+          "max_loss": 4.138580824426148,
+          "loss_gt100": 0,
+          "lr": 0.001,
+          "stale": 0
+        },
+        {
+          "epoch": 6,
+          "ap70": 0.25285261480012095,
+          "sha256": "7865aafd1ee0e9f18d87fbb7640a76be9595e2354b56e9f850098d69315628fe",
+          "max_loss": 4.829322947086197,
+          "loss_gt100": 0,
+          "lr": 0.001,
+          "stale": 1
+        }
+      ],
+      "status": {
+        "epoch": 7,
+        "labels": 1825,
+        "mean_loss": 0.7250279954371617,
+        "phase": "train",
+        "scans": 3000,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 795
+      }
+    },
+    {
+      "name": "unified_bev_v2n_reset",
+      "best": {
+        "ap70": 0.1768437901849631,
+        "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_reset/epoch_006/student.pth",
+        "epoch": 6,
+        "sha256": "ce18247c2624fa1ce9c9b8a30bf95dcb5bea2fa5cb2452b08d97091a2acaa2f7"
+      },
+      "checked": [
+        {
+          "epoch": 4,
+          "ap70": 0.055466307005149644,
+          "sha256": "b560b55f2c5737c91f7b046b2fb4a9765d3dd6bc533f9383ffd7c7ddb2d05a28",
+          "max_loss": 4.6273116111549175,
+          "loss_gt100": 0,
+          "lr": 0.001,
+          "stale": 1
+        },
+        {
+          "epoch": 5,
+          "ap70": 0.14027098569156257,
+          "sha256": "2c3f9a3175dbdf8801c0d6fc475c895e129951de36ff7c83c0dc4c9a32118496",
+          "max_loss": 4.351862004548165,
+          "loss_gt100": 0,
+          "lr": 0.001,
+          "stale": 0
+        },
+        {
+          "epoch": 6,
+          "ap70": 0.1768437901849631,
+          "sha256": "ce18247c2624fa1ce9c9b8a30bf95dcb5bea2fa5cb2452b08d97091a2acaa2f7",
+          "max_loss": 4.262388517150294,
+          "loss_gt100": 0,
+          "lr": 0.001,
+          "stale": 0
+        }
+      ],
+      "status": {
+        "epoch": 7,
+        "labels": 1902,
+        "mean_loss": 0.7634226686511856,
+        "phase": "train",
+        "scans": 3200,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 847
+      }
+    }
+  ],
+  "same_epoch5": {
+    "unified_bev_v2_recurrent": {
+      "ap70": 0.18328522608649767,
+      "sha256": "27113e0aed9eeff9dbe88b5a4da7f4802f6beadd20180ebe7f0743093bae66f5"
+    },
+    "unified_bev_v2_reset": {
+      "ap70": 0.21765937241985092,
+      "sha256": "2347cd8066232d758c186f43f023a155a5b4cc084695f90a6677fbbbc6aea2f9"
+    },
+    "unified_bev_v2n_recurrent": {
+      "ap70": 0.2539107299806497,
+      "sha256": "4c635ca6109adc7ecfc6a2a56d1f81d1266c7d71fd3d4031f23bf92989d60217"
+    },
+    "unified_bev_v2n_reset": {
+      "ap70": 0.14027098569156257,
+      "sha256": "2c3f9a3175dbdf8801c0d6fc475c895e129951de36ff7c83c0dc4c9a32118496"
+    }
+  }
+}

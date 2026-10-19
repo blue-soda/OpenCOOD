@@ -1,0 +1,40 @@
+{
+  "scope": "CPU, identical first32 training scans at v2n epochs1/3/5; not AP, latency or recursive selective-policy evidence",
+  "runs": {
+    "unified_v2n_gate_e1_cpu32": {
+      "checkpoint_sha256": "cbe70401580dac5d8bfc47ec0ca8138881b712ed7629b530175a654971b8fbc1",
+      "always_gt99": 27,
+      "always_lt01": 4,
+      "frame_mean_range_lt01": 256,
+      "median_current_rms": 1.0,
+      "median_residual_rms": 4.479209899902344,
+      "valid_delta_to_stale": 0.47422768414879435,
+      "foreground_delta_to_stale": 0.41326205967432383
+    },
+    "unified_v2n_gate_e3_cpu32": {
+      "checkpoint_sha256": "4e0c5b2f75e3a1e2a9738bc22e0a9355f5b3ae3942f95a1c0344785b48a39c7e",
+      "always_gt99": 16,
+      "always_lt01": 1,
+      "frame_mean_range_lt01": 252,
+      "median_current_rms": 1.0,
+      "median_residual_rms": 2.6499857902526855,
+      "valid_delta_to_stale": 0.835703105855014,
+      "foreground_delta_to_stale": 0.640470335162673
+    },
+    "unified_v2n_gate_e5_cpu32": {
+      "checkpoint_sha256": "4c635ca6109adc7ecfc6a2a56d1f81d1266c7d71fd3d4031f23bf92989d60217",
+      "always_gt99": 18,
+      "always_lt01": 9,
+      "frame_mean_range_lt01": 232,
+      "median_current_rms": 1.0,
+      "median_residual_rms": 3.381385326385498,
+      "valid_delta_to_stale": 0.8081044231016633,
+      "foreground_delta_to_stale": 0.7182310349732981
+    }
+  },
+  "checks": [
+    "Same ordered32 frames/segments/supervision;30 valid histories",
+    "All source SHA256 match reports",
+    "Finite gates; CPU confirmed"
+  ]
+}
