@@ -1,0 +1,6 @@
+{
+  "scope": "CPU/GPU engineering only, not full validation or latency evidence",
+  "source_checkpoint_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+  "status": "ENGINEERING_PASSED",
+  "validation_ap": null
+}

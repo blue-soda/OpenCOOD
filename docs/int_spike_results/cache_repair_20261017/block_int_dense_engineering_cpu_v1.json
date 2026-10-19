@@ -1,0 +1,450 @@
+{
+  "additional_parameters": 0,
+  "block_contract": [
+    {
+      "block": 0,
+      "radius": 3,
+      "scale": 2,
+      "stage": 0,
+      "stride": 2
+    },
+    {
+      "block": 1,
+      "radius": 2,
+      "scale": 2,
+      "stage": 0,
+      "stride": 1
+    },
+    {
+      "block": 2,
+      "radius": 2,
+      "scale": 2,
+      "stage": 0,
+      "stride": 1
+    },
+    {
+      "block": 0,
+      "radius": 3,
+      "scale": 4,
+      "stage": 1,
+      "stride": 2
+    },
+    {
+      "block": 1,
+      "radius": 2,
+      "scale": 4,
+      "stage": 1,
+      "stride": 1
+    },
+    {
+      "block": 2,
+      "radius": 2,
+      "scale": 4,
+      "stage": 1,
+      "stride": 1
+    },
+    {
+      "block": 3,
+      "radius": 2,
+      "scale": 4,
+      "stage": 1,
+      "stride": 1
+    },
+    {
+      "block": 0,
+      "radius": 3,
+      "scale": 8,
+      "stage": 2,
+      "stride": 2
+    },
+    {
+      "block": 1,
+      "radius": 2,
+      "scale": 8,
+      "stage": 2,
+      "stride": 1
+    },
+    {
+      "block": 2,
+      "radius": 2,
+      "scale": 8,
+      "stage": 2,
+      "stride": 1
+    },
+    {
+      "block": 3,
+      "radius": 2,
+      "scale": 8,
+      "stage": 2,
+      "stride": 1
+    },
+    {
+      "block": 4,
+      "radius": 2,
+      "scale": 8,
+      "stage": 2,
+      "stride": 1
+    }
+  ],
+  "caveats": [
+    "Partial mode is experimental and uncalibrated, with no AP or speed claim.",
+    "Pillar, GRU, decoder, shrink and heads still execute densely.",
+    "All residual-block caches consume extra memory and warp/index costs during partial execution."
+  ],
+  "cost_scope": "Analytic Conv2d/ConvTranspose2d MACs of one real dense frame only; excludes Pillar Linear, BN, activations, warp, masks, copies; not actual latency or total network work.",
+  "device": "cpu",
+  "first_frame_conv_macs": {
+    "cls_head": 12902400,
+    "decoder": 2890137600,
+    "dir_head": 25804800,
+    "feature_memory": 26127360000,
+    "reg_head": 90316800,
+    "shrink_conv": 37158912000,
+    "spatial_blocks": 84226867200
+  },
+  "frames": [
+    {
+      "block_shapes": [
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ]
+      ],
+      "cache_bytes": 107282700,
+      "frame": "011050",
+      "prediction_max_errors": {
+        "dm": 0.0,
+        "psm": 0.0,
+        "rm": 0.0
+      },
+      "reset": "initial",
+      "segment": "105:0000"
+    },
+    {
+      "block_shapes": [
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ]
+      ],
+      "cache_bytes": 107282700,
+      "frame": "011051",
+      "prediction_max_errors": {
+        "dm": 0.0,
+        "psm": 0.0,
+        "rm": 0.0
+      },
+      "reset": null,
+      "segment": "105:0000"
+    },
+    {
+      "block_shapes": [
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ]
+      ],
+      "cache_bytes": 107282700,
+      "frame": "011052",
+      "prediction_max_errors": {
+        "dm": 0.0,
+        "psm": 0.0,
+        "rm": 0.0
+      },
+      "reset": null,
+      "segment": "105:0000"
+    },
+    {
+      "block_shapes": [
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          128,
+          100,
+          252
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          256,
+          50,
+          126
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ],
+        [
+          1,
+          512,
+          25,
+          63
+        ]
+      ],
+      "cache_bytes": 107282700,
+      "frame": "011053",
+      "prediction_max_errors": {
+        "dm": 0.0,
+        "psm": 0.0,
+        "rm": 0.0
+      },
+      "reset": null,
+      "segment": "105:0000"
+    }
+  ],
+  "parameters": 30776212,
+  "scope": "Original-weight inference bridge: exact dense operation order, no learned architecture change.",
+  "status": "PASSED"
+}

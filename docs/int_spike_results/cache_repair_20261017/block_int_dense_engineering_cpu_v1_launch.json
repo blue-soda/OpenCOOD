@@ -1,0 +1,21 @@
+{
+  "code_commit": "a2e5261126754490ecee49a48e3ab5d6f128b3ac",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_block_baseline",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/block_int_dense_engineering_cpu_v1",
+    "--device",
+    "cpu",
+    "--frames",
+    "4",
+    "--worker"
+  ],
+  "created_unix": 1792386710.3141875,
+  "device": "cpu",
+  "pid": 3363,
+  "timeout_seconds": 1800
+}

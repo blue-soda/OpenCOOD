@@ -91,6 +91,7 @@ def worker(a):
         a.stage = 'full'
         a.engineering = str(out/'engineering.json')
         write_json(out/'status.json',dict(status='RUNNING',phase='full_validation'))
+        torch.cuda.reset_peak_memory_stats()
         report = evaluate(a,model,cfg,rows,out,BlockCacheINT(model,cfg))
         report.update(scope='Pretrained INT block-cache bridge, all regions updated; not sparse inference',
                       source_checkpoint_sha256=provenance['checkpoint']['sha256'],
