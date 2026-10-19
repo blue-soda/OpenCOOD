@@ -1,0 +1,199 @@
+{
+  "captured_unix": 1792382051.7567372,
+  "root": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019",
+  "round_status": {
+    "state": "running",
+    "stage": "adapt10",
+    "supervisors": {
+      "snn_fixed_adapt10": 45401,
+      "snn_learn_adapt10": 45402,
+      "ann_fixed_adapt10": 45404,
+      "ann_learn_adapt10": 45406
+    }
+  },
+  "groups": {
+    "snn_fixed": {
+      "pipeline": {
+        "state": "running",
+        "job": "snn_fixed_adapt10_off_replay",
+        "child_pid": 21619,
+        "command": [
+          "env",
+          "CUDA_VISIBLE_DEVICES=",
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.replay_e3dsnn_predictions",
+          "--evaluation-dir",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/snn_fixed_adapt10_off"
+        ],
+        "supervisor_pid": 45401,
+        "updated_unix": 1792382027.6020086
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "current_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "verified_through_epoch": 10,
+        "passed": true
+      },
+      "frozen_decoder.json": {
+        "initial_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "current_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "verified_through_epoch": 10,
+        "passed": true
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "current_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "verified_through_epoch": 10,
+        "passed": true
+      }
+    },
+    "snn_learn": {
+      "pipeline": {
+        "state": "running",
+        "job": "snn_learn_adapt10_p3",
+        "child_pid": 11794,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/snn_learn/p3.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/snn_learn_adapt10/best_ap70.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/snn_learn_adapt10_p3",
+          "--eval-3d",
+          "--save-predictions",
+          "--profile",
+          "--packet-roundtrip"
+        ],
+        "supervisor_pid": 45402,
+        "updated_unix": 1792381251.0900767
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "current_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "verified_through_epoch": 10,
+        "passed": true
+      },
+      "frozen_decoder.json": {
+        "initial_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "current_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "verified_through_epoch": 10,
+        "passed": true
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "current_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "verified_through_epoch": 10,
+        "passed": true
+      }
+    },
+    "ann_fixed": {
+      "pipeline": {
+        "state": "running",
+        "job": "ann_fixed_adapt10_off",
+        "child_pid": 17834,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_fixed/off.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_fixed_adapt10/best_ap70.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_fixed_adapt10_off",
+          "--eval-3d",
+          "--save-predictions",
+          "--profile"
+        ],
+        "supervisor_pid": 45404,
+        "updated_unix": 1792381866.923247
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+        "current_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+        "verified_through_epoch": 10,
+        "passed": true
+      },
+      "frozen_decoder.json": {
+        "initial_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+        "current_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+        "verified_through_epoch": 10,
+        "passed": true
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "ce82e780b9490efd094dabc379102a9646beb394e58b0dcd5897fbaaabac5678",
+        "current_sha256": "ce82e780b9490efd094dabc379102a9646beb394e58b0dcd5897fbaaabac5678",
+        "verified_through_epoch": 10,
+        "passed": true
+      }
+    },
+    "ann_learn": {
+      "pipeline": {
+        "state": "running",
+        "job": "ann_learn_adapt10_p3",
+        "child_pid": 12396,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn/p3.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn_adapt10/best_ap70.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn_adapt10_p3",
+          "--eval-3d",
+          "--save-predictions",
+          "--profile",
+          "--packet-roundtrip"
+        ],
+        "supervisor_pid": 45406,
+        "updated_unix": 1792381303.0292647
+      },
+      "frozen_encoder.json": {
+        "initial_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+        "current_sha256": "62d9b2cfcebe1b55de52d78fbe04b91604f8c09fb62354b321d7c66a938ea1b1",
+        "verified_through_epoch": 10,
+        "passed": true
+      },
+      "frozen_decoder.json": {
+        "initial_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+        "current_sha256": "b9389df60564c696cb591a6f98590419ba814501c4a567794fbfc4f4b3953644",
+        "verified_through_epoch": 10,
+        "passed": true
+      },
+      "fixed_bn.json": {
+        "initial_sha256": "ce82e780b9490efd094dabc379102a9646beb394e58b0dcd5897fbaaabac5678",
+        "current_sha256": "ce82e780b9490efd094dabc379102a9646beb394e58b0dcd5897fbaaabac5678",
+        "verified_through_epoch": 10,
+        "passed": true
+      }
+    }
+  }
+}
