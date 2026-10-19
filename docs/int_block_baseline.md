@@ -1,5 +1,7 @@
 # 保留成熟精度的逐块缓存整图基线
 
+> 2026-10-19用户讨论后：本方案降为工程对照，暂停后续优化及完整验证排程。当前主线是[int_local_state_goal.md](int_local_state_goal.md)中的新状态更新架构。
+
 更新：2026-10-19。执行优先级见[int_dense_baseline_priority.md](int_dense_baseline_priority.md)。
 
 ## 目标与边界
