@@ -1,0 +1,29 @@
+{
+  "code_commit": "aaad761fa4f338628ea87c1741663646724b2e75",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.run_int_local_state",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_state_b_from_a06_dense_v1",
+    "--phase",
+    "b",
+    "--initialize-from",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_state_a_dense_v1/epoch_006/student.pth",
+    "--device",
+    "cuda",
+    "--gpu",
+    "1",
+    "--frames",
+    "4",
+    "--epochs",
+    "60",
+    "--worker"
+  ],
+  "created_unix": 1792396270.7107558,
+  "device": "cuda",
+  "pid": 51293,
+  "timeout_seconds": 172800
+}

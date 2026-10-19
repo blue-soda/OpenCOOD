@@ -1,0 +1,76 @@
+{
+  "caveat": "Engineering only; no AP or speed claim. Probe optimizer step is discarded before formal training.",
+  "device": "cuda",
+  "frames": [
+    {
+      "feature_kd": 0.03007538430392742,
+      "frame": "015371",
+      "gt": null,
+      "head_kd": 0.13334865868091583,
+      "reset": "initial",
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": false
+    },
+    {
+      "feature_kd": 0.03121088817715645,
+      "frame": "015372",
+      "gt": 0.6041575862347667,
+      "head_kd": 0.13794228434562683,
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": true
+    },
+    {
+      "feature_kd": 0.03244118392467499,
+      "frame": "015373",
+      "gt": 0.5148915657854828,
+      "head_kd": 0.14003492891788483,
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": true
+    },
+    {
+      "feature_kd": 0.03284543380141258,
+      "frame": "015374",
+      "gt": 0.5567254320159085,
+      "head_kd": 0.13847991824150085,
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": true
+    }
+  ],
+  "frozen_parameters": 768,
+  "gradient_norm_before_clip": 6.371819496154785,
+  "history_projection_gradient_l1": 22.04682159423828,
+  "initial_state_restored": true,
+  "initialization": "named_phase_a_checkpoint",
+  "manifest_start_index": 26,
+  "migrated_tensor_equality": true,
+  "migration_check_scope": "Before optional phase-A checkpoint loading",
+  "optimizer_step_changed_projection": true,
+  "previous_state_gradient_l1_after_probe_update": 0.1786330422546598,
+  "selection": "First contiguous requested-length window containing a training label; initial state empty",
+  "status": "PASSED",
+  "trainable_parameters": 2975252,
+  "update_radius": 4
+}
