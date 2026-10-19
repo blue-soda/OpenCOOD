@@ -6,8 +6,11 @@ from opencood.utils.quantized_feature_packet import pack, unpack
 
 
 def _validate(coords, codes, scales, metadata, family, kind):
-    if family not in ('count3', 'ann2bit') or kind not in ('event', 'full'):
+    if family not in ('count3', 'ann2bit') or kind not in ('event', 'full', 'joint_batch', 'joint_full'):
         raise ValueError('Unknown content message format')
+    joint = kind.startswith('joint_')
+    if joint and family != 'count3':
+        raise ValueError('Joint protocol requires Count3')
     if (codes.shape != (len(coords), 32) or coords.shape != (len(codes), 3) or
             not np.isfinite(coords).all() or np.any(coords != np.floor(coords)) or
             np.any(coords < 0) or np.any(coords >= 65536) or
@@ -24,6 +27,12 @@ def _validate(coords, codes, scales, metadata, family, kind):
     from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract, check_transform
     import torch
     expected = {'contract', 'basis_sha256', 'source_to_ego', 'packet_index', 'packet_count'}
+    if joint:
+        expected |= {'schema', 'transport'}
+        transport = 'progressive_voxel_batch' if kind == 'joint_batch' else 'full_then_same_schedule'
+        if (metadata.get('schema') != 'joint-content-voxel-batches-v1' or
+                metadata.get('transport') != transport):
+            raise ValueError('Wrong joint transport contract')
     if set(metadata) != expected or metadata['packet_count'] != 3:
         raise ValueError('Incomplete content metadata')
     contract = dict(metadata['contract'])
@@ -33,12 +42,12 @@ def _validate(coords, codes, scales, metadata, family, kind):
     basis = metadata['basis_sha256']
     if (not isinstance(basis, str) or len(basis) != 64 or
             any(c not in '0123456789abcdef' for c in basis) or
-            contract.channel_basis != 'content32-' + basis):
+            contract.channel_basis != ('joint-content32-' if joint else 'content32-') + basis):
         raise ValueError('Invalid latent channel basis')
     if np.prod(contract.shape_zyx) > 1000000 or np.any(coords >= contract.shape_zyx):
         raise ValueError('Address outside declared grid')
     index = metadata['packet_index']
-    if type(index) is not int or index not in ((1, 2, 3) if kind == 'event' else (3,)):
+    if type(index) is not int or index not in ((1, 2, 3) if kind in ('event', 'joint_batch') else (3,)):
         raise ValueError('Invalid content packet index')
     check_transform(torch.tensor(metadata['source_to_ego'], dtype=torch.float64)[None])
 

@@ -1,6 +1,7 @@
 """Causal state/geometry/learning checks for the joint path, not AP claims."""
 import dataclasses
 import unittest
+import numpy as np
 import torch
 from opencood.models.fuse_modules.e3dsnn_joint_membrane import JointMembraneReceiver
 from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract
@@ -9,6 +10,24 @@ from opencood.models.fuse_modules.e3dsnn_progressive_sender import ProgressiveSe
 
 
 class JointMembraneTest(unittest.TestCase):
+    def test_progressive_count3_codec_and_wrong_protocol_rejection(self):
+        from opencood.utils import content_feature_packet as codec
+        c=MessageContract('c','r','r','a'*64,'joint-content32-'+'b'*64,
+                          (1,1,4),(0.,0.,0.),(1.,1.,1.),(1,2))
+        meta=dict(contract=dataclasses.asdict(c),basis_sha256='b'*64,
+                  source_to_ego=np.eye(4).tolist(),packet_index=1,packet_count=3,
+                  schema='joint-content-voxel-batches-v1',transport='progressive_voxel_batch')
+        coords=np.array([[0,0,1],[0,0,3]])
+        codes=np.tile(np.arange(32)%4,(2,1));scales=np.ones(32)
+        packet=codec.encode(coords,codes,scales,meta,'count3','joint_batch')
+        pos,values,_,_=codec.decode(packet,'count3','joint_batch')
+        self.assertTrue(np.array_equal(pos,coords));self.assertTrue(np.array_equal(values,codes))
+        with self.assertRaises(ValueError):codec.decode(packet,'count3','full')
+        with self.assertRaises(ValueError):codec.encode(coords,codes,scales,meta,'count3','joint_full')
+        meta.update(packet_index=3,transport='full_then_same_schedule')
+        packet=codec.encode(coords,codes,scales,meta,'count3','joint_full')
+        self.assertTrue(np.array_equal(codec.decode(packet,'count3','joint_full')[1],codes))
+
     def setup_state(self, retain=True, local=True, membrane=.1):
         receiver = JointMembraneReceiver(1, 1, retain, local).double()
         with torch.no_grad(): receiver.current_scale.fill_(.4)

@@ -71,8 +71,9 @@ class E3dsnnJointDetector(E3dsnnContentDetector):
                 source_to_ego=poses[i][0].cpu().tolist(), packet_index=packet_index,
                 packet_count=3, schema='joint-content-voxel-batches-v1', transport=transport)
             scales = np.ones(32, dtype=np.float32)
-            packet = codec.encode(coords, features, scales, meta, 'count3', 'full')
-            coords, features, decoded_scales, metadata = codec.decode(packet, 'count3', 'full')
+            kind = 'joint_batch' if transport == 'progressive_voxel_batch' else 'joint_full'
+            packet = codec.encode(coords, features, scales, meta, 'count3', kind)
+            coords, features, decoded_scales, metadata = codec.decode(packet, 'count3', kind)
             if metadata != json.loads(json.dumps(meta)) or not np.array_equal(decoded_scales, scales):
                 raise ValueError('Packet contract or scale changed')
             out = torch.zeros_like(values)
