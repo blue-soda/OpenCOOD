@@ -118,6 +118,14 @@ def coordinate(root):
                 supervisor_pid=process.pid, training_started=stage == 'adapt10'))
             if process.wait() != 0: raise RuntimeError('Joint pipeline failed')
             summarize(root, stage)
+            if stage == 'adapt10':
+                cfg = yaml.safe_load((root / 'joint/p3.yaml').read_text())
+                if not cfg['model']['args'].get('joint_learn_order', True):
+                    report = read(root / 'adapt10_summary.json')
+                    if report['groups']['joint']['selected_sender_weights_changed']:
+                        report['passed'] = False
+                        write_json(root / 'adapt10_summary.json', report)
+                        raise RuntimeError('Frozen sender changed during ablation')
         write_json(root / 'round_status.json', dict(state='complete', finished_unix=time.time()))
     except Exception:
         write_json(root / 'round_status.json', dict(state='failed', error=traceback.format_exc(),

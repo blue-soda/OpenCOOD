@@ -19,7 +19,10 @@ from opencood.utils.e3dsnn_budget import decoder_digest
 from opencood.utils.e3dsnn_fusion_probe import bn_digest
 
 
-def audit(root, base, family, learn, joint=False):
+def audit(root, base, family, learn, joint=False, joint_variant='full'):
+    if joint_variant not in ('full','no_local','clear_interbatch','frozen_order'):
+        raise ValueError('Unknown registered joint ablation')
+    if not joint and joint_variant!='full':raise ValueError('Ablations require joint detector')
     root=Path(root);root.mkdir(parents=True,exist_ok=True)
     if any(root.iterdir()):raise FileExistsError('Fresh audit directory required')
     if joint:
@@ -39,6 +42,10 @@ def audit(root, base, family, learn, joint=False):
     raw['model']['core_method']='e3dsnn_joint_detector' if joint else 'e3dsnn_content_detector'
     raw['model']['args'].update(content_trainable=learn,readout_prefix=3,content_full_packet=False,
         fusion_activation_kind='count4' if family=='snn' else 'relu',train_encoder=False)
+    if joint:
+        raw['model']['args'].update(joint_local_membrane=joint_variant!='no_local',
+            joint_retain_residual=joint_variant!='clear_interbatch',
+            joint_learn_order=joint_variant!='frozen_order')
     raw['train_params']=dict(batch_size=2,epoches=10)
     (root/'config.yaml').write_text(yaml.safe_dump(raw));cfg=load_yaml(str(root/'config.yaml'))
     random.seed(20260929);np.random.seed(20260929);torch.manual_seed(20260929)
@@ -55,6 +62,14 @@ def audit(root, base, family, learn, joint=False):
         parameters=sum(p.numel() for p in model.parameters()),
         trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad),
         initial_basis_sha256=model.content.basis_digest())
+    if joint:
+        report['joint_variant']=joint_variant
+        reference=Path(base)/'e3dsnn_joint_round1_20261019/joint/initial.pth'
+        if reference.exists():
+            expected=torch.load(str(reference),map_location='cpu');actual=model.state_dict()
+            assert set(actual)==set(expected) and all(torch.equal(actual[k].cpu(),v) for k,v in expected.items())
+            report['initial_tensors_equal_full_joint']=True
+            report['full_joint_initial_sha256']=sha(reference)
     original=model.encode_lidar;original_membrane=model.encode_membrane
     with torch.no_grad():
         ego,membrane=original_membrane(data['processed_lidar'],2);road=original(data['road_lidar'],2)
@@ -95,6 +110,14 @@ def audit(root, base, family, learn, joint=False):
             delta=max(float((changed[k]-original_output[k]).abs().max()) for k in ('psm','rm','dm'))
             assert delta>0
             report['local_membrane_perturbation_response_max']=delta
+            from opencood.models.fuse_modules.e3dsnn_progressive import count_readout
+            same_count=count_readout(membrane)+.4
+            assert torch.equal(count_readout(same_count),count_readout(membrane))
+            model.encode_membrane=lambda lidar,n:(ego,same_count)
+            altered=model(data)
+            same_count_delta=max(float((altered[k]-original_output[k]).abs().max()) for k in ('psm','rm','dm'))
+            if joint_variant=='no_local':assert same_count_delta==0
+            report['same_count_membrane_perturbation_response_max']=same_count_delta
     model.encode_lidar=original;model.encode_membrane=original_membrane
     # Verify local path equals the source checkpoint, not just our own dropout.
     source_cfg=load_yaml(str(source_config));legacy=train_utils.create_model(source_cfg).cuda().eval()
@@ -116,7 +139,10 @@ def audit(root, base, family, learn, joint=False):
     if joint:
         # A ranking head's common score bias can have zero gradient: adding a
         # constant cannot change ordering. Require each functional block instead.
-        for prefix in ('content.project.','content.expand.','progressive_sender.','joint_receiver.'):
+        blocks=['content.project.','content.expand.','joint_receiver.']
+        if joint_variant!='frozen_order':blocks.append('progressive_sender.')
+        else:assert not any(k.startswith('progressive_sender.') for k in grads)
+        for prefix in blocks:
             assert sum(v for k,v in grads.items() if k.startswith(prefix))>0
     else:assert all(v>0 for v in grads.values())
     torch.nn.utils.clip_grad_norm_(model.parameters(),10.,error_if_nonfinite=True);optimizer.step()
@@ -136,4 +162,5 @@ if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',required=True);p.add_argument('--base',default='/data1/tzm/workspace/diagnostics')
     p.add_argument('--family',choices=('snn','ann'),required=True);p.add_argument('--learn',action='store_true')
     p.add_argument('--joint',action='store_true')
-    a=p.parse_args();audit(a.root,a.base,a.family,a.learn,a.joint)
+    p.add_argument('--joint-variant',choices=('full','no_local','clear_interbatch','frozen_order'),default='full')
+    a=p.parse_args();audit(a.root,a.base,a.family,a.learn,a.joint,a.joint_variant)

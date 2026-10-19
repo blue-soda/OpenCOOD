@@ -48,6 +48,28 @@ class JointMembraneTest(unittest.TestCase):
             outputs.append(s.output.detach())
         self.assertFalse(torch.equal(*outputs))
 
+    def test_no_local_removes_only_initial_subthreshold_information(self):
+        outputs=[]
+        for u in (.1,.4):
+            r,s,c,p=self.setup_state(local=False,membrane=u)
+            self.assertEqual(float(s.residual.abs().sum()),0)
+            x=torch.zeros_like(s.output);x[...,1]=1
+            r.receive(s,x,c,p,1,lambda a:a)
+            # New received subthreshold information is still retained.
+            self.assertGreater(float(s.residual.abs().sum()),0)
+            outputs.append((s.output.detach().clone(),s.residual.detach().clone()))
+        self.assertTrue(all(torch.equal(a,b) for a,b in zip(*outputs)))
+
+    def test_clear_interbatch_keeps_initial_local_residual(self):
+        full=self.setup_state(retain=True,membrane=.4)
+        clear=self.setup_state(retain=False,membrane=.4)
+        self.assertTrue(torch.equal(full[1].residual,clear[1].residual))
+        for r,s,c,p in (full,clear):
+            x=torch.zeros_like(s.output);x[...,1]=1
+            r.receive(s,x,c,p,1,lambda a:a)
+        self.assertTrue(torch.equal(full[1].output,clear[1].output))
+        self.assertFalse(torch.equal(full[1].residual,clear[1].residual))
+
     def test_residual_changes_second_packet_response_and_conserves_state(self):
         out=[]
         for retain in (True,False):

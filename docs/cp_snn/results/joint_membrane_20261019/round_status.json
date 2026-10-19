@@ -1,6 +1,4 @@
 {
-  "state": "running",
-  "stage": "adapt10",
-  "supervisor_pid": 19862,
-  "training_started": true
+  "state": "complete",
+  "finished_unix": 1792395209.4203722
 }
