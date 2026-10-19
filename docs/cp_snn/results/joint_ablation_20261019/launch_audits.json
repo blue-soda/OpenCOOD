@@ -1,0 +1,540 @@
+{
+  "observed_unix": 1792398481.5623734,
+  "groups": {
+    "no_local": {
+      "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_no_local_20261019",
+      "audit": {
+        "family": "snn",
+        "learn_content": true,
+        "joint_membrane": true,
+        "started_unix": 1792398365.0671668,
+        "source": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/snn_learn_adapt10/best_ap70.pth",
+        "source_sha256": "5abdd581b3d31ad11f32c66b290c99f129bda748a79e11d34214250426aa0902",
+        "source_summary_sha256": "a182257ab9d88c60c4dbe238dfb9e9cd8b198817b6266f1426e5741bd65771f3",
+        "initial_sha256": "107451f95c7785d8c67313f464694cc1706d20527164adf9dbe4f27b4aba4259",
+        "config_sha256": "c1381a3c5e0152ff771d2ad178f8bb2c498aa425c4445ca6198ea42771a6d5a2",
+        "frames": [
+          "000010",
+          "000011"
+        ],
+        "road_frames": [
+          "006689",
+          "006690"
+        ],
+        "prefixes": [
+          {
+            "prefix": 1,
+            "packet_bytes": [
+              2966,
+              3164
+            ],
+            "direct_wire_exact": true
+          },
+          {
+            "prefix": 2,
+            "packet_bytes": [
+              5864,
+              6272
+            ],
+            "direct_wire_exact": true
+          },
+          {
+            "prefix": 3,
+            "packet_bytes": [
+              8988,
+              9481
+            ],
+            "direct_wire_exact": true
+          }
+        ],
+        "code_commit": "5ec4bde69a697fdf91833d01e965e7ed0afd79d3",
+        "parameters": 3120631,
+        "trainable_parameters": 25634,
+        "initial_basis_sha256": "bf41b2b1060a52d937069f0a0eabadb984f0b2e3de24afbcb608b59a911f0952",
+        "joint_variant": "no_local",
+        "initial_tensors_equal_full_joint": true,
+        "full_joint_initial_sha256": "107451f95c7785d8c67313f464694cc1706d20527164adf9dbe4f27b4aba4259",
+        "full_packet_bytes": [
+          4780,
+          5195
+        ],
+        "single_full_packet_equal_three_events": true,
+        "repeated_forward_has_no_state_leak": true,
+        "batch_isolation_max_response_error": 0.0,
+        "local_membrane_perturbation_response_max": 1.3313933610916138,
+        "same_count_membrane_perturbation_response_max": 0.0,
+        "ego_matches_mature_source_exactly": true,
+        "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "bn_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "gradient_l1": {
+          "content.project.weight": 0.2399909347295761,
+          "content.expand.weight": 0.05738086253404617,
+          "joint_receiver.current_scale": 0.002836541971191764,
+          "joint_receiver.local_gate.weight": 0.040438491851091385,
+          "progressive_sender.score.0.weight": 0.000617078272625804,
+          "progressive_sender.score.0.bias": 0.0001302408636547625,
+          "progressive_sender.score.2.weight": 7.117957284208387e-05,
+          "progressive_sender.score.2.bias": 0.00010803026816574857
+        },
+        "frozen_encoder_decoder_bn": true,
+        "loss_components": {
+          "fused_detection_loss": 0.8667404240840715,
+          "prefix_1_detection_loss": 0.8667404240840715,
+          "prefix_2_detection_loss": 0.8667404240840715,
+          "prefix_3_detection_loss": 0.8667404240840715,
+          "ego_detection_loss": 0.8667404240840715
+        },
+        "full_dropout_all_prefixes_equal_ego": true,
+        "passed": true,
+        "finished_unix": 1792398366.6165283,
+        "scope": "Augmented train frames 0/1; audit update discarded; not an AP or mean-byte result"
+      },
+      "prepared_audit_sha256": "00e8f8277b766fb6005dc9fb041c83a1f6751d72bf2616febcc33034174bf110",
+      "launch": {
+        "gpu": 2,
+        "audit_sha256": "00e8f8277b766fb6005dc9fb041c83a1f6751d72bf2616febcc33034174bf110",
+        "started_unix": 1792398444.463114,
+        "code_commit": "5ec4bde69a697fdf91833d01e965e7ed0afd79d3",
+        "training_cap_seconds": 21600,
+        "per_evaluation_cap_seconds": 3600,
+        "allow_shared": true,
+        "memory_fraction": 0.2,
+        "gpu_admission": {
+          "accepted": true,
+          "minimum_free_mib": 8192,
+          "allocator_fraction": 0.2,
+          "mean_util_percent": 0.0,
+          "samples": [
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            }
+          ],
+          "policy": "user_authorized_shared"
+        }
+      },
+      "status": {
+        "state": "running",
+        "stage": "zero",
+        "supervisor_pid": 14561,
+        "training_started": false
+      },
+      "pipeline": {
+        "state": "running",
+        "job": "joint_zero_p1",
+        "child_pid": 14562,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_no_local_20261019/joint/p1.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_no_local_20261019/joint/initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_no_local_20261019/joint_zero_p1",
+          "--eval-3d",
+          "--save-predictions",
+          "--profile",
+          "--packet-roundtrip"
+        ],
+        "supervisor_pid": 14561,
+        "updated_unix": 1792398454.888635
+      },
+      "runtime": {
+        "gpu_visible": "2",
+        "cuda_allocator_memory_fraction": 0.2,
+        "joint_membrane": {
+          "local_precount_used": false,
+          "retain_post_readout_residual": true,
+          "learned_order": true,
+          "state": "U=Q_previous+R_previous+aligned_current; Q=Count4(U); R=U-Q",
+          "schedule": "learned disjoint latent voxel batches; sender-local scores",
+          "detector_backend": "frozen ANN BEV and continuous heads"
+        },
+        "trainable_parameters": 25634
+      },
+      "predicted_frames": 59
+    },
+    "clear_interbatch": {
+      "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_clear_interbatch_20261019",
+      "audit": {
+        "family": "snn",
+        "learn_content": true,
+        "joint_membrane": true,
+        "started_unix": 1792398381.9717195,
+        "source": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/snn_learn_adapt10/best_ap70.pth",
+        "source_sha256": "5abdd581b3d31ad11f32c66b290c99f129bda748a79e11d34214250426aa0902",
+        "source_summary_sha256": "a182257ab9d88c60c4dbe238dfb9e9cd8b198817b6266f1426e5741bd65771f3",
+        "initial_sha256": "107451f95c7785d8c67313f464694cc1706d20527164adf9dbe4f27b4aba4259",
+        "config_sha256": "746c29f29f073fb87eace7ee6604427f0a82aa072835f55e6e6eb56a061b6300",
+        "frames": [
+          "000010",
+          "000011"
+        ],
+        "road_frames": [
+          "006689",
+          "006690"
+        ],
+        "prefixes": [
+          {
+            "prefix": 1,
+            "packet_bytes": [
+              2966,
+              3164
+            ],
+            "direct_wire_exact": true
+          },
+          {
+            "prefix": 2,
+            "packet_bytes": [
+              5864,
+              6272
+            ],
+            "direct_wire_exact": true
+          },
+          {
+            "prefix": 3,
+            "packet_bytes": [
+              8988,
+              9481
+            ],
+            "direct_wire_exact": true
+          }
+        ],
+        "code_commit": "5ec4bde69a697fdf91833d01e965e7ed0afd79d3",
+        "parameters": 3120631,
+        "trainable_parameters": 25634,
+        "initial_basis_sha256": "bf41b2b1060a52d937069f0a0eabadb984f0b2e3de24afbcb608b59a911f0952",
+        "joint_variant": "clear_interbatch",
+        "initial_tensors_equal_full_joint": true,
+        "full_joint_initial_sha256": "107451f95c7785d8c67313f464694cc1706d20527164adf9dbe4f27b4aba4259",
+        "full_packet_bytes": [
+          4780,
+          5195
+        ],
+        "single_full_packet_equal_three_events": true,
+        "repeated_forward_has_no_state_leak": true,
+        "batch_isolation_max_response_error": 0.0,
+        "local_membrane_perturbation_response_max": 1.3176891803741455,
+        "same_count_membrane_perturbation_response_max": 1.6746978759765625,
+        "ego_matches_mature_source_exactly": true,
+        "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "bn_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "gradient_l1": {
+          "content.project.weight": 0.24384449422359467,
+          "content.expand.weight": 0.05835077911615372,
+          "joint_receiver.current_scale": 0.002284013433381915,
+          "joint_receiver.local_gate.weight": 0.1120404452085495,
+          "progressive_sender.score.0.weight": 0.000522583955898881,
+          "progressive_sender.score.0.bias": 9.489835792919621e-05,
+          "progressive_sender.score.2.weight": 5.511166818905622e-05,
+          "progressive_sender.score.2.bias": 8.012582111405209e-05
+        },
+        "frozen_encoder_decoder_bn": true,
+        "loss_components": {
+          "fused_detection_loss": 0.86522657001766,
+          "prefix_1_detection_loss": 0.8653145107304873,
+          "prefix_2_detection_loss": 0.8651527430302767,
+          "prefix_3_detection_loss": 0.8652124562922163,
+          "ego_detection_loss": 0.8667404240840715
+        },
+        "full_dropout_all_prefixes_equal_ego": true,
+        "passed": true,
+        "finished_unix": 1792398383.5754144,
+        "scope": "Augmented train frames 0/1; audit update discarded; not an AP or mean-byte result"
+      },
+      "prepared_audit_sha256": "a12aee3ba527212731043d0ebe741a4fab6ab628f794905c77f474df338d6654",
+      "launch": {
+        "gpu": 3,
+        "audit_sha256": "a12aee3ba527212731043d0ebe741a4fab6ab628f794905c77f474df338d6654",
+        "started_unix": 1792398452.8629906,
+        "code_commit": "5ec4bde69a697fdf91833d01e965e7ed0afd79d3",
+        "training_cap_seconds": 21600,
+        "per_evaluation_cap_seconds": 3600,
+        "allow_shared": true,
+        "memory_fraction": 0.2,
+        "gpu_admission": {
+          "accepted": true,
+          "minimum_free_mib": 8192,
+          "allocator_fraction": 0.2,
+          "mean_util_percent": 0.0,
+          "samples": [
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            }
+          ],
+          "policy": "user_authorized_shared"
+        }
+      },
+      "status": {
+        "state": "running",
+        "stage": "zero",
+        "supervisor_pid": 14803,
+        "training_started": false
+      },
+      "pipeline": {
+        "state": "running",
+        "job": "joint_zero_p1",
+        "child_pid": 14811,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_clear_interbatch_20261019/joint/p1.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_clear_interbatch_20261019/joint/initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_clear_interbatch_20261019/joint_zero_p1",
+          "--eval-3d",
+          "--save-predictions",
+          "--profile",
+          "--packet-roundtrip"
+        ],
+        "supervisor_pid": 14803,
+        "updated_unix": 1792398463.336805
+      },
+      "runtime": {
+        "gpu_visible": "3",
+        "cuda_allocator_memory_fraction": 0.2,
+        "joint_membrane": {
+          "local_precount_used": true,
+          "retain_post_readout_residual": false,
+          "learned_order": true,
+          "state": "U=Q_previous+R_previous+aligned_current; Q=Count4(U); R=U-Q",
+          "schedule": "learned disjoint latent voxel batches; sender-local scores",
+          "detector_backend": "frozen ANN BEV and continuous heads"
+        },
+        "trainable_parameters": 25634
+      },
+      "predicted_frames": 0
+    },
+    "frozen_order": {
+      "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_frozen_order_20261019",
+      "audit": {
+        "family": "snn",
+        "learn_content": true,
+        "joint_membrane": true,
+        "started_unix": 1792398398.405692,
+        "source": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/snn_learn_adapt10/best_ap70.pth",
+        "source_sha256": "5abdd581b3d31ad11f32c66b290c99f129bda748a79e11d34214250426aa0902",
+        "source_summary_sha256": "a182257ab9d88c60c4dbe238dfb9e9cd8b198817b6266f1426e5741bd65771f3",
+        "initial_sha256": "107451f95c7785d8c67313f464694cc1706d20527164adf9dbe4f27b4aba4259",
+        "config_sha256": "76434cdb94ba4ae4c0542b10b6c99f0e9d1e0287ad520a4ff2a981665e446c35",
+        "frames": [
+          "000010",
+          "000011"
+        ],
+        "road_frames": [
+          "006689",
+          "006690"
+        ],
+        "prefixes": [
+          {
+            "prefix": 1,
+            "packet_bytes": [
+              2966,
+              3164
+            ],
+            "direct_wire_exact": true
+          },
+          {
+            "prefix": 2,
+            "packet_bytes": [
+              5864,
+              6272
+            ],
+            "direct_wire_exact": true
+          },
+          {
+            "prefix": 3,
+            "packet_bytes": [
+              8988,
+              9481
+            ],
+            "direct_wire_exact": true
+          }
+        ],
+        "code_commit": "5ec4bde69a697fdf91833d01e965e7ed0afd79d3",
+        "parameters": 3120631,
+        "trainable_parameters": 24577,
+        "initial_basis_sha256": "bf41b2b1060a52d937069f0a0eabadb984f0b2e3de24afbcb608b59a911f0952",
+        "joint_variant": "frozen_order",
+        "initial_tensors_equal_full_joint": true,
+        "full_joint_initial_sha256": "107451f95c7785d8c67313f464694cc1706d20527164adf9dbe4f27b4aba4259",
+        "full_packet_bytes": [
+          4780,
+          5195
+        ],
+        "single_full_packet_equal_three_events": true,
+        "repeated_forward_has_no_state_leak": true,
+        "batch_isolation_max_response_error": 0.0,
+        "local_membrane_perturbation_response_max": 1.2949316501617432,
+        "same_count_membrane_perturbation_response_max": 2.342313528060913,
+        "ego_matches_mature_source_exactly": true,
+        "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+        "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+        "bn_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "gradient_l1": {
+          "content.project.weight": 0.2439371645450592,
+          "content.expand.weight": 0.060336049646139145,
+          "joint_receiver.current_scale": 0.003123288741335273,
+          "joint_receiver.local_gate.weight": 0.12035402655601501
+        },
+        "frozen_encoder_decoder_bn": true,
+        "loss_components": {
+          "fused_detection_loss": 0.864119006013474,
+          "prefix_1_detection_loss": 0.8653145107304873,
+          "prefix_2_detection_loss": 0.8659628437985748,
+          "prefix_3_detection_loss": 0.8610796635113604,
+          "ego_detection_loss": 0.8667404240840715
+        },
+        "full_dropout_all_prefixes_equal_ego": true,
+        "passed": true,
+        "finished_unix": 1792398399.9911952,
+        "scope": "Augmented train frames 0/1; audit update discarded; not an AP or mean-byte result"
+      },
+      "prepared_audit_sha256": "6e9ac01b5337311965bd5cdc99a8f940d72f164b75f164b4cb0ffe74fd394577",
+      "launch": {
+        "gpu": 4,
+        "audit_sha256": "6e9ac01b5337311965bd5cdc99a8f940d72f164b75f164b4cb0ffe74fd394577",
+        "started_unix": 1792398461.2270927,
+        "code_commit": "5ec4bde69a697fdf91833d01e965e7ed0afd79d3",
+        "training_cap_seconds": 21600,
+        "per_evaluation_cap_seconds": 3600,
+        "allow_shared": true,
+        "memory_fraction": 0.2,
+        "gpu_admission": {
+          "accepted": true,
+          "minimum_free_mib": 8192,
+          "allocator_fraction": 0.2,
+          "mean_util_percent": 0.0,
+          "samples": [
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            },
+            {
+              "total_mib": 24576,
+              "free_mib": 24252,
+              "util_percent": 0
+            }
+          ],
+          "policy": "user_authorized_shared"
+        }
+      },
+      "status": {
+        "state": "running",
+        "stage": "zero",
+        "supervisor_pid": 14916,
+        "training_started": false
+      },
+      "pipeline": {
+        "state": "running",
+        "job": "joint_zero_p1",
+        "child_pid": 14917,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.train_e3dsnn_single",
+          "--workers",
+          "2",
+          "--seed",
+          "20260929",
+          "--mode",
+          "eval",
+          "--config",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_frozen_order_20261019/joint/p1.yaml",
+          "--checkpoint",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_frozen_order_20261019/joint/initial.pth",
+          "--output",
+          "/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_frozen_order_20261019/joint_zero_p1",
+          "--eval-3d",
+          "--save-predictions",
+          "--profile",
+          "--packet-roundtrip"
+        ],
+        "supervisor_pid": 14916,
+        "updated_unix": 1792398471.6735451
+      },
+      "predicted_frames": 0
+    }
+  }
+}

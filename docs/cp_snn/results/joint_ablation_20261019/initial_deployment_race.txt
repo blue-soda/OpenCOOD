@@ -1,0 +1,3 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+TypeError: audit() takes from 4 to 5 positional arguments but 6 were given

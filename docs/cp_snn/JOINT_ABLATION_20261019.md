@@ -25,3 +25,20 @@ no_local删除所有本地阈前信息入口，包括门控输入；不能仅解
 真实审计：`audit_e3dsnn_content_detector --family snn --learn --joint --joint-variant <组名>`。复用单GPU`launch_e3dsnn_joint_round`，每组独立目录`/data1/tzm/workspace/diagnostics/e3dsnn_joint_ablation_<组名>_20261019`；各目录内部组名joint，比较时必须以外层目录/审计joint_variant区分。
 
 当前代码已补分离开关审计及frozen-order最终权重检查，本地21项检查通过；三组真实审计、零适配/训练尚未启动，以后续状态为准。完成后集中比较三个消融和原full，再优先改有证据的接收状态/电流映射或消息预算；不把当前可加状态实现等同于所有SNN协作机制的上限，也不把偏离目标的局部最优作为终点。
+
+
+## 三个分离消融已通过审计并启动（2026-10-19）
+
+本地/181各21项检查通过；三组真实增强batch2审计全部通过，三个initial的全部张量均与完整联合模型训练前初始化逐值一致。direct/codec往返、完整包同序列、逐样本隔离、ego和dropout检查通过，编码器/ANN BEV/连续头/BN冻结。no_local同计数不同阈前信息的检测输出差为0；其余两组该差为正。frozen_order评分器无梯度且排除优化，可训练24577参数；另外两组25634参数。完整联合主模型25634参数作为已完成控制。
+
+| 消融 | GPU | coordinator | 当前状态 |
+|---|---:|---:|---|
+| no_local | 2 | 14169 | 全量零适配评估中 |
+| clear_interbatch | 3 | 14407 | 全量零适配评估中 |
+| frozen_order | 4 | 14658 | 全量零适配评估中 |
+
+启动代码5ec4bde。三卡启动前5次采样利用率均0%，剩余24252MiB；保留用户授权共享策略和20% PyTorch分配上限。每组零适配和CPU复核通过后自动各训练10轮，不与初始审计优化步混用。当前不称正式训练已开始，更没有消融AP结论；旧Residual重复种子继续后移。目录/真实审计/初始化哈希/配置审计/启动采样和进程状态见[联合证据](results/joint_ablation_20261019/launch_audits.json)，SHA256 `d0d6b8ecbfe358b1e384ead451dc199bd63ce98e37db48b67e77ef01e9d5c5e6`与服务器原件一致；[21项CPU检查](results/joint_ablation_20261019/cpu_tests.txt)。
+
+首次no_local审计调用早于服务器pull结束，因旧函数签名返回TypeError，未创建模型/训练；在确认服务器HEAD为5ec4bde后重新执行并通过。[部署时序失败记录](results/joint_ablation_20261019/initial_deployment_race.txt)保留。这是部署调用顺序问题，不是模型兼容性结论；后续先确认依赖同步完成，再启动依赖它的操作。
+
+下一次自动任务同时检查三个`e3dsnn_joint_ablation_<组名>_20261019`目录的round_status和pipeline，取回最终结果后与原full同协议比较；不得重复prepare/launch。未变化健康执行静默，90分钟间隔保持。
