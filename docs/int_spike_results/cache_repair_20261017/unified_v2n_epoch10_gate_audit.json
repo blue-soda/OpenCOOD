@@ -1,0 +1,25 @@
+{
+  "scope": "Matched32 training scans on CPU, one-step dense-history diagnostic, no AP or latency inference",
+  "runs": {
+    "unified_v2n_gate_e5_cpu32": {
+      "checkpoint_sha256": "4c635ca6109adc7ecfc6a2a56d1f81d1266c7d71fd3d4031f23bf92989d60217",
+      "always_gt99": 18,
+      "always_lt01": 9,
+      "frame_mean_range_lt01": 232,
+      "median_current_rms": 1.0,
+      "median_residual_rms": 3.381385326385498,
+      "valid_delta_to_stale": 0.8081044231016633,
+      "foreground_delta_to_stale": 0.7182310349732981
+    },
+    "unified_v2n_gate_e10_cpu32": {
+      "checkpoint_sha256": "7389bc727283de66b5fd1a10726bccb60a14acebb498860266f3d57a7bd3a9fd",
+      "always_gt99": 18,
+      "always_lt01": 20,
+      "frame_mean_range_lt01": 133,
+      "median_current_rms": 1.0,
+      "median_residual_rms": 4.724772691726685,
+      "valid_delta_to_stale": 0.9055280559761206,
+      "foreground_delta_to_stale": 0.9034162299875927
+    }
+  }
+}

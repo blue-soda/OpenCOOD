@@ -1,0 +1,32 @@
+{
+  "status": "PLANNED_RESOURCE_BLOCKED_NOT_LAUNCHED",
+  "variant": "v2n",
+  "source_epoch": 10,
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_recurrent/epoch_010/student.pth",
+  "checkpoint_sha256": "7389bc727283de66b5fd1a10726bccb60a14acebb498860266f3d57a7bd3a9fd",
+  "runner": "opencood.tools.run_int_cached_update_parts",
+  "implementation_commit": "ea50591",
+  "validation_prefix_scans": 512,
+  "periods": [
+    2,
+    3
+  ],
+  "tile": 16,
+  "max_age_seconds": 0.25,
+  "sequence": [
+    "dense_before",
+    "period2",
+    "masked_period3",
+    "period3",
+    "dense_after"
+  ],
+  "resource_rule": "Launch only on an otherwise idle GPU with sufficient memory; do not terminate or overlap other tasks on that GPU.",
+  "engineering": "83 CPU INT tests passed; require real-weight period1 equality and gathered selected-parts parity before AP evaluation.",
+  "selection": "No fitting or threshold tuning on validation. Same previously specified policy as original v2.",
+  "decision": "Compare AP and mean/P95 model latency against both dense controls. If mean lies inside dense drift, do not claim acceleration. If loss/speed tradeoff is unfavorable, diagnose rather than automatically expand to full validation.",
+  "limitations": [
+    "Epoch10 is an early low-accuracy model, not a replacement for the retained75.82349% candidate.",
+    "No GPU job, PID, AP result or speed result exists for this planned run.",
+    "Full CPU engineering tests do not establish real-weight GPU parity or actual speed."
+  ]
+}
