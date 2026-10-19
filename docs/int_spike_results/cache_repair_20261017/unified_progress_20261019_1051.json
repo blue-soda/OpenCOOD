@@ -1,0 +1,116 @@
+{
+  "scope": "Incremental saved-report and checkpoint audit; epoch10 comparison pending both full reports",
+  "created_unix": 1792378202.495932,
+  "runs": [
+    {
+      "name": "unified_bev_v2_recurrent",
+      "checked": [
+        {
+          "epoch": 21,
+          "ap70": 0.35709784483575474,
+          "sha256": "5b065c9b184d3b65540530de37c466ac01a07b8e46ebea5645e58b6d518d214b",
+          "max_loss": 3.130817303326544,
+          "loss_gt100": 0,
+          "seconds": 1139.0766959721223,
+          "lr": 0.0005
+        },
+        {
+          "epoch": 22,
+          "ap70": 0.36155579676722255,
+          "sha256": "52789e9146915f25aa5b97c4a6337dc75da9f6ee3548cb699693dcede29288dd",
+          "max_loss": 3.0196138646066135,
+          "loss_gt100": 0,
+          "seconds": 1411.0323204209562,
+          "lr": 0.0005
+        },
+        {
+          "epoch": 23,
+          "ap70": 0.3745265227560174,
+          "sha256": "4c3ff9cb2ee6725bb9225c1554688b89f19b99ae09a13c20f7b4d8e1fba1535d",
+          "max_loss": 2.9921174948573652,
+          "loss_gt100": 0,
+          "seconds": 1444.190871435916,
+          "lr": 0.0005
+        }
+      ],
+      "status": {
+        "epoch": 24,
+        "labels": 3705,
+        "mean_loss": 0.5750722023844708,
+        "phase": "train",
+        "scans": 6800,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1793
+      }
+    },
+    {
+      "name": "unified_bev_v2_reset",
+      "checked": [
+        {
+          "epoch": 22,
+          "ap70": 0.43288120624127135,
+          "sha256": "d257feac46155b1f849166b468bf95535637b09236b66fc86c2dfa468b2977ef",
+          "max_loss": 21.533425052966997,
+          "loss_gt100": 0,
+          "seconds": 3705.924719907809,
+          "lr": 0.001
+        }
+      ],
+      "status": {
+        "epoch": 23,
+        "labels": 1156,
+        "mean_loss": 0.5110082405391296,
+        "phase": "train",
+        "scans": 2000,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 531
+      }
+    },
+    {
+      "name": "unified_bev_v2n_recurrent",
+      "checked": [
+        {
+          "epoch": 9,
+          "ap70": 0.3795423377117398,
+          "sha256": "2e4caf814a77ff09bed224a2ca0f1ef54677da0669cf19ee093130d1b7df780b",
+          "max_loss": 3.325885678402172,
+          "loss_gt100": 0,
+          "seconds": 1330.2477994330693,
+          "lr": 0.001
+        }
+      ],
+      "status": {
+        "epoch": 10,
+        "phase": "full_validation",
+        "status": "RUNNING"
+      }
+    },
+    {
+      "name": "unified_bev_v2n_reset",
+      "checked": [
+        {
+          "epoch": 9,
+          "ap70": 0.3159898250286164,
+          "sha256": "e2a17e95b52d5cc32c4461f4d67db77af2c32632ae6288817fb9ea413f98b5f2",
+          "max_loss": 3.903872791840951,
+          "loss_gt100": 0,
+          "seconds": 3110.0078739789315,
+          "lr": 0.001
+        }
+      ],
+      "status": {
+        "epoch": 10,
+        "labels": 2389,
+        "mean_loss": 0.6572004386850792,
+        "phase": "train",
+        "scans": 4400,
+        "status": "RUNNING",
+        "total_scans": 8593,
+        "updates": 1165
+      }
+    }
+  ],
+  "gpu_apps": "GPU-a663a4e7-ef8c-7ebf-9e53-4ada0a77930e, 45403, 3276 MiB\nGPU-a663a4e7-ef8c-7ebf-9e53-4ada0a77930e, 18986, 8036 MiB\nGPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76, 45405, 3302 MiB\nGPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76, 18987, 8030 MiB\nGPU-b2981727-f739-13ea-1e14-704b1794fa22, 45407, 3260 MiB\nGPU-b2981727-f739-13ea-1e14-704b1794fa22, 18988, 8030 MiB\nGPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f, 27008, 7606 MiB\nGPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b, 27158, 7646 MiB\nGPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b, 18989, 8030 MiB\nGPU-1fa76848-4737-2fdc-5205-5314117e890f, 45408, 3288 MiB\nGPU-1fa76848-4737-2fdc-5205-5314117e890f, 18990, 8030 MiB\nGPU-9c30712c-80fe-75ff-b808-dfc9b591442c, 21006, 7682 MiB\nGPU-9c30712c-80fe-75ff-b808-dfc9b591442c, 18991, 8030 MiB\nGPU-6049f9bd-dd16-a915-1d4e-06ad4936822f, 21157, 7676 MiB\nGPU-6049f9bd-dd16-a915-1d4e-06ad4936822f, 18992, 8030 MiB\n"
+}
