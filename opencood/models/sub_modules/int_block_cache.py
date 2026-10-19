@@ -13,6 +13,22 @@ from opencood.models.sub_modules.int_cache_repair import refresh_tiles
 from opencood.models.sub_modules.int_feature_memory import warp_bev
 
 
+def block_lidar_range(bounds, input_shape, output_shape, scale):
+    """Metric lattice of stride-s, padding-1 3x3 stacks, including odd sizes.
+
+    Output index zero has the original input cell-zero center, not the center
+    of a newly partitioned coarse cell. Rotation warps must retain this phase.
+    """
+    ih, iw = input_shape
+    oh, ow = output_shape
+    if scale < 1 or (oh, ow) != ((ih + scale - 1) // scale, (iw + scale - 1) // scale):
+        raise ValueError('Feature grid does not match the declared stride')
+    dx, dy = (bounds[3] - bounds[0]) / iw, (bounds[4] - bounds[1]) / ih
+    xmin = bounds[0] + .5 * dx - .5 * scale * dx
+    ymin = bounds[1] + .5 * dy - .5 * scale * dy
+    return [xmin, ymin, bounds[2], xmin + ow * scale * dx, ymin + oh * scale * dy, bounds[5]]
+
+
 def block_contract(backbone):
     """Reject unsupported dependencies rather than silently underestimating halo."""
     if backbone.use_dropout:
@@ -138,7 +154,8 @@ class BlockCacheINT:
                 raise RuntimeError('Missing aligned GRU observation')
             cached, requests = [], []
             for entry, value, age in zip(self.blocks.contract, state['blocks'], state['ages']):
-                packed, valid = warp_bev(torch.cat([value, age], dim=1), state['pose'], meta['pose'], self.bounds)
+                lattice = block_lidar_range(self.bounds, spatial.shape[-2:], value.shape[-2:], entry['scale'])
+                packed, valid = warp_bev(torch.cat([value, age], dim=1), state['pose'], meta['pose'], lattice)
                 old, elapsed = packed[:, :-1], packed[:, -1:] + info['delta_t']
                 request = F.max_pool2d(selection[0].float(), entry['scale'], entry['scale'], ceil_mode=True).bool()
                 requests.append(request | ~valid | (elapsed >= self.max_age))

@@ -1,8 +1,10 @@
 import unittest
+from unittest.mock import patch
 import torch
 from torch import nn
 from opencood.models.sub_modules.codyntrust_base_bev_backbone_resnet import ResNetBEVBackbone
-from opencood.models.sub_modules.int_block_cache import BlockCachedBackbone
+from opencood.models.sub_modules.int_block_cache import BlockCachedBackbone, BlockCacheINT, block_lidar_range
+from opencood.models.sub_modules.int_feature_memory import warp_bev, INTFeatureMemory
 
 
 class BlockCacheTests(unittest.TestCase):
@@ -80,6 +82,89 @@ class BlockCacheTests(unittest.TestCase):
         self.backbone.resnet.layer0[0].bn1 = nn.BatchNorm2d(4, track_running_stats=False)
         with self.assertRaises(ValueError):
             BlockCachedBackbone(self.backbone)
+
+    def test_stride_phase_and_odd_feature_grid(self):
+        bounds = [-12., -8., -1., 12., 8., 1.]
+        for shape in [(16, 24), (17, 25)]:
+            for scale in (2, 4, 8):
+                output = tuple((v + scale - 1) // scale for v in shape)
+                lattice = block_lidar_range(bounds, shape, output, scale)
+                for lo, hi, axis in [(0, 3, 1), (1, 4, 0)]:
+                    step = (bounds[hi] - bounds[lo]) / shape[axis]
+                    self.assertAlmostEqual((lattice[hi] - lattice[lo]) / output[axis], scale * step)
+                    self.assertAlmostEqual(lattice[lo] + .5 * scale * step, bounds[lo] + .5 * step)
+        with self.assertRaises(ValueError):
+            block_lidar_range(bounds, (16, 24), (5, 6), 4)
+
+    def test_rotation_uses_convolution_lattice_centers(self):
+        bounds = [-12., -8., -1., 12., 8., 1.]
+        lattice = block_lidar_range(bounds, (16, 24), (4, 6), 4)
+        value = torch.arange(24.).reshape(1, 1, 4, 6)
+        past = torch.eye(4).numpy()
+        current = past.copy()
+        current[0, 0] = current[1, 1] = -1
+        actual, valid = warp_bev(value, past, current, lattice)
+        expected = torch.zeros_like(value)
+        for y in range(4):
+            for x in range(6):
+                sx = int(round((-(-11.5 + 4 * x) + 11.5) / 4))
+                sy = int(round((-(-7.5 + 4 * y) + 7.5) / 4))
+                if 0 <= sx < 6 and 0 <= sy < 4:
+                    expected[0, 0, y, x] = value[0, 0, sy, sx]
+        self.assertTrue(torch.equal(actual, expected))
+
+    def detector(self):
+        class Pillar(nn.Module):
+            def forward(self, batch):
+                return dict(spatial_features=batch['voxel_features'])
+        model = nn.Module()
+        model.pillar_vfe, model.scatter = Pillar(), nn.Identity()
+        model.backbone = self.backbone
+        model.feature_memory = INTFeatureMemory('gru', 3, [-12, -8, -1, 12, 8, 1])
+        model.cls_head, model.reg_head, model.dir_head = nn.Conv2d(12, 2, 1), nn.Conv2d(12, 14, 1), nn.Conv2d(12, 4, 1)
+        model.shrink_flag, model.use_dir = False, True
+        model.eval()
+        return model, dict(model=dict(args=dict(lidar_range=[-12, -8, -1, 12, 8, 1])))
+
+    def test_recursive_detector_sparse_masked_agreement_and_reuses_gru_alignment(self):
+        model, cfg = self.detector()
+        sparse = BlockCacheINT(model, cfg, threshold=.7, tile=2, allow_fallback=False)
+        masked = BlockCacheINT(model, cfg, threshold=.7, tile=2, allow_fallback=False, execution='masked_dense')
+        a_state = b_state = None
+        with torch.no_grad():
+            for i in range(4):
+                pose = torch.eye(4).numpy()
+                pose[0, 3] = i * .2
+                meta = dict(segment='one', timestamp_us=i * 100000, pose=pose)
+                data = dict(processed_lidar=dict(voxel_features=torch.randn(1, 3, 64, 96),
+                                                voxel_coords=None, voxel_num_points=None))
+                with patch('opencood.models.sub_modules.int_feature_memory.warp_bev', wraps=warp_bev) as warp:
+                    a, a_state, info = sparse.step(data, a_state, meta)
+                    self.assertEqual(warp.call_count, int(i > 0))
+                b, b_state, _ = masked.step(data, b_state, meta)
+                for key in a:
+                    self.assertTrue(torch.allclose(a[key], b[key], atol=3e-6, rtol=3e-5))
+                self.assertTrue(all(torch.allclose(x, y, atol=3e-6, rtol=3e-5)
+                                    for x, y in zip(a_state['blocks'], b_state['blocks'])))
+
+    def test_age_refresh_scene_reset_and_noncausal_rejection(self):
+        model, cfg = self.detector()
+        bridge = BlockCacheINT(model, cfg, threshold=1e6, max_age=.2, tile=2, allow_fallback=False)
+        state = None
+        data = dict(processed_lidar=dict(voxel_features=torch.randn(1, 3, 64, 96),
+                                        voxel_coords=None, voxel_num_points=None))
+        with torch.no_grad():
+            for i in range(3):
+                meta = dict(segment='one', timestamp_us=i * 100000, pose=torch.eye(4).numpy())
+                _, state, info = bridge.step(data, state, meta)
+                expected = 0. if i == 1 else 1.
+                self.assertTrue(all(s['actual_write_fraction'] == expected for s in info['cache_blocks']))
+            with self.assertRaises(ValueError):
+                bridge.step(data, state, meta)
+            meta = dict(meta, segment='two', timestamp_us=0)
+            _, state, info = bridge.step(data, state, meta)
+            self.assertEqual(info['reset'], 'scene')
+            self.assertTrue(all(s['actual_write_fraction'] == 1 for s in info['cache_blocks']))
 
 
 if __name__ == '__main__':
