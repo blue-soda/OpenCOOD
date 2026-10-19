@@ -65,4 +65,11 @@ class CachedPartsTests(unittest.TestCase):
             self.assertTrue(torch.allclose(got,ref,atol=1e-10,rtol=1e-10))
 
 
+class NormalizedCachedPartsTests(CachedPartsTests):
+    """Run the recursive cache/skip/parity checks with the normalized current path."""
+    def setUp(self):
+        super().setUp()
+        self.core.update.normalize_current=True
+
+
 if __name__=='__main__':unittest.main()

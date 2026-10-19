@@ -28,11 +28,13 @@ def run(a,out):
     source=Path(a.checkpoint);sha=digest(source)
     assert json.loads((source.parent/'report.json').read_text())['checkpoint_sha256']==sha
     saved=torch.load(str(source),map_location='cpu')
-    assert saved['contract']['version']=='unified_bev_dense_v2' and saved['contract']['memory_policy']=='recurrent'
+    versions={'unified_bev_dense_v2':'v2','unified_bev_dense_v2n':'v2n'}
+    assert saved['contract']['version'] in versions and saved['contract']['memory_policy']=='recurrent'
+    variant=versions[saved['contract']['version']]
     write_json(out/'status.json',dict(status='RUNNING',phase='engineering'))
     teacher,cfg,rows,prov=setup(a);write_json(out/'provenance.json',prov)
     assert saved['contract']['data_contract']==prov['contract']
-    student=UnifiedBEVDetector(teacher,cfg,'v2','recurrent').cuda().eval()
+    student=UnifiedBEVDetector(teacher,cfg,variant,'recurrent').cuda().eval()
     student.load_state_dict(saved['model'],strict=True)
     for parameter in student.parameters():parameter.requires_grad_(False)
     a.engineering=str(out/'engineering.json');engineering(student,teacher,cfg,rows,out)
@@ -57,7 +59,7 @@ def run(a,out):
                 parts_max_abs_error=float(err.max()),checkpoint_sha256=sha))
     finally:hook.remove()
     write_json(out/'experiment_contract.json',dict(checkpoint=str(source),checkpoint_sha256=sha,source_epoch=saved['epoch'],
-        source_training_contract=saved['contract'],periods=[2,3],max_age=.25,tile=a.tile,
+        source_training_contract=saved['contract'],variant=variant,periods=[2,3],max_age=.25,tile=a.tile,
         rule='Reuse residual/gate logits, current projection and recurrent value updated everywhere; new-view/age cells use gathered net; >=.8 unique halo support falls back dense.',
         calibration='No fitted selector or threshold. Periods fixed before validation.',validation_scans=a.frames or len(rows)))
     reports={}
@@ -70,7 +72,7 @@ def run(a,out):
         records=[json.loads(s) for s in (folder/'frames.jsonl').read_text().splitlines()]
         expected=rows if a.frames==0 else rows[:a.frames]
         assert [(f['frame'],f['segment'],f['supervised']) for f in records]==[(f['frame'],f['segment'],f['supervised']) for f in expected]
-        report.update(checkpoint_sha256=sha,source_epoch=saved['epoch'],period=period,repair=mode,
+        report.update(checkpoint_sha256=sha,source_epoch=saved['epoch'],variant=variant,period=period,repair=mode,
             caveats=['Fixed early checkpoint, no sparse training; prefix AP is not full validation AP.',
                      'Cache includes actual previous state, residual/gate logits and age; current projection/readout stay dense.',
                      'Same GPU sequential model timing includes cache/warp/repair/current/readout, other GPUs may be training.',
