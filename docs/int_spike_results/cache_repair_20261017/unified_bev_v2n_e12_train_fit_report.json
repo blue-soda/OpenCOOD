@@ -1,0 +1,54 @@
+{
+  "caveats": [
+    "All state cells are updated each frame. No selective-update or sparsity speedup is claimed.",
+    "Own frozen Pillar encoder, observation/context, recurrent update, readout and heads only; no old GRU, ResNet or multiscale decoder.",
+    "No teacher execution or teacher state in validation/inference. Model timing excludes IO/voxelization/postprocess.",
+    "Concurrent training throughput is not a paired latency benchmark. Use independent same-GPU sequential evaluation after training.",
+    "Fixed-weight evaluation on seen training data, without optimizer updates; train/val distribution differences prevent assigning a gap to overfitting alone."
+  ],
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_recurrent/epoch_012/student.pth",
+  "checkpoint_sha256": "15a4e443e08de621351e0379597b26b93c8b7dfefea2af92bd220fa2c7fef660",
+  "content_calibration_sha256": null,
+  "content_threshold": null,
+  "evaluation_split": "train",
+  "labels": 4678,
+  "memory_policy": "recurrent",
+  "metrics": {
+    "bev_ap30": 0.8079059946798185,
+    "bev_ap50": 0.7675414025555869,
+    "bev_ap70": 0.5383201198787391
+  },
+  "model_step_ms_mean": 19.945935533226507,
+  "model_step_ms_p50": 19.722850061953068,
+  "model_step_ms_p95": 22.75665747001767,
+  "oracle_index": null,
+  "oracle_stage0": false,
+  "peak_gpu_bytes": 499706880,
+  "periodic_last": 0,
+  "periodic_refresh_counts": null,
+  "reset_frames": 303,
+  "scans": 8593,
+  "scope": "Full training-split fit diagnostic; not validation AP",
+  "seconds": 515.4276275550947,
+  "stage_means": [
+    {
+      "actual_write_fraction": 0.0,
+      "executed_input_area_ratio": 0.0
+    },
+    {
+      "actual_write_fraction": 0.0,
+      "executed_input_area_ratio": 0.0
+    },
+    {
+      "actual_write_fraction": 0.0,
+      "executed_input_area_ratio": 0.0
+    }
+  ],
+  "state_bytes": 25804800,
+  "status": "COMPLETED",
+  "support_profile": false,
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+  "uncovered_fraction_mean": null,
+  "variant": "v2n",
+  "zero_uncovered": false
+}

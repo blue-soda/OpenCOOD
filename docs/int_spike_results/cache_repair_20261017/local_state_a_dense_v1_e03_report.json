@@ -1,0 +1,50 @@
+{
+  "caveats": [
+    "All regions update; no region skipping or speedup claim.",
+    "Teacher used only in training; validation owns student state.",
+    "Concurrent GPU timing is not a controlled latency comparison."
+  ],
+  "checkpoint_sha256": "f5c7dc0a53d74a3bb39fd5511b0a14fc16a40b887223288b82346bfa774f3db4",
+  "content_calibration_sha256": null,
+  "content_threshold": null,
+  "epoch": 3,
+  "labels": 1738,
+  "memory_policy": "reset",
+  "metrics": {
+    "bev_ap30": 0.8156645601101309,
+    "bev_ap50": 0.7904533352750491,
+    "bev_ap70": 0.6558422698733266
+  },
+  "model_step_ms_mean": 12.697425496661108,
+  "model_step_ms_p50": 12.588749057613313,
+  "model_step_ms_p95": 14.097184257116167,
+  "oracle_index": null,
+  "oracle_stage0": false,
+  "peak_gpu_bytes": 460988928,
+  "periodic_last": 0,
+  "periodic_refresh_counts": null,
+  "reset_frames": 5794,
+  "scans": 5794,
+  "scope": "Migrated local-state dense baseline phase a",
+  "seconds": 256.60916917189024,
+  "stage_means": [
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    }
+  ],
+  "state_bytes": 25804800,
+  "status": "COMPLETED",
+  "support_profile": false,
+  "timing_scope": "Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included",
+  "uncovered_fraction_mean": null,
+  "zero_uncovered": false
+}
