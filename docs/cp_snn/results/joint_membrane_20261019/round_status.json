@@ -1,5 +1,6 @@
 {
-  "state": "prepared",
-  "training_started": false,
-  "note": "Joint route prioritized; waiting for one free GPU"
+  "state": "running",
+  "stage": "zero",
+  "supervisor_pid": 59491,
+  "training_started": false
 }

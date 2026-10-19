@@ -1,0 +1,44 @@
+{
+  "gpu": 3,
+  "audit_sha256": "bfe46ec148fae1c9e1cfb21821fe9bcb5b46e4ad4d57bc92fdb639aaf9885222",
+  "started_unix": 1792385916.005068,
+  "code_commit": "524c0331f13d72c212ee99323b85f2bca55cc24b",
+  "training_cap_seconds": 21600,
+  "per_evaluation_cap_seconds": 3600,
+  "allow_shared": true,
+  "memory_fraction": 0.2,
+  "gpu_admission": {
+    "accepted": true,
+    "minimum_free_mib": 8192,
+    "allocator_fraction": 0.2,
+    "mean_util_percent": 30.8,
+    "samples": [
+      {
+        "total_mib": 24576,
+        "free_mib": 16640,
+        "util_percent": 37
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 16640,
+        "util_percent": 28
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 16640,
+        "util_percent": 35
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 16640,
+        "util_percent": 29
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 16640,
+        "util_percent": 25
+      }
+    ],
+    "policy": "user_authorized_shared"
+  }
+}

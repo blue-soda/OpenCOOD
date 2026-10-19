@@ -68,8 +68,17 @@
 
 用户明确允许使用已有进程占用但利用率较低、显存充足的GPU，后续不再把“必须空卡”作为阻塞理由。联合路线优先级和实验协议不变，不停止其他进程。最近5次全卡采样中GPU3利用率9/25/0/8/8%，平均10%，可用16640MiB，明显低于其余卡，选择GPU3。
 
-联合启动器新增显式`--allow-shared --memory-fraction 0.2`：每次准入采样5次（间隔2秒），平均利用率≤50%、每次空余显存≥max(8192MiB,20%整卡容量+2048MiB)。给PyTorch缓存分配器设置20%整卡上限，约4.7GiB；CUDA上下文和第三方分配不受该API完全约束，预留至少2GiB额外空间。准入只控制新阶段启动，不因本任务运行后利用率升高而终止正常工作。
+联合启动器新增显式`--allow-shared --memory-fraction 0.2`：每次准入采样5次（间隔2秒），平均利用率≤50%、每次空余显存≥max(8192MiB,20%整卡容量+2048MiB)。给PyTorch缓存分配器设置20%整卡上限，约4.8GiB；CUDA上下文和第三方分配不受该API完全约束，预留至少2GiB额外空间。准入只控制新阶段启动，不因本任务运行后利用率升高而终止正常工作。
 
 原`e3dsnn_joint_round1_20261019`已prepare，不重建或覆盖。启动命令：`python -m opencood.tools.launch_e3dsnn_joint_round --root /data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019 --gpu 3 --allow-shared --memory-fraction 0.2`。零适配复核通过后自动进入10轮训练；阶段间若外部负载暂不合格，记录waiting_resources并等待，不重做已完成步骤、不重复launch。显存不足或真实任务错误按原规则记录失败，不自动重试。
 
 代码已补低负载、显存不足、高负载、非法比例的准入检查，并保持旧调用默认空卡策略兼容。实际启动状态随后以launch.json、round_status和子进程日志为准。
+
+
+## GPU3共享执行已启动（2026-10-19）
+
+用户授权后，联合流水线已在181 GPU3实际启动，coordinator PID59180、零适配supervisor PID59491、首包eval PID59492；代码524c033。启动五次采样平均利用率30.8%，空余16640MiB，符合共享准入条件。进程manifest确认`gpu_visible=3`、`cuda_allocator_memory_fraction=0.2`，三项机制全部开启；初始执行进程占用约2130MiB，原有进程仍在运行。
+
+当前`round_status=running, stage=zero, training_started=false`，正在首包1738帧全量真实通信评估。尚未开始梯度训练，也没有最终新AP。既定零适配四种推理与CPU复核全部通过后自动进入10轮；阶段间按共享规则重新采样，不再要求空卡。原准备状态及旧空卡条件仅是历史证据。
+
+[启动记录](results/joint_membrane_20261019/launch.json)、[零适配准入采样](results/joint_membrane_20261019/zero_gpu_admission.json)、[状态快照](results/joint_membrane_20261019/round_status.json)已取回。后续优先检查现有进程/日志，禁止重复launch；90分钟跟进、无变化静默保持。记录共享执行的计时，不用其推断独占时延或能耗优势。
