@@ -19,10 +19,14 @@ from opencood.utils.e3dsnn_budget import decoder_digest
 from opencood.utils.e3dsnn_fusion_probe import bn_digest
 
 
-def audit(root, base, family, learn):
+def audit(root, base, family, learn, joint=False):
     root=Path(root);root.mkdir(parents=True,exist_ok=True)
     if any(root.iterdir()):raise FileExistsError('Fresh audit directory required')
-    if family=='snn':
+    if joint:
+        if family!='snn' or not learn:raise ValueError('Joint audit requires SNN learned content')
+        source=Path(base)/'e3dsnn_content_round1_v2_20261019';group='snn_learn'
+        ckpt=source/'snn_learn_adapt10/best_ap70.pth'
+    elif family=='snn':
         source=Path(base)/'e3dsnn_message_fusion_round1_20261018';group='snn_geometry'
         ckpt=source/'message_snn_geometry_adapt10/best_ap70.pth'
     else:
@@ -30,8 +34,9 @@ def audit(root, base, family, learn):
         ckpt=source/'budget_a_fusion_adapt10/best_ap70.pth'
     prior=read(source/'adapt10_summary.json');assert prior['passed']
     assert sha(ckpt)==prior['groups'][group]['checkpoint_sha256']
-    raw=yaml.safe_load((source/(group+'.yaml')).read_text())
-    raw['model']['core_method']='e3dsnn_content_detector'
+    source_config=source/'snn_learn/p3.yaml' if joint else source/(group+'.yaml')
+    raw=yaml.safe_load(source_config.read_text())
+    raw['model']['core_method']='e3dsnn_joint_detector' if joint else 'e3dsnn_content_detector'
     raw['model']['args'].update(content_trainable=learn,readout_prefix=3,content_full_packet=False,
         fusion_activation_kind='count4' if family=='snn' else 'relu',train_encoder=False)
     raw['train_params']=dict(batch_size=2,epoches=10)
@@ -40,9 +45,9 @@ def audit(root, base, family, learn):
     dataset=build_dataset(cfg,train=True);samples=[dataset[i] for i in (0,1)]
     batch=train_utils.to_device(dataset.collate_batch_train(samples),torch.device('cuda'));data=batch['ego']
     model=train_utils.create_model(cfg).cuda().eval()
-    model.load_legacy(torch.load(str(ckpt),map_location='cpu'))
+    (model.load_content if joint else model.load_legacy)(torch.load(str(ckpt),map_location='cpu'))
     torch.save(model.state_dict(),str(root/'initial.pth'))
-    report=dict(family=family,learn_content=learn,started_unix=time.time(),source=str(ckpt),
+    report=dict(family=family,learn_content=learn,joint_membrane=joint,started_unix=time.time(),source=str(ckpt),
         source_sha256=sha(ckpt),source_summary_sha256=sha(source/'adapt10_summary.json'),
         initial_sha256=sha(root/'initial.pth'),config_sha256=sha(root/'config.yaml'),
         frames=data['frame_ids'],road_frames=data['road_frame_ids'],prefixes=[],
@@ -79,9 +84,20 @@ def audit(root, base, family, learn):
                 errors.append(float((combined[key][i:i+1]-isolated[key]).abs().max()))
                 assert torch.allclose(combined[key][i:i+1],isolated[key],atol=2e-5,rtol=2e-5)
         report['batch_isolation_max_response_error']=max(errors)
+        if joint:
+            # Restore full cached batch, then perturb only the local pre-count
+            # state. Changes must reach actual detector outputs, not a dead hook.
+            model.encode_membrane=lambda lidar,n:(ego,membrane)
+            model.encode_lidar=lambda lidar,n:road
+            original_output=model(data)
+            model.encode_membrane=lambda lidar,n:(ego,membrane+.25)
+            changed=model(data)
+            delta=max(float((changed[k]-original_output[k]).abs().max()) for k in ('psm','rm','dm'))
+            assert delta>0
+            report['local_membrane_perturbation_response_max']=delta
     model.encode_lidar=original;model.encode_membrane=original_membrane
     # Verify local path equals the source checkpoint, not just our own dropout.
-    source_cfg=load_yaml(str(source/(group+'.yaml')));legacy=train_utils.create_model(source_cfg).cuda().eval()
+    source_cfg=load_yaml(str(source_config));legacy=train_utils.create_model(source_cfg).cuda().eval()
     legacy.load_state_dict(torch.load(str(ckpt),map_location='cpu'),strict=True)
     with torch.no_grad():
         saved=model.fusion_mode;model.fusion_mode='ego';legacy.fusion_mode='ego'
@@ -96,7 +112,13 @@ def audit(root, base, family, learn):
     assert len(output['prefix_outputs'])==3;loss.backward()
     grads={k:float(p.grad.abs().sum()) for k,p in model.named_parameters() if p.grad is not None}
     expected={k for k,p in model.named_parameters() if p.requires_grad}
-    assert set(grads)==expected and all(np.isfinite(v) and v>0 for v in grads.values())
+    assert set(grads)==expected and all(np.isfinite(v) for v in grads.values())
+    if joint:
+        # A ranking head's common score bias can have zero gradient: adding a
+        # constant cannot change ordering. Require each functional block instead.
+        for prefix in ('content.project.','content.expand.','progressive_sender.','joint_receiver.'):
+            assert sum(v for k,v in grads.items() if k.startswith(prefix))>0
+    else:assert all(v>0 for v in grads.values())
     torch.nn.utils.clip_grad_norm_(model.parameters(),10.,error_if_nonfinite=True);optimizer.step()
     assert encoder_digest(model)==enc and decoder_digest(model)==dec and bn_digest(model)==bn
     assert (model.content.basis_digest()!=report['initial_basis_sha256'])==learn
@@ -113,4 +135,5 @@ def audit(root, base, family, learn):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',required=True);p.add_argument('--base',default='/data1/tzm/workspace/diagnostics')
     p.add_argument('--family',choices=('snn','ann'),required=True);p.add_argument('--learn',action='store_true')
-    a=p.parse_args();audit(a.root,a.base,a.family,a.learn)
+    p.add_argument('--joint',action='store_true')
+    a=p.parse_args();audit(a.root,a.base,a.family,a.learn,a.joint)

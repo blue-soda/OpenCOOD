@@ -729,3 +729,12 @@ SNN完整两位单包59.28294%/4.76892kB，没有优于首包59.52330%/4.57371kB
 证据：[继承审计](results/content_repeat_20261019/audit.json)、[启动前检查](results/content_repeat_20261019/prelaunch_check.json)、[状态](results/content_repeat_20261019/round_status.json)。审计SHA256 `fac5436cf294883095749085fe0cbbd31693ce61c14153e7822a7f9934902d44`，本地与服务器一致。
 
 后续自动任务先读总目标，再检查已有目录状态及资源；不重复prepare。空闲资源满足时运行`python -m opencood.tools.launch_e3dsnn_content_repeat --root /data1/tzm/workspace/diagnostics/e3dsnn_content_repeat_20261019 --gpus 0 1 2 5`，有launch.json则先检查已有进程和状态，不重复启动；不终止他人任务。若可用卡不同可传入四张空卡，不固定占用原卡。继续90分钟跟进，健康等待无变化静默；必要时调整为更少并发以使用可用资源，保持训练/评估协议不变。
+
+
+## 三项机制进入联合实现（2026-10-19）
+
+**当前主要开发路线（用户2026-10-19再次明确）：一起实现连续本地膜电位、发放后余量保留和可学习渐进发送，并实际训练验证。** 三项机制不是最终验收的绝对约束，但不能仅留在文档或被持续的Residual小实验取代。总目标仍是SNN风格多车协作的合格通信量—AP，允许按最终证据调整机制。现有Count3+Residual保留为对照；其重复种子四组已准备但尚未启动，优先级后移，先推进联合路线。
+
+新检测器`e3dsnn_joint_detector`已接入三项机制及多前缀损失；18项本地状态/对齐/通信检查通过。尚未完成真实点云GPU审计、训练或AP验证，不把代码接入写成效果成立。当前进度与执行入口见[联合实现记录](JOINT_MEMBRANE_ROUTE_20261019.md)。
+
+新接收器与检测forward已接入，本地18项检查通过。下一步真实点云审计；尚无训练或AP结果。详见联合实现记录。
