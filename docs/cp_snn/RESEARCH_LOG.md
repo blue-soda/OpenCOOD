@@ -718,3 +718,14 @@ Count3/ANN2bit内容四组全量零适配及CPU BEV/3D、预测/GT哈希复核�
 学习内容使SNN首包相对固定映射提高0.47872个百分点，字节增加8.56/帧；ANN也提高0.27845个百分点，因此不是已证明的SNN特有增益。SNN首包比固定ANN单车高1.54323个百分点；但原始编码器、初始化和验证集均固定，仅单次适配结果，不是独立测试/多种子泛化结论。ANN对应首包更高1.55044个百分点，SNN少约34.10%字节，仍不是等码率比较。
 
 SNN完整两位单包59.28294%/4.76892kB，没有优于首包59.52330%/4.57371kB；多包增加坐标/包头开销，不能宣称信息越多AP越好。共享服务器计时不用于能效或SNN速度优势结论。保留首包候选，停止本轮架构搜索，按[重复验证协议](CONTENT_ROBUSTNESS_20261019.md)补SNN/ANN各两个适配训练种子。
+
+
+## 服务器准备完成，等待资源（2026-10-19）
+
+代码6073095已push main并在181 fast-forward同步。四组源初始权重、五种配置、首轮接口/零适配/最终报告哈希及相关模型代码未变检查通过；四组任务计划已验证训练种子各异、最终评估种子固定、从initial开始、保留第三前缀选择best。复用的是旧接口审计，未宣称做了新的GPU审计。
+
+服务器目录已经准备完成，`round_status=prepared`、`training_started=false`，没有启动训练。181 GPU0/1/2/5有其他进程约8GB常驻、多个卡当前满负载；187各卡仅约1.7GB空余。原空卡检查拒绝启动，磁盘余量14.51GiB仍高于12GiB门槛。资源检查是执行门槛，不是需要用户再次批准研究。
+
+证据：[继承审计](results/content_repeat_20261019/audit.json)、[启动前检查](results/content_repeat_20261019/prelaunch_check.json)、[状态](results/content_repeat_20261019/round_status.json)。审计SHA256 `fac5436cf294883095749085fe0cbbd31693ce61c14153e7822a7f9934902d44`，本地与服务器一致。
+
+后续自动任务先读总目标，再检查已有目录状态及资源；不重复prepare。空闲资源满足时运行`python -m opencood.tools.launch_e3dsnn_content_repeat --root /data1/tzm/workspace/diagnostics/e3dsnn_content_repeat_20261019 --gpus 0 1 2 5`，有launch.json则先检查已有进程和状态，不重复启动；不终止他人任务。若可用卡不同可传入四张空卡，不固定占用原卡。继续90分钟跟进，健康等待无变化静默；必要时调整为更少并发以使用可用资源，保持训练/评估协议不变。

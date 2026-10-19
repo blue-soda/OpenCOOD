@@ -1,0 +1,13 @@
+{
+  "preparation_passed": true,
+  "jobs_verified": 4,
+  "audit_sha256": "fac5436cf294883095749085fe0cbbd31693ce61c14153e7822a7f9934902d44",
+  "disk_free_gib": 14.51376724243164,
+  "gpu_snapshot": "0, 8047 MiB, 16206 MiB, 100 %\n1, 8041 MiB, 16212 MiB, 100 %\n2, 8041 MiB, 16212 MiB, 4 %\n3, 7613 MiB, 16640 MiB, 58 %\n4, 15690 MiB, 8563 MiB, 100 %\n5, 8041 MiB, 16212 MiB, 100 %\n6, 15724 MiB, 8529 MiB, 100 %\n7, 15720 MiB, 8533 MiB, 100 %\n",
+  "blocking_resources": [
+    "GPU 0 is not free: 8047, 16206, 100\n",
+    "GPU 1 is not free: 8041, 16212, 100\n",
+    "GPU 2 is not free: 8041, 16212, 0\n",
+    "GPU 5 is not free: 8041, 16212, 100\n"
+  ]
+}

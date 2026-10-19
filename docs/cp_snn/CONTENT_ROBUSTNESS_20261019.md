@@ -23,6 +23,17 @@ ANN使用相同额外训练预算和对应种子；其原空间保留比例与SN
 
 ## 实现与运行状态
 
-启动器：`opencood/tools/launch_e3dsnn_content_repeat.py`。目标目录`/data1/tzm/workspace/diagnostics/e3dsnn_content_repeat_20261019`。当前已登记，准备代码和源哈希核验；尚未启动训练。
+启动器：`opencood/tools/launch_e3dsnn_content_repeat.py`。目标目录`/data1/tzm/workspace/diagnostics/e3dsnn_content_repeat_20261019`。服务器准备与源哈希核验已完成；尚未启动训练，见文末状态。
 
 181最新检查：GPU0/1/2/5分别已有约8GB其他进程，GPU利用率约95–97%；187各卡约22.6GB占用，仅1.7GB空余。继续沿用已有空卡门槛，不终止或挤占他人任务；准备完成后待资源再启动，不能写成训练中。定时任务保持90分钟、提示“循总目标推进，无变化静默”。
+
+
+## 服务器准备完成，等待资源（2026-10-19）
+
+代码6073095已push main并在181 fast-forward同步。四组源初始权重、五种配置、首轮接口/零适配/最终报告哈希及相关模型代码未变检查通过；四组任务计划已验证训练种子各异、最终评估种子固定、从initial开始、保留第三前缀选择best。复用的是旧接口审计，未宣称做了新的GPU审计。
+
+服务器目录已经准备完成，`round_status=prepared`、`training_started=false`，没有启动训练。181 GPU0/1/2/5有其他进程约8GB常驻、多个卡当前满负载；187各卡仅约1.7GB空余。原空卡检查拒绝启动，磁盘余量14.51GiB仍高于12GiB门槛。资源检查是执行门槛，不是需要用户再次批准研究。
+
+证据：[继承审计](results/content_repeat_20261019/audit.json)、[启动前检查](results/content_repeat_20261019/prelaunch_check.json)、[状态](results/content_repeat_20261019/round_status.json)。审计SHA256 `fac5436cf294883095749085fe0cbbd31693ce61c14153e7822a7f9934902d44`，本地与服务器一致。
+
+后续自动任务先读总目标，再检查已有目录状态及资源；不重复prepare。空闲资源满足时运行`python -m opencood.tools.launch_e3dsnn_content_repeat --root /data1/tzm/workspace/diagnostics/e3dsnn_content_repeat_20261019 --gpus 0 1 2 5`，有launch.json则先检查已有进程和状态，不重复启动；不终止他人任务。若可用卡不同可传入四张空卡，不固定占用原卡。继续90分钟跟进，健康等待无变化静默；必要时调整为更少并发以使用可用资源，保持训练/评估协议不变。

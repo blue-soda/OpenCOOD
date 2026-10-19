@@ -1,0 +1,5 @@
+{
+  "state": "prepared",
+  "training_started": false,
+  "note": "Waiting for free GPUs; no jobs launched"
+}
