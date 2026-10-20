@@ -1,0 +1,47 @@
+{
+  "source_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+  "audit_path": "/data1/tzm/workspace/diagnostics/e3dsnn_event_compact_audit_20261021/audit.json",
+  "audit_sha256": "9bdbba18dc873b5c085e511a4f03a3cc1cd4af2581a2ec9e2f3f216597ad5ed9",
+  "config_hashes": {
+    "fixed4096/train.yaml": "e4e7e06c6fe1430569a7d38686b66388ca46944614f27373d9c11c8edcad94cd",
+    "fixed4096/b0.yaml": "7b849cc07881b49acdcfc777a80f74eba23f8bfaaf2f311281b8628ec946d7e8",
+    "fixed4096/b2048.yaml": "c1f6fa66015d06f8d6b55407df0fc2ac903a418b0d04f90cebc7e895869a8258",
+    "fixed4096/b4096.yaml": "e4e7e06c6fe1430569a7d38686b66388ca46944614f27373d9c11c8edcad94cd",
+    "fixed4096/b6144.yaml": "d4c79c605167304169e5777b70c22e474acfe0c3fc4170169ea31bb7a7a4f302",
+    "fixed4096/b8192.yaml": "41f0d30f6c98c26ebf40d4e29b72395ae460145f53c8748ec860a56e62a106e7",
+    "fixed4096/b16384.yaml": "733d3bfedbd66c51a5926ad1f9f655849e532f2fe5d0b4c33bfb70d25cddd5c4",
+    "log2048_16384/train.yaml": "8f91371cad2b25dae19f17249c8c0f65a454a1bff73e676ca5ead746a0575de8",
+    "log2048_16384/b0.yaml": "ae349e9adc2b1dff17504716f22d567c4acb2f91707c48b1ef959ca61af764ec",
+    "log2048_16384/b2048.yaml": "75a514d6425eba84b01554075576faf07cf628946e692d11ceba14a22221af55",
+    "log2048_16384/b4096.yaml": "8f91371cad2b25dae19f17249c8c0f65a454a1bff73e676ca5ead746a0575de8",
+    "log2048_16384/b6144.yaml": "ed5ff7c4b7e5cd555dd1d32007c8af98b2e3222fb7947df441ddcfae4031977d",
+    "log2048_16384/b8192.yaml": "2b2afd52b97b50a6cdd91689dfd0aa99122545a19921bb81d57bd0d0f13c65b0",
+    "log2048_16384/b16384.yaml": "312380d48f00c836dfae92066deb0f19170e245485fac5acae9bc206ba96b0cc"
+  },
+  "groups": {
+    "fixed4096": [
+      4096,
+      4096
+    ],
+    "log2048_16384": [
+      2048,
+      16384
+    ]
+  },
+  "training_seed": 20260929,
+  "selection": "max validation BEV AP70 at 4096 bytes over epochs 0..10",
+  "selection_limitation": "4096-byte anchor may favor fixed-budget training; report full curve",
+  "final_budgets_bytes": [
+    0,
+    2048,
+    4096,
+    6144,
+    8192,
+    16384
+  ],
+  "trainable": [
+    "content.project.weight"
+  ],
+  "training_cap_seconds": 43200,
+  "evaluation_cap_seconds": 7200
+}

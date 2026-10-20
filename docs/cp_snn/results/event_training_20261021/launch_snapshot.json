@@ -1,0 +1,27 @@
+{
+  "snapshot_unix": 1792524057.9285293,
+  "groups": {
+    "fixed4096": {
+      "pipeline_status.json": {
+        "state": "running",
+        "stage": "train",
+        "started_unix": 1792523907.6293044
+      },
+      "train/progress.json": {
+        "state": "initial_validation",
+        "epoch": 0
+      }
+    },
+    "log2048_16384": {
+      "pipeline_status.json": {
+        "state": "running",
+        "stage": "train",
+        "started_unix": 1792523907.6291966
+      },
+      "train/progress.json": {
+        "state": "initial_validation",
+        "epoch": 0
+      }
+    }
+  }
+}

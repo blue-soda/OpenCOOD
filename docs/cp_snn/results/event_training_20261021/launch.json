@@ -1,0 +1,80 @@
+{
+  "gpus": {
+    "fixed4096": 2,
+    "log2048_16384": 3
+  },
+  "admissions": {
+    "fixed4096": {
+      "accepted": true,
+      "minimum_free_mib": 8192,
+      "allocator_fraction": 0.2,
+      "mean_util_percent": 0.0,
+      "samples": [
+        {
+          "total_mib": 24576,
+          "free_mib": 24252,
+          "util_percent": 0
+        },
+        {
+          "total_mib": 24576,
+          "free_mib": 24252,
+          "util_percent": 0
+        },
+        {
+          "total_mib": 24576,
+          "free_mib": 24252,
+          "util_percent": 0
+        },
+        {
+          "total_mib": 24576,
+          "free_mib": 24252,
+          "util_percent": 0
+        },
+        {
+          "total_mib": 24576,
+          "free_mib": 24252,
+          "util_percent": 0
+        }
+      ],
+      "policy": "user_authorized_shared"
+    },
+    "log2048_16384": {
+      "accepted": true,
+      "minimum_free_mib": 8192,
+      "allocator_fraction": 0.2,
+      "mean_util_percent": 0.0,
+      "samples": [
+        {
+          "total_mib": 24576,
+          "free_mib": 24252,
+          "util_percent": 0
+        },
+        {
+          "total_mib": 24576,
+          "free_mib": 24252,
+          "util_percent": 0
+        },
+        {
+          "total_mib": 24576,
+          "free_mib": 24252,
+          "util_percent": 0
+        },
+        {
+          "total_mib": 24576,
+          "free_mib": 24252,
+          "util_percent": 0
+        },
+        {
+          "total_mib": 24576,
+          "free_mib": 24252,
+          "util_percent": 0
+        }
+      ],
+      "policy": "user_authorized_shared"
+    }
+  },
+  "code_commit": "05d3f4e9660b191ba19d2e4bd55cc7e344035a59",
+  "protocol_sha256": "b31c3022cfcee9b915e37f38f024d5cdcf0a6d1db58295e03a4917ef23180606",
+  "started_unix": 1792523905.705627,
+  "memory_fraction": 0.2
+}

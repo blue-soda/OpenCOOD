@@ -1,5 +1,26 @@
 # 任务脉冲流固定与随机预算训练（2026-10-21）
 
+<!-- event-training-latest -->
+## 实际启动记录（最新）
+
+快照时间：2026-10-21T03:20:57.928529+08:00。两组已启动，当前完整epoch0验证中，随后自动训练10轮。
+
+| 组别 | GPU | supervisor PID | 当前进度 |
+|---|---:|---:|---|
+| fixed4096 | 2 | 48237 | {"state": "initial_validation", "epoch": 0} |
+| log2048_16384 | 3 | 48239 | {"state": "initial_validation", "epoch": 0} |
+
+启动代码main `05d3f4e9660b191ba19d2e4bd55cc7e344035a59`；源权重、协议、GPU五次准入抽样、PID和快照均已取回并核对远端SHA256。
+
+真实compact审计：0/4096/8192bytes直接与解码后预测逐值一致，零预算等于原ego；随机预算2276/6286实际发送2273/6286bytes；P梯度L1为1.279158，其余全部参数与缓冲区不变。审计优化步丢弃。
+
+完整初始验证属于启动检查，不算训练epoch。相同源权重的两个微调组不能当作独立训练种子；未完成最终复核前不声称精度优势。
+
+证据：[真实审计](results/event_training_20261021/compact_audit.json)、[启动](results/event_training_20261021/launch.json)、[协议](results/event_training_20261021/protocol.json)、[状态快照](results/event_training_20261021/launch_snapshot.json)、[远端SHA256](results/event_training_20261021/launch_sha256.json)。
+
+<!-- /event-training-latest -->
+
+
 ## 预登记与总目标
 
 目标仍是SNN风格协作的真实通信量—BEV AP70；应超过固定ANN/SNN单车参考57.98007%/54.77316%，并与低通信ANN/旧Residual曲线比较。此次只检验新发送端能否在真实字节约束下学出有用脉冲流，不提前宣称优于ANN或各机制有效。
