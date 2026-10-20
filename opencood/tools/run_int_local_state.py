@@ -33,7 +33,9 @@ def teacher_step(teacher, data, state, meta):
     return prediction, captured[0], state
 
 
-def make_optimizer(student, refinement=False):
+def make_optimizer(student, refinement=False, head_lr=None):
+    if head_lr is not None and (not refinement or not 0 < head_lr <= 1e-3):
+        raise ValueError('Head LR override requires refinement and a finite rate in (0, 1e-3]')
     heads = list(student.cls_head.parameters()) + list(student.reg_head.parameters())
     if student.dir_head is not None:
         heads += list(student.dir_head.parameters())
@@ -41,7 +43,7 @@ def make_optimizer(student, refinement=False):
         dict(params=student.update.input_projection.parameters(), lr=1e-4 if refinement else 1e-3, name='projection'),
         dict(params=student.update.blocks[:2].parameters(), lr=1e-5 if refinement else 1e-4, name='migrated_update'),
         dict(params=student.observation.parameters(), lr=1e-6 if refinement else 1e-5, name='shallow'),
-        dict(params=heads, lr=1e-6 if refinement else 1e-5, name='heads')]
+        dict(params=heads, lr=head_lr if head_lr is not None else (1e-6 if refinement else 1e-5), name='heads')]
     if len(student.update.blocks) > 2:
         groups.append(dict(params=student.update.blocks[2:].parameters(), lr=1e-4, name='new_context'))
     return torch.optim.AdamW(groups, weight_decay=1e-4)
@@ -80,7 +82,12 @@ def engineering(a, student, teacher, cfg, rows, out, reference=None):
     initial = copy.deepcopy(student.state_dict())
     criterion = PointPillarDirLoss(cfg['loss']['args']).to(a.device)
     student.train()
-    optimizer = make_optimizer(student, bool(a.refine_from))
+    optimizer = make_optimizer(student, bool(a.refine_from), a.refine_head_lr)
+    optimizer_groups = [dict(name=g['name'],lr=g['lr'],parameters=sum(p.numel() for p in g['params']))
+                        for g in optimizer.param_groups]
+    grouped_ids = [id(p) for g in optimizer.param_groups for p in g['params']]
+    assert len(grouped_ids) == len(set(grouped_ids))
+    assert set(grouped_ids) == {id(p) for p in student.parameters() if p.requires_grad}
     optimizer.zero_grad(set_to_none=True)
     state = teacher_state = None
     terms, records, initial_errors = [], [], []
@@ -163,6 +170,7 @@ def engineering(a, student, teacher, cfg, rows, out, reference=None):
                 initialization='fixed_phase_b_refinement' if a.refine_from else
                     ('named_phase_a_checkpoint' if a.phase == 'b' else 'raw_teacher_migration'),
                 source_prediction_max_errors=initial_errors,
+                optimizer_groups=optimizer_groups,
                 new_context_bn2_gradient_l1=context_gradients,
                 history_projection_gradient_l1=history_gradient,
                 previous_state_gradient_l1_after_probe_update=temporal_gradient,
@@ -256,7 +264,8 @@ def worker(a):
                     seed=303,tbptt=4,train_scans=len(train),train_labels=sum(r['supervised'] for r in train),
                     val_scans=len(val),val_labels=sum(r['supervised'] for r in val),epochs_max=a.epochs,
                     loss_weights=dict(gt=1.,head_kd=.2,feature_kd=.5),feature_loss='channel RMS clamp1; .5 global + .5 confidence weighted SmoothL1',
-                    optimizer='AdamW',initial_lrs=[g['lr'] for g in make_optimizer(student,bool(a.refine_from)).param_groups],
+                    optimizer='AdamW',initial_lrs=[g['lr'] for g in make_optimizer(student,bool(a.refine_from),a.refine_head_lr).param_groups],
+                    refinement_head_lr_override=a.refine_head_lr,
                     weight_decay=1e-4,clip_gradient=5.,
                     head_warmup_epochs=1 if a.phase=='a' else 0,normalization='fixed BN statistics; affine trainable',
                     update_radius=student.update.radius,all_regions_update=True,augmentation=False,artificial_delay=False)
@@ -292,7 +301,7 @@ def worker(a):
         write_json(out/'status.json',dict(status='COMPLETED'))
         return
     torch.manual_seed(303); np.random.seed(303)
-    optimizer = make_optimizer(student,bool(a.refine_from))
+    optimizer = make_optimizer(student,bool(a.refine_from),a.refine_head_lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=2,
                                                          threshold=.001,threshold_mode='abs',min_lr=1e-7)
     history=[]; best=significant=-1.; stale=0
@@ -336,6 +345,8 @@ def main():
     p.add_argument('--root',required=True); p.add_argument('--output',required=True)
     p.add_argument('--phase',choices=['a','b'],default='a'); p.add_argument('--initialize-from')
     p.add_argument('--refine-from'); p.add_argument('--source-sha256')
+    p.add_argument('--refine-head-lr',type=float,
+                   help='Explicit head-only learning-rate intervention for fixed-checkpoint refinement')
     p.add_argument('--variant',choices=['base','context'],default='base')
     p.add_argument('--device',choices=['cpu','cuda'],default='cuda'); p.add_argument('--gpu',type=int)
     p.add_argument('--epochs',type=int,default=60); p.add_argument('--frames',type=int,default=2)
@@ -345,6 +356,8 @@ def main():
     if a.initialize_from and a.refine_from:p.error('Initialization and refinement are exclusive')
     if (a.phase=='b') != bool(a.initialize_from or a.refine_from):p.error('Phase B requires explicit initialization')
     if a.refine_from and (not a.source_sha256 or a.epochs>20):p.error('Refinement requires a fixed SHA and at most 20 epochs')
+    if a.refine_head_lr is not None and (not a.refine_from or not 0<a.refine_head_lr<=1e-3):
+        p.error('Head LR override requires refinement and a finite rate in (0, 1e-3]')
     if a.variant=='context' and not a.refine_from:p.error('Context variant requires fixed phase-B refinement')
     if a.source_sha256 and not a.refine_from:p.error('Source SHA applies only to refinement')
     if a.phase=='b' and a.frames != 4:p.error('Phase B engineering requires a real four-frame TBPTT window')

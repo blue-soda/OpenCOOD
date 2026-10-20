@@ -67,6 +67,26 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             load_refinement_state(ContextLocalStateDetector(self.teacher,self.cfg), state)
 
+    def test_head_rate_intervention_preserves_other_groups_and_parameter_coverage(self):
+        from opencood.tools.run_int_local_state import make_optimizer
+        for factory in (LocalStateDetector, ContextLocalStateDetector):
+            model = factory(self.teacher, self.cfg)
+            before = make_optimizer(model, refinement=True)
+            after = make_optimizer(model, refinement=True, head_lr=1e-4)
+            ids = []
+            for old, new in zip(before.param_groups, after.param_groups):
+                self.assertEqual(old['name'], new['name'])
+                self.assertEqual([id(p) for p in old['params']], [id(p) for p in new['params']])
+                self.assertEqual(new['lr'], 1e-4 if new['name'] == 'heads' else old['lr'])
+                ids.extend(id(p) for p in new['params'])
+            self.assertEqual(len(ids), len(set(ids)))
+            self.assertEqual(set(ids), {id(p) for p in model.parameters() if p.requires_grad})
+        for invalid in (0., -1., float('nan'), float('inf'), .01):
+            with self.assertRaises(ValueError):
+                make_optimizer(model, refinement=True, head_lr=invalid)
+        with self.assertRaises(ValueError):
+            make_optimizer(model, refinement=False, head_lr=1e-4)
+
 
 if __name__ == '__main__':
     unittest.main()
