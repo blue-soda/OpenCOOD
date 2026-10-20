@@ -1,0 +1,10 @@
+{
+  "caveat": "Masked-dense is a correctness reference, not a compute-saving implementation.",
+  "dense_all_update_max_error": 0.0,
+  "frames": 64,
+  "partial_update_frames": 50,
+  "sparse_masked_dense_max_error": 0.0,
+  "split": "train",
+  "status": "PASSED",
+  "teacher_execution_forbidden": true
+}
