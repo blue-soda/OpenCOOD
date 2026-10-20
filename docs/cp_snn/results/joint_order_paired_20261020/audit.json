@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "frames": [
+    {
+      "frame_id": "000211",
+      "count3_sha256": "a605bbc41e96a1d8f755b1f01841b1358e850e755ca42ab255980cd0fc199b22"
+    },
+    {
+      "frame_id": "000212",
+      "count3_sha256": "1d0df243a30ffcc039beb9b1a6c92c6efc050c578e357f08d8ffa1ff1faa4d59"
+    }
+  ],
+  "checkpoint_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+  "code_commit": "7539c87037c3c5331d17329493840df7accbf8e2",
+  "direct_wire_exact_all_six": true,
+  "shared_content_and_balanced_rows_both_frames": true,
+  "bytes": {
+    "learned_p1": [
+      4001,
+      4031
+    ],
+    "learned_p2": [
+      7447,
+      7475
+    ],
+    "learned_p3": [
+      10414,
+      10520
+    ],
+    "l1_p1": [
+      3995,
+      4033
+    ],
+    "l1_p2": [
+      7416,
+      7450
+    ],
+    "l1_p3": [
+      10405,
+      10496
+    ]
+  }
+}

@@ -10,7 +10,7 @@
 
 固定权重、同内容配对的AP—实际字节为本轮主要比较；仍核对历史AP在既有0.02个百分点复现界内，历史逐帧字节差全部记录而非声称一致。不用AP结果调整阈值，不重训、不新选best。新设计对六项都重新推理是保证配对所需，原独立推理与失败证据保留。
 
-执行入口`opencood.tools.evaluate_e3dsnn_joint_order_paired`；先在独立`_audit`目录对前两验证帧做六模式direct/wire精确一致检查，全部通过才启动1738帧。整段配对推理上限2h、各CPU复算1h、失败无自动重试；181共享低利用率卡，20% PyTorch上限。配对缓存时间不能报告为独立模型推理时延。当前实现完成、待真实审计/启动，以后续追加状态为准。仍以联合SNN协作通信量—AP为目标，完成这次诊断后回到消息优先级或接收电流映射优化，不继续扩展顺序小实验。
+执行入口`opencood.tools.evaluate_e3dsnn_joint_order_paired`；先在独立`_audit`目录对前两验证帧做六模式direct/wire精确一致检查，全部通过才启动1738帧。整段配对推理上限2h、各CPU复算1h、失败无自动重试；181共享低利用率卡，20% PyTorch上限。配对缓存时间不能报告为独立模型推理时延。配对流程现已通过真实审计并启动，见下方最新执行记录。仍以联合SNN协作通信量—AP为目标，完成这次诊断后回到消息优先级或接收电流映射优化，不继续扩展顺序小实验。
 
 
 ## 启动前登记
@@ -35,3 +35,9 @@
 第三前缀跨排序的psm/rm/dm最大差为0.0158052/0.0070900/0.0139620；已如实记录，未强行要求换序后的检测输出逐位相同。浮点对齐/累加与量化阈值可能导致差异，当前不能仅凭审计将其归因于某一来源，也不将数学加性视为完整消息AP必定相同。全量p3同时评估。
 
 当前状态为`evaluating/learned_p1`，随后依次执行其余5项与CPU复算，无训练。下次定时任务读取`/data1/tzm/workspace/diagnostics/e3dsnn_joint_order_20261020/status.json`和`summary.json`；只有passed=true及六项结果齐全后归档最终结论。若失败保留现场并定位，不重复启动。证据：[真实审计](results/joint_order_20261020/audit.json)、[资源与启动](results/joint_order_20261020/launch.json)、[远端一致SHA256](results/joint_order_20261020/sha256.json)。
+
+## 配对流程审计及正式启动（2026-10-20 16:11，最新）
+
+代码7539c87，181 main已同步。两验证帧000211/000212的六模式direct/wire检测张量逐元素一致；两帧均通过共享完整Count3内容和各批等体素数检查，前缀累计字节单调，checkpoint SHA保持不变。真实审计见[audit](results/joint_order_paired_20261020/audit.json)，与远端一致SHA为`9f2eff3ea708cffd2297612a21cb5bf3cfcf9b292b6850ff927c4fe91745af51`。这是管线检查，不是AP结果。
+
+全量配对评估PID58659、GPU2已启动；5次采样利用率均0%，空闲24252MiB，执行20% PyTorch分配上限。[启动证据](results/joint_order_paired_20261020/launch.json)及[SHA](results/joint_order_paired_20261020/sha256.json)已归档。仅推理，无重训。今后轮询新目录`e3dsnn_joint_order_paired_20261020/status.json`，最终以`summary.json passed=true`及六模式CPU复算为准；旧目录失败保留，不再重启。预计当前90分钟任务间隔足够，无需加密轮询。

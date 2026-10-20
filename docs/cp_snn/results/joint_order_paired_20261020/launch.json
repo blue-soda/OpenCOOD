@@ -1,0 +1,43 @@
+{
+  "pid": 58659,
+  "gpu": 2,
+  "admission": {
+    "accepted": true,
+    "minimum_free_mib": 8192,
+    "allocator_fraction": 0.2,
+    "mean_util_percent": 0.0,
+    "samples": [
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      }
+    ],
+    "policy": "user_authorized_shared"
+  },
+  "audit_path": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_order_paired_20261020_audit",
+  "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_order_paired_20261020",
+  "started_unix": 1792482661.3467002,
+  "code_commit": "7539c87",
+  "training": false
+}
