@@ -14,4 +14,14 @@
 
 退出：报告两次微调种子的逐种子结果及均值/范围，不把2个种子称显著性证明。若通信下降但AP优势不复现，明确只保留节省字节的证据；若两轴改善均复现，作为当前较优低通信联合候选，后续接收电流映射优化优先从该目标出发。无论正负，完成这一次配对复核即结束该小阶段；不默认加第三种子、改系数或追逐单帧误差。下一步仍以提升联合SNN协作AP为目的，对有局部上下文的脉冲电流映射做有预算的匹配实验。
 
-当前：重复实验协议已登记，启动器已支持独立训练seed，待服务器验证与启动。
+当前：服务器验证已通过，两组已启动零适配流水线，详见下方执行记录。
+
+## 两组seed30流水线已启动（2026-10-20，最新）
+
+代码668a0a5已push并在181 main同步，本地和服务器14项检查通过，含训练/评估seed隔离和原默认命令不变。重新prepare后的审计对象与对应首轮审计逐项相同，initial文件SHA仍逐字节等于原联合best；复用真实模型审计，没有声称重新做seed30梯度审计。
+
+control与prefix_rate分别由coordinator28321/28558启动，共享GPU2；两次准入各5次采样利用率均0%、空闲24252MiB，每进程20% PyTorch分配上限。启动元数据明确training_seed20260930、evaluation_seed20260929，并保存真实训练命令。当前两个round_status均`running/zero`、`training_started=false`，零适配和CPU复核通过后各10轮训练，尚无新种子AP结论。
+
+证据：[启动与训练命令](results/joint_objective_seed30_20261020/launches.json)、[初始状态](results/joint_objective_seed30_20261020/initial_status.json)、[14项检查](results/joint_objective_seed30_20261020/tests.log)、[与远端一致SHA](results/joint_objective_seed30_20261020/sha256.json)。
+
+下一次自动任务读取两个`e3dsnn_joint_objective_<control|prefix_rate>_seed30_20261020/round_status.json`及pipeline；最终必须五模式结果完整、CPU精确复算和冻结至第10轮通过，再合并两个微调种子的逐种子表。源权重固定使这不是全训练链独立初始化实验。无关键变化静默；90分钟间隔保持，不重复prepare/launch。

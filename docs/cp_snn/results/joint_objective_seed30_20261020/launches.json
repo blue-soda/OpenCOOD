@@ -1,0 +1,156 @@
+{
+  "control": {
+    "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_control_seed30_20261020",
+    "audit_reused_exactly": true,
+    "audit_sha256": "8976f8df1f5349749c9543da252590022d11c1f1ed973efb2a8bd962d7d7b923",
+    "training_seed": 20260930,
+    "evaluation_seed": 20260929,
+    "training_command": [
+      "/data1/tzm/miniconda3/envs/opencood/bin/python",
+      "-u",
+      "-m",
+      "opencood.tools.train_e3dsnn_single",
+      "--workers",
+      "2",
+      "--seed",
+      "20260930",
+      "--mode",
+      "train",
+      "--config",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_control_seed30_20261020/joint/p3.yaml",
+      "--checkpoint",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_control_seed30_20261020/joint/initial.pth",
+      "--output",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_control_seed30_20261020/joint_adapt10",
+      "--epochs",
+      "10",
+      "--selection-iou",
+      "0.7",
+      "--retain-initial-best"
+    ],
+    "admission_rejections": [],
+    "launch": {
+      "gpu": 2,
+      "audit_sha256": "8976f8df1f5349749c9543da252590022d11c1f1ed973efb2a8bd962d7d7b923",
+      "started_unix": 1792504589.0505815,
+      "code_commit": "668a0a579b02cc0b60b835cc94d41d0906e32d7b",
+      "training_cap_seconds": 21600,
+      "per_evaluation_cap_seconds": 3600,
+      "training_seed": 20260930,
+      "evaluation_seed": 20260929,
+      "allow_shared": true,
+      "memory_fraction": 0.2,
+      "gpu_admission": {
+        "accepted": true,
+        "minimum_free_mib": 8192,
+        "allocator_fraction": 0.2,
+        "mean_util_percent": 0.0,
+        "samples": [
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          }
+        ],
+        "policy": "user_authorized_shared"
+      }
+    }
+  },
+  "prefix_rate": {
+    "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_prefix_rate_seed30_20261020",
+    "audit_reused_exactly": true,
+    "audit_sha256": "dd2652d10c2ef902f5f06179debc11cceecf2eece7412b00b201801bf138e5e0",
+    "training_seed": 20260930,
+    "evaluation_seed": 20260929,
+    "training_command": [
+      "/data1/tzm/miniconda3/envs/opencood/bin/python",
+      "-u",
+      "-m",
+      "opencood.tools.train_e3dsnn_single",
+      "--workers",
+      "2",
+      "--seed",
+      "20260930",
+      "--mode",
+      "train",
+      "--config",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_prefix_rate_seed30_20261020/joint/p3.yaml",
+      "--checkpoint",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_prefix_rate_seed30_20261020/joint/initial.pth",
+      "--output",
+      "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_prefix_rate_seed30_20261020/joint_adapt10",
+      "--epochs",
+      "10",
+      "--selection-iou",
+      "0.7",
+      "--retain-initial-best"
+    ],
+    "admission_rejections": [],
+    "launch": {
+      "gpu": 2,
+      "audit_sha256": "dd2652d10c2ef902f5f06179debc11cceecf2eece7412b00b201801bf138e5e0",
+      "started_unix": 1792504597.5399334,
+      "code_commit": "668a0a579b02cc0b60b835cc94d41d0906e32d7b",
+      "training_cap_seconds": 21600,
+      "per_evaluation_cap_seconds": 3600,
+      "training_seed": 20260930,
+      "evaluation_seed": 20260929,
+      "allow_shared": true,
+      "memory_fraction": 0.2,
+      "gpu_admission": {
+        "accepted": true,
+        "minimum_free_mib": 8192,
+        "allocator_fraction": 0.2,
+        "mean_util_percent": 0.0,
+        "samples": [
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          }
+        ],
+        "policy": "user_authorized_shared"
+      }
+    }
+  }
+}
