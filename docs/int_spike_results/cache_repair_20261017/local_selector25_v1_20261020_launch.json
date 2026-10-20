@@ -1,0 +1,31 @@
+{
+  "code_commit": "d2c54231d24e64afda49e5da5854e2ee1ff7f730",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.train_int_local_selector",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_selector25_v1_20261020",
+    "--checkpoint",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_base_refine_b16_20261020/epoch_001/student.pth",
+    "--source-sha256",
+    "45b22ca1f75d92c20a0dc49c10c8967d881fecc4c693d3666549bd70835d23ef",
+    "--gpu",
+    "0",
+    "--fraction",
+    ".25",
+    "--epochs",
+    "3",
+    "--execution",
+    "fixed_sparse",
+    "--batch-size",
+    "32",
+    "--worker"
+  ],
+  "created_unix": 1792508784.0413709,
+  "gpu": 0,
+  "pid": 36648,
+  "timeout_seconds": 7200
+}
