@@ -1,0 +1,86 @@
+{
+  "caveat": "Engineering only; no AP or speed claim. Probe optimizer step is discarded before formal training.",
+  "device": "cuda",
+  "frames": [
+    {
+      "feature_kd": 0.02826009690761566,
+      "frame": "015371",
+      "gt": null,
+      "head_kd": 0.12303426861763,
+      "reset": "initial",
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": false
+    },
+    {
+      "feature_kd": 0.025725796818733215,
+      "frame": "015372",
+      "gt": 0.28411277867126683,
+      "head_kd": 0.10496904700994492,
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": true
+    },
+    {
+      "feature_kd": 0.02659076265990734,
+      "frame": "015373",
+      "gt": 0.3489179201045277,
+      "head_kd": 0.10891040414571762,
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": true
+    },
+    {
+      "feature_kd": 0.026776691898703575,
+      "frame": "015374",
+      "gt": 0.2981191716261111,
+      "head_kd": 0.11243239790201187,
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": true
+    }
+  ],
+  "frozen_parameters": 768,
+  "gradient_norm_before_clip": 4.896224498748779,
+  "history_projection_gradient_l1": 8.045034408569336,
+  "initial_state_restored": true,
+  "initialization": "fixed_phase_b_refinement",
+  "manifest_start_index": 26,
+  "migrated_tensor_equality": true,
+  "migration_check_scope": "Before optional checkpoint loading",
+  "new_context_bn2_gradient_l1": [
+    0.6883214712142944,
+    0.5535355806350708
+  ],
+  "optimizer_step_changed_projection": true,
+  "previous_state_gradient_l1_after_probe_update": 21.72071123123169,
+  "selection": "First contiguous requested-length window containing a training label; initial state empty",
+  "source_prediction_max_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "status": "PASSED",
+  "trainable_parameters": 5336596,
+  "update_radius": 8
+}

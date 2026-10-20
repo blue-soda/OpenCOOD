@@ -1,0 +1,57 @@
+{
+  "all_regions_update": true,
+  "artificial_delay": false,
+  "augmentation": false,
+  "clip_gradient": 5.0,
+  "data_contract": {
+    "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+    "fm_only_epochs": 1,
+    "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+    "lr": 0.0001,
+    "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+    "min_delta": 0.001,
+    "min_epochs": 20,
+    "mode": "gru",
+    "patience": 10,
+    "seed": 303,
+    "state_policy": "whole-segment/tbptt/v1",
+    "tbptt_steps": 4
+  },
+  "epoch_budget_is_hard": true,
+  "epochs_max": 20,
+  "feature_loss": "channel RMS clamp1; .5 global + .5 confidence weighted SmoothL1",
+  "head_warmup_epochs": 0,
+  "initial_lrs": [
+    0.0001,
+    1e-05,
+    1e-06,
+    1e-06
+  ],
+  "initialization": {
+    "epoch": 16,
+    "path": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_state_b_from_a06_dense_v1/epoch_016/student.pth",
+    "sha256": "4e55c305fa62990ddb31e667d40a2d4f0520e5276aae642e24bd11362e4739eb",
+    "source_phase": "b"
+  },
+  "loss_weights": {
+    "feature_kd": 0.5,
+    "gt": 1.0,
+    "head_kd": 0.2
+  },
+  "memory_policy": "recurrent",
+  "normalization": "fixed BN statistics; affine trainable",
+  "optimizer": "AdamW",
+  "phase": "b",
+  "plateau_projection_lr_limit": 1e-05,
+  "refinement_variant": "base",
+  "seed": 303,
+  "tbptt": 4,
+  "teacher_sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8",
+  "train_labels": 4678,
+  "train_scans": 8593,
+  "update_radius": 4,
+  "val_labels": 1738,
+  "val_scans": 5794,
+  "version": "migrated_local_state_v1",
+  "weight_decay": 0.0001
+}
