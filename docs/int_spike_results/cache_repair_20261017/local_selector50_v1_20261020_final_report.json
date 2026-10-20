@@ -1,0 +1,173 @@
+{
+  "detector_unchanged": true,
+  "epochs": 3,
+  "history": [
+    {
+      "actual_write_fraction": 0.6552422169817489,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_selector50_v1_20261020/epoch_001/selector.pth",
+      "detector_unchanged": true,
+      "epoch": 1,
+      "optimizer_steps": 8290,
+      "scans": 8593,
+      "sha256": "59d702a31508a75b9c8d8402f5297fa35bba92b86b9f9732ffdd4c9a7c313398",
+      "train_log_score_loss": 0.10592655405420158,
+      "train_topk_overlap": 0.8804411945929717,
+      "validation": {
+        "cache_0.5": {
+          "ap70_delta_pp": -2.214577670659479,
+          "latency_reduction_percent": -62.45919498531587,
+          "mean_ms": 20.91692191488103,
+          "metrics": {
+            "bev_ap30": 0.8472141835029047,
+            "bev_ap50": 0.8216755780034202,
+            "bev_ap70": 0.7132703696371353
+          },
+          "p50_ms": 22.27112650871277,
+          "p95_ms": 25.503110140562057,
+          "region_means": {
+            "actual_write_fraction": 0.6329835294072366,
+            "crop_area_ratio_before_fallback": 0.8643405602949958,
+            "executed_input_area_ratio": 1.0329662321723074,
+            "fallback": 0.25284777355885396,
+            "mandatory_fraction": 0.07304906812577443,
+            "max_age_after_update": 0.1732262264825288,
+            "oracle_full_update": 0.0,
+            "requested_fraction": 0.5297371848599846,
+            "selected_fraction": 0.5445057863320076,
+            "tiles": 44.98705557473248,
+            "training_full_update": 0.0
+          },
+          "reset_frames": 214,
+          "state_bytes": 38808000
+        },
+        "dense": {
+          "ap70_delta_pp": 0.0,
+          "latency_reduction_percent": 0.0,
+          "mean_ms": 12.875185006777633,
+          "metrics": {
+            "bev_ap30": 0.8486823581573426,
+            "bev_ap50": 0.8279387076068144,
+            "bev_ap70": 0.7354161463437301
+          },
+          "p50_ms": 12.759849545545876,
+          "p95_ms": 13.79077727906406,
+          "region_means": null,
+          "reset_frames": 214,
+          "state_bytes": 25804800
+        }
+      }
+    },
+    {
+      "actual_write_fraction": 0.6625853668376812,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_selector50_v1_20261020/epoch_002/selector.pth",
+      "detector_unchanged": true,
+      "epoch": 2,
+      "optimizer_steps": 8290,
+      "scans": 8593,
+      "sha256": "8ef9b17775a096bb4524103667e71e94e594e312d0380b181455e206c845d48c",
+      "train_log_score_loss": 0.059238943507820725,
+      "train_topk_overlap": 0.8964673874821105,
+      "validation": {
+        "cache_0.5": {
+          "ap70_delta_pp": -2.1797671698840726,
+          "latency_reduction_percent": -61.91998778864083,
+          "mean_ms": 20.90328237438577,
+          "metrics": {
+            "bev_ap30": 0.8462341479329116,
+            "bev_ap50": 0.8208794455661746,
+            "bev_ap70": 0.7136184746448894
+          },
+          "p50_ms": 22.30663795489818,
+          "p95_ms": 25.34647947177291,
+          "region_means": {
+            "actual_write_fraction": 0.6349336585742998,
+            "crop_area_ratio_before_fallback": 0.8629239881431804,
+            "executed_input_area_ratio": 1.0312536778605126,
+            "fallback": 0.25854332067656194,
+            "mandatory_fraction": 0.07152724209301473,
+            "max_age_after_update": 0.17133224779443573,
+            "oracle_full_update": 0.0,
+            "requested_fraction": 0.527565740468093,
+            "selected_fraction": 0.5418177294317591,
+            "tiles": 44.820676561960646,
+            "training_full_update": 0.0
+          },
+          "reset_frames": 214,
+          "state_bytes": 38808000
+        },
+        "dense": {
+          "ap70_delta_pp": 0.0,
+          "latency_reduction_percent": 0.0,
+          "mean_ms": 12.90963682733936,
+          "metrics": {
+            "bev_ap30": 0.8486823581573426,
+            "bev_ap50": 0.8279387076068144,
+            "bev_ap70": 0.7354161463437301
+          },
+          "p50_ms": 12.817543465644121,
+          "p95_ms": 13.780672464054076,
+          "region_means": null,
+          "reset_frames": 214,
+          "state_bytes": 25804800
+        }
+      }
+    },
+    {
+      "actual_write_fraction": 0.6635146577699795,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_selector50_v1_20261020/epoch_003/selector.pth",
+      "detector_unchanged": true,
+      "epoch": 3,
+      "optimizer_steps": 8290,
+      "scans": 8593,
+      "sha256": "62fb1d5629b4f687e8da0810e7f6e4a77c3a4cb46519a2fd1c7e73d2e89bbc2f",
+      "train_log_score_loss": 0.051702106353210056,
+      "train_topk_overlap": 0.9008595120561712,
+      "validation": {
+        "cache_0.5": {
+          "ap70_delta_pp": -2.2259974954337958,
+          "latency_reduction_percent": -61.681233068861154,
+          "mean_ms": 20.726466151738517,
+          "metrics": {
+            "bev_ap30": 0.8466697389593707,
+            "bev_ap50": 0.8213175399051647,
+            "bev_ap70": 0.7131561713893921
+          },
+          "p50_ms": 22.176865953952074,
+          "p95_ms": 25.045199587475505,
+          "region_means": {
+            "actual_write_fraction": 0.6338499979208286,
+            "crop_area_ratio_before_fallback": 0.8627362734300947,
+            "executed_input_area_ratio": 1.0312974012525271,
+            "fallback": 0.25681739730755954,
+            "mandatory_fraction": 0.07125703915790273,
+            "max_age_after_update": 0.17233078474160266,
+            "oracle_full_update": 0.0,
+            "requested_fraction": 0.5269960625277826,
+            "selected_fraction": 0.541143249603317,
+            "tiles": 44.90403866068347,
+            "training_full_update": 0.0
+          },
+          "reset_frames": 214,
+          "state_bytes": 38808000
+        },
+        "dense": {
+          "ap70_delta_pp": 0.0,
+          "latency_reduction_percent": 0.0,
+          "mean_ms": 12.819339485684756,
+          "metrics": {
+            "bev_ap30": 0.8486823581573426,
+            "bev_ap50": 0.8279387076068144,
+            "bev_ap70": 0.7354161463437301
+          },
+          "p50_ms": 12.709203991107643,
+          "p95_ms": 13.704988884273916,
+          "region_means": null,
+          "reset_frames": 214,
+          "state_bytes": 25804800
+        }
+      }
+    }
+  ],
+  "seconds": 2324.3919987501577,
+  "status": "COMPLETED"
+}
