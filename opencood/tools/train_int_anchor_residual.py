@@ -154,11 +154,13 @@ def engineering(model, cfg, rows, modules):
                 conv_macs_per_frame=costs)
 
 
-def evaluate(model, cfg, rows, modules, out, costs, epoch):
+def evaluate(model, cfg, rows, modules, out, costs, epoch, cached_detector=None):
     modules.eval()
     modes = dict(original=model,
                  full=AnchorResidualDetector(model,cfg,modules,1),
                  cached=AnchorResidualDetector(model,cfg,modules,3))
+    if cached_detector is not None:
+        modes['cached']=cached_detector
     states={k:None for k in modes}; times={k:[] for k in modes}
     aps={k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.3,.5,.7)} for k in modes}
     partial=0; original_weights={k:v.detach().clone() for k,v in modules.state_dict().items()}
@@ -173,9 +175,10 @@ def evaluate(model, cfg, rows, modules, out, costs, epoch):
                 torch.cuda.synchronize(); ms=1000*(time.perf_counter()-tick)
                 assert all(torch.isfinite(v).all() for v in pred.values())
                 if index>=10:times[name].append(ms)
-                if name=='cached':partial+=int(info['anchor_partial'])
+                is_partial=info.get('anchor_partial',info.get('local_partial',False))
+                if name=='cached':partial+=int(is_partial)
                 log.write(json.dumps(dict(frame=meta['frame'],mode=name,ms=ms,
-                                          partial=info.get('anchor_partial',False)))+'\n')
+                                          partial=is_partial))+'\n')
                 if meta['supervised']:
                     data=dict(ego=ego)
                     boxes,scores=dataset.post.post_process(data,dict(ego=pred))
@@ -206,6 +209,40 @@ def evaluate(model, cfg, rows, modules, out, costs, epoch):
     return report
 
 
+def stage_zero_control(model,cfg,rows):
+    """Change only cache location/readout, keeping the three-frame schedule."""
+    from opencood.models.sub_modules.int_light_repair import make_repairs
+    from opencood.models.sub_modules.int_local_cache import LocalCacheDetector
+    repairs=make_repairs('stages').cuda().eval()
+    wrapper=LocalCacheDetector(model,cfg,0.,period=3,repair_modules=repairs,repair_dense=True)
+    counter=ConvCounter(model,repairs);state=reference=None;costs={};errors=[];depths=[]
+    _,stream=loader(rows[:32],cfg,0,303)
+    try:
+        with torch.no_grad():
+            for sample in stream:
+                ego=to_device(sample['ego'],torch.device('cuda'));meta=sample['meta']
+                expected,reference,_=model.step(ego,reference,meta)
+                previous=None if state is None else state['cache']
+                before=counter.total
+                actual,state,info=wrapper.step(ego,state,meta)
+                key='partial' if info['local_partial'] else 'full'
+                cost=counter.total-before
+                if key in costs:assert cost==costs[key]
+                costs[key]=cost
+                if info['local_partial']:
+                    assert all(x is y for x,y in zip(previous['values'],state['cache']['values']))
+                    depths.append(state['cache']['frames'])
+                else:
+                    errors.append(max(float((actual[k]-expected[k]).abs().max()) for k in actual))
+    finally:
+        counter.close()
+    assert max(errors)<=1e-5 and set(depths)=={1,2}
+    costs['original']=costs['full']
+    return wrapper,dict(status='PASSED',full_prediction_max_error=max(errors),
+                        immutable_anchor_checked=True,partial_depths=sorted(set(depths)),
+                        conv_macs_per_frame=costs)
+
+
 def worker(a):
     out=Path(a.output)
     for k,v in dict(mode='gru',stage='pilot',device='cuda',content_calibration=None,
@@ -218,7 +255,7 @@ def worker(a):
     train=json.loads(Path(source_args['manifest']).read_text())['train']
     torch.manual_seed(303); modules=AnchorResidualModules(a.arm=='fusion').cuda()
     contract=dict(arm=a.arm,seed=303,refresh_period=3,max_age=.25,anchor_writeback=False,
-        evaluation_only=a.diagnostic,
+        evaluation_only=a.diagnostic,stage_diagnostic=a.stage_diagnostic,
         epochs_max=a.epochs,minimum_epochs=6,plateau_patience=4,minimum_ap_gain=.001,
         original_sha256=provenance['checkpoint']['sha256'],data_contract=provenance['contract'],
         train_scans=len(train),val_scans=len(val),trainable_parameters=sum(p.numel() for p in modules.parameters()),
@@ -237,9 +274,16 @@ def worker(a):
     gate=engineering(model,cfg,train,modules);write_json(out/'engineering.json',gate)
     if a.diagnostic:
         directory=out/'epoch_000';directory.mkdir()
-        report=evaluate(model,cfg,val,modules,directory,gate['conv_macs_per_frame'],0)
+        cached_detector=None
+        if a.stage_diagnostic:
+            cached_detector,gate=stage_zero_control(model,cfg,train)
+            write_json(out/'stage_engineering.json',gate)
+        report=evaluate(model,cfg,val,modules,directory,gate['conv_macs_per_frame'],0,cached_detector)
         report.update(diagnostic='Zero residual, immutable warped anchor; untrained modules still execute. Accuracy control, not optimized warp-only latency.',
-                      optimizer_steps=0)
+                      optimizer_steps=0,cache_location='stages2/3' if a.stage_diagnostic else 'decoded_H')
+        if a.stage_diagnostic:
+            report['repair_area']='Whole zero-residual stage2/3 modules; original current-E multiscale decoder and shrink execute every frame.'
+        write_json(directory/'report.json',report)
         write_json(out/'report.json',report)
         write_json(out/'status.json',dict(status='COMPLETED',diagnostic=True))
         return
@@ -302,7 +346,10 @@ def main():
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--epochs',type=int,default=12)
     p.add_argument('--worker',action='store_true')
     p.add_argument('--diagnostic',action='store_true',help='Full zero-residual baseline; no training')
+    p.add_argument('--stage-diagnostic',action='store_true',help='Zero residual pre-decoder stage caches')
     a=p.parse_args();out=Path(a.output)
+    if a.stage_diagnostic and (not a.diagnostic or a.arm!='direct'):
+        p.error('Stage diagnostic requires --diagnostic --arm direct')
     if not 1<=a.epochs<=12:p.error('Maximum initial budget is 12 epochs')
     if a.worker:
         def expired(signum,frame):raise TimeoutError('Anchor experiment exceeded 8 hours')
