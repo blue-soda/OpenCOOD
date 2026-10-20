@@ -2,6 +2,7 @@ import unittest
 import torch
 from opencood.models.sub_modules.int_local_state import LocalStateDetector
 from opencood.models.sub_modules.int_local_state_cache import RegionalLocalStateDetector, change_request
+from opencood.models.sub_modules.int_local_selector import LocalChangeSelector, selector_state
 from test_int_local_state import source_teacher
 
 
@@ -115,6 +116,69 @@ class RegionalStateTests(unittest.TestCase):
         self.assertEqual(info['region_cache']['executed_input_area_ratio'], 1.)
         self.assertEqual(info['region_cache']['oracle_full_update'], 1.)
         self.assertTrue(torch.equal(first['value'], second['value']))
+
+    def test_learned_selector_skips_u_without_access_to_current_candidate(self):
+        cached = self.model(fraction=0., selector='learned', selector_net=LocalChangeSelector())
+        calls = []
+        hook = cached.update.register_forward_pre_hook(lambda m, args: calls.append(1))
+        with torch.no_grad():
+            _, first, _ = cached.step_spatial(torch.randn(1,64,40,48), None, self.meta(0))
+            _, second, info = cached.step_spatial(torch.randn(1,64,40,48), first, self.meta(1))
+        hook.remove()
+        self.assertEqual(len(calls), 1)
+        self.assertTrue(torch.equal(first['value'], second['value']))
+        self.assertEqual(info['region_cache']['executed_input_area_ratio'], 0.)
+        self.assertIsNone(cached.selector_example)
+
+    def test_selector_training_updates_only_scorer_and_counts_full_label_work(self):
+        cached = self.model(fraction=.25, tile=4, selector='learned', selector_net=LocalChangeSelector())
+        for name, param in cached.named_parameters():
+            param.requires_grad_(name.startswith('selector_net.'))
+        before = {k:v.clone() for k,v in cached.state_dict().items()}
+        cached.collect_selector_targets = True
+        with torch.no_grad():
+            _, state, _ = cached.step_spatial(torch.randn(1,64,40,48), None, self.meta(0))
+            self.assertIsNone(cached.selector_example)
+            _, state, info = cached.step_spatial(torch.randn(1,64,40,48), state, self.meta(1))
+        logits, target = cached.selector_example
+        self.assertTrue(logits.requires_grad)
+        self.assertFalse(target.requires_grad)
+        self.assertFalse(state['value'].requires_grad)
+        optimizer = torch.optim.AdamW(cached.selector_net.parameters(), lr=1e-3)
+        torch.nn.functional.smooth_l1_loss(logits, target).backward()
+        optimizer.step()
+        self.assertTrue(all(p.grad is None for n,p in cached.named_parameters() if not n.startswith('selector_net.')))
+        self.assertTrue(all(torch.equal(before[k], v) for k,v in cached.state_dict().items() if not k.startswith('selector_net.')))
+        self.assertTrue(any(not torch.equal(before[k], v) for k,v in cached.state_dict().items() if k.startswith('selector_net.')))
+        self.assertEqual(info['region_cache']['training_full_update'], 1.)
+        self.assertEqual(info['region_cache']['executed_input_area_ratio'], 1.)
+
+    def test_learned_sparse_and_full_label_writeback_have_same_recursive_states(self):
+        sparse = self.model(fraction=.15, tile=4, fallback_fraction=1.,
+                            selector='learned', selector_net=LocalChangeSelector(), execution='fixed_sparse')
+        labelled = self.model(fraction=.15, tile=4, fallback_fraction=1.,
+                              selector='learned', selector_net=LocalChangeSelector())
+        labelled.load_state_dict(sparse.state_dict())
+        labelled.collect_selector_targets = True
+        ss = ls = None
+        with torch.no_grad():
+            for i in range(4):
+                x = torch.randn(1,64,48,64)
+                actual, ss, ai = sparse.step_spatial(x, ss, self.meta(i, i*.4))
+                expected, ls, ei = labelled.step_spatial(x, ls, self.meta(i, i*.4))
+                self.assertTrue(all(torch.allclose(actual[k], expected[k], atol=1e-5, rtol=1e-4) for k in actual))
+                self.assertTrue(torch.equal(ss['cache_age'], ls['cache_age']))
+                self.assertEqual(ai['region_cache']['actual_write_fraction'], ei['region_cache']['actual_write_fraction'])
+
+    def test_selector_requires_matching_source_and_train_only_provenance(self):
+        checkpoint = dict(version=LocalChangeSelector.version, source_sha256='fixed',
+                          tile=16, fraction=.5, split='train', selector={})
+        self.assertEqual(selector_state(checkpoint, 'fixed', 16, .5), {})
+        for args in [('other', 16, .5), ('fixed', 8, .5), ('fixed', 16, .25)]:
+            with self.assertRaises(ValueError):
+                selector_state(checkpoint, *args)
+        with self.assertRaises(ValueError):
+            selector_state(dict(checkpoint, split='val'), 'fixed', 16, .5)
 
 
 if __name__ == '__main__':

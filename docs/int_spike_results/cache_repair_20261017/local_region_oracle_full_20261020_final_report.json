@@ -1,0 +1,90 @@
+{
+  "caveats": [
+    "Pilot prefix AP is not full validation AP.",
+    "oracle_state, if enabled, executes full U before selection: diagnostic only, not deployable skipping or a formal AP upper bound.",
+    "Nominal fraction excludes mandatory coverage, age, tile expansion and dense fallback.",
+    "Executed input area counts overlapping halos; it is not a FLOP measurement.",
+    "All modes own their recursive states; skipped states may affect later refreshed states.",
+    "State uses ego-motion only; no object-motion prediction or cache-aware training.",
+    "Same-GPU paired timing is preliminary; host contention and thermal variation remain.",
+    "Peak GPU memory includes resident comparison models and teacher construction, not deployment memory."
+  ],
+  "checkpoint_sha256": "45b22ca1f75d92c20a0dc49c10c8967d881fecc4c693d3666549bd70835d23ef",
+  "labels": 1738,
+  "peak_gpu_bytes": 541789696,
+  "results": {
+    "cache_0.25": {
+      "ap70_delta_pp": -16.145416089550835,
+      "latency_reduction_percent": -20.6461264335142,
+      "mean_ms": 15.690137062512884,
+      "metrics": {
+        "bev_ap30": 0.8178185850254284,
+        "bev_ap50": 0.7512741314285976,
+        "bev_ap70": 0.5739619854482217
+      },
+      "p50_ms": 15.67956805229187,
+      "p95_ms": 16.915728244930506,
+      "region_means": {
+        "actual_write_fraction": 0.38159902040191795,
+        "crop_area_ratio_before_fallback": 0.5612232687344872,
+        "executed_input_area_ratio": 1.0,
+        "fallback": 0.15843976527442183,
+        "mandatory_fraction": 0.1329979932473157,
+        "max_age_after_update": 0.2212138174755597,
+        "oracle_full_update": 1.0,
+        "requested_fraction": 0.3363163548299556,
+        "selected_fraction": 0.3620111537665838,
+        "tiles": 12.402657921988263
+      },
+      "reset_frames": 214,
+      "state_bytes": 38808000
+    },
+    "cache_0.5": {
+      "ap70_delta_pp": -2.0553663109462494,
+      "latency_reduction_percent": -20.334773228485115,
+      "mean_ms": 15.649645298656287,
+      "metrics": {
+        "bev_ap30": 0.8478571020826919,
+        "bev_ap50": 0.8220738972900266,
+        "bev_ap70": 0.7148624832342676
+      },
+      "p50_ms": 15.643523074686527,
+      "p95_ms": 16.90057680243626,
+      "region_means": {
+        "actual_write_fraction": 0.6328534552937423,
+        "crop_area_ratio_before_fallback": 0.8630351047334132,
+        "executed_input_area_ratio": 1.0,
+        "fallback": 0.2545736969278564,
+        "mandatory_fraction": 0.07320702429305263,
+        "max_age_after_update": 0.17329669764479522,
+        "oracle_full_update": 1.0,
+        "requested_fraction": 0.5294185395709062,
+        "selected_fraction": 0.5434494120296133,
+        "tiles": 18.134794615119088
+      },
+      "reset_frames": 214,
+      "state_bytes": 38808000
+    },
+    "dense": {
+      "ap70_delta_pp": 0.0,
+      "latency_reduction_percent": 0.0,
+      "mean_ms": 13.005089783101674,
+      "metrics": {
+        "bev_ap30": 0.8486823581573426,
+        "bev_ap50": 0.8279387076068144,
+        "bev_ap70": 0.7354161463437301
+      },
+      "p50_ms": 12.919540517032146,
+      "p95_ms": 13.936018489766866,
+      "region_means": null,
+      "reset_frames": 214,
+      "state_bytes": 25804800
+    }
+  },
+  "scans": 5794,
+  "seconds": 598.7583917709999,
+  "stage": "full",
+  "status": "COMPLETED",
+  "timing_scope": "One GPU, same frames, rotating mode order; synchronized full model step, including observation, warps, selector, crop planning, U, writeback and heads; excludes loading, voxelization, H2D, postprocessing.",
+  "weights_unchanged": true
+}

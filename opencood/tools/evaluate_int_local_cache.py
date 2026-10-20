@@ -11,6 +11,7 @@ import numpy as np
 import torch
 from opencood.models.sub_modules.int_local_state import LocalStateDetector
 from opencood.models.sub_modules.int_local_state_cache import RegionalLocalStateDetector
+from opencood.models.sub_modules.int_local_selector import LocalChangeSelector, selector_state
 from opencood.tools.run_int_cache_repair import setup
 from opencood.tools.run_int_ego import loader, to_device, write_json
 from opencood.tools.launch_int_memory import digest
@@ -18,9 +19,15 @@ from opencood.utils import eval_utils
 
 
 def make_model(teacher, cfg, saved, **policy):
+    weights = dict(saved['model'])
+    if policy.get('selector') == 'learned':
+        net = LocalChangeSelector()
+        net.load_state_dict(policy.pop('selector_weights'), strict=True)
+        policy['selector_net'] = net
+        weights.update({'selector_net.'+k:v for k,v in net.state_dict().items()})
     model = (RegionalLocalStateDetector(teacher, cfg, **policy) if policy else
              LocalStateDetector(teacher, cfg, 'recurrent')).cuda().eval()
-    model.load_state_dict(saved['model'], strict=True)
+    model.load_state_dict(weights, strict=True)
     for p in model.parameters():
         p.requires_grad_(False)
     return model
@@ -87,6 +94,19 @@ def worker(a):
     # also copies hooks, which would otherwise forbid legitimate student calls.
     common = dict(tile=a.tile, max_age=a.cache_max_age, fallback_fraction=a.fallback_fraction,
                   selector=a.selector)
+    selector_weights = None
+    if a.selector == 'learned':
+        assert digest(a.selector_checkpoint) == a.selector_sha256
+        selector_saved = torch.load(a.selector_checkpoint, map_location='cpu')
+        assert len(a.fractions) == 1, 'Evaluate each scorer at its trained budget'
+        assert selector_saved['max_age'] == a.cache_max_age
+        assert selector_saved['fallback_fraction'] == a.fallback_fraction
+        selector_weights = selector_state(selector_saved, a.source_sha256, a.tile, a.fractions[0])
+        common['selector_weights'] = selector_weights
+        provenance.update(selector_checkpoint=a.selector_checkpoint, selector_sha256=a.selector_sha256,
+                          selector_epoch=selector_saved['epoch'],
+                          selector_parameters=sum(v.numel() for v in selector_weights.values()))
+        write_json(out/'provenance.json', provenance)
     probe_models = [
         make_model(teacher, cfg, saved),
         make_model(teacher, cfg, saved, fraction=1., **common),
@@ -152,7 +172,11 @@ def worker(a):
         assert all(len(values) == len(chosen) for values in records.values())
         results = {}
         for name, model in models.items():
-            assert all(torch.equal(v.cpu(), saved['model'][k]) for k,v in model.state_dict().items())
+            expected = dict(saved['model'])
+            if name != 'dense' and selector_weights is not None:
+                expected.update({'selector_net.'+k:v for k,v in selector_weights.items()})
+            assert set(expected) == set(model.state_dict())
+            assert all(torch.equal(v.cpu(), expected[k]) for k,v in model.state_dict().items())
             times = [r['ms'] for r in records[name][10:]]
             region = [r['region'] for r in records[name] if r['region'] is not None]
             results[name] = dict(
@@ -167,6 +191,8 @@ def worker(a):
             result.update(ap70_delta_pp=100*(result['metrics']['bev_ap70']-dense['metrics']['bev_ap70']),
                           latency_reduction_percent=100*(1-result['mean_ms']/dense['mean_ms']))
         assert digest(source) == a.source_sha256
+        if a.selector == 'learned':
+            assert digest(a.selector_checkpoint) == a.selector_sha256
         if evaluation_stage == 'full':
             assert abs(dense['metrics']['bev_ap70']-source_ap) < 1e-8, 'Dense baseline replay differs from source AP'
         report = dict(status='COMPLETED', stage=evaluation_stage, scans=len(chosen),
@@ -201,7 +227,9 @@ def main():
     p.add_argument('--cache-max-age', type=float, default=.5)
     p.add_argument('--fallback-fraction', type=float, default=.85)
     p.add_argument('--execution', choices=['sparse','fixed_sparse'], default='sparse')
-    p.add_argument('--selector', choices=['shallow','oracle_state'], default='shallow')
+    p.add_argument('--selector', choices=['shallow','oracle_state','learned'], default='shallow')
+    p.add_argument('--selector-checkpoint')
+    p.add_argument('--selector-sha256')
     p.add_argument('--batch-size', type=int, default=8)
     p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
@@ -209,6 +237,8 @@ def main():
             or not 0<a.fallback_fraction<=1 or not a.fractions
             or any(not 0<=f<=1 for f in a.fractions) or len(set(a.fractions)) != len(a.fractions)):
         p.error('Invalid bounded regional evaluation policy')
+    if a.selector == 'learned' and (not a.selector_checkpoint or not a.selector_sha256):
+        p.error('Learned selector requires a fixed checkpoint and SHA256')
     if a.worker:
         def expired(signum, frame):
             raise TimeoutError('Paired regional evaluation exceeded two hours')
