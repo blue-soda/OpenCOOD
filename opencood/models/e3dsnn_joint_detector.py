@@ -7,6 +7,7 @@ of individual spikes and does not require receiver data at the sender.
 """
 from dataclasses import asdict
 import json
+import math
 import numpy as np
 import torch
 from opencood.models.e3dsnn_content_detector import E3dsnnContentDetector
@@ -15,6 +16,7 @@ from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract
 from opencood.models.fuse_modules.e3dsnn_progressive_sender import ProgressiveSender, l1_partition
 from opencood.utils import content_feature_packet as codec
 from opencood.utils.e3dsnn_transplant import encoder_digest
+from opencood.utils.e3dsnn_rate_objective import sparse_payload_proxy
 
 
 class E3dsnnJointDetector(E3dsnnContentDetector):
@@ -28,6 +30,15 @@ class E3dsnnJointDetector(E3dsnnContentDetector):
         self.progressive_sender = ProgressiveSender(channels=32)
         self.joint_learn_order = bool(args.get('joint_learn_order', True))
         self.joint_eval_order = args.get('joint_eval_order', 'learned')
+        self.joint_prefix_weights = args.get('joint_prefix_weights')
+        if self.joint_prefix_weights is not None:
+            weights = self.joint_prefix_weights
+            if (len(weights) != 3 or any(not math.isfinite(w) or w < 0 for w in weights)
+                    or abs(sum(weights)-1.) > 1e-6):
+                raise ValueError('Invalid joint prefix loss weights')
+        self.joint_rate_weight = float(args.get('joint_rate_weight', 0.))
+        if not math.isfinite(self.joint_rate_weight) or self.joint_rate_weight < 0:
+            raise ValueError('Invalid joint rate objective weight')
         if self.joint_eval_order not in ('learned', 'l1'):
             raise ValueError('Unknown joint evaluation ordering')
         self.sender_ranking = 'learned_content32_voxel_batch' if self.joint_learn_order else 'frozen_content32_voxel_batch'
@@ -64,7 +75,7 @@ class E3dsnnJointDetector(E3dsnnContentDetector):
         if self._encoder_identity is None:
             self._encoder_identity = encoder_digest(self)
         basis = self.content.basis_digest()
-        states, contracts, poses, chunks = [], [], [], []
+        states, contracts, poses, chunks, rate_proxies = [], [], [], [], []
         lengths = [0] * b
         kept = ego.new_ones(b)
         if self.training and self.message_dropout:
@@ -100,6 +111,9 @@ class E3dsnnJointDetector(E3dsnnContentDetector):
                 self._encoder_identity, basis))
             message = self.content.encode(road[i:i+1])
             counts = message.counts
+            if self.training and self.joint_rate_weight:
+                source_rows = int((road[i:i+1].detach() != 0).any(1).sum())
+                rate_proxies.append(sparse_payload_proxy(counts, source_rows))
             if self.content_full_packet:
                 if not self.packet_roundtrip:
                     raise ValueError('Full transport control requires wire roundtrip')
@@ -124,6 +138,10 @@ class E3dsnnJointDetector(E3dsnnContentDetector):
         result = dict(outputs[-1], message_kept=kept.detach())
         if self.training:
             result['prefix_outputs'] = outputs
+            if self.joint_prefix_weights is not None:
+                result['prefix_loss_weights'] = self.joint_prefix_weights
+            if rate_proxies:
+                result['message_rate_loss'] = self.joint_rate_weight * torch.stack(rate_proxies).mean()
             if self.enable_ego_aux:
                 result['ego_output'] = self.detect_bev(ego_bev)
         if self.packet_roundtrip:

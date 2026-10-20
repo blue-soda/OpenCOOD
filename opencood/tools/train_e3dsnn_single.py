@@ -259,6 +259,9 @@ def execute(args, output_dir):
         'joint_membrane': dict(local_precount_used=model.joint_receiver.use_local_membrane,
             retain_post_readout_residual=model.joint_receiver.retain_residual,
             learned_order=model.joint_learn_order,
+            prefix_loss_weights=model.joint_prefix_weights,
+            rate_proxy_weight=model.joint_rate_weight,
+            rate_proxy='uncompressed sparse Count3 address/mask/value occupancy; not actual compressed bytes',
             state='U=Q_previous+R_previous+aligned_current; Q=Count4(U); R=U-Q',
             schedule='learned disjoint latent voxel batches; sender-local scores',
             detector_backend='frozen ANN BEV and continuous heads')

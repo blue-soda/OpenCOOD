@@ -19,13 +19,22 @@ from opencood.utils.e3dsnn_budget import decoder_digest
 from opencood.utils.e3dsnn_fusion_probe import bn_digest
 
 
-def audit(root, base, family, learn, joint=False, joint_variant='full'):
+def audit(root, base, family, learn, joint=False, joint_variant='full', refine_objective=None):
+    if refine_objective not in (None, 'control', 'prefix', 'prefix_rate'):
+        raise ValueError('Unknown refinement objective')
+    if refine_objective and (not joint or joint_variant != 'full'):
+        raise ValueError('Objective refinement requires the full joint model')
     if joint_variant not in ('full','no_local','clear_interbatch','frozen_order'):
         raise ValueError('Unknown registered joint ablation')
     if not joint and joint_variant!='full':raise ValueError('Ablations require joint detector')
     root=Path(root);root.mkdir(parents=True,exist_ok=True)
     if any(root.iterdir()):raise FileExistsError('Fresh audit directory required')
-    if joint:
+    if refine_objective:
+        if family != 'snn' or not learn:
+            raise ValueError('Refinement requires learned SNN content')
+        source=Path(base)/'e3dsnn_joint_round1_20261019';group='joint'
+        ckpt=source/'joint_adapt10/best_ap70.pth'
+    elif joint:
         if family!='snn' or not learn:raise ValueError('Joint audit requires SNN learned content')
         source=Path(base)/'e3dsnn_content_round1_v2_20261019';group='snn_learn'
         ckpt=source/'snn_learn_adapt10/best_ap70.pth'
@@ -37,7 +46,8 @@ def audit(root, base, family, learn, joint=False, joint_variant='full'):
         ckpt=source/'budget_a_fusion_adapt10/best_ap70.pth'
     prior=read(source/'adapt10_summary.json');assert prior['passed']
     assert sha(ckpt)==prior['groups'][group]['checkpoint_sha256']
-    source_config=source/'snn_learn/p3.yaml' if joint else source/(group+'.yaml')
+    source_config=(source/'joint/p3.yaml' if refine_objective else
+                   source/'snn_learn/p3.yaml' if joint else source/(group+'.yaml'))
     raw=yaml.safe_load(source_config.read_text())
     raw['model']['core_method']='e3dsnn_joint_detector' if joint else 'e3dsnn_content_detector'
     raw['model']['args'].update(content_trainable=learn,readout_prefix=3,content_full_packet=False,
@@ -46,13 +56,20 @@ def audit(root, base, family, learn, joint=False, joint_variant='full'):
         raw['model']['args'].update(joint_local_membrane=joint_variant!='no_local',
             joint_retain_residual=joint_variant!='clear_interbatch',
             joint_learn_order=joint_variant!='frozen_order')
+    if refine_objective:
+        raw['model']['args'].update(joint_prefix_weights=(
+            [.6,.3,.1] if refine_objective != 'control' else None),
+            joint_rate_weight=.01 if refine_objective == 'prefix_rate' else 0.)
     raw['train_params']=dict(batch_size=2,epoches=10)
     (root/'config.yaml').write_text(yaml.safe_dump(raw));cfg=load_yaml(str(root/'config.yaml'))
     random.seed(20260929);np.random.seed(20260929);torch.manual_seed(20260929)
     dataset=build_dataset(cfg,train=True);samples=[dataset[i] for i in (0,1)]
     batch=train_utils.to_device(dataset.collate_batch_train(samples),torch.device('cuda'));data=batch['ego']
     model=train_utils.create_model(cfg).cuda().eval()
-    (model.load_content if joint else model.load_legacy)(torch.load(str(ckpt),map_location='cpu'))
+    if refine_objective:
+        model.load_state_dict(torch.load(str(ckpt),map_location='cpu'),strict=True)
+    else:
+        (model.load_content if joint else model.load_legacy)(torch.load(str(ckpt),map_location='cpu'))
     torch.save(model.state_dict(),str(root/'initial.pth'))
     report=dict(family=family,learn_content=learn,joint_membrane=joint,started_unix=time.time(),source=str(ckpt),
         source_sha256=sha(ckpt),source_summary_sha256=sha(source/'adapt10_summary.json'),
@@ -64,11 +81,13 @@ def audit(root, base, family, learn, joint=False, joint_variant='full'):
         initial_basis_sha256=model.content.basis_digest())
     if joint:
         report['joint_variant']=joint_variant
-        reference=Path(base)/'e3dsnn_joint_round1_20261019/joint/initial.pth'
+        report['refine_objective']=refine_objective
+        reference=ckpt if refine_objective else Path(base)/'e3dsnn_joint_round1_20261019/joint/initial.pth'
         if reference.exists():
             expected=torch.load(str(reference),map_location='cpu');actual=model.state_dict()
             assert set(actual)==set(expected) and all(torch.equal(actual[k].cpu(),v) for k,v in expected.items())
             report['initial_tensors_equal_full_joint']=True
+            report['initial_reference_kind']='trained_full_joint_best' if refine_objective else 'untrained_full_joint_initial'
             report['full_joint_initial_sha256']=sha(reference)
     original=model.encode_lidar;original_membrane=model.encode_membrane
     with torch.no_grad():
@@ -163,4 +182,5 @@ if __name__=='__main__':
     p.add_argument('--family',choices=('snn','ann'),required=True);p.add_argument('--learn',action='store_true')
     p.add_argument('--joint',action='store_true')
     p.add_argument('--joint-variant',choices=('full','no_local','clear_interbatch','frozen_order'),default='full')
-    a=p.parse_args();audit(a.root,a.base,a.family,a.learn,a.joint,a.joint_variant)
+    p.add_argument('--refine-objective',choices=('control','prefix','prefix_rate'))
+    a=p.parse_args();audit(a.root,a.base,a.family,a.learn,a.joint,a.joint_variant,a.refine_objective)
