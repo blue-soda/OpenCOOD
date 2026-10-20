@@ -1,4 +1,4 @@
-"""Inference-only regional updates of the migrated local high-level state."""
+"""Regional updates, with explicit opt-in masked training of cached states."""
 import math
 import torch
 import torch.nn.functional as F
@@ -54,7 +54,7 @@ class RegionalLocalStateDetector(LocalStateDetector):
     """
     def __init__(self, teacher, config, fraction=.25, tile=16, max_age=.5,
                  execution='sparse', fallback_fraction=.85, batch_size=8, selector='shallow',
-                 selector_net=None):
+                 selector_net=None, cache_training=False):
         if not 0 <= fraction <= 1 or tile < 1 or not 0 < max_age < float('inf'):
             raise ValueError('Invalid regional update policy')
         if execution not in ('sparse', 'masked_dense', 'fixed_sparse') or not 0 < fallback_fraction <= 1 or batch_size < 1:
@@ -67,11 +67,21 @@ class RegionalLocalStateDetector(LocalStateDetector):
         self.execution, self.fallback_fraction = execution, fallback_fraction
         self.batch_size = batch_size
         self.selector = selector
+        self.cache_training = cache_training
         super().__init__(teacher, config, 'recurrent')
         if selector_net is not None:
             self.selector_net = selector_net
         self.collect_selector_targets = False
         self.selector_example = None
+
+    def train(self, mode=True):
+        super().train(mode)
+        if self.cache_training:
+            # Eval fixes BN/crop semantics; autograd still trains U's weights.
+            self.update.eval()
+            if hasattr(self, 'selector_net'):
+                self.selector_net.eval()
+        return self
 
     def select_request(self, packed, old, evidence, reference, coverage, age):
         candidate = self.update(packed) if (
@@ -92,8 +102,10 @@ class RegionalLocalStateDetector(LocalStateDetector):
         return score_request(score, coverage, age, self.fraction, self.tile, self.max_age), candidate
 
     def compute_update(self, packed, old, valid, state, meta, lattice, reason):
-        if self.training:
+        if self.training and not self.cache_training:
             raise ValueError('Regional cache is inference-only; no cache-aware training yet')
+        if self.training and (self.execution != 'masked_dense' or self.collect_selector_targets):
+            raise ValueError('Cache training requires masked-dense execution and a fixed selector')
         if self.collect_selector_targets and self.selector != 'learned':
             raise ValueError('Target collection is only for learned selector training')
         self.selector_example = None
@@ -126,7 +138,7 @@ class RegionalLocalStateDetector(LocalStateDetector):
         age = torch.where(written, torch.zeros_like(age), age).detach()
         stats.update(mandatory_fraction=mandatory, max_age_after_update=float(age.max()))
         stats['oracle_full_update'] = float(self.selector == 'oracle_state')
-        stats['training_full_update'] = float(self.collect_selector_targets)
+        stats['training_full_update'] = float(self.collect_selector_targets or (self.training and self.cache_training))
         if self.selector == 'oracle_state' or self.collect_selector_targets:
             stats['executed_input_area_ratio'] = 1.
         size = sum(x.numel()*x.element_size() for x in (value, reference, age))

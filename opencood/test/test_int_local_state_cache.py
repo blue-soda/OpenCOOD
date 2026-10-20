@@ -180,6 +180,44 @@ class RegionalStateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             selector_state(dict(checkpoint, split='val'), 'fixed', 16, .5)
 
+    def test_cache_training_carries_gradients_through_unchanged_history(self):
+        cached = self.model(fraction=0., tile=4, execution='masked_dense', cache_training=True)
+        cached.train()
+        self.assertTrue(cached.training)
+        self.assertFalse(cached.update.training)
+        self.assertTrue(all(not m.training for m in cached.modules() if isinstance(m, torch.nn.BatchNorm2d)))
+        _, first, _ = cached.step_spatial(torch.randn(1,64,40,48), None, self.meta(0), detach_state=False)
+        first['value'].retain_grad()
+        _, second, info = cached.step_spatial(torch.randn(1,64,40,48), first, self.meta(1), detach_state=False)
+        second['value'].square().mean().backward()
+        self.assertEqual(info['region_cache']['actual_write_fraction'], 0.)
+        self.assertEqual(info['region_cache']['executed_input_area_ratio'], 1.)
+        self.assertTrue(torch.equal(first['value'], second['value']))
+        self.assertGreater(float(first['value'].grad.abs().sum()), 0.)
+        self.assertGreater(float(cached.update.input_projection.weight.grad.abs().sum()), 0.)
+        self.assertFalse(second['evidence_cache'].requires_grad)
+        self.assertFalse(second['cache_age'].requires_grad)
+
+    def test_opt_in_masked_training_preserves_deployment_path_and_frozen_selector(self):
+        trained = self.model(fraction=.15, tile=4, execution='masked_dense',
+                             selector='learned', selector_net=LocalChangeSelector(), cache_training=True)
+        deployed = self.model(fraction=.15, tile=4, execution='fixed_sparse',
+                              selector='learned', selector_net=LocalChangeSelector())
+        deployed.load_state_dict(trained.state_dict())
+        trained.train()
+        ts = ds = None
+        for i in range(3):
+            x = torch.randn(1,64,48,64)
+            actual, ts, _ = trained.step_spatial(x, ts, self.meta(i, i*.3), detach_state=False)
+            with torch.no_grad():
+                expected, ds, _ = deployed.step_spatial(x, ds, self.meta(i, i*.3))
+            self.assertTrue(all(torch.allclose(actual[k], expected[k], atol=1e-5, rtol=1e-4) for k in actual))
+        sum(v.square().mean() for v in actual.values()).backward()
+        self.assertTrue(all(p.grad is None for p in trained.selector_net.parameters()))
+        trained.execution = 'fixed_sparse'
+        with self.assertRaises(ValueError):
+            trained.step_spatial(x, ts, self.meta(3))
+
 
 if __name__ == '__main__':
     unittest.main()

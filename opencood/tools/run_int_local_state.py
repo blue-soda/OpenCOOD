@@ -187,7 +187,7 @@ def train_epoch(a, student, teacher, cfg, rows, optimizer, criterion, epoch, dir
     ends = window_ends(rows, 4)
     state = teacher_state = None
     gt_terms, head_terms, feature_terms = [], [], []
-    losses, gts, heads, features = [], [], [], []
+    losses, gts, heads, features, region_records = [], [], [], [], []
     labels = 0
     optimizer.zero_grad(set_to_none=True)
     _, stream = loader(rows, cfg, 4, 303 + epoch)
@@ -203,6 +203,9 @@ def train_epoch(a, student, teacher, cfg, rows, optimizer, criterion, epoch, dir
             head_terms.append(head)
             feature_terms.append(feature)
             record = dict(frame=meta['frame'],segment=meta['segment'],supervised=meta['supervised'],reset=info['reset'])
+            if 'region_cache' in info:
+                record['region_cache'] = info['region_cache']
+                region_records.append(info['region_cache'])
             if index in ends:
                 h, f = torch.stack(head_terms).mean(), torch.stack(feature_terms).mean()
                 g = torch.stack(gt_terms).mean() if gt_terms else None
@@ -229,7 +232,9 @@ def train_epoch(a, student, teacher, cfg, rows, optimizer, criterion, epoch, dir
     assert index+1 == len(rows) and labels == sum(r['supervised'] for r in rows)
     assert len(losses) == len(ends) and not head_terms
     return dict(scans=len(rows),labels=labels,updates=len(losses),loss=float(np.mean(losses)),
-                gt_loss=float(np.mean(gts)),head_kd=float(np.mean(heads)),feature_kd=float(np.mean(features)))
+                gt_loss=float(np.mean(gts)),head_kd=float(np.mean(heads)),feature_kd=float(np.mean(features)),
+                region_means={k:float(np.mean([r[k] for r in region_records]))
+                              for k in region_records[0]} if region_records else None)
 
 
 def save_checkpoint(path, saved):
