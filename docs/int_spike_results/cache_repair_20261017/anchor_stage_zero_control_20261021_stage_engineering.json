@@ -1,0 +1,14 @@
+{
+  "conv_macs_per_frame": {
+    "full": 150532300800,
+    "original": 150532300800,
+    "partial": 87328483200
+  },
+  "full_prediction_max_error": 0.0,
+  "immutable_anchor_checked": true,
+  "partial_depths": [
+    1,
+    2
+  ],
+  "status": "PASSED"
+}

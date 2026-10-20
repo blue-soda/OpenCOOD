@@ -209,13 +209,16 @@ def evaluate(model, cfg, rows, modules, out, costs, epoch, cached_detector=None)
     return report
 
 
-def stage_zero_control(model,cfg,rows):
+def stage_zero_control(model,cfg,rows,history_evidence=False):
     """Change only cache location/readout, keeping the three-frame schedule."""
     from opencood.models.sub_modules.int_light_repair import make_repairs
     from opencood.models.sub_modules.int_local_cache import LocalCacheDetector
     repairs=make_repairs('stages').cuda().eval()
-    wrapper=LocalCacheDetector(model,cfg,0.,period=3,repair_modules=repairs,repair_dense=True)
+    wrapper=LocalCacheDetector(model,cfg,0.,period=3,repair_modules=repairs,repair_dense=True,
+                              readout_evidence='anchor' if history_evidence else 'current')
     counter=ConvCounter(model,repairs);state=reference=None;costs={};errors=[];depths=[]
+    observed=[]
+    hook=model.backbone.deblocks[0].register_forward_pre_hook(lambda m,x:observed.append(x[0]))
     _,stream=loader(rows[:32],cfg,0,303)
     try:
         with torch.no_grad():
@@ -223,6 +226,7 @@ def stage_zero_control(model,cfg,rows):
                 ego=to_device(sample['ego'],torch.device('cuda'));meta=sample['meta']
                 expected,reference,_=model.step(ego,reference,meta)
                 previous=None if state is None else state['cache']
+                observed.clear()
                 before=counter.total
                 actual,state,info=wrapper.step(ego,state,meta)
                 key='partial' if info['local_partial'] else 'full'
@@ -231,15 +235,22 @@ def stage_zero_control(model,cfg,rows):
                 costs[key]=cost
                 if info['local_partial']:
                     assert all(x is y for x,y in zip(previous['values'],state['cache']['values']))
+                    if history_evidence:
+                        expected_e,_=warp_bev(previous['evidence'],previous['pose'],meta['pose'],
+                                             cfg['model']['args']['lidar_range'])
+                        assert len(observed)==1 and torch.equal(observed[0],expected_e)
+                        assert state['cache']['evidence'] is previous['evidence']
                     depths.append(state['cache']['frames'])
                 else:
                     errors.append(max(float((actual[k]-expected[k]).abs().max()) for k in actual))
     finally:
         counter.close()
+        hook.remove()
     assert max(errors)<=1e-5 and set(depths)=={1,2}
     costs['original']=costs['full']
     return wrapper,dict(status='PASSED',full_prediction_max_error=max(errors),
                         immutable_anchor_checked=True,partial_depths=sorted(set(depths)),
+                        aligned_anchor_readout_evidence_checked=history_evidence,
                         conv_macs_per_frame=costs)
 
 
@@ -256,6 +267,7 @@ def worker(a):
     torch.manual_seed(303); modules=AnchorResidualModules(a.arm=='fusion').cuda()
     contract=dict(arm=a.arm,seed=303,refresh_period=3,max_age=.25,anchor_writeback=False,
         evaluation_only=a.diagnostic,stage_diagnostic=a.stage_diagnostic,
+        stage_history_evidence=a.stage_history_evidence,
         epochs_max=a.epochs,minimum_epochs=6,plateau_patience=4,minimum_ap_gain=.001,
         original_sha256=provenance['checkpoint']['sha256'],data_contract=provenance['contract'],
         train_scans=len(train),val_scans=len(val),trainable_parameters=sum(p.numel() for p in modules.parameters()),
@@ -276,13 +288,16 @@ def worker(a):
         directory=out/'epoch_000';directory.mkdir()
         cached_detector=None
         if a.stage_diagnostic:
-            cached_detector,gate=stage_zero_control(model,cfg,train)
+            cached_detector,gate=stage_zero_control(model,cfg,train,a.stage_history_evidence)
             write_json(out/'stage_engineering.json',gate)
         report=evaluate(model,cfg,val,modules,directory,gate['conv_macs_per_frame'],0,cached_detector)
         report.update(diagnostic='Zero residual, immutable warped anchor; untrained modules still execute. Accuracy control, not optimized warp-only latency.',
                       optimizer_steps=0,cache_location='stages2/3' if a.stage_diagnostic else 'decoded_H')
         if a.stage_diagnostic:
             report['repair_area']='Whole zero-residual stage2/3 modules; original current-E multiscale decoder and shrink execute every frame.'
+            report['readout_evidence']='aligned anchor E' if a.stage_history_evidence else 'current E'
+            if a.stage_history_evidence:
+                report['repair_area']='Zero stage residuals; all three aligned anchor scales go to original decoder/shrink. Current E still computed but not used in partial-frame readout; not an optimized latency baseline.'
         write_json(directory/'report.json',report)
         write_json(out/'report.json',report)
         write_json(out/'status.json',dict(status='COMPLETED',diagnostic=True))
@@ -347,9 +362,12 @@ def main():
     p.add_argument('--worker',action='store_true')
     p.add_argument('--diagnostic',action='store_true',help='Full zero-residual baseline; no training')
     p.add_argument('--stage-diagnostic',action='store_true',help='Zero residual pre-decoder stage caches')
+    p.add_argument('--stage-history-evidence',action='store_true',help='Use aligned anchor E in diagnostic readout')
     a=p.parse_args();out=Path(a.output)
     if a.stage_diagnostic and (not a.diagnostic or a.arm!='direct'):
         p.error('Stage diagnostic requires --diagnostic --arm direct')
+    if a.stage_history_evidence and not a.stage_diagnostic:
+        p.error('Historical E requires --stage-diagnostic')
     if not 1<=a.epochs<=12:p.error('Maximum initial budget is 12 epochs')
     if a.worker:
         def expired(signum,frame):raise TimeoutError('Anchor experiment exceeded 8 hours')

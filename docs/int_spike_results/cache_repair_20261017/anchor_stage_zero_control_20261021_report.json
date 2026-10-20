@@ -1,0 +1,39 @@
+{
+  "cache_location": "stages2/3",
+  "conv_scope": "Conv2d+ConvTranspose2d standard MACs x2; excludes VFE Linear, activations, warps, BN and other non-conv operations. Transposed conv counts input positions including boundary products. Not complete model FLOPs or hardware instructions.",
+  "deep_call_fraction": 0.3460476354849845,
+  "diagnostic": "Zero residual, immutable warped anchor; untrained modules still execute. Accuracy control, not optimized warp-only latency.",
+  "labels": 1738,
+  "optimizer_steps": 0,
+  "partial_frames": 3789,
+  "repair_area": "Whole zero-residual stage2/3 modules; original current-E multiscale decoder and shrink execute every frame.",
+  "results": {
+    "cached": {
+      "ap50": 0.8315116233287068,
+      "ap70": 0.7532678498056796,
+      "conv_gflops": 218.4000296682085,
+      "conv_reduction_vs_original": 0.27457419933287663,
+      "mean_ms": 26.698213506021112,
+      "p95_ms": 32.84575410652906
+    },
+    "full": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "conv_reduction_vs_original": 0.0,
+      "mean_ms": 32.19925847742932,
+      "p95_ms": 33.80377481225878
+    },
+    "original": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "conv_reduction_vs_original": 0.0,
+      "mean_ms": 32.141896362091515,
+      "p95_ms": 33.789775311015546
+    }
+  },
+  "scans": 5794,
+  "status": "COMPLETED",
+  "timing_scope": "Same GPU rotating modes; synchronized model, excludes IO/H2D/postprocess; training concurrent on other GPUs may contend for host resources."
+}

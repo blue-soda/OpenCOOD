@@ -51,7 +51,8 @@ Keep the full-frame anchor until the next mandatory full refresh. Do not blend
 different pose/time anchors into the saved reference. Stage3 requests use the
 ACTUAL stage2 write mask, including a possible full-stage fallback.
 """
-    def __init__(self,model,config,threshold,period=2,verify=False,repair_modules=None,repair_dense=False):
+    def __init__(self,model,config,threshold,period=2,verify=False,repair_modules=None,repair_dense=False,
+                 readout_evidence='current'):
         if model.training or model.feature_memory.mode!='gru' or period not in (1,2,3):
             raise ValueError('Frozen GRU and period 1/2/3 required')
         if period==3 and (repair_modules is None or not repair_dense):
@@ -61,6 +62,9 @@ ACTUAL stage2 write mask, including a possible full-stage fallback.
         self.threshold=threshold;self.period=period;self.verify=verify
         self.repair_modules=repair_modules
         self.repair_dense=repair_dense
+        if readout_evidence not in ('current','anchor'):
+            raise ValueError('Unknown readout evidence control')
+        self.readout_evidence=readout_evidence
         if repair_dense and repair_modules is None:raise ValueError('Dense repair requires small repair modules')
 
     def step(self,data,state,meta):
@@ -92,6 +96,7 @@ ACTUAL stage2 write mask, including a possible full-stage fallback.
                     crop_area_ratio_before_fallback=1.,tiles=1,fallback=False,
                     executed_input_area_ratio=1.,actual_write_fraction=1.))
             cache=dict(values=stages[1:],desc=desc,pose=meta['pose'],stamp=int(meta['timestamp_us']),frames=0)
+            if self.readout_evidence=='anchor':cache['evidence']=first
         else:
             if self.repair_dense:
                 changed=torch.zeros_like(first[:,:1],dtype=torch.bool)
@@ -129,11 +134,14 @@ ACTUAL stage2 write mask, including a possible full-stage fallback.
                     errors.append(maximum)
                 x=result;stages.append(x);stats.append(stat)
             cache=dict(cache,frames=count)
+            if self.readout_evidence=='anchor':
+                stages[0],_=warp_bev(cache['evidence'],cache['pose'],meta['pose'],self.bounds)
         features=m.backbone.decode_multiscale_feature(stages)
         if m.shrink_flag:features=m.shrink_conv(features)
         pred=dict(psm=m.cls_head(features),rm=m.reg_head(features))
         if m.use_dir:pred['dm']=m.dir_head(features)
         tensors=cache['values']+[fm['value']]
+        if 'evidence' in cache:tensors.append(cache['evidence'])
         if cache['desc'] is not None:tensors.append(cache['desc'])
         info.update(cache_stages=stats,cache_bytes=sum(t.numel()*t.element_size() for t in tensors),
             cache_anchor_stamp=cache['stamp'],cache_age_seconds=(int(meta['timestamp_us'])-cache['stamp'])/1e6,
