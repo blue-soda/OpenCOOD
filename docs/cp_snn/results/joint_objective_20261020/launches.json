@@ -1,0 +1,145 @@
+{
+  "control": {
+    "launch": {
+      "gpu": 2,
+      "audit_sha256": "8976f8df1f5349749c9543da252590022d11c1f1ed973efb2a8bd962d7d7b923",
+      "started_unix": 1792488451.2335203,
+      "code_commit": "2c402bdbf6cd8e2a6b705a5f88fc31bb50c46295",
+      "training_cap_seconds": 21600,
+      "per_evaluation_cap_seconds": 3600,
+      "allow_shared": true,
+      "memory_fraction": 0.2,
+      "gpu_admission": {
+        "accepted": true,
+        "minimum_free_mib": 8192,
+        "allocator_fraction": 0.2,
+        "mean_util_percent": 0.0,
+        "samples": [
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 24252,
+            "util_percent": 0
+          }
+        ],
+        "policy": "user_authorized_shared"
+      }
+    },
+    "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_control_20261020"
+  },
+  "prefix": {
+    "launch": {
+      "gpu": 2,
+      "audit_sha256": "1245e9b7fa72e1b697fdb12727841004afc38f78ec3590026961b0c5c54d8952",
+      "started_unix": 1792488590.6954062,
+      "code_commit": "2c402bdbf6cd8e2a6b705a5f88fc31bb50c46295",
+      "training_cap_seconds": 21600,
+      "per_evaluation_cap_seconds": 3600,
+      "allow_shared": true,
+      "memory_fraction": 0.2,
+      "gpu_admission": {
+        "accepted": true,
+        "minimum_free_mib": 8192,
+        "allocator_fraction": 0.2,
+        "mean_util_percent": 9.4,
+        "samples": [
+          {
+            "total_mib": 24576,
+            "free_mib": 21782,
+            "util_percent": 9
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 21782,
+            "util_percent": 11
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 21778,
+            "util_percent": 8
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 21778,
+            "util_percent": 9
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 21778,
+            "util_percent": 10
+          }
+        ],
+        "policy": "user_authorized_shared"
+      }
+    },
+    "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_prefix_20261020",
+    "note": "Shares GPU2 with own control under observed low-utilization admission"
+  },
+  "prefix_rate": {
+    "launch": {
+      "gpu": 2,
+      "audit_sha256": "dd2652d10c2ef902f5f06179debc11cceecf2eece7412b00b201801bf138e5e0",
+      "started_unix": 1792488599.1036153,
+      "code_commit": "2c402bdbf6cd8e2a6b705a5f88fc31bb50c46295",
+      "training_cap_seconds": 21600,
+      "per_evaluation_cap_seconds": 3600,
+      "allow_shared": true,
+      "memory_fraction": 0.2,
+      "gpu_admission": {
+        "accepted": true,
+        "minimum_free_mib": 8192,
+        "allocator_fraction": 0.2,
+        "mean_util_percent": 12.4,
+        "samples": [
+          {
+            "total_mib": 24576,
+            "free_mib": 21778,
+            "util_percent": 15
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 21778,
+            "util_percent": 11
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 21778,
+            "util_percent": 12
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 21778,
+            "util_percent": 9
+          },
+          {
+            "total_mib": 24576,
+            "free_mib": 21778,
+            "util_percent": 15
+          }
+        ],
+        "policy": "user_authorized_shared"
+      }
+    },
+    "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_prefix_rate_20261020",
+    "note": "Shares GPU2 with own control under observed low-utilization admission"
+  }
+}

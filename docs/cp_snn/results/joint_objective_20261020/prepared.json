@@ -1,0 +1,279 @@
+{
+  "control": {
+    "audit": {
+      "family": "snn",
+      "learn_content": true,
+      "joint_membrane": true,
+      "started_unix": 1792488359.6527398,
+      "source": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019/joint_adapt10/best_ap70.pth",
+      "source_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+      "source_summary_sha256": "16d2ac70f6d531900259aaf2b0e17abccd3cccd73c181a578d6a78dd019f89cb",
+      "initial_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+      "config_sha256": "34fd96e02b1c88156488bcd7735f96a00dc74d00a35018f41bca07f9763468f8",
+      "frames": [
+        "000010",
+        "000011"
+      ],
+      "road_frames": [
+        "006689",
+        "006690"
+      ],
+      "prefixes": [
+        {
+          "prefix": 1,
+          "packet_bytes": [
+            3841,
+            4032
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 2,
+          "packet_bytes": [
+            7320,
+            7777
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 3,
+          "packet_bytes": [
+            10443,
+            11067
+          ],
+          "direct_wire_exact": true
+        }
+      ],
+      "code_commit": "2c402bdbf6cd8e2a6b705a5f88fc31bb50c46295",
+      "parameters": 3120631,
+      "trainable_parameters": 25634,
+      "initial_basis_sha256": "5342d3f72ac617086f2844b335e8411abd80370a8453b051a9843220b843fa91",
+      "joint_variant": "full",
+      "refine_objective": "control",
+      "initial_tensors_equal_full_joint": true,
+      "initial_reference_kind": "trained_full_joint_best",
+      "full_joint_initial_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+      "full_packet_bytes": [
+        6620,
+        7247
+      ],
+      "single_full_packet_equal_three_events": true,
+      "repeated_forward_has_no_state_leak": true,
+      "batch_isolation_max_response_error": 0.0,
+      "local_membrane_perturbation_response_max": 2.5066709518432617,
+      "same_count_membrane_perturbation_response_max": 5.503156661987305,
+      "ego_matches_mature_source_exactly": true,
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "bn_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+      "gradient_l1": {
+        "content.project.weight": 1.9145565032958984,
+        "content.expand.weight": 1.7234008312225342,
+        "joint_receiver.current_scale": 0.17546573281288147,
+        "joint_receiver.local_gate.weight": 1.4618029594421387,
+        "progressive_sender.score.0.weight": 0.10718705505132675,
+        "progressive_sender.score.0.bias": 0.007831516675651073,
+        "progressive_sender.score.2.weight": 0.051391392946243286,
+        "progressive_sender.score.2.bias": 0.00281691737473011
+      },
+      "frozen_encoder_decoder_bn": true,
+      "loss_components": {
+        "fused_detection_loss": 0.5911585692891355,
+        "prefix_1_detection_loss": 0.5972033811697157,
+        "prefix_2_detection_loss": 0.5883837059230383,
+        "prefix_3_detection_loss": 0.5878886207746526,
+        "ego_detection_loss": 0.8667404240840715
+      },
+      "full_dropout_all_prefixes_equal_ego": true,
+      "passed": true,
+      "finished_unix": 1792488361.4355721,
+      "scope": "Augmented train frames 0/1; audit update discarded; not an AP or mean-byte result"
+    },
+    "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_control_20261020"
+  },
+  "prefix": {
+    "audit": {
+      "family": "snn",
+      "learn_content": true,
+      "joint_membrane": true,
+      "started_unix": 1792488376.537761,
+      "source": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019/joint_adapt10/best_ap70.pth",
+      "source_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+      "source_summary_sha256": "16d2ac70f6d531900259aaf2b0e17abccd3cccd73c181a578d6a78dd019f89cb",
+      "initial_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+      "config_sha256": "b12952c22d2db919008b5efc2fcf5a5d3310525221e631ff7987333540c8f4e2",
+      "frames": [
+        "000010",
+        "000011"
+      ],
+      "road_frames": [
+        "006689",
+        "006690"
+      ],
+      "prefixes": [
+        {
+          "prefix": 1,
+          "packet_bytes": [
+            3841,
+            4032
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 2,
+          "packet_bytes": [
+            7320,
+            7777
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 3,
+          "packet_bytes": [
+            10443,
+            11067
+          ],
+          "direct_wire_exact": true
+        }
+      ],
+      "code_commit": "2c402bdbf6cd8e2a6b705a5f88fc31bb50c46295",
+      "parameters": 3120631,
+      "trainable_parameters": 25634,
+      "initial_basis_sha256": "5342d3f72ac617086f2844b335e8411abd80370a8453b051a9843220b843fa91",
+      "joint_variant": "full",
+      "refine_objective": "prefix",
+      "initial_tensors_equal_full_joint": true,
+      "initial_reference_kind": "trained_full_joint_best",
+      "full_joint_initial_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+      "full_packet_bytes": [
+        6620,
+        7247
+      ],
+      "single_full_packet_equal_three_events": true,
+      "repeated_forward_has_no_state_leak": true,
+      "batch_isolation_max_response_error": 0.0,
+      "local_membrane_perturbation_response_max": 2.5066709518432617,
+      "same_count_membrane_perturbation_response_max": 5.503156661987305,
+      "ego_matches_mature_source_exactly": true,
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "bn_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+      "gradient_l1": {
+        "content.project.weight": 1.939361333847046,
+        "content.expand.weight": 1.6444876194000244,
+        "joint_receiver.current_scale": 0.17160622775554657,
+        "joint_receiver.local_gate.weight": 1.4380953311920166,
+        "progressive_sender.score.0.weight": 0.1374078392982483,
+        "progressive_sender.score.0.bias": 0.00974277313798666,
+        "progressive_sender.score.2.weight": 0.06498467922210693,
+        "progressive_sender.score.2.bias": 0.0035043770913034678
+      },
+      "frozen_encoder_decoder_bn": true,
+      "loss_components": {
+        "fused_detection_loss": 0.5936260025562062,
+        "prefix_1_detection_loss": 0.5972033811697157,
+        "prefix_2_detection_loss": 0.5883837059230383,
+        "prefix_3_detection_loss": 0.5878886207746526,
+        "ego_detection_loss": 0.8667404240840715
+      },
+      "full_dropout_all_prefixes_equal_ego": true,
+      "passed": true,
+      "finished_unix": 1792488378.2667856,
+      "scope": "Augmented train frames 0/1; audit update discarded; not an AP or mean-byte result"
+    },
+    "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_prefix_20261020"
+  },
+  "prefix_rate": {
+    "audit": {
+      "family": "snn",
+      "learn_content": true,
+      "joint_membrane": true,
+      "started_unix": 1792488393.4312997,
+      "source": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019/joint_adapt10/best_ap70.pth",
+      "source_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+      "source_summary_sha256": "16d2ac70f6d531900259aaf2b0e17abccd3cccd73c181a578d6a78dd019f89cb",
+      "initial_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+      "config_sha256": "29d135c641c62a395d7ee44bc0f6d89339821900409d6ba4f567aefbffabc8b8",
+      "frames": [
+        "000010",
+        "000011"
+      ],
+      "road_frames": [
+        "006689",
+        "006690"
+      ],
+      "prefixes": [
+        {
+          "prefix": 1,
+          "packet_bytes": [
+            3841,
+            4032
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 2,
+          "packet_bytes": [
+            7320,
+            7777
+          ],
+          "direct_wire_exact": true
+        },
+        {
+          "prefix": 3,
+          "packet_bytes": [
+            10443,
+            11067
+          ],
+          "direct_wire_exact": true
+        }
+      ],
+      "code_commit": "2c402bdbf6cd8e2a6b705a5f88fc31bb50c46295",
+      "parameters": 3120631,
+      "trainable_parameters": 25634,
+      "initial_basis_sha256": "5342d3f72ac617086f2844b335e8411abd80370a8453b051a9843220b843fa91",
+      "joint_variant": "full",
+      "refine_objective": "prefix_rate",
+      "initial_tensors_equal_full_joint": true,
+      "initial_reference_kind": "trained_full_joint_best",
+      "full_joint_initial_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+      "full_packet_bytes": [
+        6620,
+        7247
+      ],
+      "single_full_packet_equal_three_events": true,
+      "repeated_forward_has_no_state_leak": true,
+      "batch_isolation_max_response_error": 0.0,
+      "local_membrane_perturbation_response_max": 2.5066709518432617,
+      "same_count_membrane_perturbation_response_max": 5.503156661987305,
+      "ego_matches_mature_source_exactly": true,
+      "encoder_sha256": "41f71316598d73806411f97247cbbe61933fa2998d3863c9eb36137598b9fd61",
+      "decoder_sha256": "1f9261e671afd36871ca582d7917ff39cc0c6df5a3c8ae3328299ec6296a557b",
+      "bn_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+      "gradient_l1": {
+        "content.project.weight": 1.9185020923614502,
+        "content.expand.weight": 1.6444876194000244,
+        "joint_receiver.current_scale": 0.17160622775554657,
+        "joint_receiver.local_gate.weight": 1.4380953311920166,
+        "progressive_sender.score.0.weight": 0.1374078392982483,
+        "progressive_sender.score.0.bias": 0.00974277313798666,
+        "progressive_sender.score.2.weight": 0.06498467922210693,
+        "progressive_sender.score.2.bias": 0.0035043770913034678
+      },
+      "frozen_encoder_decoder_bn": true,
+      "loss_components": {
+        "fused_detection_loss": 0.5936260025562062,
+        "prefix_1_detection_loss": 0.5972033811697157,
+        "prefix_2_detection_loss": 0.5883837059230383,
+        "prefix_3_detection_loss": 0.5878886207746526,
+        "message_rate_loss": 0.008218896575272083,
+        "ego_detection_loss": 0.8667404240840715
+      },
+      "full_dropout_all_prefixes_equal_ego": true,
+      "passed": true,
+      "finished_unix": 1792488395.220897,
+      "scope": "Augmented train frames 0/1; audit update discarded; not an AP or mean-byte result"
+    },
+    "root": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_prefix_rate_20261020"
+  }
+}

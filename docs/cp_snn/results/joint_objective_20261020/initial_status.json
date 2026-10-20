@@ -1,0 +1,23 @@
+{
+  "checked_unix": 1792488639.8539321,
+  "groups": {
+    "control": {
+      "state": "running",
+      "stage": "zero",
+      "supervisor_pid": 3637,
+      "training_started": false
+    },
+    "prefix": {
+      "state": "running",
+      "stage": "zero",
+      "supervisor_pid": 6310,
+      "training_started": false
+    },
+    "prefix_rate": {
+      "state": "running",
+      "stage": "zero",
+      "supervisor_pid": 6410,
+      "training_started": false
+    }
+  }
+}
