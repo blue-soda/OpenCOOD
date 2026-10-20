@@ -1,0 +1,196 @@
+{
+  "epochs": 3,
+  "history": [
+    {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_u_dense_control_v1_20261021/epoch_001/student.pth",
+      "epoch": 1,
+      "seconds": 1195.0693192910403,
+      "sha256": "95850aa83e102aa2870171be29878524c997df30b49ccec328bce039edaee972",
+      "training": {
+        "feature_kd": 0.022422511279615916,
+        "gt_loss": 0.22866190263258943,
+        "head_kd": 0.08765858125886909,
+        "labels": 4678,
+        "loss": 0.17936464984157682,
+        "region_means": null,
+        "scans": 8593,
+        "updates": 2262
+      },
+      "validation": {
+        "source_dense": {
+          "mean_ms": 12.717562036182702,
+          "metrics": {
+            "bev_ap30": 0.8486823581573426,
+            "bev_ap50": 0.8279387076068144,
+            "bev_ap70": 0.7354161463437301
+          },
+          "p95_ms": 13.60980630852282,
+          "region_means": null,
+          "reset_frames": 214
+        },
+        "trained_cache": {
+          "mean_ms": 20.44310583636412,
+          "metrics": {
+            "bev_ap30": 0.8454249634465945,
+            "bev_ap50": 0.8207898451080192,
+            "bev_ap70": 0.7126169612252168
+          },
+          "p95_ms": 24.75664023077115,
+          "region_means": {
+            "actual_write_fraction": 0.6364456772145872,
+            "crop_area_ratio_before_fallback": 0.8641731183325936,
+            "executed_input_area_ratio": 1.0313907654881076,
+            "fallback": 0.2616499827407663,
+            "mandatory_fraction": 0.07179107550407804,
+            "max_age_after_update": 0.17139498471524495,
+            "oracle_full_update": 0.0,
+            "requested_fraction": 0.5277476474503875,
+            "selected_fraction": 0.5420005129747322,
+            "tiles": 44.70521228857439,
+            "training_full_update": 0.0
+          },
+          "reset_frames": 214
+        },
+        "trained_dense": {
+          "mean_ms": 12.740112891608145,
+          "metrics": {
+            "bev_ap30": 0.8473400948796558,
+            "bev_ap50": 0.8267736164597026,
+            "bev_ap70": 0.7330095024603386
+          },
+          "p95_ms": 13.478433946147561,
+          "region_means": null,
+          "reset_frames": 214
+        }
+      }
+    },
+    {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_u_dense_control_v1_20261021/epoch_002/student.pth",
+      "epoch": 2,
+      "seconds": 1197.5161615700927,
+      "sha256": "2aad3348fdf688af88eab256c923c778619d119aa52a1dbf1e5614b63a38867b",
+      "training": {
+        "feature_kd": 0.022312497832935062,
+        "gt_loss": 0.22698334375138088,
+        "head_kd": 0.0869014464239701,
+        "labels": 4678,
+        "loss": 0.17805253415100372,
+        "region_means": null,
+        "scans": 8593,
+        "updates": 2262
+      },
+      "validation": {
+        "source_dense": {
+          "mean_ms": 12.751430749263934,
+          "metrics": {
+            "bev_ap30": 0.8486823581573426,
+            "bev_ap50": 0.8279387076068144,
+            "bev_ap70": 0.7354161463437301
+          },
+          "p95_ms": 13.667076593264937,
+          "region_means": null,
+          "reset_frames": 214
+        },
+        "trained_cache": {
+          "mean_ms": 20.548134868573925,
+          "metrics": {
+            "bev_ap30": 0.8416981708570545,
+            "bev_ap50": 0.8169567533674977,
+            "bev_ap70": 0.7111687611746692
+          },
+          "p95_ms": 24.936570669524368,
+          "region_means": {
+            "actual_write_fraction": 0.6354051918038262,
+            "crop_area_ratio_before_fallback": 0.8639988822591514,
+            "executed_input_area_ratio": 1.0306697130583908,
+            "fallback": 0.2604418363824646,
+            "mandatory_fraction": 0.07171525133360854,
+            "max_age_after_update": 0.17036493480833062,
+            "oracle_full_update": 0.0,
+            "requested_fraction": 0.5271056243519063,
+            "selected_fraction": 0.5412126151361999,
+            "tiles": 44.768553676216776,
+            "training_full_update": 0.0
+          },
+          "reset_frames": 214
+        },
+        "trained_dense": {
+          "mean_ms": 12.782139448218118,
+          "metrics": {
+            "bev_ap30": 0.8440642744409472,
+            "bev_ap50": 0.8239349863276445,
+            "bev_ap70": 0.7323214553277705
+          },
+          "p95_ms": 13.593862694688141,
+          "region_means": null,
+          "reset_frames": 214
+        }
+      }
+    },
+    {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_u_dense_control_v1_20261021/epoch_003/student.pth",
+      "epoch": 3,
+      "seconds": 1195.5640915578697,
+      "sha256": "d097b8d3b94e062284623836aaefae91f4ef2353af4dbf89f60d932dd4c4f7e4",
+      "training": {
+        "feature_kd": 0.02218606394726312,
+        "gt_loss": 0.22848467551726737,
+        "head_kd": 0.0862528845951106,
+        "labels": 4678,
+        "loss": 0.17884854574079193,
+        "region_means": null,
+        "scans": 8593,
+        "updates": 2262
+      },
+      "validation": {
+        "source_dense": {
+          "mean_ms": 12.724383482134696,
+          "metrics": {
+            "bev_ap30": 0.8486823581573426,
+            "bev_ap50": 0.8279387076068144,
+            "bev_ap70": 0.7354161463437301
+          },
+          "p95_ms": 13.63038985291496,
+          "region_means": null,
+          "reset_frames": 214
+        },
+        "trained_cache": {
+          "mean_ms": 20.519591317889518,
+          "metrics": {
+            "bev_ap30": 0.8402935711883285,
+            "bev_ap50": 0.8156524251655565,
+            "bev_ap70": 0.709933368697486
+          },
+          "p95_ms": 24.86812694696709,
+          "region_means": {
+            "actual_write_fraction": 0.6360661931024735,
+            "crop_area_ratio_before_fallback": 0.8635404989288318,
+            "executed_input_area_ratio": 1.030621387204059,
+            "fallback": 0.2616499827407663,
+            "mandatory_fraction": 0.07128255139345063,
+            "max_age_after_update": 0.1697246384738456,
+            "oracle_full_update": 0.0,
+            "requested_fraction": 0.5269623863869879,
+            "selected_fraction": 0.5407874353145129,
+            "tiles": 44.72713151536072,
+            "training_full_update": 0.0
+          },
+          "reset_frames": 214
+        },
+        "trained_dense": {
+          "mean_ms": 12.766422090991071,
+          "metrics": {
+            "bev_ap30": 0.8427001152711701,
+            "bev_ap50": 0.8226105339491063,
+            "bev_ap70": 0.7295688867889438
+          },
+          "p95_ms": 13.554000470321625,
+          "region_means": null,
+          "reset_frames": 214
+        }
+      }
+    }
+  ],
+  "status": "COMPLETED",
+  "stop_reason": "fixed_budget_not_convergence"
+}

@@ -1,0 +1,232 @@
+{
+  "epochs": 3,
+  "history": [
+    {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_u_cache_aware_v1_20261021/epoch_001/student.pth",
+      "epoch": 1,
+      "seconds": 1211.137921037851,
+      "sha256": "08ec6045fd1290423d6c31ab64162e7d74b3c35b7dfb7a361816b967573ea8be",
+      "training": {
+        "feature_kd": 0.022701756994114,
+        "gt_loss": 0.24993852298973143,
+        "head_kd": 0.09187781446301284,
+        "labels": 4678,
+        "loss": 0.19436322298968997,
+        "region_means": {
+          "actual_write_fraction": 0.6657536896555857,
+          "crop_area_ratio_before_fallback": 0.8637622723553131,
+          "executed_input_area_ratio": 1.0,
+          "fallback": 0.314441987664378,
+          "mandatory_fraction": 0.06416438412669193,
+          "max_age_after_update": 0.15059110139206486,
+          "oracle_full_update": 0.0,
+          "requested_fraction": 0.5285530351418827,
+          "selected_fraction": 0.540646977444321,
+          "tiles": 18.52752240195508,
+          "training_full_update": 1.0
+        },
+        "scans": 8593,
+        "updates": 2262
+      },
+      "validation": {
+        "source_dense": {
+          "mean_ms": 12.54641577573416,
+          "metrics": {
+            "bev_ap30": 0.8486823581573426,
+            "bev_ap50": 0.8279387076068144,
+            "bev_ap70": 0.7354161463437301
+          },
+          "p95_ms": 13.228460075333713,
+          "region_means": null,
+          "reset_frames": 214
+        },
+        "trained_cache": {
+          "mean_ms": 19.997822937947205,
+          "metrics": {
+            "bev_ap30": 0.8450632605227139,
+            "bev_ap50": 0.8201967008623611,
+            "bev_ap70": 0.7109534909965186
+          },
+          "p95_ms": 24.042139144148674,
+          "region_means": {
+            "actual_write_fraction": 0.635353359408242,
+            "crop_area_ratio_before_fallback": 0.8643574359901595,
+            "executed_input_area_ratio": 1.0311400408742486,
+            "fallback": 0.2599240593717639,
+            "mandatory_fraction": 0.07225436945311355,
+            "max_age_after_update": 0.17198550025522605,
+            "oracle_full_update": 0.0,
+            "requested_fraction": 0.5278434429007808,
+            "selected_fraction": 0.5421623662088425,
+            "tiles": 44.755091473938556,
+            "training_full_update": 0.0
+          },
+          "reset_frames": 214
+        },
+        "trained_dense": {
+          "mean_ms": 12.582936015147213,
+          "metrics": {
+            "bev_ap30": 0.8472633014302102,
+            "bev_ap50": 0.8266216877121422,
+            "bev_ap70": 0.732511029478462
+          },
+          "p95_ms": 13.174934568814933,
+          "region_means": null,
+          "reset_frames": 214
+        }
+      }
+    },
+    {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_u_cache_aware_v1_20261021/epoch_002/student.pth",
+      "epoch": 2,
+      "seconds": 1195.1691435850225,
+      "sha256": "8621aeabc49d6a90f82bad3de0428ce20ca585f9b4f3c28f7df61e8ee96a2010",
+      "training": {
+        "feature_kd": 0.022568246721891994,
+        "gt_loss": 0.24767045717158476,
+        "head_kd": 0.0908455401741357,
+        "labels": 4678,
+        "loss": 0.1925960173645746,
+        "region_means": {
+          "actual_write_fraction": 0.6658935598967504,
+          "crop_area_ratio_before_fallback": 0.8640975027661867,
+          "executed_input_area_ratio": 1.0,
+          "fallback": 0.3151402304201094,
+          "mandatory_fraction": 0.06417460843546455,
+          "max_age_after_update": 0.1516620429239436,
+          "oracle_full_update": 0.0,
+          "requested_fraction": 0.5284123383605492,
+          "selected_fraction": 0.5403989349069965,
+          "tiles": 18.51716513441173,
+          "training_full_update": 1.0
+        },
+        "scans": 8593,
+        "updates": 2262
+      },
+      "validation": {
+        "source_dense": {
+          "mean_ms": 12.527436838291436,
+          "metrics": {
+            "bev_ap30": 0.8486823581573426,
+            "bev_ap50": 0.8279387076068144,
+            "bev_ap70": 0.7354161463437301
+          },
+          "p95_ms": 13.161118293646723,
+          "region_means": null,
+          "reset_frames": 214
+        },
+        "trained_cache": {
+          "mean_ms": 19.945507843321433,
+          "metrics": {
+            "bev_ap30": 0.8418646026695438,
+            "bev_ap50": 0.8168415190482325,
+            "bev_ap70": 0.7098032976083007
+          },
+          "p95_ms": 23.910473007708788,
+          "region_means": {
+            "actual_write_fraction": 0.6328542222637615,
+            "crop_area_ratio_before_fallback": 0.8635177057821173,
+            "executed_input_area_ratio": 1.0308126085551008,
+            "fallback": 0.25560925094925785,
+            "mandatory_fraction": 0.07208385917204864,
+            "max_age_after_update": 0.17255971062777986,
+            "oracle_full_update": 0.0,
+            "requested_fraction": 0.5272374177055191,
+            "selected_fraction": 0.5412348604403902,
+            "tiles": 44.93717638936831,
+            "training_full_update": 0.0
+          },
+          "reset_frames": 214
+        },
+        "trained_dense": {
+          "mean_ms": 12.563471467331448,
+          "metrics": {
+            "bev_ap30": 0.8441607900148637,
+            "bev_ap50": 0.8239197994186502,
+            "bev_ap70": 0.7317497136911828
+          },
+          "p95_ms": 13.085226761177182,
+          "region_means": null,
+          "reset_frames": 214
+        }
+      }
+    },
+    {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_u_cache_aware_v1_20261021/epoch_003/student.pth",
+      "epoch": 3,
+      "seconds": 1195.2887320739683,
+      "sha256": "c4a1cb93d58a21dd68324100f90be6316c172440c7f69c5eb545c3b054f04792",
+      "training": {
+        "feature_kd": 0.022454493175154498,
+        "gt_loss": 0.24879445756197752,
+        "head_kd": 0.09027695895117484,
+        "labels": 4678,
+        "loss": 0.19316581367518143,
+        "region_means": {
+          "actual_write_fraction": 0.6655664571287689,
+          "crop_area_ratio_before_fallback": 0.8644858587369934,
+          "executed_input_area_ratio": 1.0,
+          "fallback": 0.3151402304201094,
+          "mandatory_fraction": 0.06488997002330915,
+          "max_age_after_update": 0.1528118979682207,
+          "oracle_full_update": 0.0,
+          "requested_fraction": 0.5285235166334654,
+          "selected_fraction": 0.540806649516573,
+          "tiles": 18.51600139648551,
+          "training_full_update": 1.0
+        },
+        "scans": 8593,
+        "updates": 2262
+      },
+      "validation": {
+        "source_dense": {
+          "mean_ms": 12.541291603343858,
+          "metrics": {
+            "bev_ap30": 0.8486823581573426,
+            "bev_ap50": 0.8279387076068144,
+            "bev_ap70": 0.7354161463437301
+          },
+          "p95_ms": 13.190830941312013,
+          "region_means": null,
+          "reset_frames": 214
+        },
+        "trained_cache": {
+          "mean_ms": 19.980012491360863,
+          "metrics": {
+            "bev_ap30": 0.8410466479328743,
+            "bev_ap50": 0.8166842288877988,
+            "bev_ap70": 0.7105596912728152
+          },
+          "p95_ms": 23.9749823580496,
+          "region_means": {
+            "actual_write_fraction": 0.6331438485932918,
+            "crop_area_ratio_before_fallback": 0.8639961426982483,
+            "executed_input_area_ratio": 1.030867180608292,
+            "fallback": 0.25612702795995856,
+            "mandatory_fraction": 0.0717814869955974,
+            "max_age_after_update": 0.17152530326410578,
+            "oracle_full_update": 0.0,
+            "requested_fraction": 0.5270380737156468,
+            "selected_fraction": 0.541221820201222,
+            "tiles": 44.92250604073179,
+            "training_full_update": 0.0
+          },
+          "reset_frames": 214
+        },
+        "trained_dense": {
+          "mean_ms": 12.584740179550627,
+          "metrics": {
+            "bev_ap30": 0.8431744397411154,
+            "bev_ap50": 0.8232054685412555,
+            "bev_ap70": 0.7304672412572764
+          },
+          "p95_ms": 13.118747284170238,
+          "region_means": null,
+          "reset_frames": 214
+        }
+      }
+    }
+  ],
+  "status": "COMPLETED",
+  "stop_reason": "fixed_budget_not_convergence"
+}
