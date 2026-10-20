@@ -1,0 +1,229 @@
+{
+  "convention": "1 MAC = 2 FLOPs; standard Conv2d multiply/add counting including padded kernels.",
+  "counted_layers": [
+    {
+      "groups": 1,
+      "in_channels": 385,
+      "kernel": [
+        1,
+        1
+      ],
+      "layer": "input_projection",
+      "macs_per_cell": 49280,
+      "out_channels": 128
+    },
+    {
+      "groups": 1,
+      "in_channels": 128,
+      "kernel": [
+        3,
+        3
+      ],
+      "layer": "blocks.0.conv1",
+      "macs_per_cell": 294912,
+      "out_channels": 256
+    },
+    {
+      "groups": 1,
+      "in_channels": 256,
+      "kernel": [
+        3,
+        3
+      ],
+      "layer": "blocks.0.conv2",
+      "macs_per_cell": 589824,
+      "out_channels": 256
+    },
+    {
+      "groups": 1,
+      "in_channels": 128,
+      "kernel": [
+        1,
+        1
+      ],
+      "layer": "blocks.0.downsample.0",
+      "macs_per_cell": 32768,
+      "out_channels": 256
+    },
+    {
+      "groups": 1,
+      "in_channels": 256,
+      "kernel": [
+        3,
+        3
+      ],
+      "layer": "blocks.1.conv1",
+      "macs_per_cell": 589824,
+      "out_channels": 256
+    },
+    {
+      "groups": 1,
+      "in_channels": 256,
+      "kernel": [
+        3,
+        3
+      ],
+      "layer": "blocks.1.conv2",
+      "macs_per_cell": 589824,
+      "out_channels": 256
+    }
+  ],
+  "dense_U_conv_flops": 108180172800,
+  "dense_U_conv_macs": 54090086400,
+  "exclusions": [
+    "Not whole-model FLOPs: Pillar, E, heads, scorer, alignment, selection, copy/writeback omitted.",
+    "Bias, BN, activation and residual-add operations omitted; not treated as free in system evaluation.",
+    "Not measured GPU instructions, energy, or unique sparse dependency MACs.",
+    "Lower FLOPs/area is a positive compute signal even when current GPU latency worsens.",
+    "AP and execution costs must still be judged together; sparse/event hardware gains remain unverified."
+  ],
+  "lattice": [
+    100,
+    252
+  ],
+  "method": "Executed crop area includes batch copies, overlapping halos, reset and fallback; all six U convolutions retain H/W, so their summed standard MACs scale exactly with recorded executed area.",
+  "rows": [
+    {
+      "U_conv_compute_reduction_percent": 40.295094542246765,
+      "actual_write_fraction": 0.3824019305379711,
+      "ap70": 0.5653482153428268,
+      "executed_U_input_area_ratio": 0.5970490545775323,
+      "mean_U_conv_gflops": 64.58886989427408,
+      "mean_U_conv_gmacs": 32.29443494713704,
+      "mean_U_executed_input_cells": 15045.636175353815,
+      "mean_model_ms": 19.006417366751066,
+      "mode": "cache_0.25",
+      "report": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_selector25_v1_20261020/epoch_003/validation/report.json",
+      "report_sha256": "8f37b893c31a9eebd4aeb797f278b1dc45c909c11d85ef57daf289cb369ab8b1",
+      "scans": 5794
+    },
+    {
+      "U_conv_compute_reduction_percent": 0.0,
+      "actual_write_fraction": 1.0,
+      "ap70": 0.7354161463437301,
+      "executed_U_input_area_ratio": 1.0,
+      "mean_U_conv_gflops": 108.1801728,
+      "mean_U_conv_gmacs": 54.0900864,
+      "mean_U_executed_input_cells": 25200.0,
+      "mean_model_ms": 13.078542162080065,
+      "mode": "dense",
+      "report": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_selector25_v1_20261020/epoch_003/validation/report.json",
+      "report_sha256": "8f37b893c31a9eebd4aeb797f278b1dc45c909c11d85ef57daf289cb369ab8b1",
+      "scans": 5794
+    },
+    {
+      "U_conv_compute_reduction_percent": -3.1297401252527113,
+      "actual_write_fraction": 0.6338499979208286,
+      "ap70": 0.7131561713893921,
+      "executed_U_input_area_ratio": 1.0312974012525271,
+      "mean_U_conv_gflops": 111.56593107568932,
+      "mean_U_conv_gmacs": 55.78296553784466,
+      "mean_U_executed_input_cells": 25988.694511563685,
+      "mean_model_ms": 20.726466151738517,
+      "mode": "cache_0.5",
+      "report": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_selector50_v1_20261020/epoch_003/validation/report.json",
+      "report_sha256": "05121288004d0b57a1a87be6e75eadc6bbff3b0e51090eb97315b0482ed4aeeb",
+      "scans": 5794
+    },
+    {
+      "U_conv_compute_reduction_percent": 0.0,
+      "actual_write_fraction": 1.0,
+      "ap70": 0.7354161463437301,
+      "executed_U_input_area_ratio": 1.0,
+      "mean_U_conv_gflops": 108.1801728,
+      "mean_U_conv_gmacs": 54.0900864,
+      "mean_U_executed_input_cells": 25200.0,
+      "mean_model_ms": 12.819339485684756,
+      "mode": "dense",
+      "report": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_selector50_v1_20261020/epoch_003/validation/report.json",
+      "report_sha256": "05121288004d0b57a1a87be6e75eadc6bbff3b0e51090eb97315b0482ed4aeeb",
+      "scans": 5794
+    },
+    {
+      "U_conv_compute_reduction_percent": 14.452389171063661,
+      "actual_write_fraction": 0.6338499979208286,
+      "ap70": 0.7131561713893921,
+      "executed_U_input_area_ratio": 0.8554761082893634,
+      "mean_U_conv_gflops": 92.54555322101484,
+      "mean_U_conv_gmacs": 46.27277661050742,
+      "mean_U_executed_input_cells": 21557.997928891957,
+      "mean_model_ms": 23.708727472050523,
+      "mode": "cache_0.5",
+      "report": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_selector50_e3_merged_full_20261021/report.json",
+      "report_sha256": "19166b1d43b7842a3aa8275262988357719daace4a10d85ea5072acc03b072ab",
+      "scans": 5794
+    },
+    {
+      "U_conv_compute_reduction_percent": 0.0,
+      "actual_write_fraction": 1.0,
+      "ap70": 0.7354161463437301,
+      "executed_U_input_area_ratio": 1.0,
+      "mean_U_conv_gflops": 108.1801728,
+      "mean_U_conv_gmacs": 54.0900864,
+      "mean_U_executed_input_cells": 25200.0,
+      "mean_model_ms": 12.785110724930501,
+      "mode": "dense",
+      "report": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_selector50_e3_merged_full_20261021/report.json",
+      "report_sha256": "19166b1d43b7842a3aa8275262988357719daace4a10d85ea5072acc03b072ab",
+      "scans": 5794
+    }
+  ],
+  "small_crop_execution_trace": [
+    {
+      "layer": "input_projection",
+      "shape": [
+        1,
+        128,
+        9,
+        13
+      ]
+    },
+    {
+      "layer": "blocks.0.conv1",
+      "shape": [
+        1,
+        256,
+        9,
+        13
+      ]
+    },
+    {
+      "layer": "blocks.0.conv2",
+      "shape": [
+        1,
+        256,
+        9,
+        13
+      ]
+    },
+    {
+      "layer": "blocks.0.downsample.0",
+      "shape": [
+        1,
+        256,
+        9,
+        13
+      ]
+    },
+    {
+      "layer": "blocks.1.conv1",
+      "shape": [
+        1,
+        256,
+        9,
+        13
+      ]
+    },
+    {
+      "layer": "blocks.1.conv2",
+      "shape": [
+        1,
+        256,
+        9,
+        13
+      ]
+    }
+  ],
+  "source_sha256": "45b22ca1f75d92c20a0dc49c10c8967d881fecc4c693d3666549bd70835d23ef",
+  "status": "COMPLETED"
+}

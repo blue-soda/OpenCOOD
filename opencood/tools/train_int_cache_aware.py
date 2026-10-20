@@ -19,6 +19,7 @@ from opencood.tools.run_int_local_state import step_losses, train_epoch, save_ch
 from opencood.tools.run_int_ego import loader, to_device, write_json
 from opencood.tools.launch_int_memory import digest
 from opencood.utils import eval_utils
+from opencood.tools.audit_int_local_compute import same_lattice_conv_macs
 
 
 def optimizer_for(model):
@@ -130,6 +131,13 @@ def evaluate_models(cfg, rows, models, out, source_ap):
                              reset_frames=resets[name],
                              region_means={k:float(np.mean([r[k] for r in regions[name]]))
                                            for k in regions[name][0]} if regions[name] else None)
+        h,w=states[name]['value'].shape[-2:]
+        dense_macs,_=same_lattice_conv_macs(model.update,h,w)
+        area=results[name]['region_means']['executed_input_area_ratio'] if regions[name] else 1.
+        results[name]['U_conv_compute']=dict(
+            dense_gmacs=dense_macs/1e9,executed_gmacs=dense_macs*area/1e9,
+            executed_gflops=2*dense_macs*area/1e9,reduction_percent=100*(1-area),
+            scope='U Conv2d only; standard 1 MAC=2 FLOPs, includes duplicated halos and fallback; excludes other modules, bias, BN, activation and hardware implementation details.')
     assert abs(results['source_dense']['metrics']['bev_ap70']-source_ap)<1e-8
     report = dict(status='COMPLETED', scans=len(rows), labels=sum(r['supervised'] for r in rows),
                   results=results, validation_weights_unchanged=True,

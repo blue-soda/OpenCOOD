@@ -16,6 +16,7 @@ from opencood.tools.run_int_cache_repair import setup
 from opencood.tools.run_int_ego import loader, to_device, write_json
 from opencood.tools.launch_int_memory import digest
 from opencood.utils import eval_utils
+from opencood.tools.audit_int_local_compute import same_lattice_conv_macs
 
 
 def make_model(teacher, cfg, saved, **policy):
@@ -186,6 +187,13 @@ def worker(a):
                 reset_frames=sum(bool(r['reset']) for r in records[name]),
                 state_bytes=records[name][-1]['state_bytes'],
                 region_means={k:float(np.mean([r[k] for r in region])) for k in region[0]} if region else None)
+            h, w = states[name]['value'].shape[-2:]
+            dense_macs, _ = same_lattice_conv_macs(model.update, h, w)
+            area = results[name]['region_means']['executed_input_area_ratio'] if region else 1.
+            results[name]['U_conv_compute'] = dict(
+                dense_gmacs=dense_macs/1e9, executed_gmacs=dense_macs*area/1e9,
+                executed_gflops=2*dense_macs*area/1e9, reduction_percent=100*(1-area),
+                scope='U Conv2d only; standard 1 MAC=2 FLOPs including duplicated halos and fallback, excluding bias/BN/activation; not whole-model FLOPs or hardware instructions.')
         dense = results['dense']
         for name, result in results.items():
             result.update(ap70_delta_pp=100*(result['metrics']['bev_ap70']-dense['metrics']['bev_ap70']),
