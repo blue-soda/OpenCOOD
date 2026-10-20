@@ -1,0 +1,40 @@
+{
+  "labels": 1738,
+  "results": {
+    "compact_cache": {
+      "ap50": 0.8275472491078213,
+      "ap70": 0.7498337916895392,
+      "conv_gflops": 185.9061076390749,
+      "mean_ms": 24.02519844366137,
+      "p95_ms": 30.823455518111587,
+      "partial_frames": 3789
+    },
+    "full": {
+      "ap50": 0.8304074507001995,
+      "ap70": 0.7535071289975197,
+      "conv_gflops": 269.0666496,
+      "mean_ms": 30.274825757543297,
+      "p95_ms": 31.697601650375873,
+      "partial_frames": 0
+    },
+    "original": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "mean_ms": 31.863970908857716,
+      "p95_ms": 33.49453719565645,
+      "partial_frames": 0
+    },
+    "reference_cache": {
+      "ap50": 0.8315116233287068,
+      "ap70": 0.7532678498056796,
+      "conv_gflops": 217.9040596390749,
+      "mean_ms": 25.808710076689675,
+      "p95_ms": 32.53217119490728,
+      "partial_frames": 3789
+    }
+  },
+  "scans": 5794,
+  "scope": "Rotating same-GPU model latency, excludes IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only, excluding VFE Linear/warps/BN/activations. No sparse region execution yet.",
+  "status": "COMPLETED"
+}
