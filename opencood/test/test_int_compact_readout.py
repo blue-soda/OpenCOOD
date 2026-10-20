@@ -16,6 +16,7 @@ class CompactReadoutTests(unittest.TestCase):
 
     def test_low_rank_local_crops_and_gradient(self):
         model,energy=factorize_input(nn.Conv2d(12,17,3,padding=1),5)
+        model.eval()
         self.assertGreater(energy,0.);self.assertLess(energy,1.)
         x=torch.randn(1,12,17,21,requires_grad=True)
         old=torch.zeros(1,17,17,21);mask=torch.zeros(1,1,17,21,dtype=torch.bool)
