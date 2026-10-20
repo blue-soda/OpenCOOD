@@ -26,7 +26,9 @@ def factorize_input(conv, rank):
 def compact_shrink(source,rank):
     result=copy.deepcopy(source).cpu();energy=[]
     for layer in result.layers:
-        for index in (0,2):
+        indices=[i for i,m in enumerate(layer.double_conv) if isinstance(m,nn.Conv2d)]
+        if len(indices)!=2:raise ValueError('Expected two shrink convolutions')
+        for index in indices:
             layer.double_conv[index],retained=factorize_input(layer.double_conv[index],rank)
             energy.append(retained)
     return result,energy

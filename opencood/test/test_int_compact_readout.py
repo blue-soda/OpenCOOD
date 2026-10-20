@@ -1,11 +1,21 @@
 import unittest
 import torch
 from torch import nn
-from opencood.models.sub_modules.int_compact_readout import factorize_input
+from opencood.models.sub_modules.int_compact_readout import factorize_input,compact_shrink
+from opencood.models.sub_modules.codyntrust_downsample_conv import DownsampleConv
 from opencood.models.sub_modules.int_cache_repair import refresh_tiles
 
 
 class CompactReadoutTests(unittest.TestCase):
+    def test_checkpoint_layout_keeps_bn_and_full_rank_output(self):
+        source=DownsampleConv(dict(input_dim=12,kernal_size=[3],dim=[17],stride=[1],padding=[1])).eval()
+        model,energy=compact_shrink(source,17);model.eval()
+        x=torch.randn(1,12,9,13)
+        self.assertEqual(len(energy),2)
+        self.assertIsInstance(model.layers[0].double_conv[1],nn.BatchNorm2d)
+        self.assertIsInstance(model.layers[0].double_conv[4],nn.BatchNorm2d)
+        self.assertTrue(torch.allclose(source(x),model(x),atol=1e-5,rtol=1e-5))
+
     def test_full_rank_preserves_bias_and_boundary_values(self):
         torch.manual_seed(19)
         source=nn.Conv2d(12,17,3,padding=1)
