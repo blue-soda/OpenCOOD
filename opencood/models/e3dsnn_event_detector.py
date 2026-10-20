@@ -9,9 +9,10 @@ import hashlib
 import json
 import torch
 from opencood.models.e3dsnn_joint_detector import E3dsnnJointDetector
-from opencood.models.fuse_modules.e3dsnn_event_stream import integrate_and_fire, stream_readout
+from opencood.models.fuse_modules.e3dsnn_event_stream import integrate_and_fire, stream_readout, sample_byte_budget
 from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract
 from opencood.utils import event_stream_packet as codec
+from opencood.utils import event_stream_compact as compact_codec
 from opencood.utils.e3dsnn_transplant import encoder_digest
 
 
@@ -25,11 +26,17 @@ class E3dsnnEventDetector(E3dsnnJointDetector):
         self.event_train_budgets = tuple(options['train_budget_range'])
         self.event_packet_events = options.get('packet_events', 256)
         self.event_max_spikes = options.get('max_spikes', 8)
+        self.event_transport = options.get('transport', 'raw_v1')
+        self.event_sampling = options.get('sampling', 'uniform')
+        if self.event_transport not in ('raw_v1','session_zlib') or self.event_sampling not in ('uniform','log_uniform'):
+            raise ValueError('Unknown event transport or budget sampling')
         if (type(self.event_budget) is not int or self.event_budget < 0 or
                 len(self.event_train_budgets) != 2 or
                 any(type(x) is not int or x < 0 for x in self.event_train_budgets) or
                 self.event_train_budgets[0] > self.event_train_budgets[1]):
             raise ValueError('Invalid event byte budgets')
+        if self.event_sampling == 'log_uniform' and self.event_train_budgets[0] <= 0:
+            raise ValueError('Log budget lower bound must be positive')
         if not self.joint_receiver.retain_residual or not self.joint_receiver.use_local_membrane:
             raise ValueError('First sender experiment fixes full joint receiver')
         self.sender_ranking = 'analytical_IF_crossing_time_stable_address_ties'
@@ -68,17 +75,19 @@ class E3dsnnEventDetector(E3dsnnJointDetector):
             pose = data['road_to_ego'][i:i+1]
             drive = torch.relu(self.content.project(road[i:i+1]))
             stream = integrate_and_fire(drive, self.event_max_spikes)
-            budget = self.event_budget if not self.training else int(torch.randint(
-                self.event_train_budgets[0], self.event_train_budgets[1]+1, (1,)).item())
+            budget = self.event_budget if not self.training else sample_byte_budget(
+                self.event_train_budgets, self.event_sampling)
             metadata = dict(contract=asdict(contract), source_to_ego=pose[0].cpu().tolist(),
                             channels=32, max_spikes=self.event_max_spikes, schema='if-unit-events-v1')
-            packets, n, used = codec.pack_prefix(stream.addresses, metadata, budget,
+            transport = compact_codec if self.event_transport == 'session_zlib' else codec
+            packets, n, used = transport.pack_prefix(stream.addresses, metadata, budget,
                                                 self.event_packet_events)
             counts = stream.prefix(n)
             if self.packet_roundtrip:
                 if self.training:
                     raise ValueError('Wire reconstruction is an evaluation-only audit')
-                receiver = codec.StreamAccumulator(metadata)
+                receiver = (compact_codec.CompactAccumulator(metadata) if self.event_transport == 'session_zlib'
+                            else codec.StreamAccumulator(metadata))
                 for packet in packets:
                     receiver.receive(packet)
                 decoded = counts.new_tensor(receiver.finish())

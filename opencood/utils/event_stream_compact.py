@@ -30,6 +30,10 @@ def encode(addresses, metadata, start, compress=True):
     if (ids.ndim != 1 or not np.issubdtype(ids.dtype, np.integer) or len(ids) == 0 or
             len(ids) > 1000000 or np.any(ids < 0) or np.any(ids >= 32 * np.prod(shape))):
         raise ValueError('Invalid event addresses')
+    return _encode_validated(ids, context, start, compress)
+
+
+def _encode_validated(ids, context, start, compress):
     raw = ids.astype('<u4').tobytes()
     payload = zlib.compress(raw) if compress else raw
     first = start == 0
@@ -87,13 +91,18 @@ one fits. Slow reference, not a promised optimal number of packets.
         raise ValueError('Invalid budget')
     if type(packet_events) is not int or packet_events < 1:
         raise ValueError('Invalid packet capacity')
-    metadata_bytes(metadata)
+    context = metadata_bytes(metadata)
+    addresses = np.asarray(addresses)
+    if (addresses.ndim != 1 or not np.issubdtype(addresses.dtype,np.integer) or
+            np.any(addresses < 0) or np.any(addresses >= 32*np.prod(metadata['contract']['shape_zyx'])) or
+            len(addresses) >= 2**32 or packet_events > 1000000 or type(compress) is not bool):
+        raise ValueError('Invalid event stream')
     packets, offset, used = [], 0, 0
     while offset < len(addresses):
         limit = min(packet_events, len(addresses)-offset)
         chosen = None
         for n in range(limit,0,-1):
-            candidate = encode(addresses[offset:offset+n],metadata,offset,compress)
+            candidate = _encode_validated(addresses[offset:offset+n],context,offset,compress)
             if used+len(candidate) <= budget_bytes:
                 chosen = candidate
                 break

@@ -19,7 +19,7 @@ from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract
 from opencood.utils import event_stream_packet as wire
 
 
-def audit(root, base):
+def audit(root, base, compact=False):
     root = Path(root); root.mkdir(parents=True, exist_ok=False)
     source = Path(base) / 'e3dsnn_joint_round1_20261019'
     checkpoint = source / 'joint_adapt10/best_ap70.pth'
@@ -31,6 +31,10 @@ def audit(root, base):
         content_full_packet=False, packet_roundtrip=False,
         event_stream=dict(budget_bytes=4096, train_budget_range=[4096,8192],
                           packet_events=256, max_spikes=8))
+    if compact:
+        raw['model']['args']['event_stream'].update(transport='session_zlib',sampling='log_uniform',
+                                                   train_budget_range=[2048,16384])
+    raw['train_params']=dict(batch_size=2,epoches=10)
     (root / 'config.yaml').write_text(yaml.safe_dump(raw))
     cfg = load_yaml(str(root / 'config.yaml'))
     random.seed(20260929); np.random.seed(20260929); torch.manual_seed(20260929)
@@ -46,6 +50,7 @@ def audit(root, base):
             ['git','rev-parse','HEAD']).decode().strip(),
         frames=data['frame_ids'], tests=[], training_started=False,
         status='audit_only_no_AP', trainable=[k for k,p in model.named_parameters() if p.requires_grad],
+        transport=model.event_transport, sampling=model.event_sampling,
         trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad))
     assert report['trainable'] == ['content.project.weight']
     original_encode, original_membrane = model.encode_lidar, model.encode_membrane
@@ -134,6 +139,7 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument('--root',required=True)
     parser.add_argument('--base',default='/data1/tzm/workspace/diagnostics')
+    parser.add_argument('--compact',action='store_true')
     args=parser.parse_args()
     torch.cuda.set_per_process_memory_fraction(.2)
-    audit(args.root,args.base)
+    audit(args.root,args.base,args.compact)

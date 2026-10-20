@@ -5,8 +5,24 @@ Repeated addresses are valid spikes, not duplicate messages. CPU scheduling
 is a correctness reference, NOT a neuromorphic speed/energy implementation.
 """
 from dataclasses import dataclass
+import math
 import numpy as np
 import torch
+
+
+def sample_byte_budget(bounds, sampling='log_uniform'):
+    if (len(bounds) != 2 or any(type(x) is not int or x < 0 for x in bounds)
+            or bounds[0] > bounds[1] or sampling not in ('uniform','log_uniform')):
+        raise ValueError('Invalid training budget distribution')
+    lo, hi = bounds
+    if sampling == 'log_uniform' and lo <= 0:
+        raise ValueError('Log budgets must be positive')
+    # Draw even for a fixed budget: paired runs consume the same CPU RNG count.
+    u = float(torch.rand(()))
+    if lo == hi:
+        return lo
+    value = math.exp(math.log(lo) + u * math.log(hi / lo)) if sampling == 'log_uniform' else lo + u*(hi-lo+1)
+    return max(lo,min(hi,int(value)))
 
 
 class _HardCounts(torch.autograd.Function):

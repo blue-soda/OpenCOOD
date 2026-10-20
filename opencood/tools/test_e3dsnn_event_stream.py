@@ -3,7 +3,7 @@ import dataclasses
 import unittest
 import numpy as np
 import torch
-from opencood.models.fuse_modules.e3dsnn_event_stream import integrate_and_fire, stream_readout
+from opencood.models.fuse_modules.e3dsnn_event_stream import integrate_and_fire, stream_readout, sample_byte_budget
 from opencood.models.fuse_modules.e3dsnn_joint_membrane import JointMembraneReceiver
 from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract
 from opencood.utils import event_stream_packet as wire
@@ -17,6 +17,17 @@ def metadata():
 
 
 class StreamTest(unittest.TestCase):
+    def test_log_budget_distribution_and_paired_rng(self):
+        torch.manual_seed(99)
+        values = [sample_byte_budget((2048,16384)) for _ in range(3000)]
+        self.assertTrue(all(2048 <= x <= 16384 for x in values))
+        counts = np.histogram(np.log2(values),bins=[11,12,13,14])[0]
+        self.assertTrue(all(850 < x < 1150 for x in counts))
+        torch.manual_seed(99); sample_byte_budget((4096,4096)); fixed_state=torch.get_rng_state()
+        torch.manual_seed(99); sample_byte_budget((2048,16384))
+        self.assertTrue(torch.equal(fixed_state,torch.get_rng_state()))
+        with self.assertRaises(ValueError):sample_byte_budget((0,100))
+
     def test_crossings_repeated_channel_and_conservation(self):
         x = torch.tensor([2.5, 1.25, 0., .7]).reshape(1, 1, 1, 1, 4)
         s = integrate_and_fire(x)

@@ -269,10 +269,11 @@ def execute(args, output_dir):
         'event_stream': dict(schema='if-unit-events-v1',threshold=1.,horizon=1.,
             max_spikes=model.event_max_spikes,budget_bytes=model.event_budget,
             train_budget_range=model.event_train_budgets,packet_events=model.event_packet_events,
+            budget_sampling=model.event_sampling,
             trainable='content.project only',preselection='all source occupied features',
             gradient='biased fixed-frontier STE; no gradient through sorting/actual bytes',
             receiver='frozen joint weights; canonical cumulative source counts before warp',
-            transport='raw uint32 addresses plus all per-packet metadata; no compression',
+            transport=model.event_transport,
             state_scope='one frame, one infrastructure sender',
             compute='CPU scheduling/dense readout reference; not event-kernel efficiency')
             if hasattr(model,'event_budget') else None,
@@ -399,6 +400,7 @@ def execute(args, output_dir):
         frozen_digest = detector_digest(model)
         write_json(output_dir / 'frozen_detector.json', {'initial_sha256': frozen_digest})
     if getattr(args, 'retain_initial_best', False) and not args.resume:
+        write_json(output_dir / 'progress.json', {'state': 'initial_validation', 'epoch': 0})
         initial = validate(model, val_data, args.workers)
         initial['epoch'] = 0
         best = save_best_checkpoints(model, initial, output_dir, best_by_iou, args.selection_iou, best)
@@ -416,13 +418,14 @@ def execute(args, output_dir):
                 model.backbone_2d.eval()
         total, samples = 0., 0
         component_totals = {}
+        stream_totals = {}
         started = time.monotonic()
         for index, batch in enumerate(loader):
             if batch is None:
                 raise ValueError('Unexpected empty training batch')
             batch = train_utils.to_device(batch, torch.device('cuda'))
             optimizer.zero_grad(set_to_none=True)
-            _, loss = checked_forward(model, criterion, batch, teacher,
+            train_output, loss = checked_forward(model, criterion, batch, teacher,
                                       teacher_manifest['weight'] if teacher_manifest else 0.)
             loss.backward()
             grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 10., error_if_nonfinite=True)
@@ -432,10 +435,15 @@ def execute(args, output_dir):
             for key, value in model.last_loss_components.items():
                 component_totals[key] = component_totals.get(key, 0.) + value * n
             samples += n
+            if 'stream_budgets' in train_output:
+                for key in ('stream_budgets', 'packet_bytes', 'stream_events'):
+                    stream_totals[key] = stream_totals.get(key, 0) + sum(train_output[key])
             if index % 50 == 0:
                 progress = {'state': 'training', 'epoch': epoch + 1, 'epochs': epochs,
                     'batch': index + 1, 'batches': len(loader), 'loss': float(loss.detach()),
                     'gradient_norm': float(grad_norm), 'elapsed_seconds': time.monotonic() - started}
+                if stream_totals:
+                    progress['stream_means'] = {k: v / samples for k, v in stream_totals.items()}
                 write_json(output_dir / 'progress.json', progress)
                 print(json.dumps(progress), flush=True)
         assert samples == len(train_data)
@@ -445,6 +453,8 @@ def execute(args, output_dir):
         metrics.update({'epoch': epoch + 1, 'train_loss': total / samples,
                         'train_samples': samples, 'seconds': time.monotonic() - started})
         metrics['train_loss_components'] = {k: v / samples for k, v in component_totals.items()}
+        if stream_totals:
+            metrics['train_stream_means'] = {k: v / samples for k, v in stream_totals.items()}
         if teacher is not None:
             current_teacher = state_digest(teacher)
             if current_teacher != teacher_manifest['state_sha256'] or any(p.grad is not None for p in teacher.parameters()):
