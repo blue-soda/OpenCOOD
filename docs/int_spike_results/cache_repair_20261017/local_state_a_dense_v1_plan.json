@@ -1,5 +1,5 @@
 {
-  "status": "RUNNING",
+  "status": "COMPLETED",
   "priority": "Current approved architecture: stage A representation migration before new cache experiments",
   "goal_document": "docs/int_local_state_goal.md",
   "implementation_commit": "8dc11fc",
@@ -34,5 +34,5 @@
     "Phase B requires a named fixed phase-A checkpoint and real-data sequence gradient checks",
     "Region skipping experiments remain gated by a reliable dense baseline near original INT precision"
   ],
-  "caveat": "GPU engineering PASSED and phase-A epoch 1 is training. No completed validation AP or controlled latency measurement yet."
+  "caveat": "Stopped by configured plateau at epoch 27; best full validation AP70 0.7248051266455096 at epoch 26. Accuracy gate 0.7537 not reached; no sparse speedup established."
 }

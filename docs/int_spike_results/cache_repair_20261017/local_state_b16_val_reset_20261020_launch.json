@@ -1,0 +1,25 @@
+{
+  "code_commit": "346a9924b5f828d1e9511fa6ef8d33ebf8666d28",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.evaluate_int_local_state",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_state_b16_val_reset_20261020",
+    "--checkpoint",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_state_b_from_a06_dense_v1/epoch_016/student.pth",
+    "--gpu",
+    "2",
+    "--split",
+    "val",
+    "--memory-policy",
+    "reset",
+    "--worker"
+  ],
+  "created_unix": 1792477289.573096,
+  "gpu": 2,
+  "pid": 26709,
+  "timeout_seconds": 7200
+}

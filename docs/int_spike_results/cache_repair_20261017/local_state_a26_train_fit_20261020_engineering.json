@@ -1,0 +1,41 @@
+{
+  "checkpoint_sha256": "dfac1b9be430442b978aba6fa6106133034da6b2a9a9448db4f64e36994ffd86",
+  "frames": [
+    {
+      "frame": "015344",
+      "reset": "single_frame_stage_a"
+    },
+    {
+      "frame": "015345",
+      "reset": "single_frame_stage_a"
+    },
+    {
+      "frame": "015346",
+      "reset": "single_frame_stage_a"
+    },
+    {
+      "frame": "015347",
+      "reset": "single_frame_stage_a"
+    },
+    {
+      "frame": "015348",
+      "reset": "single_frame_stage_a"
+    },
+    {
+      "frame": "015349",
+      "reset": "single_frame_stage_a"
+    },
+    {
+      "frame": "015350",
+      "reset": "single_frame_stage_a"
+    },
+    {
+      "frame": "015351",
+      "reset": "single_frame_stage_a"
+    }
+  ],
+  "memory_policy": "reset",
+  "optimizer_created": false,
+  "status": "PASSED",
+  "teacher_execution_forbidden": true
+}
