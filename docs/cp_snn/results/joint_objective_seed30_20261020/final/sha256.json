@@ -1,0 +1,26 @@
+{
+  "control_adapt10_summary.json": {
+    "path": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_control_seed30_20261020/adapt10_summary.json",
+    "sha256": "725580206d2085d74174e0ceac89d385dcb2134f2b73432227b5bd48a1732428"
+  },
+  "control_round_status.json": {
+    "path": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_control_seed30_20261020/round_status.json",
+    "sha256": "b73324071644c1e6929cd2cf34f70a2790ccaf6faac8f3e2fad39c0c8a631c73"
+  },
+  "control_zero_summary.json": {
+    "path": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_control_seed30_20261020/zero_summary.json",
+    "sha256": "a921432eb02a5e68a1feb2edcabc276185cc53b461fa103d0abfb10518e957e9"
+  },
+  "prefix_rate_adapt10_summary.json": {
+    "path": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_prefix_rate_seed30_20261020/adapt10_summary.json",
+    "sha256": "8f4f8fa567c5ebbff5390b86ea5017ce2fc812887c995c75220255a4eaf3701a"
+  },
+  "prefix_rate_round_status.json": {
+    "path": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_prefix_rate_seed30_20261020/round_status.json",
+    "sha256": "e904f4d380dbefdc563118e147eb33e3b0005ef39666689f7bd35ab32c56bdc4"
+  },
+  "prefix_rate_zero_summary.json": {
+    "path": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_objective_prefix_rate_seed30_20261020/zero_summary.json",
+    "sha256": "ec25dd0dd8f6b08f8823399f520bd02416bc6d1b4aefd75b30eb112cd4290390"
+  }
+}
