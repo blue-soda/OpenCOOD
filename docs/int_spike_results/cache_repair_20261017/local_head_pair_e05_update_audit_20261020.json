@@ -1,0 +1,65 @@
+{
+  "scope": "Read-only CPU checkpoint head-update audit; not an AP or causal-effect measurement",
+  "source_sha256": "45b22ca1f75d92c20a0dc49c10c8967d881fecc4c693d3666549bd70835d23ef",
+  "epoch": 5,
+  "runs": {
+    "local_head_control_beste1_20261020": {
+      "checkpoint_sha256": "ad17f93d7c52449c89526179b0f6afb8ec325beea297925d350e9320c442c076",
+      "initial_lrs": [
+        0.0001,
+        1e-05,
+        1e-06,
+        1e-06
+      ],
+      "heads": {
+        "cls_head": {
+          "parameters": 514,
+          "delta_l2": 0.009578483267901403,
+          "relative_l2": 0.004186806240189199,
+          "max_abs": 0.0016898661851882935
+        },
+        "reg_head": {
+          "parameters": 3598,
+          "delta_l2": 0.014729608720569371,
+          "relative_l2": 0.006766570373968841,
+          "max_abs": 0.0029522813856601715
+        },
+        "dir_head": {
+          "parameters": 1028,
+          "delta_l2": 0.007873416379093593,
+          "relative_l2": 0.0018179930815091065,
+          "max_abs": 0.0014963779249228537
+        }
+      }
+    },
+    "local_head_adapt_beste1_20261020": {
+      "checkpoint_sha256": "3a07357a91c5344510dab46e22def26bf10606d8429be49924d29d9ae834d2b2",
+      "initial_lrs": [
+        0.0001,
+        1e-05,
+        1e-06,
+        0.0001
+      ],
+      "heads": {
+        "cls_head": {
+          "parameters": 514,
+          "delta_l2": 0.5552503769485138,
+          "relative_l2": 0.24270290797143898,
+          "max_abs": 0.134574880823493
+        },
+        "reg_head": {
+          "parameters": 3598,
+          "delta_l2": 0.7657886509119703,
+          "relative_l2": 0.3517922910434382,
+          "max_abs": 0.20968938246369362
+        },
+        "dir_head": {
+          "parameters": 1028,
+          "delta_l2": 0.6845700752205975,
+          "relative_l2": 0.15806907708626608,
+          "max_abs": 0.1272752785589546
+        }
+      }
+    }
+  }
+}
