@@ -1,0 +1,5 @@
+{
+  "state": "failed",
+  "error": "Traceback (most recent call last):\n  File \"/data1/tzm/workspace/OpenCOOD/opencood/tools/evaluate_e3dsnn_joint_order.py\", line 124, in run\n    assert entry['communication_frames'] == reference['communication_frames']\nAssertionError\n",
+  "note": "No automatic retry"
+}
