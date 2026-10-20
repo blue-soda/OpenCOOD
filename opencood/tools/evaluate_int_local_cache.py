@@ -26,14 +26,7 @@ def make_model(teacher, cfg, saved, **policy):
     return model
 
 
-def probe(a, teacher, cfg, saved, rows):
-    common = dict(tile=a.tile, max_age=a.cache_max_age, fallback_fraction=a.fallback_fraction)
-    dense = make_model(teacher, cfg, saved)
-    all_update = make_model(teacher, cfg, saved, fraction=1., **common)
-    sparse = make_model(teacher, cfg, saved, fraction=min(a.fractions), **common)
-    masked = make_model(teacher, cfg, saved, fraction=min(a.fractions),
-                        execution='masked_dense', **common)
-    models = [dense, all_update, sparse, masked]
+def probe(cfg, models, rows):
     states = [None]*4
     errors = [0., 0.]
     partial = 0
@@ -89,6 +82,17 @@ def worker(a):
                                   mandatory='new_coverage_and_per_cell_age',
                                   layout='merged_rectangles', radius=4))
     write_json(out/'provenance.json', provenance)
+    # Build every copied module BEFORE installing teacher-only hooks: deepcopy
+    # also copies hooks, which would otherwise forbid legitimate student calls.
+    common = dict(tile=a.tile, max_age=a.cache_max_age, fallback_fraction=a.fallback_fraction)
+    probe_models = [
+        make_model(teacher, cfg, saved),
+        make_model(teacher, cfg, saved, fraction=1., **common),
+        make_model(teacher, cfg, saved, fraction=min(a.fractions), **common),
+        make_model(teacher, cfg, saved, fraction=min(a.fractions), execution='masked_dense', **common)]
+    models = {'dense': make_model(teacher, cfg, saved)}
+    for fraction in a.fractions:
+        models['cache_%g'%fraction] = make_model(teacher, cfg, saved, fraction=fraction, **common)
     def reject_teacher(module, inputs):
         raise RuntimeError('Teacher inference is forbidden')
     hooks = [m.register_forward_pre_hook(reject_teacher) for m in
@@ -100,13 +104,9 @@ def worker(a):
         (out/'unit_tests.log').write_bytes(tests.stdout)
         assert tests.returncode == 0, 'INT tests failed'
         write_json(out/'status.json', dict(status='RUNNING', phase='engineering'))
-        engineering = probe(a, teacher, cfg, saved, train)
+        engineering = probe(cfg, probe_models, train)
         write_json(out/'engineering.json', engineering)
-        models = {'dense': make_model(teacher, cfg, saved)}
-        for fraction in a.fractions:
-            models['cache_%g'%fraction] = make_model(
-                teacher, cfg, saved, fraction=fraction, tile=a.tile,
-                max_age=a.cache_max_age, fallback_fraction=a.fallback_fraction)
+        del probe_models
         states = {name:None for name in models}
         aps = {name:{t:dict(tp=[], fp=[], gt=0, score=[]) for t in [.3,.5,.7]} for name in models}
         records = {name:[] for name in models}
