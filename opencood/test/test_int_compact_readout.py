@@ -1,0 +1,30 @@
+import unittest
+import torch
+from torch import nn
+from opencood.models.sub_modules.int_compact_readout import factorize_input
+from opencood.models.sub_modules.int_cache_repair import refresh_tiles
+
+
+class CompactReadoutTests(unittest.TestCase):
+    def test_full_rank_preserves_bias_and_boundary_values(self):
+        torch.manual_seed(19)
+        source=nn.Conv2d(12,17,3,padding=1)
+        model,energy=factorize_input(source,12)
+        x=torch.randn(1,12,9,13)
+        self.assertAlmostEqual(energy,1.)
+        self.assertTrue(torch.allclose(source(x),model(x),atol=1e-5,rtol=1e-5))
+
+    def test_low_rank_local_crops_and_gradient(self):
+        model,energy=factorize_input(nn.Conv2d(12,17,3,padding=1),5)
+        self.assertGreater(energy,0.);self.assertLess(energy,1.)
+        x=torch.randn(1,12,17,21,requires_grad=True)
+        old=torch.zeros(1,17,17,21);mask=torch.zeros(1,1,17,21,dtype=torch.bool)
+        mask[...,0,0]=True;mask[...,-1,-1]=True
+        actual,written,_=refresh_tiles(model,x,old,mask,1,1,4,allow_fallback=False)
+        reference=model(x)
+        self.assertTrue(torch.allclose(actual[written.expand_as(actual)],reference[written.expand_as(reference)],atol=1e-5,rtol=1e-5))
+        actual.square().mean().backward()
+        self.assertGreater(float(x.grad.abs().sum()),0.)
+
+
+if __name__=='__main__':unittest.main()

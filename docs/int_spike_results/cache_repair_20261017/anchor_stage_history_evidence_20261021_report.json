@@ -1,0 +1,40 @@
+{
+  "cache_location": "stages2/3",
+  "conv_scope": "Conv2d+ConvTranspose2d standard MACs x2; excludes VFE Linear, activations, warps, BN and other non-conv operations. Transposed conv counts input positions including boundary products. Not complete model FLOPs or hardware instructions.",
+  "deep_call_fraction": 0.3460476354849845,
+  "diagnostic": "Zero residual, immutable warped anchor; untrained modules still execute. Accuracy control, not optimized warp-only latency.",
+  "labels": 1738,
+  "optimizer_steps": 0,
+  "partial_frames": 3789,
+  "readout_evidence": "aligned anchor E",
+  "repair_area": "Zero stage residuals; all three aligned anchor scales go to original decoder/shrink. Current E still computed but not used in partial-frame readout; not an optimized latency baseline.",
+  "results": {
+    "cached": {
+      "ap50": 0.554533811536736,
+      "ap70": 0.3124105032355967,
+      "conv_gflops": 218.4000296682085,
+      "conv_reduction_vs_original": 0.27457419933287663,
+      "mean_ms": 27.26873385522387,
+      "p95_ms": 32.99099711002782
+    },
+    "full": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "conv_reduction_vs_original": 0.0,
+      "mean_ms": 32.316007604170395,
+      "p95_ms": 33.92981078941375
+    },
+    "original": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "conv_reduction_vs_original": 0.0,
+      "mean_ms": 32.24672069124179,
+      "p95_ms": 33.92082832287997
+    }
+  },
+  "scans": 5794,
+  "status": "COMPLETED",
+  "timing_scope": "Same GPU rotating modes; synchronized model, excludes IO/H2D/postprocess; training concurrent on other GPUs may contend for host resources."
+}
