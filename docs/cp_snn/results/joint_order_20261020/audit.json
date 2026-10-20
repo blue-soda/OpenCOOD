@@ -1,0 +1,68 @@
+{
+  "checkpoint_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+  "config_hashes": {
+    "learned_p1": "d761de9e5d0e35cb2d1f980e188d466b8b0b42c255815cf17c1ab5daa91e02bc",
+    "learned_p2": "39d552006f29451d908c41b8f767d2ceaf22fd1500e3c458a9a82f65d31c4432",
+    "learned_p3": "7d2deac8ce6933607349c1627662510269e545036cdcb73ff6af6f5d7f187f46",
+    "l1_p1": "5389622a85b11d33a9d8862aa2746cb5ac14225f5cba45498b1ac9960468eca8",
+    "l1_p2": "b2602b161f4835e1fc8bdcd87aca98d601e3e3b7ad212f8f58d816a216b1bb83",
+    "l1_p3": "6b403ab4e918471789bd4b9c2390f9096befc6b212889237fc67b044d37b36ec"
+  },
+  "frames": [
+    "000010",
+    "000011"
+  ],
+  "train": false,
+  "comparisons": {
+    "learned_p1": {
+      "direct_wire_exact": true,
+      "bytes": [
+        3841,
+        4032
+      ]
+    },
+    "learned_p2": {
+      "direct_wire_exact": true,
+      "bytes": [
+        7320,
+        7777
+      ]
+    },
+    "learned_p3": {
+      "direct_wire_exact": true,
+      "bytes": [
+        10443,
+        11067
+      ]
+    },
+    "l1_p1": {
+      "direct_wire_exact": true,
+      "bytes": [
+        3853,
+        4050
+      ]
+    },
+    "l1_p2": {
+      "direct_wire_exact": true,
+      "bytes": [
+        7323,
+        7785
+      ]
+    },
+    "l1_p3": {
+      "direct_wire_exact": true,
+      "bytes": [
+        10427,
+        11044
+      ]
+    }
+  },
+  "code_commit": "d43a4b22397b19163a67b792ee696c08d323fe27",
+  "same_complete_content_and_rows_per_batch": true,
+  "p3_order_prediction_max_difference": {
+    "psm": 0.01580524444580078,
+    "rm": 0.00709003210067749,
+    "dm": 0.013962030410766602
+  },
+  "passed": true
+}
