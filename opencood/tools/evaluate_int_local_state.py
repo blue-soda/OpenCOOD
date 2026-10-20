@@ -9,6 +9,7 @@ import sys
 import time
 import torch
 from opencood.models.sub_modules.int_local_state import LocalStateDetector
+from opencood.models.sub_modules.int_local_state_context import ContextLocalStateDetector
 from opencood.tools.run_int_cache_repair import setup, evaluate
 from opencood.tools.run_int_ego import loader, to_device, write_json
 from opencood.tools.launch_int_memory import digest
@@ -26,14 +27,15 @@ def worker(a):
     source_sha = digest(source)
     saved = torch.load(str(source), map_location='cpu')
     contract = saved['contract']
-    assert contract['version'] == LocalStateDetector.version
+    factories = {cls.version:cls for cls in (LocalStateDetector,ContextLocalStateDetector)}
+    assert contract['version'] in factories
     assert contract['phase'] in ('a', 'b')
     assert contract['teacher_sha256'] == provenance['checkpoint']['sha256']
     assert contract['data_contract'] == provenance['contract']
     trained_policy = contract['memory_policy']
     assert trained_policy == ('reset' if contract['phase'] == 'a' else 'recurrent')
     policy = trained_policy if a.memory_policy == 'trained' else 'reset'
-    student = LocalStateDetector(teacher, cfg, policy).cuda().eval()
+    student = factories[contract['version']](teacher, cfg, policy).cuda().eval()
     student.load_state_dict(saved['model'], strict=True)
     for parameter in student.parameters():
         parameter.requires_grad_(False)

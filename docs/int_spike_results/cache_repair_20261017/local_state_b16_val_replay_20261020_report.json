@@ -1,0 +1,57 @@
+{
+  "caveats": [
+    "No region skipping or cache speedup is tested.",
+    "Train AP is a fit diagnostic, not validation or a model selection score.",
+    "Reset is a fixed-weight inference intervention; not a separately retrained single-frame baseline.",
+    "Concurrent GPU timings are not a controlled speed comparison."
+  ],
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_state_b_from_a06_dense_v1/epoch_016/student.pth",
+  "checkpoint_sha256": "4e55c305fa62990ddb31e667d40a2d4f0520e5276aae642e24bd11362e4739eb",
+  "content_calibration_sha256": null,
+  "content_threshold": null,
+  "epoch": 16,
+  "evaluation_split": "val",
+  "labels": 1738,
+  "memory_policy": "recurrent",
+  "metrics": {
+    "bev_ap30": 0.8377692549943497,
+    "bev_ap50": 0.8179754161237096,
+    "bev_ap70": 0.7248928954689444
+  },
+  "model_step_ms_mean": 13.513517958665316,
+  "model_step_ms_p50": 13.36348196491599,
+  "model_step_ms_p95": 15.50242829835042,
+  "optimizer_created": false,
+  "oracle_index": null,
+  "oracle_stage0": false,
+  "peak_gpu_bytes": 463120384,
+  "periodic_last": 0,
+  "periodic_refresh_counts": null,
+  "reset_frames": 214,
+  "scans": 5794,
+  "scope": "Fixed-weight local-state val diagnostic",
+  "seconds": 259.71589322411455,
+  "source_phase": "b",
+  "stage_means": [
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    },
+    {
+      "actual_write_fraction": 1.0,
+      "executed_input_area_ratio": 1.0
+    }
+  ],
+  "state_bytes": 25804800,
+  "status": "COMPLETED",
+  "support_profile": false,
+  "timing_scope": "Synchronized student model only, including alignment; excludes IO, voxelization and postprocess",
+  "trained_memory_policy": "recurrent",
+  "uncovered_fraction_mean": null,
+  "weights_unchanged": true,
+  "zero_uncovered": false
+}

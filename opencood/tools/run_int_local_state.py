@@ -13,6 +13,7 @@ import torch
 from opencood.data_utils.int_tbptt import window_ends
 from opencood.loss.point_pillar_dir_loss import PointPillarDirLoss
 from opencood.models.sub_modules.int_local_state import LocalStateDetector, feature_distillation
+from opencood.models.sub_modules.int_local_state_context import ContextLocalStateDetector, load_refinement_state
 from opencood.models.sub_modules.int_light_repair import foreground_head_loss
 from opencood.tools.run_int_cache_repair import setup, evaluate
 from opencood.tools.run_int_ego import loader, to_device, write_json
@@ -32,15 +33,18 @@ def teacher_step(teacher, data, state, meta):
     return prediction, captured[0], state
 
 
-def make_optimizer(student):
+def make_optimizer(student, refinement=False):
     heads = list(student.cls_head.parameters()) + list(student.reg_head.parameters())
     if student.dir_head is not None:
         heads += list(student.dir_head.parameters())
-    return torch.optim.AdamW([
-        dict(params=student.update.input_projection.parameters(), lr=1e-3, name='new_projection'),
-        dict(params=student.update.blocks.parameters(), lr=1e-4, name='migrated_update'),
-        dict(params=student.observation.parameters(), lr=1e-5, name='shallow'),
-        dict(params=heads, lr=1e-5, name='heads')], weight_decay=1e-4)
+    groups = [
+        dict(params=student.update.input_projection.parameters(), lr=1e-4 if refinement else 1e-3, name='projection'),
+        dict(params=student.update.blocks[:2].parameters(), lr=1e-5 if refinement else 1e-4, name='migrated_update'),
+        dict(params=student.observation.parameters(), lr=1e-6 if refinement else 1e-5, name='shallow'),
+        dict(params=heads, lr=1e-6 if refinement else 1e-5, name='heads')]
+    if len(student.update.blocks) > 2:
+        groups.append(dict(params=student.update.blocks[2:].parameters(), lr=1e-4, name='new_context'))
+    return torch.optim.AdamW(groups, weight_decay=1e-4)
 
 
 def step_losses(student, teacher, ego, meta, state, teacher_state, criterion):
@@ -71,15 +75,16 @@ def check_migration(student, teacher):
     assert not hasattr(student, 'feature_memory') and not hasattr(student, 'backbone') and not hasattr(student, 'shrink_conv')
 
 
-def engineering(a, student, teacher, cfg, rows, out):
+def engineering(a, student, teacher, cfg, rows, out, reference=None):
     # For B this snapshot must be the named A checkpoint, not raw migration.
     initial = copy.deepcopy(student.state_dict())
     criterion = PointPillarDirLoss(cfg['loss']['args']).to(a.device)
     student.train()
-    optimizer = make_optimizer(student)
+    optimizer = make_optimizer(student, bool(a.refine_from))
     optimizer.zero_grad(set_to_none=True)
     state = teacher_state = None
-    terms, records = [], []
+    terms, records, initial_errors = [], [], []
+    reference_state = None
     first_label = next((i for i, row in enumerate(rows) if row['supervised']), None)
     if first_label is None:
         raise ValueError('No supervised frame in the training manifest')
@@ -98,6 +103,15 @@ def engineering(a, student, teacher, cfg, rows, out):
         meta = sample['meta']
         ego = to_device(sample['ego'], torch.device(a.device))
         gt, head, feature, state, teacher_state, info = step_losses(student, teacher, ego, meta, state, teacher_state, criterion)
+        if reference is not None:
+            with torch.no_grad():
+                expected, reference_state, _ = reference.step(ego, reference_state, meta)
+                actual = dict(psm=student.cls_head(state['value']), rm=student.reg_head(state['value']))
+                if student.dir_head is not None:
+                    actual['dm'] = student.dir_head(state['value'])
+                error = max(float((actual[k]-expected[k]).abs().max()) for k in expected)
+                initial_errors.append(error)
+                assert error <= 1e-5, 'Refinement must preserve source predictions before training'
         terms.append((gt if gt is not None else 0) + .2 * head + .5 * feature)
         assert state['value'].shape[-2:] == ego['anchor_box'].shape[:2]
         records.append(dict(frame=meta['frame'],supervised=meta['supervised'],gt=None if gt is None else float(gt.detach()),
@@ -112,6 +126,8 @@ def engineering(a, student, teacher, cfg, rows, out):
     assert all(p.grad is None for p in teacher.parameters())
     assert all(p.grad is None for p in student.pillar_vfe.parameters())
     history_gradient = float(student.update.input_projection.weight.grad[:,128:384].abs().sum())
+    context_gradients = [float(block.bn2.weight.grad.abs().sum()) for block in student.update.blocks[2:]]
+    assert all(value > 0 for value in context_gradients)
     if a.phase == 'b':
         assert all(r['reset'] is None for r in records[1:]), 'B probe must reuse its own state'
         assert history_gradient > 0, 'History projection must learn from the real sequence'
@@ -144,12 +160,15 @@ def engineering(a, student, teacher, cfg, rows, out):
                 selection='First contiguous requested-length window containing a training label; initial state empty',
                 gradient_norm_before_clip=float(gradient),
                 optimizer_step_changed_projection=changed,initial_state_restored=True,
-                initialization='named_phase_a_checkpoint' if a.phase == 'b' else 'raw_teacher_migration',
+                initialization='fixed_phase_b_refinement' if a.refine_from else
+                    ('named_phase_a_checkpoint' if a.phase == 'b' else 'raw_teacher_migration'),
+                source_prediction_max_errors=initial_errors,
+                new_context_bn2_gradient_l1=context_gradients,
                 history_projection_gradient_l1=history_gradient,
                 previous_state_gradient_l1_after_probe_update=temporal_gradient,
                 trainable_parameters=sum(p.numel() for p in student.parameters() if p.requires_grad),
                 frozen_parameters=sum(p.numel() for p in student.parameters() if not p.requires_grad),
-                migrated_tensor_equality=True,migration_check_scope='Before optional phase-A checkpoint loading',update_radius=4,
+                migrated_tensor_equality=True,migration_check_scope='Before optional checkpoint loading',update_radius=student.update.radius,
                 caveat='Engineering only; no AP or speed claim. Probe optimizer step is discarded before formal training.')
 
 
@@ -224,7 +243,8 @@ def worker(a):
     runtime = json.loads((Path(a.root)/'full_gru'/'effective_runtime.json').read_text())['arguments']
     train = json.loads(Path(runtime['manifest']).read_text())['train']
     torch.manual_seed(303); np.random.seed(303)
-    student = LocalStateDetector(teacher,cfg,'reset' if a.phase=='a' else 'recurrent').to(a.device)
+    factory = ContextLocalStateDetector if a.variant == 'context' else LocalStateDetector
+    student = factory(teacher,cfg,'reset' if a.phase=='a' else 'recurrent').to(a.device)
     tests = subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],
                            stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     (out/'unit_tests.log').write_bytes(tests.stdout)
@@ -236,9 +256,11 @@ def worker(a):
                     seed=303,tbptt=4,train_scans=len(train),train_labels=sum(r['supervised'] for r in train),
                     val_scans=len(val),val_labels=sum(r['supervised'] for r in val),epochs_max=a.epochs,
                     loss_weights=dict(gt=1.,head_kd=.2,feature_kd=.5),feature_loss='channel RMS clamp1; .5 global + .5 confidence weighted SmoothL1',
-                    optimizer='AdamW',initial_lrs=[1e-3,1e-4,1e-5,1e-5],weight_decay=1e-4,clip_gradient=5.,
+                    optimizer='AdamW',initial_lrs=[g['lr'] for g in make_optimizer(student,bool(a.refine_from)).param_groups],
+                    weight_decay=1e-4,clip_gradient=5.,
                     head_warmup_epochs=1 if a.phase=='a' else 0,normalization='fixed BN statistics; affine trainable',
-                    update_radius=4,all_regions_update=True,augmentation=False,artificial_delay=False)
+                    update_radius=student.update.radius,all_regions_update=True,augmentation=False,artificial_delay=False)
+    reference = None
     if a.initialize_from:
         source = Path(a.initialize_from)
         saved = torch.load(str(source),map_location='cpu')
@@ -247,16 +269,30 @@ def worker(a):
         assert old['teacher_sha256']==contract['teacher_sha256'] and old['data_contract']==contract['data_contract']
         student.load_state_dict(saved['model'],strict=True)
         contract['initialization'] = dict(path=str(source),sha256=digest(source),epoch=saved['epoch'])
+    if a.refine_from:
+        source = Path(a.refine_from)
+        assert digest(source) == a.source_sha256, 'Fixed refinement checkpoint hash mismatch'
+        saved = torch.load(str(source), map_location='cpu')
+        old = saved['contract']
+        assert old['version'] == LocalStateDetector.version and old['phase'] == 'b'
+        assert old['teacher_sha256'] == contract['teacher_sha256'] and old['data_contract'] == contract['data_contract']
+        load_refinement_state(student, saved['model'])
+        reference = LocalStateDetector(teacher,cfg,'recurrent').to(a.device).eval()
+        reference.load_state_dict(saved['model'],strict=True)
+        contract.update(refinement_variant=a.variant, initialization=dict(
+            path=str(source),sha256=a.source_sha256,epoch=saved['epoch'],source_phase='b'),
+            epoch_budget_is_hard=True, plateau_projection_lr_limit=1e-5)
     write_json(out/'training_contract.json',contract)
-    gate = engineering(a,student,teacher,cfg,train,out)
+    gate = engineering(a,student,teacher,cfg,train,out,reference)
     write_json(out/'engineering.json',gate)
+    del reference
     if a.engineering_only:
         write_json(out/'report.json',dict(status='ENGINEERING_PASSED',validation_ap=None,
                                          scope='Real-data losses/gradient/migration only; not training or convergence'))
         write_json(out/'status.json',dict(status='COMPLETED'))
         return
     torch.manual_seed(303); np.random.seed(303)
-    optimizer = make_optimizer(student)
+    optimizer = make_optimizer(student,bool(a.refine_from))
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=2,
                                                          threshold=.001,threshold_mode='abs',min_lr=1e-7)
     history=[]; best=significant=-1.; stale=0
@@ -288,10 +324,10 @@ def worker(a):
             scheduler=scheduler.state_dict(),contract=contract,history=history,epoch=epoch,
             best=best,significant=significant,stale=stale,torch_rng=torch.get_rng_state(),
             cuda_rng=torch.cuda.get_rng_state_all(),numpy_rng=np.random.get_state()))
-        if epoch>=5 and stale>=5 and optimizer.param_groups[0]['lr']<=1e-4:
+        if epoch>=5 and stale>=5 and optimizer.param_groups[0]['lr']<=(1e-5 if a.refine_from else 1e-4):
             break
     write_json(out/'report.json',dict(status='COMPLETED',epochs=len(history),best=json.loads((out/'best.json').read_text()),
-        stop_reason='plateau' if stale>=5 and optimizer.param_groups[0]['lr']<=1e-4 else 'max_epochs_not_proof_of_convergence'))
+        stop_reason='plateau' if stale>=5 and optimizer.param_groups[0]['lr']<=(1e-5 if a.refine_from else 1e-4) else 'max_epochs_not_proof_of_convergence'))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
 
@@ -299,16 +335,22 @@ def main():
     p=argparse.ArgumentParser()
     p.add_argument('--root',required=True); p.add_argument('--output',required=True)
     p.add_argument('--phase',choices=['a','b'],default='a'); p.add_argument('--initialize-from')
+    p.add_argument('--refine-from'); p.add_argument('--source-sha256')
+    p.add_argument('--variant',choices=['base','context'],default='base')
     p.add_argument('--device',choices=['cpu','cuda'],default='cuda'); p.add_argument('--gpu',type=int)
     p.add_argument('--epochs',type=int,default=60); p.add_argument('--frames',type=int,default=2)
     p.add_argument('--engineering-only',action='store_true'); p.add_argument('--worker',action='store_true')
     a=p.parse_args(); out=Path(a.output)
     if not 2<=a.frames<=8 or not 5<=a.epochs<=60:p.error('Engineering frames 2..8; training epochs 5..60')
-    if (a.phase=='b') != bool(a.initialize_from):p.error('Phase B requires a fixed phase-A checkpoint; phase A uses migration')
+    if a.initialize_from and a.refine_from:p.error('Initialization and refinement are exclusive')
+    if (a.phase=='b') != bool(a.initialize_from or a.refine_from):p.error('Phase B requires explicit initialization')
+    if a.refine_from and (not a.source_sha256 or a.epochs>20):p.error('Refinement requires a fixed SHA and at most 20 epochs')
+    if a.variant=='context' and not a.refine_from:p.error('Context variant requires fixed phase-B refinement')
+    if a.source_sha256 and not a.refine_from:p.error('Source SHA applies only to refinement')
     if a.phase=='b' and a.frames != 4:p.error('Phase B engineering requires a real four-frame TBPTT window')
     if a.device=='cpu' and not a.engineering_only:p.error('CPU is restricted to bounded engineering')
     if a.device=='cuda' and a.gpu is None:p.error('CUDA requires explicit GPU')
-    timeout=1800 if a.engineering_only else 172800
+    timeout=1800 if a.engineering_only else (86400 if a.refine_from else 172800)
     if a.worker:
         def expired(signum,frame):raise TimeoutError('Local-state execution budget exceeded')
         signal.signal(signal.SIGALRM,expired); signal.alarm(timeout)
