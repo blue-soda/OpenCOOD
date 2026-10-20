@@ -56,6 +56,22 @@ def check_gpu(gpu, allow_shared=False, fraction=.2):
     return result
 
 
+def seeded_jobs(root, stage, training_seed):
+    """Change training RNG only; keep the registered evaluation seed fixed."""
+    if type(training_seed) is not int or not 0 <= training_seed < 2**32:
+        raise ValueError('Training seed must fit NumPy uint32')
+    name, jobs = make_jobs(root, 'joint', stage)
+    changed = 0
+    for job in jobs:
+        command = job['command']
+        if '--mode' in command and command[command.index('--mode') + 1] == 'train':
+            command[command.index('--seed') + 1] = str(training_seed)
+            changed += 1
+    if changed != (1 if stage == 'adapt10' else 0):
+        raise ValueError('Unexpected number of training jobs')
+    return name, jobs
+
+
 def prepare(root, audit_root):
     entry = read(audit_root / 'audit.json')
     if not (entry['passed'] and entry['joint_membrane'] and
@@ -103,7 +119,7 @@ def coordinate(root):
                         stage=stage, gpu=gpu, note=str(error), training_started=False))
                     time.sleep(60)
             write_json(root / (stage + '_gpu_admission.json'), admission)
-            name, jobs = make_jobs(root, 'joint', stage)
+            name, jobs = seeded_jobs(root, stage, setup.get('training_seed', 20260929))
             plan = root / (name + '_plan.json')
             write_json(plan, dict(name=name, jobs=jobs, gpu=gpu))
             env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu), PYTHONPATH=str(REPO),
@@ -133,7 +149,9 @@ def coordinate(root):
         raise
 
 
-def launch(root, gpu, allow_shared=False, memory_fraction=.2):
+def launch(root, gpu, allow_shared=False, memory_fraction=.2, training_seed=20260929):
+    if type(training_seed) is not int or not 0 <= training_seed < 2**32:
+        raise ValueError('Training seed must fit NumPy uint32')
     audit = read(root / 'audit.json'); assert audit['passed']
     if (root / 'launch.json').exists(): raise FileExistsError('Already attempted')
     entry = audit['groups']['joint']
@@ -145,6 +163,7 @@ def launch(root, gpu, allow_shared=False, memory_fraction=.2):
     setup = dict(gpu=gpu, audit_sha256=sha(root / 'audit.json'), started_unix=time.time(),
         code_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=str(REPO)).decode().strip(),
         training_cap_seconds=21600, per_evaluation_cap_seconds=3600,
+        training_seed=training_seed, evaluation_seed=20260929,
         allow_shared=allow_shared, memory_fraction=memory_fraction if allow_shared else None,
         gpu_admission=admission)
     write_json(root / 'launch.json', setup)
@@ -162,8 +181,9 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', type=int, default=2)
     parser.add_argument('--allow-shared', action='store_true')
     parser.add_argument('--memory-fraction', type=float, default=.2)
+    parser.add_argument('--training-seed', type=int, default=20260929)
     parser.add_argument('--prepare', action='store_true'); parser.add_argument('--coordinate', action='store_true')
     args = parser.parse_args(); root = Path(args.root)
     if args.prepare: prepare(root, Path(args.audit_root))
     elif args.coordinate: coordinate(root)
-    else: launch(root, args.gpu, args.allow_shared, args.memory_fraction)
+    else: launch(root, args.gpu, args.allow_shared, args.memory_fraction, args.training_seed)

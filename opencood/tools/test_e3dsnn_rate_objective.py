@@ -6,6 +6,21 @@ from opencood.utils.e3dsnn_aux_loss import detection_loss
 
 
 class RateObjectiveTests(unittest.TestCase):
+    def test_refinement_seed_changes_training_only(self):
+        from pathlib import Path
+        from opencood.tools.launch_e3dsnn_joint_round import seeded_jobs
+        from opencood.tools.launch_e3dsnn_content_round import make_jobs
+        root=Path('/unused')
+        for stage in ('zero','adapt10'):
+            self.assertEqual(seeded_jobs(root,stage,20260929),make_jobs(root,'joint',stage))
+            _, jobs=seeded_jobs(root,stage,20260930)
+            for job in jobs:
+                cmd=job['command']
+                if '--seed' not in cmd:continue
+                expected='20260930' if cmd[cmd.index('--mode')+1]=='train' else '20260929'
+                self.assertEqual(cmd[cmd.index('--seed')+1],expected)
+        with self.assertRaises(ValueError):seeded_jobs(root,'adapt10',-1)
+
     def test_payload_units_and_nonzero_gradient(self):
         x=torch.zeros(1,32,1,1,2)
         x[0,0,0,0,0]=3
