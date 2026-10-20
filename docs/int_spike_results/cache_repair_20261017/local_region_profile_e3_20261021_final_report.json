@@ -1,0 +1,71 @@
+{
+  "caveats": [
+    "Validation prefix diagnostic, not full-stream AP or deployment latency.",
+    "Component timings synchronize each boundary and perturb scheduling; use uninstrumented totals separately.",
+    "refresh_including_update contains update_inside_refresh; do not sum them.",
+    "Other includes concatenation, statistics, cache writeback and instrumentation overhead.",
+    "Uninstrumented pairs still run among diagnostic copies; host/thermal contention remains."
+  ],
+  "no_ap_claim": true,
+  "results": {
+    "dense": {
+      "components_mean_ms": {
+        "heads": 0.3681955441639599,
+        "observation": 3.2760631223487486,
+        "other_and_instrumentation": 0.282962194298843,
+        "pillar_scatter": 1.5521348983724694,
+        "refresh_excluding_update": 0.0,
+        "state_warp": 0.6803205080026115,
+        "update_direct": 7.250289653476135
+      },
+      "instrumented_mean_ms": 13.409965920662767,
+      "partial_frames": 0,
+      "prediction_max_error": 0.0,
+      "resets": 17,
+      "uninstrumented_mean_ms": 12.462509776543515
+    },
+    "fixed": {
+      "components_mean_ms": {
+        "heads": 0.36336269472684873,
+        "observation": 3.2855129236748732,
+        "other_and_instrumentation": 0.5959960042064884,
+        "pillar_scatter": 1.5432888208758606,
+        "reference_age_warp": 0.5479142514142797,
+        "refresh_excluding_update": 1.6247458320919914,
+        "refresh_including_update": 14.921778570433922,
+        "selector_and_request": 0.8924320178752045,
+        "state_warp": 0.691137530755593,
+        "update_direct": 0.22227457071472687,
+        "update_inside_refresh": 13.297032738341931
+      },
+      "instrumented_mean_ms": 23.0636973846778,
+      "partial_frames": 357,
+      "prediction_max_error": 0.0,
+      "resets": 17,
+      "uninstrumented_mean_ms": 19.513802784235324
+    },
+    "merged": {
+      "components_mean_ms": {
+        "heads": 0.36411274287597356,
+        "observation": 3.2991604045575182,
+        "other_and_instrumentation": 0.6043663405186211,
+        "pillar_scatter": 1.5443965242581954,
+        "reference_age_warp": 0.547102571324078,
+        "refresh_excluding_update": 1.3175025629621755,
+        "refresh_including_update": 17.837731406534186,
+        "selector_and_request": 0.9056460279303481,
+        "state_warp": 0.702676472283781,
+        "update_direct": 0.2208680537829836,
+        "update_inside_refresh": 16.52022884357201
+      },
+      "instrumented_mean_ms": 26.026060544065686,
+      "partial_frames": 357,
+      "prediction_max_error": 0.0,
+      "resets": 17,
+      "uninstrumented_mean_ms": 22.318438313756715
+    }
+  },
+  "scans": 512,
+  "status": "COMPLETED",
+  "weights_unchanged": true
+}
