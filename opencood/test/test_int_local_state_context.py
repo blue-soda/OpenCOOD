@@ -5,7 +5,9 @@ from opencood.models.sub_modules.codyntrust_resblock import BasicBlock
 from opencood.models.sub_modules.int_cache_repair import refresh_tiles
 from opencood.models.sub_modules.int_local_state import LocalStateDetector
 from opencood.models.sub_modules.int_local_state_context import ContextLocalStateDetector, load_refinement_state
-from opencood.test.test_int_local_state import source_teacher
+# unittest discover adds this test directory to sys.path. The repository also
+# has opencood/test.py, so importing opencood.test would execute that old script.
+from test_int_local_state import source_teacher
 
 
 class ContextTests(unittest.TestCase):
