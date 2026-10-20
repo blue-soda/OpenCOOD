@@ -1,0 +1,19 @@
+{
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/local_context_refine_b16_20261020/epoch_004/student.pth",
+  "checkpoint_sha256_from_validation_report": "cd8b584b7b01b384ad50f78a42e39a883efbab0fb107eeef00ba8c0015b6f7ea",
+  "epoch": 4,
+  "read_device": "cpu",
+  "new_context_bn2": {
+    "2": {
+      "gamma_abs_mean": 0.004675369244068861,
+      "gamma_abs_max": 0.030215293169021606,
+      "nonzero": 256
+    },
+    "3": {
+      "gamma_abs_mean": 0.005542584229260683,
+      "gamma_abs_max": 0.04007832705974579,
+      "nonzero": 256
+    }
+  },
+  "interpretation": "Parameters have moved from zero initialization. This alone neither quantifies feature contribution nor demonstrates improved AP."
+}
