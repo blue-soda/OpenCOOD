@@ -1,0 +1,15 @@
+{
+  "conv_macs": {
+    "compact_cache_full": 134533324800,
+    "compact_cache_partial": 70950297600,
+    "full_full": 134533324800,
+    "original_full": 150532300800,
+    "reference_cache_full": 150532300800,
+    "reference_cache_partial": 86949273600
+  },
+  "frames": 32,
+  "gradient_checked": true,
+  "partial_frames_without_deep_calls": 21,
+  "same_cached_readout_input": true,
+  "status": "PASSED"
+}

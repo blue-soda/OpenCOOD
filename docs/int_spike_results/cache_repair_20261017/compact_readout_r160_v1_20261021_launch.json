@@ -1,0 +1,21 @@
+{
+  "code_commit": "39a1f83889b9c2e97c6d100e751a291a7ebaa289",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.train_int_compact_readout",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/compact_readout_r160_v1_20261021",
+    "--rank",
+    "160",
+    "--gpu",
+    "5",
+    "--worker"
+  ],
+  "created_unix": 1792534509.5011232,
+  "gpu": 5,
+  "pid": 54841,
+  "timeout_seconds": 28800
+}

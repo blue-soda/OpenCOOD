@@ -1,0 +1,4 @@
+{
+  "error": "AttributeError(\"'ReLU' object has no attribute 'groups'\")",
+  "status": "FAILED"
+}
