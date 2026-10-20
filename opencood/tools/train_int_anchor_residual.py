@@ -218,6 +218,7 @@ def worker(a):
     train=json.loads(Path(source_args['manifest']).read_text())['train']
     torch.manual_seed(303); modules=AnchorResidualModules(a.arm=='fusion').cuda()
     contract=dict(arm=a.arm,seed=303,refresh_period=3,max_age=.25,anchor_writeback=False,
+        evaluation_only=a.diagnostic,
         epochs_max=a.epochs,minimum_epochs=6,plateau_patience=4,minimum_ap_gain=.001,
         original_sha256=provenance['checkpoint']['sha256'],data_contract=provenance['contract'],
         train_scans=len(train),val_scans=len(val),trainable_parameters=sum(p.numel() for p in modules.parameters()),
@@ -234,6 +235,14 @@ def worker(a):
     (out/'unit_tests.log').write_bytes(tests.stdout)
     assert tests.returncode==0
     gate=engineering(model,cfg,train,modules);write_json(out/'engineering.json',gate)
+    if a.diagnostic:
+        directory=out/'epoch_000';directory.mkdir()
+        report=evaluate(model,cfg,val,modules,directory,gate['conv_macs_per_frame'],0)
+        report.update(diagnostic='Zero residual, immutable warped anchor; untrained modules still execute. Accuracy control, not optimized warp-only latency.',
+                      optimizer_steps=0)
+        write_json(out/'report.json',report)
+        write_json(out/'status.json',dict(status='COMPLETED',diagnostic=True))
+        return
     criterion=PointPillarDirLoss(cfg['loss']['args']).cuda()
     optimizer=torch.optim.AdamW(modules.parameters(),lr=1e-3,weight_decay=1e-4)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,
@@ -292,6 +301,7 @@ def main():
     p.add_argument('--arm',choices=['direct','fusion'],required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--epochs',type=int,default=12)
     p.add_argument('--worker',action='store_true')
+    p.add_argument('--diagnostic',action='store_true',help='Full zero-residual baseline; no training')
     a=p.parse_args();out=Path(a.output)
     if not 1<=a.epochs<=12:p.error('Maximum initial budget is 12 epochs')
     if a.worker:

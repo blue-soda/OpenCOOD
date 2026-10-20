@@ -1,0 +1,36 @@
+{
+  "conv_scope": "Conv2d+ConvTranspose2d standard MACs x2; excludes VFE Linear, activations, warps, BN and other non-conv operations. Transposed conv counts input positions including boundary products. Not complete model FLOPs or hardware instructions.",
+  "deep_call_fraction": 0.3460476354849845,
+  "labels": 1738,
+  "partial_frames": 3789,
+  "repair_area": "Whole H on every partial frame; no selective spatial skipping yet.",
+  "results": {
+    "cached": {
+      "ap50": 0.7457064767656177,
+      "ap70": 0.4170716236864444,
+      "conv_gflops": 170.0397809596134,
+      "conv_reduction_vs_original": 0.4352050023285986,
+      "mean_ms": 19.365592796526485,
+      "p95_ms": 33.59880889765918
+    },
+    "full": {
+      "ap50": 0.8269016722037398,
+      "ap70": 0.7340503299372049,
+      "conv_gflops": 304.2095616,
+      "conv_reduction_vs_original": -0.010446130110568275,
+      "mean_ms": 33.01302096779899,
+      "p95_ms": 34.22600959893316
+    },
+    "original": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "conv_reduction_vs_original": 0.0,
+      "mean_ms": 32.34199338492275,
+      "p95_ms": 33.58139656484127
+    }
+  },
+  "scans": 5794,
+  "status": "COMPLETED",
+  "timing_scope": "Same GPU rotating modes; synchronized model, excludes IO/H2D/postprocess; training concurrent on other GPUs may contend for host resources."
+}
