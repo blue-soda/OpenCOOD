@@ -22,6 +22,7 @@ from opencood.tools.train_e3dsnn_single import write_json
 SOURCE_SHA = 'f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588'
 BUDGETS = (0, 2048, 4096, 6144, 8192, 16384)
 GROUPS = {'fixed4096': [4096, 4096], 'log2048_16384': [2048, 16384]}
+RECEIVER_GROUPS = ('decode', 'receiver')
 
 
 def prepare(root, audit_root):
@@ -59,6 +60,8 @@ def prepare(root, audit_root):
 
 def check_frozen(root, folder):
     initial = torch.load(str(root / 'initial.pth'), map_location='cpu')
+    protocol = read(root / 'protocol.json')
+    allowed = set(protocol.get('trainable_by_group', {}).get(folder.name, ['content.project.weight']))
     report = {}
     for filename in ('best_ap70.pth', 'last.pt'):
         state = torch.load(str(folder / 'train' / filename), map_location='cpu')
@@ -67,11 +70,47 @@ def check_frozen(root, folder):
             state = state['model']
         assert set(state) == set(initial)
         changed = [k for k in state if not torch.equal(state[k], initial[k])]
-        assert set(changed) <= {'content.project.weight'}, changed
-        if filename == 'last.pt': assert changed == ['content.project.weight']
+        assert set(changed) <= allowed, changed
+        if filename == 'last.pt': assert changed
         report[filename] = dict(sha256=sha(folder / 'train' / filename), changed=changed)
     write_json(folder / 'all_frozen_verified.json', dict(passed=True, checkpoints=report))
     return report
+
+
+def prepare_receivers(root, audit_root):
+    """One bounded receiver-mapping study, with the same frozen E1 sender."""
+    source_sha = '17b793cd47595570f2be37a07cd3977c825058c2ac704508637927c41717a27d'
+    entries = {g: read(audit_root / g / 'audit.json') for g in RECEIVER_GROUPS}
+    for group, audit in entries.items():
+        assert audit['passed'] and audit['all_other_parameters_and_buffers_unchanged']
+        assert audit['cached_source_event_count_and_bytes_unchanged']
+        assert audit['train_scope'] == group and audit['source_sha256'] == source_sha
+        assert sha(Path(audit['source'])) == source_sha
+    root.mkdir(parents=True, exist_ok=False)
+    shutil.copyfile(entries['decode']['source'], str(root / 'initial.pth'))
+    hashes = {}; trainable = {}
+    for group in RECEIVER_GROUPS:
+        folder = root / group; folder.mkdir()
+        cfg = yaml.safe_load((audit_root / group / 'config.yaml').read_text())
+        assert cfg['model']['args']['event_stream']['train_scope'] == group
+        assert cfg['model']['args']['event_stream']['train_budget_range'] == [2048,16384]
+        assert cfg['optimizer']['lr'] == 5e-5 and cfg['train_params'] == dict(batch_size=2,epoches=10)
+        trainable[group] = entries[group]['trainable']
+        for mode,budget in [('train',4096)]+[('b'+str(b),b) for b in BUDGETS]:
+            current=copy.deepcopy(cfg); current['model']['args']['event_stream']['budget_bytes']=budget
+            path=folder/(mode+'.yaml'); path.write_text(yaml.safe_dump(current))
+            hashes[str(path.relative_to(root))]=sha(path)
+    audits={str(audit_root/g/'audit.json'):sha(audit_root/g/'audit.json') for g in RECEIVER_GROUPS}
+    write_json(root/'protocol.json',dict(source_sha256=source_sha,
+        audit_path=str(audit_root/'decode/audit.json'),audit_sha256=sha(audit_root/'decode/audit.json'),
+        audits=audits,config_hashes=hashes,groups={g:[2048,16384] for g in RECEIVER_GROUPS},
+        trainable_by_group=trainable,training_seed=20260929,
+        selection='max validation BEV AP70 at 4096 bytes over epochs 0..10',
+        final_budgets_bytes=list(BUDGETS),training_cap_seconds=43200,evaluation_cap_seconds=7200,
+        hypothesis='Receiver mapping trained for voxel counts limits the new frozen IF sender',
+        control='same initial E1 random-budget checkpoint; decode only versus decode plus existing gate/scale',
+        limitations='additional adaptation; not a matched historical SNN/ANN architecture comparison',
+        exit='one 10-epoch round only; no spatial block or parameter sweep if communication/AP remains poor'))
 
 
 def run_group(root, group):
@@ -80,7 +119,7 @@ def run_group(root, group):
     protocol = read(root / 'protocol.json')
     launch = read(root / 'launch.json')
     try:
-        assert sha(root / 'initial.pth') == SOURCE_SHA
+        assert sha(root / 'initial.pth') == protocol['source_sha256']
         for name, digest in protocol['config_hashes'].items():
             if name.startswith(group + '/'): assert sha(root / name) == digest
         base = [sys.executable, '-u', '-m', 'opencood.tools.train_e3dsnn_single',
@@ -135,13 +174,16 @@ def launch(root, gpus):
     if shutil.disk_usage(str(root)).free < 12 * 1024**3: raise RuntimeError('Disk reserve too small')
     protocol = read(root / 'protocol.json')
     assert sha(Path(protocol['audit_path'])) == protocol['audit_sha256']
-    admissions = {group: check_gpu(gpu, True, .2) for group, gpu in zip(GROUPS, gpus)}
-    setup = dict(gpus=dict(zip(GROUPS, gpus)), admissions=admissions,
+    for path,digest in protocol.get('audits',{}).items(): assert sha(Path(path))==digest
+    groups = list(protocol['groups'])
+    assert len(groups)==len(gpus)
+    admissions = {group: check_gpu(gpu, True, .2) for group, gpu in zip(groups, gpus)}
+    setup = dict(gpus=dict(zip(groups, gpus)), admissions=admissions,
         code_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=str(REPO)).decode().strip(),
         protocol_sha256=sha(root / 'protocol.json'), started_unix=time.time(), memory_fraction=.2)
     write_json(root / 'launch.json', setup)
     processes = {}
-    for group, gpu in zip(GROUPS, gpus):
+    for group, gpu in zip(groups, gpus):
         env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu), PYTHONPATH=str(REPO),
             OPENCOOD_CUDA_MEMORY_FRACTION='.2', OMP_NUM_THREADS='1', MKL_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1')
         with (root / group / 'pipeline.log').open('xb') as log:
@@ -158,9 +200,11 @@ if __name__ == '__main__':
     parser.add_argument('--root', required=True)
     parser.add_argument('--audit-root')
     parser.add_argument('--prepare', action='store_true')
-    parser.add_argument('--run-group', choices=list(GROUPS))
+    parser.add_argument('--prepare-receivers', action='store_true')
+    parser.add_argument('--run-group', choices=list(GROUPS)+list(RECEIVER_GROUPS))
     parser.add_argument('--gpus', type=int, nargs=2, default=[2, 3])
     args = parser.parse_args(); root = Path(args.root)
-    if args.prepare: prepare(root, Path(args.audit_root))
+    if args.prepare_receivers: prepare_receivers(root, Path(args.audit_root))
+    elif args.prepare: prepare(root, Path(args.audit_root))
     elif args.run_group: run_group(root, args.run_group)
     else: launch(root, args.gpus)

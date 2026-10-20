@@ -270,9 +270,11 @@ def execute(args, output_dir):
             max_spikes=model.event_max_spikes,budget_bytes=model.event_budget,
             train_budget_range=model.event_train_budgets,packet_events=model.event_packet_events,
             budget_sampling=model.event_sampling,
-            trainable='content.project only',preselection='all source occupied features',
+            train_scope=model.event_train_scope,
+            trainable=[k for k,p in model.named_parameters() if p.requires_grad],
+            preselection='all source occupied features',
             gradient='biased fixed-frontier STE; no gradient through sorting/actual bytes',
-            receiver='frozen joint weights; canonical cumulative source counts before warp',
+            receiver='canonical cumulative source counts before warp; scope declares trained weights',
             transport=model.event_transport,
             state_scope='one frame, one infrastructure sender',
             compute='CPU scheduling/dense readout reference; not event-kernel efficiency')

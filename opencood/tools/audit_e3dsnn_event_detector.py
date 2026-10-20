@@ -19,11 +19,18 @@ from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract
 from opencood.utils import event_stream_packet as wire
 
 
-def audit(root, base, compact=False):
+def audit(root, base, compact=False, receiver_scope=None):
     root = Path(root); root.mkdir(parents=True, exist_ok=False)
     source = Path(base) / 'e3dsnn_joint_round1_20261019'
     checkpoint = source / 'joint_adapt10/best_ap70.pth'
-    if sha(checkpoint) != 'f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588':
+    expected_sha = 'f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588'
+    if receiver_scope:
+        candidate = Path(base) / 'e3dsnn_event_training_20261021/log2048_16384'
+        summary = json.loads((candidate/'summary.json').read_text())
+        assert summary['passed'] and summary['frozen']['passed']
+        checkpoint = candidate/'train/best_ap70.pth'
+        expected_sha = '17b793cd47595570f2be37a07cd3977c825058c2ac704508637927c41717a27d'
+    if sha(checkpoint) != expected_sha:
         raise ValueError('Unexpected registered source checkpoint')
     raw = yaml.safe_load((source / 'joint/p3.yaml').read_text())
     raw['model']['core_method'] = 'e3dsnn_event_detector'
@@ -34,6 +41,8 @@ def audit(root, base, compact=False):
     if compact:
         raw['model']['args']['event_stream'].update(transport='session_zlib',sampling='log_uniform',
                                                    train_budget_range=[2048,16384])
+    if receiver_scope:
+        raw['model']['args']['event_stream']['train_scope'] = receiver_scope
     raw['train_params']=dict(batch_size=2,epoches=10)
     (root / 'config.yaml').write_text(yaml.safe_dump(raw))
     cfg = load_yaml(str(root / 'config.yaml'))
@@ -51,8 +60,11 @@ def audit(root, base, compact=False):
         frames=data['frame_ids'], tests=[], training_started=False,
         status='audit_only_no_AP', trainable=[k for k,p in model.named_parameters() if p.requires_grad],
         transport=model.event_transport, sampling=model.event_sampling,
+        train_scope=model.event_train_scope,
         trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad))
-    assert report['trainable'] == ['content.project.weight']
+    expected = {'sender': ['content.project.weight'], 'decode': ['content.expand.weight'],
+                'receiver': ['content.expand.weight','joint_receiver.current_scale','joint_receiver.local_gate.weight']}
+    assert set(report['trainable']) == set(expected[model.event_train_scope])
     original_encode, original_membrane = model.encode_lidar, model.encode_membrane
     with torch.no_grad():
         ego, membrane = original_membrane(data['processed_lidar'], 2)
@@ -125,9 +137,20 @@ def audit(root, base, compact=False):
     assert all(np.isfinite(v) and v>0 for v in gradients.values())
     optimizer.step()
     actual = model.state_dict()
-    frozen = [k for k in actual if k!='content.project.weight']
+    frozen = [k for k in actual if k not in report['trainable']]
     assert all(torch.equal(actual[k].cpu(),reference[k]) for k in frozen)
-    assert not torch.equal(actual['content.project.weight'].cpu(),reference['content.project.weight'])
+    assert any(not torch.equal(actual[k].cpu(),reference[k]) for k in report['trainable'])
+    if receiver_scope:
+        # Identical cached source features must emit identical payload/event counts
+        # after receiver-only optimization, even though the paid basis hash changes.
+        model.eval(); model.event_budget = 4096
+        model.encode_membrane = lambda lidar,n: (ego,membrane)
+        model.encode_lidar = lambda lidar,n: road
+        with torch.no_grad():
+            after = model(data)
+        before = next(x for x in report['tests'] if x['budget']==4096)
+        assert after['packet_bytes']==before['bytes'] and after['stream_events']==before['events']
+        report['cached_source_event_count_and_bytes_unchanged'] = True
     report.update(passed=True, gradient_l1=gradients, loss=float(loss.detach()),
         sampled_budgets=output['stream_budgets'], sampled_bytes=output['packet_bytes'],
         all_other_parameters_and_buffers_unchanged=True, optimizer_step_discarded=True)
@@ -140,6 +163,7 @@ if __name__=='__main__':
     parser.add_argument('--root',required=True)
     parser.add_argument('--base',default='/data1/tzm/workspace/diagnostics')
     parser.add_argument('--compact',action='store_true')
+    parser.add_argument('--receiver-scope',choices=['decode','receiver'])
     args=parser.parse_args()
     torch.cuda.set_per_process_memory_fraction(.2)
-    audit(args.root,args.base,args.compact)
+    audit(args.root,args.base,args.compact,args.receiver_scope)

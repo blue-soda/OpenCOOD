@@ -28,6 +28,11 @@ class E3dsnnEventDetector(E3dsnnJointDetector):
         self.event_max_spikes = options.get('max_spikes', 8)
         self.event_transport = options.get('transport', 'raw_v1')
         self.event_sampling = options.get('sampling', 'uniform')
+        self.event_train_scope = options.get('train_scope', 'sender')
+        scopes = {'sender': ('content.project.',), 'decode': ('content.expand.',),
+                  'receiver': ('content.expand.', 'joint_receiver.')}
+        if self.event_train_scope not in scopes:
+            raise ValueError('Unknown event training scope')
         if self.event_transport not in ('raw_v1','session_zlib') or self.event_sampling not in ('uniform','log_uniform'):
             raise ValueError('Unknown event transport or budget sampling')
         if (type(self.event_budget) is not int or self.event_budget < 0 or
@@ -44,7 +49,7 @@ class E3dsnnEventDetector(E3dsnnJointDetector):
         self.joint_learn_order = False
         self.message_support_kind = 'cumulative_received_3d'
         for name, parameter in self.named_parameters():
-            parameter.requires_grad_(name.startswith('content.project.'))
+            parameter.requires_grad_(name.startswith(scopes[self.event_train_scope]))
 
     def event_basis_digest(self):
         spec = dict(content=self.content.basis_digest(), threshold=1., horizon=1.,
