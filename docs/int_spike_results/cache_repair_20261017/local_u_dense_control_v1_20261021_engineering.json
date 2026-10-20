@@ -1,0 +1,16 @@
+{
+  "discarded_optimizer_step": true,
+  "frames": 4,
+  "gradient_norm": 6.880270957946777,
+  "initial_weights_restored": true,
+  "observation_selector_bn_frozen": true,
+  "prediction_max_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "previous_state_gradient_l1": 27.174980401992798,
+  "status": "PASSED",
+  "train_start_index": 26
+}
