@@ -1,0 +1,22 @@
+{
+  "initial_audit.json": {
+    "source": "/data1/tzm/workspace/diagnostics/e3dsnn_event_e0_20261020/audit.json",
+    "sha256": "a0f5e6398ebdc4a9ac6c1a94794f5d851ee03f99b95f729aafeaf4bc1f752a66"
+  },
+  "audit.json": {
+    "source": "/data1/tzm/workspace/diagnostics/e3dsnn_event_e0_repack_20261020/audit.json",
+    "sha256": "072e14e2e9de9a6d235272df03064832ad5a7dfe63b8f2c505f0081ec0b1110c"
+  },
+  "config.yaml": {
+    "source": "/data1/tzm/workspace/diagnostics/e3dsnn_event_e0_repack_20261020/config.yaml",
+    "sha256": "e4db9d7f95180cef72d901853e6d7f0aaad132fbd351fdb3fb43ef84b42e20bb"
+  },
+  "cpu_tests.txt": {
+    "source": "/data1/tzm/workspace/diagnostics/e3dsnn_event_e0_20261020_tests.txt",
+    "sha256": "5c999392b0928e185cedc80c2a7ac94f802a773f1e2fdb4be19f0c8ddddd57e9"
+  },
+  "launch.json": {
+    "source": "/data1/tzm/workspace/diagnostics/e3dsnn_event_e0_repack_20261020_launch.json",
+    "sha256": "9b9e7aa6d6fc4cfe3878138471ed6641824808545b627c027252a4f72bbef705"
+  }
+}

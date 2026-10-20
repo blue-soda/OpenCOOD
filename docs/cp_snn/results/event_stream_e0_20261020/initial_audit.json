@@ -1,0 +1,74 @@
+{
+  "started_unix": 1792507903.8407707,
+  "source": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019/joint_adapt10/best_ap70.pth",
+  "source_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+  "code_commit": "cf4a1bef1947381e00e875bf5cb96cede067095f",
+  "frames": [
+    "000010",
+    "000011"
+  ],
+  "tests": [
+    {
+      "budget": 0,
+      "bytes": [
+        0,
+        0
+      ],
+      "events": [
+        0,
+        0
+      ],
+      "direct_wire_exact": true,
+      "repeated_exact": true
+    },
+    {
+      "budget": 4096,
+      "bytes": [
+        3618,
+        3608
+      ],
+      "events": [
+        512,
+        512
+      ],
+      "direct_wire_exact": true,
+      "repeated_exact": true
+    },
+    {
+      "budget": 8192,
+      "bytes": [
+        8192,
+        8191
+      ],
+      "events": [
+        1066,
+        1072
+      ],
+      "direct_wire_exact": true,
+      "repeated_exact": true
+    }
+  ],
+  "training_started": false,
+  "status": "audit_only_no_AP",
+  "trainable": [
+    "content.project.weight"
+  ],
+  "trainable_parameters": 4096,
+  "zero_budget_is_ego_exact": true,
+  "ego_matches_source_exact": true,
+  "passed": true,
+  "gradient_l1": {
+    "content.project.weight": 1.248642921447754
+  },
+  "loss": 1.6936929282954867,
+  "sampled_budgets": [
+    7036,
+    7256
+  ],
+  "sampled_bytes": [
+    7034,
+    7218
+  ],
+  "all_other_parameters_and_buffers_unchanged": true,
+  "optimizer_step_discarded": true
+}

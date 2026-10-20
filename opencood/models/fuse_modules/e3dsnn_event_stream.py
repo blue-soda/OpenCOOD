@@ -5,7 +5,6 @@ Repeated addresses are valid spikes, not duplicate messages. CPU scheduling
 is a correctness reference, NOT a neuromorphic speed/energy implementation.
 """
 from dataclasses import dataclass
-import math
 import numpy as np
 import torch
 

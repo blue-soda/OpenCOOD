@@ -7,7 +7,6 @@ no three-way partition and no fixed 25% spatial preselection.
 from dataclasses import asdict
 import hashlib
 import json
-import numpy as np
 import torch
 from opencood.models.e3dsnn_joint_detector import E3dsnnJointDetector
 from opencood.models.fuse_modules.e3dsnn_event_stream import integrate_and_fire, stream_readout

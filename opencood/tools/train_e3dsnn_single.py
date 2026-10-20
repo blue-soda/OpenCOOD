@@ -245,7 +245,7 @@ def execute(args, output_dir):
         'bev_activation': getattr(model, 'bev_activation', getattr(model, 'receiver_activation', cfg['model']['args'].get('activation', 'count4'))),
         'bev_scale_mode': getattr(model, 'bev_scale_mode', None),
         'message_codec': getattr(model, 'message_codec', None),
-        'budget_codec': getattr(model, 'budget_codec', None),
+        'budget_codec': getattr(model, 'budget_codec', None) if not hasattr(model,'event_budget') else None,
         'train_encoder': getattr(model, 'train_encoder', None),
         'message_support': getattr(model, 'message_support_kind', 'geometry'),
         'sender_ranking': getattr(model, 'sender_ranking', 'l1'),

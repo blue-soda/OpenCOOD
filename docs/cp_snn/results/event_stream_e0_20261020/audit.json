@@ -1,0 +1,124 @@
+{
+  "started_unix": 1792508027.6761756,
+  "source": "/data1/tzm/workspace/diagnostics/e3dsnn_joint_round1_20261019/joint_adapt10/best_ap70.pth",
+  "source_sha256": "f4a5795b8b001a7cc4c04fd9eb3959f02df70181afe23691e733cb3aa4eb8588",
+  "code_commit": "0e48ad62e428b7e0aeca51b83b444a4d226aa8cb",
+  "frames": [
+    "000010",
+    "000011"
+  ],
+  "tests": [
+    {
+      "budget": 0,
+      "bytes": [
+        0,
+        0
+      ],
+      "events": [
+        0,
+        0
+      ],
+      "direct_wire_exact": true,
+      "repeated_exact": true
+    },
+    {
+      "budget": 4096,
+      "bytes": [
+        3618,
+        3608
+      ],
+      "events": [
+        512,
+        512
+      ],
+      "direct_wire_exact": true,
+      "repeated_exact": true
+    },
+    {
+      "budget": 8192,
+      "bytes": [
+        8192,
+        8191
+      ],
+      "events": [
+        1066,
+        1072
+      ],
+      "direct_wire_exact": true,
+      "repeated_exact": true
+    }
+  ],
+  "training_started": false,
+  "status": "audit_only_no_AP",
+  "trainable": [
+    "content.project.weight"
+  ],
+  "trainable_parameters": 4096,
+  "zero_budget_is_ego_exact": true,
+  "ego_matches_source_exact": true,
+  "same_events_repacking": [
+    {
+      "frame": "000010",
+      "events": 512,
+      "variants": [
+        {
+          "packet_events": 64,
+          "packets": 8,
+          "bytes": 8325
+        },
+        {
+          "packet_events": 256,
+          "packets": 2,
+          "bytes": 3618
+        },
+        {
+          "packet_events": 1024,
+          "packets": 1,
+          "bytes": 2832
+        }
+      ],
+      "counts_and_predictions_exact": true,
+      "candidate_events": 10560,
+      "saturated_latent_entries": 0
+    },
+    {
+      "frame": "000011",
+      "events": 512,
+      "variants": [
+        {
+          "packet_events": 64,
+          "packets": 8,
+          "bytes": 8285
+        },
+        {
+          "packet_events": 256,
+          "packets": 2,
+          "bytes": 3608
+        },
+        {
+          "packet_events": 1024,
+          "packets": 1,
+          "bytes": 2827
+        }
+      ],
+      "counts_and_predictions_exact": true,
+      "candidate_events": 13970,
+      "saturated_latent_entries": 0
+    }
+  ],
+  "passed": true,
+  "gradient_l1": {
+    "content.project.weight": 1.248642921447754
+  },
+  "loss": 1.6936929282954867,
+  "sampled_budgets": [
+    7036,
+    7256
+  ],
+  "sampled_bytes": [
+    7034,
+    7218
+  ],
+  "all_other_parameters_and_buffers_unchanged": true,
+  "optimizer_step_discarded": true
+}
