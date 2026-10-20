@@ -1,0 +1,17 @@
+{
+  "conv_macs_per_frame": {
+    "full": 150532300800,
+    "original": 150532300800,
+    "partial": 47948544000
+  },
+  "discarded_probe_weights": true,
+  "frames": 32,
+  "heavy_calls_on_partial": 0,
+  "immutable_anchor_checked": true,
+  "partial_depths": [
+    1,
+    2
+  ],
+  "prediction_max_error": 0.0,
+  "status": "PASSED"
+}

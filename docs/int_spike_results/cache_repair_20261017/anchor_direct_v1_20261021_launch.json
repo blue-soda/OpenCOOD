@@ -1,0 +1,23 @@
+{
+  "code_commit": "981f208d06d7a7674a95fb9383065cc2fca8368e",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.train_int_anchor_residual",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/anchor_direct_v1_20261021",
+    "--arm",
+    "direct",
+    "--gpu",
+    "0",
+    "--epochs",
+    "12",
+    "--worker"
+  ],
+  "created_unix": 1792521173.5791416,
+  "gpu": 0,
+  "pid": 30200,
+  "timeout_seconds": 28800
+}
