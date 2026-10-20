@@ -12,7 +12,7 @@ import torch
 from opencood.models.e3dsnn_content_detector import E3dsnnContentDetector
 from opencood.models.fuse_modules.e3dsnn_joint_membrane import JointMembraneReceiver
 from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract
-from opencood.models.fuse_modules.e3dsnn_progressive_sender import ProgressiveSender
+from opencood.models.fuse_modules.e3dsnn_progressive_sender import ProgressiveSender, l1_partition
 from opencood.utils import content_feature_packet as codec
 from opencood.utils.e3dsnn_transplant import encoder_digest
 
@@ -27,7 +27,12 @@ class E3dsnnJointDetector(E3dsnnContentDetector):
             use_local_membrane=bool(args.get('joint_local_membrane', True)))
         self.progressive_sender = ProgressiveSender(channels=32)
         self.joint_learn_order = bool(args.get('joint_learn_order', True))
+        self.joint_eval_order = args.get('joint_eval_order', 'learned')
+        if self.joint_eval_order not in ('learned', 'l1'):
+            raise ValueError('Unknown joint evaluation ordering')
         self.sender_ranking = 'learned_content32_voxel_batch' if self.joint_learn_order else 'frozen_content32_voxel_batch'
+        if self.joint_eval_order == 'l1':
+            self.sender_ranking = 'l1_content32_voxel_batch'
         self.message_support_kind = 'received_3d_before_membrane_update'
         self.content_prefix_semantics = 'learned disjoint voxel batches of Count3; content and order trained jointly'
         for name, p in self.named_parameters():
@@ -41,6 +46,8 @@ class E3dsnnJointDetector(E3dsnnContentDetector):
             raise ValueError('Unexpected content-to-joint checkpoint mapping')
 
     def forward(self, data):
+        if self.training and self.joint_eval_order != 'learned':
+            raise ValueError('Alternative joint ordering is an inference-only control')
         if self.training and (self.packet_roundtrip or self.readout_prefix != 3 or self.content_full_packet):
             raise ValueError('Training requires three differentiable prefixes')
         b = data['object_bbx_mask'].shape[0]
@@ -100,7 +107,8 @@ class E3dsnnJointDetector(E3dsnnContentDetector):
                 # counts. This preserves the schedule for a transport-only test;
                 # its extra computation is not an optimized single-pass latency.
                 counts = wire(counts, i, 3, 'full_then_same_schedule')
-            chunks.append(self.progressive_sender(counts, 3))
+            chunks.append(self.progressive_sender(counts, 3) if self.joint_eval_order == 'learned'
+                          else l1_partition(counts, 3))
         outputs = []
         for k in range(self.readout_prefix):
             for i in range(b):

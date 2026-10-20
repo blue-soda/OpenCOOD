@@ -1,0 +1,18 @@
+{
+  "state": "complete",
+  "jobs": [
+    "joint_adapt10_train",
+    "joint_adapt10_p1",
+    "joint_adapt10_p1_replay",
+    "joint_adapt10_p2",
+    "joint_adapt10_p2_replay",
+    "joint_adapt10_p3",
+    "joint_adapt10_p3_replay",
+    "joint_adapt10_off",
+    "joint_adapt10_off_replay",
+    "joint_adapt10_full",
+    "joint_adapt10_full_replay"
+  ],
+  "supervisor_pid": 34754,
+  "updated_unix": 1792407607.310118
+}
