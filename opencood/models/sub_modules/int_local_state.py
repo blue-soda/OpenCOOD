@@ -97,6 +97,10 @@ class LocalStateDetector(nn.Module):
             nx, ny, _ = self.scatter.model_cfg['grid_size']
             return self.cls_head.weight.new_zeros((1, 64, int(ny), int(nx)))
 
+    def compute_update(self, packed, old, valid, state, meta, lattice, reason):
+        """Dense baseline; inference-only regional variants override this hook."""
+        return self.update(packed), {}, {}
+
     def step_spatial(self, spatial, state, meta, detach_state=True):
         if spatial.shape[0] != 1:
             raise ValueError('One explicit sequence state required')
@@ -123,16 +127,20 @@ class LocalStateDetector(nn.Module):
         else:
             old = evidence.new_zeros((1, 256, *evidence.shape[-2:]))
             valid = torch.zeros_like(old[:, :1], dtype=torch.bool)
-        value = self.update(torch.cat([evidence, old, valid.to(old.dtype)], dim=1))
+        value, extra_state, extra_info = self.compute_update(
+            torch.cat([evidence, old, valid.to(old.dtype)], dim=1),
+            old, valid, state, meta, lattice, reason)
         pred = dict(psm=self.cls_head(value), rm=self.reg_head(value))
         if self.dir_head is not None:
             pred['dm'] = self.dir_head(value)
         new = dict(value=value.detach() if detach_state else value, pose=meta['pose'],
                    scene=meta['segment'], timestamp_us=int(meta['timestamp_us']), grid_range=lattice)
+        new.update(extra_state)
         size = value.numel() * value.element_size()
         info = dict(reset=reason, cache_bytes=size, state_bytes=size,
                     memory_policy=self.memory_policy, dense_update=True,
                     cache_stages=[dict(actual_write_fraction=1., executed_input_area_ratio=1.) for _ in range(3)])
+        info.update(extra_info)
         return pred, new, info
 
     def step(self, data, state, meta, detach_state=True):

@@ -1,0 +1,78 @@
+"""Inference-only regional updates of the migrated local high-level state."""
+import math
+import torch
+import torch.nn.functional as F
+from opencood.models.sub_modules.int_local_state import LocalStateDetector
+from opencood.models.sub_modules.int_feature_memory import warp_bev
+from opencood.models.sub_modules.int_cache_repair import refresh_tiles, expand_tiles
+
+
+def change_request(current, reference, valid, age, fraction, tile, max_age):
+    """Rank tiles by relative shallow-feature change since their last refresh."""
+    pool = lambda x: F.avg_pool2d(x, tile, tile, ceil_mode=True, count_include_pad=False)
+    error = pool((current-reference).square().mean(1, keepdim=True))
+    energy = torch.maximum(pool(current.square().mean(1, keepdim=True)),
+                           pool(reference.square().mean(1, keepdim=True)))
+    score = error / energy.clamp_min(1e-6)
+    chosen = torch.zeros_like(score, dtype=torch.bool)
+    count = int(math.ceil(fraction * score.numel()))
+    if fraction == 1:
+        chosen.fill_(True)
+    elif count:
+        indices = score.flatten().topk(count, sorted=False).indices
+        chosen.view(-1)[indices] = score.flatten()[indices] > 0
+    # Mandatory coverage/age is additional to the nominal ranking budget.
+    return expand_tiles(chosen, tile, current.shape[-2:]) | ~valid | (age >= max_age-1e-6)
+
+
+class RegionalLocalStateDetector(LocalStateDetector):
+    """Same weights as B; unselected cells retain their warped high-level state.
+
+    The extra shallow reference and age follow the same nearest-neighbor warp as
+    H. Reference cells change only when their corresponding H cells are written,
+    so small successive input changes accumulate until a refresh.
+    """
+    def __init__(self, teacher, config, fraction=.25, tile=16, max_age=.5,
+                 execution='sparse', fallback_fraction=.85):
+        if not 0 <= fraction <= 1 or tile < 1 or not 0 < max_age < float('inf'):
+            raise ValueError('Invalid regional update policy')
+        if execution not in ('sparse', 'masked_dense') or not 0 < fallback_fraction <= 1:
+            raise ValueError('Invalid execution policy')
+        self.fraction, self.tile, self.max_age = fraction, tile, max_age
+        self.execution, self.fallback_fraction = execution, fallback_fraction
+        super().__init__(teacher, config, 'recurrent')
+
+    def compute_update(self, packed, old, valid, state, meta, lattice, reason):
+        if self.training:
+            raise ValueError('Regional cache is inference-only; no cache-aware training yet')
+        evidence = packed[:, :128]
+        if reason is not None:
+            value = self.update(packed)
+            written = torch.ones_like(valid)
+            reference = evidence
+            age = torch.zeros_like(evidence[:, :1])
+            stats = dict(requested_fraction=1., selected_fraction=1.,
+                         executed_input_area_ratio=1., actual_write_fraction=1.,
+                         crop_area_ratio_before_fallback=1., tiles=1, fallback=False)
+            mandatory = 1.
+        else:
+            auxiliary, aux_valid = warp_bev(
+                torch.cat([state['evidence_cache'], state['cache_age']], 1),
+                state['pose'], meta['pose'], lattice)
+            reference = auxiliary[:, :128]
+            dt = (int(meta['timestamp_us'])-state['timestamp_us'])/1e6
+            age = auxiliary[:, 128:] + dt
+            coverage = valid & aux_valid
+            requested = change_request(evidence, reference, coverage, age,
+                                       self.fraction, self.tile, self.max_age)
+            mandatory = float((~coverage | (age >= self.max_age-1e-6)).float().mean())
+            value, written, stats = refresh_tiles(
+                self.update, packed, old, requested, 1, self.update.radius,
+                tile=self.tile, fallback_fraction=self.fallback_fraction,
+                execution=self.execution)
+        reference = torch.where(written, evidence, reference).detach()
+        age = torch.where(written, torch.zeros_like(age), age).detach()
+        stats.update(mandatory_fraction=mandatory, max_age_after_update=float(age.max()))
+        size = sum(x.numel()*x.element_size() for x in (value, reference, age))
+        return value, dict(evidence_cache=reference, cache_age=age), dict(
+            dense_update=False, cache_bytes=size, state_bytes=size, region_cache=stats)
