@@ -102,6 +102,20 @@ class RegionalStateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             cached.train().step_spatial(x, None, self.meta(0))
 
+    def test_oracle_diagnostic_counts_full_update_and_does_not_inject_skipped_state(self):
+        cached = self.model(fraction=0., tile=4, selector='oracle_state')
+        calls = []
+        hook = cached.update.register_forward_pre_hook(lambda m, args: calls.append(1))
+        with torch.no_grad():
+            _, first, _ = cached.step_spatial(torch.randn(1,64,40,48), None, self.meta(0))
+            _, second, info = cached.step_spatial(torch.randn(1,64,40,48), first, self.meta(1))
+        hook.remove()
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(info['region_cache']['actual_write_fraction'], 0.)
+        self.assertEqual(info['region_cache']['executed_input_area_ratio'], 1.)
+        self.assertEqual(info['region_cache']['oracle_full_update'], 1.)
+        self.assertTrue(torch.equal(first['value'], second['value']))
+
 
 if __name__ == '__main__':
     unittest.main()

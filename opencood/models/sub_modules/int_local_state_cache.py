@@ -7,6 +7,17 @@ from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.models.sub_modules.int_cache_repair import refresh_tiles, expand_tiles
 
 
+class ComputedUpdate(torch.nn.Module):
+    """Only for an explicitly expensive selector diagnostic; no second U call."""
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+        self.eval()
+
+    def forward(self, unused):
+        return self.value
+
+
 def change_request(current, reference, valid, age, fraction, tile, max_age):
     """Rank tiles by relative shallow-feature change since their last refresh."""
     pool = lambda x: F.avg_pool2d(x, tile, tile, ceil_mode=True, count_include_pad=False)
@@ -33,14 +44,17 @@ class RegionalLocalStateDetector(LocalStateDetector):
     so small successive input changes accumulate until a refresh.
     """
     def __init__(self, teacher, config, fraction=.25, tile=16, max_age=.5,
-                 execution='sparse', fallback_fraction=.85, batch_size=8):
+                 execution='sparse', fallback_fraction=.85, batch_size=8, selector='shallow'):
         if not 0 <= fraction <= 1 or tile < 1 or not 0 < max_age < float('inf'):
             raise ValueError('Invalid regional update policy')
         if execution not in ('sparse', 'masked_dense', 'fixed_sparse') or not 0 < fallback_fraction <= 1 or batch_size < 1:
             raise ValueError('Invalid execution policy')
+        if selector not in ('shallow', 'oracle_state'):
+            raise ValueError('Unknown selector')
         self.fraction, self.tile, self.max_age = fraction, tile, max_age
         self.execution, self.fallback_fraction = execution, fallback_fraction
         self.batch_size = batch_size
+        self.selector = selector
         super().__init__(teacher, config, 'recurrent')
 
     def compute_update(self, packed, old, valid, state, meta, lattice, reason):
@@ -64,16 +78,22 @@ class RegionalLocalStateDetector(LocalStateDetector):
             dt = (int(meta['timestamp_us'])-state['timestamp_us'])/1e6
             age = auxiliary[:, 128:] + dt
             coverage = valid & aux_valid
-            requested = change_request(evidence, reference, coverage, age,
+            candidate = self.update(packed) if self.selector == 'oracle_state' else None
+            gate_current, gate_reference = (candidate, old) if candidate is not None else (evidence, reference)
+            requested = change_request(gate_current, gate_reference, coverage, age,
                                        self.fraction, self.tile, self.max_age)
             mandatory = float((~coverage | (age >= self.max_age-1e-6)).float().mean())
             value, written, stats = refresh_tiles(
-                self.update, packed, old, requested, 1, self.update.radius,
+                self.update if candidate is None else ComputedUpdate(candidate),
+                packed, old, requested, 1, self.update.radius,
                 tile=self.tile, fallback_fraction=self.fallback_fraction,
-                execution=self.execution, batch_size=self.batch_size)
+                execution=self.execution if candidate is None else 'masked_dense', batch_size=self.batch_size)
         reference = torch.where(written, evidence, reference).detach()
         age = torch.where(written, torch.zeros_like(age), age).detach()
         stats.update(mandatory_fraction=mandatory, max_age_after_update=float(age.max()))
+        stats['oracle_full_update'] = float(self.selector == 'oracle_state')
+        if self.selector == 'oracle_state':
+            stats['executed_input_area_ratio'] = 1.
         size = sum(x.numel()*x.element_size() for x in (value, reference, age))
         return value, dict(evidence_cache=reference, cache_age=age), dict(
             dense_update=False, cache_bytes=size, state_bytes=size, region_cache=stats)

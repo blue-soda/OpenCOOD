@@ -78,14 +78,15 @@ def worker(a):
                       source_ap70=source_ap, stage=evaluation_stage,
                       policy=dict(fractions=a.fractions, tile=a.tile, max_age=a.cache_max_age,
                                   fallback_fraction=a.fallback_fraction,
-                                  selector='relative_shallow_change_since_cell_refresh',
+                                  selector=a.selector,
                                   mandatory='new_coverage_and_per_cell_age',
                                   execution=a.execution, batch_size=a.batch_size,
                                   fallback_planner='merged_rectangles', radius=4))
     write_json(out/'provenance.json', provenance)
     # Build every copied module BEFORE installing teacher-only hooks: deepcopy
     # also copies hooks, which would otherwise forbid legitimate student calls.
-    common = dict(tile=a.tile, max_age=a.cache_max_age, fallback_fraction=a.fallback_fraction)
+    common = dict(tile=a.tile, max_age=a.cache_max_age, fallback_fraction=a.fallback_fraction,
+                  selector=a.selector)
     probe_models = [
         make_model(teacher, cfg, saved),
         make_model(teacher, cfg, saved, fraction=1., **common),
@@ -174,6 +175,7 @@ def worker(a):
                       peak_gpu_bytes=torch.cuda.max_memory_allocated(), weights_unchanged=True,
                       timing_scope='One GPU, same frames, rotating mode order; synchronized full model step, including observation, warps, selector, crop planning, U, writeback and heads; excludes loading, voxelization, H2D, postprocessing.',
                       caveats=['Pilot prefix AP is not full validation AP.',
+                               'oracle_state, if enabled, executes full U before selection: diagnostic only, not deployable skipping or a formal AP upper bound.',
                                'Nominal fraction excludes mandatory coverage, age, tile expansion and dense fallback.',
                                'Executed input area counts overlapping halos; it is not a FLOP measurement.',
                                'All modes own their recursive states; skipped states may affect later refreshed states.',
@@ -199,6 +201,7 @@ def main():
     p.add_argument('--cache-max-age', type=float, default=.5)
     p.add_argument('--fallback-fraction', type=float, default=.85)
     p.add_argument('--execution', choices=['sparse','fixed_sparse'], default='sparse')
+    p.add_argument('--selector', choices=['shallow','oracle_state'], default='shallow')
     p.add_argument('--batch-size', type=int, default=8)
     p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
