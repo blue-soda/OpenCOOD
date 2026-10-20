@@ -22,6 +22,6 @@
 
 control与prefix_rate分别由coordinator28321/28558启动，共享GPU2；两次准入各5次采样利用率均0%、空闲24252MiB，每进程20% PyTorch分配上限。启动元数据明确training_seed20260930、evaluation_seed20260929，并保存真实训练命令。当前两个round_status均`running/zero`、`training_started=false`，零适配和CPU复核通过后各10轮训练，尚无新种子AP结论。
 
-证据：[启动与训练命令](results/joint_objective_seed30_20261020/launches.json)、[初始状态](results/joint_objective_seed30_20261020/initial_status.json)、[14项检查](results/joint_objective_seed30_20261020/tests.log)、[与远端一致SHA](results/joint_objective_seed30_20261020/sha256.json)。
+证据：[启动与训练命令](results/joint_objective_seed30_20261020/launches.json)、[初始状态](results/joint_objective_seed30_20261020/initial_status.json)、[14项检查](results/joint_objective_seed30_20261020/cpu_tests.txt)、[与远端一致SHA](results/joint_objective_seed30_20261020/sha256.json)。
 
 下一次自动任务读取两个`e3dsnn_joint_objective_<control|prefix_rate>_seed30_20261020/round_status.json`及pipeline；最终必须五模式结果完整、CPU精确复算和冻结至第10轮通过，再合并两个微调种子的逐种子表。源权重固定使这不是全训练链独立初始化实验。无关键变化静默；90分钟间隔保持，不重复prepare/launch。
