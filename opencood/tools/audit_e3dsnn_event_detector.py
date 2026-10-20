@@ -1,5 +1,6 @@
 """Bounded real-data E0 audit; discarded optimizer step, no AP/training claim."""
 import argparse
+from dataclasses import asdict
 import json
 from pathlib import Path
 import random
@@ -13,6 +14,9 @@ from opencood.data_utils.datasets import build_dataset
 from opencood.tools import train_utils
 from opencood.tools.train_e3dsnn_single import checked_forward
 from opencood.tools.launch_e3dsnn_hybrid_round import sha
+from opencood.models.fuse_modules.e3dsnn_event_stream import integrate_and_fire, stream_readout
+from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract
+from opencood.utils import event_stream_packet as wire
 
 
 def audit(root, base):
@@ -72,6 +76,37 @@ def audit(root, base):
         assert all(torch.equal(local[k],old_local[k]) for k in ('psm','rm','dm'))
         report['ego_matches_source_exact'] = True
         del old
+        report['same_events_repacking'] = []
+        for i in range(2):
+            drive = torch.relu(model.content.project(road.dense()[i:i+1]))
+            stream = integrate_and_fire(drive, model.event_max_spikes)
+            c = MessageContract(str(data['frame_ids'][i]), str(data['road_frame_ids'][i]),
+                'infrastructure', model._encoder_identity, 'event-content32-'+model.event_basis_digest(),
+                tuple(int(n) for n in membrane.shape[2:]), tuple(model.origin), tuple(model.step),
+                tuple(int(n) for n in data['timestamps_us'][i].cpu().tolist()))
+            pose = data['road_to_ego'][i:i+1]
+            meta = dict(contract=asdict(c), source_to_ego=pose[0].cpu().tolist(), channels=32,
+                        max_spikes=model.event_max_spikes, schema='if-unit-events-v1')
+            n = min(512, len(stream.addresses))
+            expected = None; sizes = []
+            for capacity in (64,256,1024):
+                packets, received, used = wire.pack_prefix(stream.addresses[:n],meta,2**30,capacity)
+                acc = wire.StreamAccumulator(meta)
+                for packet in packets:
+                    acc.receive(packet)
+                counts = drive.new_tensor(acc.finish())
+                assert torch.equal(counts,stream.prefix(n)) and received==n
+                state = stream_readout(membrane[i:i+1],counts,pose,c,
+                                       model.joint_receiver,model.content.decode)
+                detected = model.detect_bev(state.flatten(1,2))
+                if expected is not None:
+                    assert all(torch.equal(expected[k],detected[k]) for k in ('psm','rm','dm'))
+                expected = detected
+                sizes.append(dict(packet_events=capacity,packets=len(packets),bytes=used))
+            report['same_events_repacking'].append(dict(frame=data['frame_ids'][i],
+                events=n,variants=sizes,counts_and_predictions_exact=True,
+                candidate_events=len(stream.addresses),
+                saturated_latent_entries=int((drive>=model.event_max_spikes).sum())))
     model.encode_lidar, model.encode_membrane = original_encode, original_membrane
     model.packet_roundtrip = False; model.event_budget = 4096
     model.train(); model.message_dropout = 0.
