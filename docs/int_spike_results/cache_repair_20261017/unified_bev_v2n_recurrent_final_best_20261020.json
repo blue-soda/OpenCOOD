@@ -1,0 +1,6 @@
+{
+  "ap70": 0.6891296200707171,
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_recurrent/epoch_040/student.pth",
+  "epoch": 40,
+  "sha256": "ebca8b7748c54087e2fccef02152ce680c24b4dec81924d17406af44651d7f35"
+}

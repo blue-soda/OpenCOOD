@@ -1,0 +1,11 @@
+{
+  "best": {
+    "ap70": 0.6750078246950171,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/unified_bev_v2n_reset/epoch_056/student.pth",
+    "epoch": 56,
+    "sha256": "36c2ad735c0f7bcfdcbf5d7174d5b9908de13680be207f7f7397cb470277b200"
+  },
+  "epochs": 60,
+  "status": "COMPLETED",
+  "stop_reason": "max_epochs_not_proof_of_convergence"
+}
