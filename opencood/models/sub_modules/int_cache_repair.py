@@ -63,6 +63,21 @@ def rectangles(active):
     return result
 
 
+def crop_jobs(regions, h, w, oh, ow, stride, radius, tile):
+    jobs = []
+    area = 0
+    for ty, tx, ey, ex in regions:
+        y0, x0 = ty*tile, tx*tile
+        y1, x1 = min(ey*tile, oh), min(ex*tile, ow)
+        iy0 = max(0, ((y0*stride-radius)//stride)*stride)
+        ix0 = max(0, ((x0*stride-radius)//stride)*stride)
+        iy1 = min(h, math.ceil(((y1-1)*stride+radius+1)/stride)*stride)
+        ix1 = min(w, math.ceil(((x1-1)*stride+radius+1)/stride)*stride)
+        jobs.append((y0,x0,y1,x1,iy0,ix0,iy1,ix1))
+        area += (iy1-iy0)*(ix1-ix0)
+    return jobs, area
+
+
 def stage_dependency_work(module, output_mask, input_shape):
     """Ideal deduplicated convolution work for the frozen BasicBlock stack.
 
@@ -114,7 +129,7 @@ intermediate BN offsets would then produce a different boundary condition.
 """
     if module.training or x.shape[0] != 1:
         raise ValueError('Frozen eval modules and batch=1 are required')
-    if execution not in ('sparse','masked_dense','gather'):raise ValueError('Unknown tile execution')
+    if execution not in ('sparse','masked_dense','gather','fixed_sparse'):raise ValueError('Unknown tile execution')
     if layout not in ('merged','fixed') or batch_size<1:raise ValueError('Invalid crop layout/batch')
     h, w = x.shape[-2:]
     oh, ow = cached.shape[-2:]
@@ -124,17 +139,7 @@ intermediate BN offsets would then produce a different boundary condition.
     written = expand_tiles(active, tile, (oh, ow))
     regions = (rectangles(active) if layout=='merged' else
                [[y,x,y+1,x+1] for y,row in enumerate(active[0,0].cpu().tolist()) for x,on in enumerate(row) if on])
-    jobs = []
-    area = 0
-    for ty, tx, ey, ex in regions:
-        y0, x0 = ty*tile, tx*tile
-        y1, x1 = min(ey*tile, oh), min(ex*tile, ow)
-        iy0 = max(0, ((y0*stride-radius)//stride)*stride)
-        ix0 = max(0, ((x0*stride-radius)//stride)*stride)
-        iy1 = min(h, math.ceil(((y1-1)*stride+radius+1)/stride)*stride)
-        ix1 = min(w, math.ceil(((x1-1)*stride+radius+1)/stride)*stride)
-        jobs.append((y0,x0,y1,x1,iy0,ix0,iy1,ix1))
-        area += (iy1-iy0)*(ix1-ix0)
+    jobs, area = crop_jobs(regions, h, w, oh, ow, stride, radius, tile)
     ratio = area / float(h*w)
     stats = dict(requested_fraction=float(requested.float().mean()),
                  selected_fraction=float(written.float().mean()),
@@ -153,6 +158,12 @@ intermediate BN offsets would then produce a different boundary condition.
         # Gathered dependencies have no duplicated rectangle halos.
         stats['executed_input_area_ratio']=float(F.max_pool2d(written.float(),5,1,2).mean())
         return torch.where(written,gathered_update(module,x,written),cached),written,stats
+    if execution=='fixed_sparse':
+        # Keep merged planner's selection/fallback decision identical. Only the
+        # execution changes: equal-size tiles batch better but duplicate halos.
+        regions = [[y,x,y+1,x+1] for y,row in enumerate(active[0,0].cpu().tolist()) for x,on in enumerate(row) if on]
+        jobs, area = crop_jobs(regions, h, w, oh, ow, stride, radius, tile)
+        stats.update(executed_input_area_ratio=area/float(h*w), tiles=len(jobs))
     output = cached.clone()
     groups = {}
     for job in jobs:

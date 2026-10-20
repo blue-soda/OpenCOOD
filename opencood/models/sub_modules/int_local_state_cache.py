@@ -33,13 +33,14 @@ class RegionalLocalStateDetector(LocalStateDetector):
     so small successive input changes accumulate until a refresh.
     """
     def __init__(self, teacher, config, fraction=.25, tile=16, max_age=.5,
-                 execution='sparse', fallback_fraction=.85):
+                 execution='sparse', fallback_fraction=.85, batch_size=8):
         if not 0 <= fraction <= 1 or tile < 1 or not 0 < max_age < float('inf'):
             raise ValueError('Invalid regional update policy')
-        if execution not in ('sparse', 'masked_dense') or not 0 < fallback_fraction <= 1:
+        if execution not in ('sparse', 'masked_dense', 'fixed_sparse') or not 0 < fallback_fraction <= 1 or batch_size < 1:
             raise ValueError('Invalid execution policy')
         self.fraction, self.tile, self.max_age = fraction, tile, max_age
         self.execution, self.fallback_fraction = execution, fallback_fraction
+        self.batch_size = batch_size
         super().__init__(teacher, config, 'recurrent')
 
     def compute_update(self, packed, old, valid, state, meta, lattice, reason):
@@ -69,7 +70,7 @@ class RegionalLocalStateDetector(LocalStateDetector):
             value, written, stats = refresh_tiles(
                 self.update, packed, old, requested, 1, self.update.radius,
                 tile=self.tile, fallback_fraction=self.fallback_fraction,
-                execution=self.execution)
+                execution=self.execution, batch_size=self.batch_size)
         reference = torch.where(written, evidence, reference).detach()
         age = torch.where(written, torch.zeros_like(age), age).detach()
         stats.update(mandatory_fraction=mandatory, max_age_after_update=float(age.max()))

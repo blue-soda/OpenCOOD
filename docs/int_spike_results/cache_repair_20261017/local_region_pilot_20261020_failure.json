@@ -1,0 +1,4 @@
+{
+  "error": "RuntimeError('Teacher inference is forbidden')",
+  "status": "FAILED"
+}

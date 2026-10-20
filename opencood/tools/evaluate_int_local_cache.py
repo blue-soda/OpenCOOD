@@ -80,7 +80,8 @@ def worker(a):
                                   fallback_fraction=a.fallback_fraction,
                                   selector='relative_shallow_change_since_cell_refresh',
                                   mandatory='new_coverage_and_per_cell_age',
-                                  layout='merged_rectangles', radius=4))
+                                  execution=a.execution, batch_size=a.batch_size,
+                                  fallback_planner='merged_rectangles', radius=4))
     write_json(out/'provenance.json', provenance)
     # Build every copied module BEFORE installing teacher-only hooks: deepcopy
     # also copies hooks, which would otherwise forbid legitimate student calls.
@@ -88,11 +89,13 @@ def worker(a):
     probe_models = [
         make_model(teacher, cfg, saved),
         make_model(teacher, cfg, saved, fraction=1., **common),
-        make_model(teacher, cfg, saved, fraction=min(a.fractions), **common),
+        make_model(teacher, cfg, saved, fraction=min(a.fractions),
+                   execution=a.execution, batch_size=a.batch_size, **common),
         make_model(teacher, cfg, saved, fraction=min(a.fractions), execution='masked_dense', **common)]
     models = {'dense': make_model(teacher, cfg, saved)}
     for fraction in a.fractions:
-        models['cache_%g'%fraction] = make_model(teacher, cfg, saved, fraction=fraction, **common)
+        models['cache_%g'%fraction] = make_model(
+            teacher, cfg, saved, fraction=fraction, execution=a.execution, batch_size=a.batch_size, **common)
     def reject_teacher(module, inputs):
         raise RuntimeError('Teacher inference is forbidden')
     hooks = [m.register_forward_pre_hook(reject_teacher) for m in
@@ -195,9 +198,11 @@ def main():
     p.add_argument('--tile', type=int, default=16)
     p.add_argument('--cache-max-age', type=float, default=.5)
     p.add_argument('--fallback-fraction', type=float, default=.85)
+    p.add_argument('--execution', choices=['sparse','fixed_sparse'], default='sparse')
+    p.add_argument('--batch-size', type=int, default=8)
     p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
-    if (a.frames < 32 or a.tile < 1 or not 0<a.cache_max_age<float('inf')
+    if (a.frames < 32 or a.tile < 1 or a.batch_size < 1 or not 0<a.cache_max_age<float('inf')
             or not 0<a.fallback_fraction<=1 or not a.fractions
             or any(not 0<=f<=1 for f in a.fractions) or len(set(a.fractions)) != len(a.fractions)):
         p.error('Invalid bounded regional evaluation policy')

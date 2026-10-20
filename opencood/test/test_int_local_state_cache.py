@@ -75,6 +75,22 @@ class RegionalStateTests(unittest.TestCase):
         self.assertTrue(request[..., -1, -1].all())
         self.assertEqual(int(request.sum()), 5)
 
+    def test_fixed_batch_execution_keeps_merged_policy_and_recursive_outputs(self):
+        merged = self.model(fraction=.15, tile=4, fallback_fraction=1.)
+        fixed = self.model(fraction=.15, tile=4, fallback_fraction=1.,
+                           execution='fixed_sparse', batch_size=32)
+        fixed.load_state_dict(merged.state_dict())
+        ms = fs = None
+        with torch.no_grad():
+            for i in range(4):
+                x = torch.randn(1,64,48,64)
+                a, ms, mi = merged.step_spatial(x, ms, self.meta(i, i*.3))
+                b, fs, fi = fixed.step_spatial(x, fs, self.meta(i, i*.3))
+                self.assertTrue(all(torch.allclose(a[k], b[k], atol=1e-5, rtol=1e-4) for k in a))
+                self.assertEqual(mi['region_cache']['actual_write_fraction'], fi['region_cache']['actual_write_fraction'])
+                self.assertEqual(mi['region_cache']['fallback'], fi['region_cache']['fallback'])
+                self.assertTrue(torch.equal(ms['cache_age'], fs['cache_age']))
+
     def test_reset_clears_age_and_training_is_rejected(self):
         cached = self.model(fraction=0.)
         x = torch.randn(1,64,40,48)
