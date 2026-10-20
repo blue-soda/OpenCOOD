@@ -1,0 +1,105 @@
+{
+  "caveat": "Engineering only; no AP or speed claim. Probe optimizer step is discarded before formal training.",
+  "device": "cuda",
+  "frames": [
+    {
+      "feature_kd": 0.026562098413705826,
+      "frame": "015371",
+      "gt": null,
+      "head_kd": 0.10958398878574371,
+      "reset": "initial",
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": false
+    },
+    {
+      "feature_kd": 0.024659518152475357,
+      "frame": "015372",
+      "gt": 0.31692903714295184,
+      "head_kd": 0.0966530442237854,
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": true
+    },
+    {
+      "feature_kd": 0.025625932961702347,
+      "frame": "015373",
+      "gt": 0.39396420639577795,
+      "head_kd": 0.10161463916301727,
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": true
+    },
+    {
+      "feature_kd": 0.025855178013443947,
+      "frame": "015374",
+      "gt": 0.3706244344322209,
+      "head_kd": 0.10588817298412323,
+      "reset": null,
+      "state_shape": [
+        1,
+        256,
+        100,
+        252
+      ],
+      "supervised": true
+    }
+  ],
+  "frozen_parameters": 768,
+  "gradient_norm_before_clip": 5.069814682006836,
+  "history_projection_gradient_l1": 7.758621692657471,
+  "initial_state_restored": true,
+  "initialization": "fixed_phase_b_refinement",
+  "manifest_start_index": 26,
+  "migrated_tensor_equality": true,
+  "migration_check_scope": "Before optional checkpoint loading",
+  "new_context_bn2_gradient_l1": [],
+  "optimizer_groups": [
+    {
+      "lr": 0.0001,
+      "name": "projection",
+      "parameters": 49408
+    },
+    {
+      "lr": 1e-05,
+      "name": "migrated_update",
+      "parameters": 2099712
+    },
+    {
+      "lr": 1e-06,
+      "name": "shallow",
+      "parameters": 820992
+    },
+    {
+      "lr": 1e-06,
+      "name": "heads",
+      "parameters": 5140
+    }
+  ],
+  "optimizer_step_changed_projection": true,
+  "previous_state_gradient_l1_after_probe_update": 26.553619861602783,
+  "selection": "First contiguous requested-length window containing a training label; initial state empty",
+  "source_prediction_max_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "status": "PASSED",
+  "trainable_parameters": 2975252,
+  "update_radius": 4
+}
