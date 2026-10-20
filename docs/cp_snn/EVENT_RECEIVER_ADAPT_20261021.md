@@ -1,5 +1,14 @@
 # 固定任务脉冲流的接收映射适配（2026-10-21）
 
+## 实际启动与审计通过
+
+两组真实batch审计均通过：直接/解码预测逐值一致、零通信等于原ego、仅登记模块有有限非零梯度、所有冻结项不变；共享同一源编码时，接收器更新前后发送事件数/字节保持一致。D梯度L1为0.500330；完整receiver组尺度/门控梯度为0.110475/0.592559。审计优化步已丢弃。
+
+181 GPU2启动decode（supervisor PID38700），GPU3启动receiver（PID38701），启动代码main `e7e35b65cf093fb2c108a03a9ccc55d42f440184`。快照时间：2026-10-21T05:33:13.529581+08:00；两组处于完整epoch0验证，随后自动10轮训练与六预算wire/CPU复核。没有把初始验证当作正式优化，也没有本轮新AP结果。45分钟轮询保持不变。
+
+证据：[D审计](results/event_receiver_20261021/decode_audit.json)、[接收器审计](results/event_receiver_20261021/receiver_audit.json)、[启动和资源采样](results/event_receiver_20261021/launch.json)、[协议](results/event_receiver_20261021/protocol.json)、[初始状态](results/event_receiver_20261021/launch_snapshot.json)、[远端SHA](results/event_receiver_20261021/launch_sha256.json)。取回文件均已核对远端SHA。
+
+
 ## 定位与一次性预算
 
 总目标仍是SNN风格协作的合格真实通信量—BEV AP70。E1发送端两组已完成10轮与全量wire/CPU复核：4KiB下固定/随机组为57.70546%/57.72459%，低于固定ANN单车57.98007%；随机组16.38231kB时58.02911%，但仍不及旧低通信候选。不能把越过单车约0.049个百分点当作稳健成功，不能据此宣称随机预算或事件粒度优势。

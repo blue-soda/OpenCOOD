@@ -1,0 +1,128 @@
+{
+  "started_unix": 1792531895.3614094,
+  "source": "/data1/tzm/workspace/diagnostics/e3dsnn_event_training_20261021/log2048_16384/train/best_ap70.pth",
+  "source_sha256": "17b793cd47595570f2be37a07cd3977c825058c2ac704508637927c41717a27d",
+  "code_commit": "e7e35b65cf093fb2c108a03a9ccc55d42f440184",
+  "frames": [
+    "000010",
+    "000011"
+  ],
+  "tests": [
+    {
+      "budget": 0,
+      "bytes": [
+        0,
+        0
+      ],
+      "events": [
+        0,
+        0
+      ],
+      "direct_wire_exact": true,
+      "repeated_exact": true
+    },
+    {
+      "budget": 4096,
+      "bytes": [
+        4094,
+        4095
+      ],
+      "events": [
+        1014,
+        1036
+      ],
+      "direct_wire_exact": true,
+      "repeated_exact": true
+    },
+    {
+      "budget": 8192,
+      "bytes": [
+        8191,
+        8191
+      ],
+      "events": [
+        2150,
+        2194
+      ],
+      "direct_wire_exact": true,
+      "repeated_exact": true
+    }
+  ],
+  "training_started": false,
+  "status": "audit_only_no_AP",
+  "trainable": [
+    "content.expand.weight"
+  ],
+  "transport": "session_zlib",
+  "sampling": "log_uniform",
+  "train_scope": "decode",
+  "trainable_parameters": 4096,
+  "zero_budget_is_ego_exact": true,
+  "ego_matches_source_exact": true,
+  "same_events_repacking": [
+    {
+      "frame": "000010",
+      "events": 512,
+      "variants": [
+        {
+          "packet_events": 64,
+          "packets": 8,
+          "bytes": 8325
+        },
+        {
+          "packet_events": 256,
+          "packets": 2,
+          "bytes": 3618
+        },
+        {
+          "packet_events": 1024,
+          "packets": 1,
+          "bytes": 2832
+        }
+      ],
+      "counts_and_predictions_exact": true,
+      "candidate_events": 45152,
+      "saturated_latent_entries": 331
+    },
+    {
+      "frame": "000011",
+      "events": 512,
+      "variants": [
+        {
+          "packet_events": 64,
+          "packets": 8,
+          "bytes": 8285
+        },
+        {
+          "packet_events": 256,
+          "packets": 2,
+          "bytes": 3608
+        },
+        {
+          "packet_events": 1024,
+          "packets": 1,
+          "bytes": 2827
+        }
+      ],
+      "counts_and_predictions_exact": true,
+      "candidate_events": 60722,
+      "saturated_latent_entries": 462
+    }
+  ],
+  "cached_source_event_count_and_bytes_unchanged": true,
+  "passed": true,
+  "gradient_l1": {
+    "content.expand.weight": 0.5003302097320557
+  },
+  "loss": 1.6666697876045782,
+  "sampled_budgets": [
+    2276,
+    6286
+  ],
+  "sampled_bytes": [
+    2273,
+    6285
+  ],
+  "all_other_parameters_and_buffers_unchanged": true,
+  "optimizer_step_discarded": true
+}

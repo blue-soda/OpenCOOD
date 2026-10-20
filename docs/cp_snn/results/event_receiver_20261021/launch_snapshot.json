@@ -1,0 +1,27 @@
+{
+  "snapshot_unix": 1792531993.5295808,
+  "groups": {
+    "decode": {
+      "pipeline_status.json": {
+        "state": "running",
+        "stage": "train",
+        "started_unix": 1792531974.8631306
+      },
+      "train/progress.json": {
+        "state": "initial_validation",
+        "epoch": 0
+      }
+    },
+    "receiver": {
+      "pipeline_status.json": {
+        "state": "running",
+        "stage": "train",
+        "started_unix": 1792531974.811076
+      },
+      "train/progress.json": {
+        "state": "initial_validation",
+        "epoch": 0
+      }
+    }
+  }
+}

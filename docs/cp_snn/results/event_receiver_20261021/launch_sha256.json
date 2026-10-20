@@ -1,0 +1,8 @@
+{
+  "launch.json": "e25a892b6c2a6fce2ffadd3bb4c6b2ca3fa1de37afb7010fca60a5fa692b50ca",
+  "protocol.json": "022b85bde02f3a9ed1e8ac534d4e5632ea6add8d3dca6998205522d8ae36d003",
+  "processes.json": "3626a145f3a87690e67d4a3a32ddce6563ade6819b058a3760e62758bfada877",
+  "launch_snapshot.json": "1a79fc4c8947d8640d20e2bc6aa7d982d611046c6c7cc1a47a5937dd96a0e936",
+  "decode_audit.json": "e11c448b891e8702663a48e4d1d9e56200f1f22fc0df34edb25abf1d16332dc8",
+  "receiver_audit.json": "c7fa2cf73fc4e4cac6eb35f4055515850f969a4d35acb2a2e533bcf2f2d5dd3a"
+}
