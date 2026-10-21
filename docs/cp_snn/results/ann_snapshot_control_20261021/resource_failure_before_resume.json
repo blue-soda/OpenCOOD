@@ -1,0 +1,5 @@
+{
+  "state": "failed",
+  "error": "Traceback (most recent call last):\n  File \"/data1/tzm/workspace/OpenCOOD/opencood/tools/evaluate_e3dsnn_ann_snapshot.py\", line 180, in coordinate\n    write_json(root/(stage+'_'+name+'_admission.json'),check_gpu(gpu,True,.2))\n  File \"/data1/tzm/workspace/OpenCOOD/opencood/tools/launch_e3dsnn_joint_round.py\", line 55, in check_gpu\n    raise RuntimeError('GPU {} shared admission failed: {}'.format(gpu, result))\nRuntimeError: GPU 0 shared admission failed: {'accepted': False, 'minimum_free_mib': 8192, 'allocator_fraction': 0.2, 'mean_util_percent': 56.0, 'samples': [{'total_mib': 24576, 'free_mib': 18624, 'util_percent': 94}, {'total_mib': 24576, 'free_mib': 18624, 'util_percent': 87}, {'total_mib': 24576, 'free_mib': 18624, 'util_percent': 26}, {'total_mib': 24576, 'free_mib': 18624, 'util_percent': 45}, {'total_mib': 24576, 'free_mib': 18624, 'util_percent': 28}], 'policy': 'user_authorized_shared'}\n",
+  "note": "No automatic retry"
+}
