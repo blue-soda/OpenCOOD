@@ -1,0 +1,32 @@
+{
+  "labels": 1738,
+  "results": {
+    "cached": {
+      "ap50": 0.8293572735996714,
+      "ap70": 0.752781663200643,
+      "conv_gflops": 164.928132444874,
+      "mean_ms": 18.664474151033474,
+      "p95_ms": 29.908533836714923,
+      "partial_frames": 3789
+    },
+    "full": {
+      "ap50": 0.832712474888943,
+      "ap70": 0.7562138415770423,
+      "conv_gflops": 252.1387008,
+      "mean_ms": 29.35758191491748,
+      "p95_ms": 30.541700636968017,
+      "partial_frames": 0
+    },
+    "repaired": {
+      "ap50": 0.8321894450195149,
+      "ap70": 0.7548409022625181,
+      "conv_gflops": 165.27618158812564,
+      "mean_ms": 18.90876381228102,
+      "p95_ms": 29.85893173608929,
+      "partial_frames": 3789
+    }
+  },
+  "scans": 5794,
+  "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+  "status": "COMPLETED"
+}
