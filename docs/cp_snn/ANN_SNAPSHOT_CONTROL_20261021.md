@@ -1,5 +1,16 @@
 # 强量化ANN的紧凑快照参照（2026-10-21）
 
+## 共同协议工程参照已启动（2026-10-21，最新）
+
+本地及181各3项CPU测试通过。181 GPU0五次采样平均利用率21%、可用显存18624MiB，按已授权共享策略准入，PyTorch分配上限20%；其余GPU高占用，不干扰其他进程。流水线PID **59704**，代码`192e8a9`，根目录`/data1/tzm/workspace/diagnostics/e3dsnn_ann_snapshot_control_20261021`。SNN/ANN各自完整消息和2048bytes四个点，无新增训练。
+
+四项两帧smoke均已通过：SNN/ANN满消息各自与原模型同次源编码的真实forward预测逐值一致，全部8次直接/真实解码检查、冻结状态和独立CPU BEV/3D复算通过；已进入64帧审计，通过后自动进入四项全量。任何门槛失败会停止并保留证据，无自动重试；没有新的最终AP。首轮实现采用同一空间行/通道掩码/CRC/zlib协议，ANN两位码＋包内FP32尺度，SNN四位计数＋协议约定单位尺度，二者完整身份/几何信息全部计费。
+
+下一轮读取根目录`status.json`，检查smoke_complete/audit64_complete以及最终summary。全量完成前不将两帧或64帧AP作为结论。若ANN原模型等价失败，先检查读出顺序或接口，不能通过调模型权重绕过；若工程参照差异明显，仍保留历史训练、接收器和选择粒度差异的限定。
+
+证据：[资源准入与启动](results/ann_snapshot_control_20261021/launch.json)、[锁定协议](results/ann_snapshot_control_20261021/protocol.json)。[两家族真实smoke复核](results/ann_snapshot_control_20261021/smoke_review.json)。原SNN选择对照已结束，后续不再启动其完整体素分支。
+
+
 ## 实现与启动门槛（2026-10-21 14:42后，最新）
 
 共同快照格式`E3TS1`、两家族真实检测适配器及自动复核流水线已实现，尚待181实测。本地3项CPU测试通过：ANN尺度逐值往返与实际付费、SNN单位尺度、所有候选长度边界的暴力前缀对照、错位姿/basis/损坏包拒绝及非法尺度/计数拒绝。ANN非零值2bit、IF非零值4bit；其他空间行/掩码/完整元数据/CRC/zlib封装相同。

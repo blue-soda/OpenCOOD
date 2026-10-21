@@ -1,0 +1,359 @@
+{
+  "passed": true,
+  "groups": {
+    "if8_full": {
+      "passed": true,
+      "manifest": {
+        "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_event_receiver_20261021/receiver/train/best_ap70.pth",
+        "checkpoint_sha256": "60b7e0ff84e992862902aa9325b56ac13ab5658d70c4aacb194028638f5105dc",
+        "config": "/data1/tzm/workspace/diagnostics/e3dsnn_event_receiver_20261021/receiver/b4096.yaml",
+        "config_sha256": "07244b9ea3db4601f2c8dcad94f028c361e29a175d57ad10f222d8d8966eb5d0",
+        "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+        "split_sha256": {
+          "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+          "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+        },
+        "git_commit": "192e8a940ffd533ab60c141c411b0cd69254f122",
+        "family": "if8",
+        "mode": "full",
+        "limit": 2,
+        "seed": 20260929,
+        "training": false,
+        "cuda_allocator_memory_fraction": 0.2,
+        "scale_policy": "ANN transmits 32 FP32 scales; IF unit scales declared",
+        "comparison": "Frozen historical systems; different receivers, selection and training; not causal activation-only control"
+      },
+      "audit": {
+        "passed": true,
+        "all_state_unchanged": true,
+        "records": [
+          {
+            "accepted_units": 1446,
+            "actual_bytes": 10389,
+            "budget_bytes": null,
+            "first_rejected_bytes": null,
+            "selected_events": 38346,
+            "selected_voxels": 1446,
+            "index": 0,
+            "frame_id": "000211",
+            "packet_file": "000000.bin",
+            "packet_sha256": "472405d9bf7f19c2cdb71add36bfdc1e8094725dab8e367970c9b757f3888804",
+            "full_counts_sha256": "24d6a3443d9d6c96de7a54e7351423518d9aed10e3e1a4a505d5dba5dbfec9fb",
+            "full_scales_sha256": "b638277a8690e175a9137feff1e43c067f9faf4e2f600caf468fb05b0403b717",
+            "direct_wire_exact": true,
+            "original_full_exact": true,
+            "audit_forward_seconds": 0.6975789899006486
+          },
+          {
+            "accepted_units": 1557,
+            "actual_bytes": 11030,
+            "budget_bytes": null,
+            "first_rejected_bytes": null,
+            "selected_events": 38976,
+            "selected_voxels": 1557,
+            "index": 1,
+            "frame_id": "000212",
+            "packet_file": "000001.bin",
+            "packet_sha256": "53a8e7d3fb17bab2be9af3254ca28741bd9acf4d6a47806699f5bb1593460604",
+            "full_counts_sha256": "8046aec81aea743525e7b85926262f8a27735b01d17d86588f4753564007efc9",
+            "full_scales_sha256": "b638277a8690e175a9137feff1e43c067f9faf4e2f600caf468fb05b0403b717",
+            "direct_wire_exact": true,
+            "original_full_exact": true,
+            "audit_forward_seconds": 0.33027243707329035
+          }
+        ],
+        "timing_scope": "includes selection, actual codec, duplicate direct/wire readout and audit; not deployment latency"
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 34,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.735880857648099,
+          "0.5": 0.6809752747252747,
+          "0.7": 0.5256410256410254
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7126436781609194,
+          "0.5": 0.6096703296703297,
+          "0.7": 0.3034896015665246
+        }
+      },
+      "hashes": {
+        "wire_audit.json": "5f44997a9be1f1cc684d874d6c542e16b05a695fc5c18d64a5458ca2e09fdab2",
+        "evaluation.json": "a39edcbdef892b6979cf542ef9341d37fd7d90a6cf62a1ffd2f1c5beae8d89f9",
+        "offline_replay.json": "7d616d23368ebfd03cdb389aa0c858e3fda0bd921c70ef2d87a7c1fd3583e1e4",
+        "predictions/index.json": "0d300a03328ea902520a47102e286081252e0735b36fb802280a11ba8eef0a19"
+      }
+    },
+    "if8_b2048": {
+      "passed": true,
+      "manifest": {
+        "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_event_receiver_20261021/receiver/train/best_ap70.pth",
+        "checkpoint_sha256": "60b7e0ff84e992862902aa9325b56ac13ab5658d70c4aacb194028638f5105dc",
+        "config": "/data1/tzm/workspace/diagnostics/e3dsnn_event_receiver_20261021/receiver/b4096.yaml",
+        "config_sha256": "07244b9ea3db4601f2c8dcad94f028c361e29a175d57ad10f222d8d8966eb5d0",
+        "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+        "split_sha256": {
+          "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+          "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+        },
+        "git_commit": "192e8a940ffd533ab60c141c411b0cd69254f122",
+        "family": "if8",
+        "mode": "b2048",
+        "limit": 2,
+        "seed": 20260929,
+        "training": false,
+        "cuda_allocator_memory_fraction": 0.2,
+        "scale_policy": "ANN transmits 32 FP32 scales; IF unit scales declared",
+        "comparison": "Frozen historical systems; different receivers, selection and training; not causal activation-only control"
+      },
+      "audit": {
+        "passed": true,
+        "all_state_unchanged": true,
+        "records": [
+          {
+            "accepted_units": 3802,
+            "actual_bytes": 2046,
+            "budget_bytes": 2048,
+            "first_rejected_bytes": 2049,
+            "selected_events": 3802,
+            "selected_voxels": 204,
+            "index": 0,
+            "frame_id": "000211",
+            "packet_file": "000000.bin",
+            "packet_sha256": "9823c1e5055800b96d82ff787aab2047c4f3d8334fe0f446683b51563492e4eb",
+            "full_counts_sha256": "24d6a3443d9d6c96de7a54e7351423518d9aed10e3e1a4a505d5dba5dbfec9fb",
+            "full_scales_sha256": "b638277a8690e175a9137feff1e43c067f9faf4e2f600caf468fb05b0403b717",
+            "direct_wire_exact": true,
+            "original_full_exact": null,
+            "audit_forward_seconds": 1.075793903786689
+          },
+          {
+            "accepted_units": 3603,
+            "actual_bytes": 2045,
+            "budget_bytes": 2048,
+            "first_rejected_bytes": 2049,
+            "selected_events": 3603,
+            "selected_voxels": 205,
+            "index": 1,
+            "frame_id": "000212",
+            "packet_file": "000001.bin",
+            "packet_sha256": "0893ee35e1d85438a902547cec0edd2e93c7b094bdffdc260d38000d6be9bc06",
+            "full_counts_sha256": "8046aec81aea743525e7b85926262f8a27735b01d17d86588f4753564007efc9",
+            "full_scales_sha256": "b638277a8690e175a9137feff1e43c067f9faf4e2f600caf468fb05b0403b717",
+            "direct_wire_exact": true,
+            "original_full_exact": null,
+            "audit_forward_seconds": 0.730783165898174
+          }
+        ],
+        "timing_scope": "includes selection, actual codec, duplicate direct/wire readout and audit; not deployment latency"
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6905393457117595,
+          "0.7": 0.6015500856349663
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6580969870094538,
+          "0.7": 0.3604790864406249
+        }
+      },
+      "hashes": {
+        "wire_audit.json": "c6435eab46c397fc4b35411768a4a98002c534d430bab116d5fded12c6b54a64",
+        "evaluation.json": "c3e0ac84a412521b9cf21385d8b11d9e6c228f18f917a7594eb785dfb8b8ec6a",
+        "offline_replay.json": "76de8d958e1ef172ef80d176437a115f4e8a6e2c29af9569b933f4ce7ca85421",
+        "predictions/index.json": "404884905f722b7f68bf3beeb15369592d96c5931a46b1904244c0dbebfc3909"
+      }
+    },
+    "ann2bit_full": {
+      "passed": true,
+      "manifest": {
+        "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn_adapt10/best_ap70.pth",
+        "checkpoint_sha256": "d0dc7b9ab4ccaad531a8fc63e0a7e8b91a62ab5fa7cf4d0740e366c6422b4bd8",
+        "config": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn/full.yaml",
+        "config_sha256": "b97bd53ddfe06ae9edcaec03e1afb0e7b66acd1d88c0d81c961e5f1fd986134a",
+        "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+        "split_sha256": {
+          "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+          "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+        },
+        "git_commit": "192e8a940ffd533ab60c141c411b0cd69254f122",
+        "family": "ann2bit",
+        "mode": "full",
+        "limit": 2,
+        "seed": 20260929,
+        "training": false,
+        "cuda_allocator_memory_fraction": 0.2,
+        "scale_policy": "ANN transmits 32 FP32 scales; IF unit scales declared",
+        "comparison": "Frozen historical systems; different receivers, selection and training; not causal activation-only control"
+      },
+      "audit": {
+        "passed": true,
+        "all_state_unchanged": true,
+        "records": [
+          {
+            "accepted_units": 1736,
+            "actual_bytes": 7853,
+            "budget_bytes": null,
+            "first_rejected_bytes": null,
+            "selected_events": 7760,
+            "selected_voxels": 1736,
+            "index": 0,
+            "frame_id": "000211",
+            "packet_file": "000000.bin",
+            "packet_sha256": "60b86c10e9792f6d9122b5675e523aa8efce80927d83d0f53d440b241cee5e80",
+            "full_counts_sha256": "97f735176f15b9310a48c709f2ad1a7987a3c77dbddfed25f589cc7057ef3ed4",
+            "full_scales_sha256": "33910e08f5c2d746a0e4b9813d173f4bb5db463c448c33b667231d6f441e559c",
+            "direct_wire_exact": true,
+            "original_full_exact": true,
+            "audit_forward_seconds": 0.5622435461264104
+          },
+          {
+            "accepted_units": 1715,
+            "actual_bytes": 7959,
+            "budget_bytes": null,
+            "first_rejected_bytes": null,
+            "selected_events": 7900,
+            "selected_voxels": 1715,
+            "index": 1,
+            "frame_id": "000212",
+            "packet_file": "000001.bin",
+            "packet_sha256": "00b1b089be4cd5130f535ffa3def6cc925872160d0fe225a776d83efcf14b8b9",
+            "full_counts_sha256": "1ae5e9e02bb25632f2a598f90a5a9149f39931c03dca89cd50882e15c5b311e4",
+            "full_scales_sha256": "16b087f2fe341c3039c1dfd965944839184c12bc09e3fcdf5bba4e5fc1718407",
+            "direct_wire_exact": true,
+            "original_full_exact": true,
+            "audit_forward_seconds": 0.16359259211458266
+          }
+        ],
+        "timing_scope": "includes selection, actual codec, duplicate direct/wire readout and audit; not deployment latency"
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7676282051282052,
+          "0.5": 0.7120255755313226,
+          "0.7": 0.6033646812957159
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7676282051282052,
+          "0.5": 0.6521684350132625,
+          "0.7": 0.5042662543676742
+        }
+      },
+      "hashes": {
+        "wire_audit.json": "5586147862179c605e56d91e31d45ff250cfae0755889b8ff6f3662bae7d1115",
+        "evaluation.json": "2c1176cfd8e18258165991bf09e01be4d7bea9c626c25215b9fd0d0bd43a050f",
+        "offline_replay.json": "b6ba221eed38559ee59eddd454ea002bacbbe752d58a87e1c2f294155765f95e",
+        "predictions/index.json": "a66695cbb4bcc8dc39cd7366b22af136aa99a27b22d83b2b8700b3924dedb1c8"
+      }
+    },
+    "ann2bit_b2048": {
+      "passed": true,
+      "manifest": {
+        "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn_adapt10/best_ap70.pth",
+        "checkpoint_sha256": "d0dc7b9ab4ccaad531a8fc63e0a7e8b91a62ab5fa7cf4d0740e366c6422b4bd8",
+        "config": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn/full.yaml",
+        "config_sha256": "b97bd53ddfe06ae9edcaec03e1afb0e7b66acd1d88c0d81c961e5f1fd986134a",
+        "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+        "split_sha256": {
+          "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+          "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+        },
+        "git_commit": "192e8a940ffd533ab60c141c411b0cd69254f122",
+        "family": "ann2bit",
+        "mode": "b2048",
+        "limit": 2,
+        "seed": 20260929,
+        "training": false,
+        "cuda_allocator_memory_fraction": 0.2,
+        "scale_policy": "ANN transmits 32 FP32 scales; IF unit scales declared",
+        "comparison": "Frozen historical systems; different receivers, selection and training; not causal activation-only control"
+      },
+      "audit": {
+        "passed": true,
+        "all_state_unchanged": true,
+        "records": [
+          {
+            "accepted_units": 140,
+            "actual_bytes": 2047,
+            "budget_bytes": 2048,
+            "first_rejected_bytes": 2050,
+            "selected_events": 2221,
+            "selected_voxels": 140,
+            "index": 0,
+            "frame_id": "000211",
+            "packet_file": "000000.bin",
+            "packet_sha256": "a3f36ba6ad889e4c55f56b0c40744a92f05bbb4b0eeca6e69c274d36b0c8cf5c",
+            "full_counts_sha256": "97f735176f15b9310a48c709f2ad1a7987a3c77dbddfed25f589cc7057ef3ed4",
+            "full_scales_sha256": "36ab36adcea7e8a60ede583dac39c6ae9d3123f93669c24c330dd517fd9d392d",
+            "direct_wire_exact": true,
+            "original_full_exact": null,
+            "audit_forward_seconds": 0.4057413579430431
+          },
+          {
+            "accepted_units": 143,
+            "actual_bytes": 2043,
+            "budget_bytes": 2048,
+            "first_rejected_bytes": 2053,
+            "selected_events": 2149,
+            "selected_voxels": 143,
+            "index": 1,
+            "frame_id": "000212",
+            "packet_file": "000001.bin",
+            "packet_sha256": "f5224a6eae7e37cc5468a49c5e075bea725fadb1ec5f7a71225723cf3d926451",
+            "full_counts_sha256": "1ae5e9e02bb25632f2a598f90a5a9149f39931c03dca89cd50882e15c5b311e4",
+            "full_scales_sha256": "d3f392a071ccb08947bd18553e1817c368ef26e68003bc1cdfe6b638d14fde20",
+            "direct_wire_exact": true,
+            "original_full_exact": null,
+            "audit_forward_seconds": 0.2605585712008178
+          }
+        ],
+        "timing_scope": "includes selection, actual codec, duplicate direct/wire readout and audit; not deployment latency"
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 31,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6887709991158266,
+          "0.7": 0.633150183150183
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.631098901098901,
+          "0.7": 0.5070135746606336
+        }
+      },
+      "hashes": {
+        "wire_audit.json": "0b78413ae50f2723b1578acf2a3737791e036bc1ebdab1ec109cd567e274801f",
+        "evaluation.json": "537a7e2f0418c6eba7eb84ac06d92bbbaeffed637dd30fdeece0ebf4d90c6772",
+        "offline_replay.json": "8985f3030941b25c36690787c1819f421bd856fa37c3c89fd03d0c2e8c600820",
+        "predictions/index.json": "06ac813e2d1e9c5a90f9f7431623311e4cff651e477f914aa5229eab8aef2ea0"
+      }
+    }
+  },
+  "full_source_equivalence_both_families": true,
+  "all_state_unchanged": true
+}
