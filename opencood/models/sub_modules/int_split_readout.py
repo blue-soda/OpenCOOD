@@ -7,6 +7,8 @@ This module alone does not implement temporal reuse or regional execution.
 import copy
 import torch
 from torch import nn
+from opencood.models.sub_modules.int_anchor_residual import refresh_reason, predict
+from opencood.models.sub_modules.int_feature_memory import warp_bev
 
 
 class SplitCompactReadout(nn.Module):
@@ -43,3 +45,53 @@ class SplitCompactReadout(nn.Module):
     def forward(self, decoded):
         return self.fuse(self.current(decoded[:,:self.current_channels]),
                          self.history(decoded[:,self.current_channels:]))
+
+
+class SplitReadoutDetector:
+    """Cache only the deep contribution before the spatial readout.
+
+    Current stage1, its upsampling/projection, and all spatial readout layers
+    run every frame. No intermediate prediction is written back to the anchor.
+    This zero-correction diagnostic is not regional execution.
+    """
+    def __init__(self, model, config, readout, period=3):
+        if model.training or readout.training or period not in (1,3):
+            raise ValueError('Frozen models and period1/3 required')
+        if len(model.backbone.deblocks)!=3 or not model.shrink_flag:
+            raise ValueError('Expected three direct multiscale branches and shrink')
+        if model.backbone.deblocks[0][0].out_channels!=readout.current_channels:
+            raise ValueError('Current branch channel split does not match')
+        self.model,self.readout,self.period=model,readout,period
+        self.bounds=config['model']['args']['lidar_range']
+
+    def step(self,data,state,meta):
+        m=self.model;p=data['processed_lidar']
+        if p['voxel_features'].shape[0]:
+            batch={k:p[k] for k in ('voxel_features','voxel_coords','voxel_num_points')}
+            batch['batch_size']=1
+            spatial=m.scatter(m.pillar_vfe(batch))['spatial_features']
+        else:
+            nx,ny,_=m.scatter.model_cfg['grid_size']
+            spatial=m.cls_head.weight.new_zeros(1,64,int(ny),int(nx))
+        temporal,fm,info=m.feature_memory.step(spatial,None if state is None else state['fm'],meta)
+        first=m.backbone.resnet.layer0(temporal)
+        current=self.readout.current(m.backbone.deblocks[0](first))
+        cache=None if state is None else state['cache']
+        reason=refresh_reason(cache,meta,info['reset'],self.period)
+        if reason:
+            second=m.backbone.resnet.layer1(first)
+            third=m.backbone.resnet.layer2(second)
+            deep=torch.cat([m.backbone.deblocks[1](second),m.backbone.deblocks[2](third)],1)
+            projected=self.readout.history(deep)
+            cache=dict(value=projected,pose=meta['pose'],stamp=int(meta['timestamp_us']),frames=0)
+            uncovered=0.
+        else:
+            projected,valid=warp_bev(cache['value'],cache['pose'],meta['pose'],self.bounds)
+            uncovered=float((~valid).float().mean())
+            cache=dict(cache,frames=cache['frames']+1)
+        assert current.shape==projected.shape
+        prediction=predict(m,self.readout.fuse(current,projected))
+        info.update(local_partial=reason is None,anchor_stamp=cache['stamp'],
+                    anchor_depth=cache['frames'],uncovered_fraction=uncovered,
+                    anchor_bytes=cache['value'].numel()*cache['value'].element_size())
+        return prediction,dict(fm=fm,cache=cache),info

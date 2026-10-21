@@ -17,6 +17,7 @@ import torch
 from opencood.models.sub_modules.int_compact_readout import compact_shrink, cached_features
 from opencood.models.sub_modules.int_light_repair import make_repairs
 from opencood.models.sub_modules.int_local_cache import LocalCacheDetector
+from opencood.models.sub_modules.int_split_readout import SplitCompactReadout, SplitReadoutDetector
 from opencood.tools.train_int_anchor_residual import ConvCounter
 from opencood.tools.run_int_cache_repair import setup
 from opencood.tools.run_int_ego import loader, to_device, write_json
@@ -66,6 +67,12 @@ def worker(a):
         original_repair=LocalCacheDetector(original,cfg,0.,period=3,repair_modules=repairs,repair_dense=True),
         compact_repair=LocalCacheDetector(student,cfg,0.,period=3,repair_modules=repairs,repair_dense=True))
     regional = {}
+    split = None
+    if a.split_readout:
+        split=SplitCompactReadout(student.shrink_conv,student.backbone.deblocks[0][0].out_channels).cuda().eval()
+        for parameter in split.parameters(): parameter.requires_grad_(False)
+        modes['split_full']=SplitReadoutDetector(student,cfg,split,period=1)
+        modes['split_cache']=SplitReadoutDetector(student,cfg,split,period=3)
     if a.regional:
         for tag,threshold in (('05',.5),('10',1.)):
             for execution in ('sparse','masked_dense'):
@@ -76,11 +83,12 @@ def worker(a):
     expected = dict(original=.758736104616861,compact_cache=readout_best['ap70'],original_repair=repair_best['ap70'])
     write_json(out/'provenance.json',dict(source=provenance,readout=readout_best,repair=repair_best,
         rank=readout['contract']['rank'],protocol='Frozen transfer; period3 immutable stage2/3 anchors, current E and compact readout every frame; full-image repairs only.',
-        expected_ap70=expected,regional=regional))
+        expected_ap70=expected,regional=regional,split_readout=bool(split)))
     test = subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     (out/'unit_tests.log').write_bytes(test.stdout)
     assert test.returncode == 0
     costs = {};states = {k:None for k in modes};partials = 0;captured = {};calls = [0,0]
+    split_calls=[0,0,0];split_error=0.;split_partials=0
     # Every LightRepair convolution keeps spatial size, hence exact standard
     # convolution MACs are linear in executed input area, including crop halos.
     per_pixel = [sum(layer.in_channels*layer.out_channels//layer.groups*layer.kernel_size[0]*layer.kernel_size[1]
@@ -96,6 +104,12 @@ def worker(a):
     hooks = [original.shrink_conv.register_forward_pre_hook(lambda m,x:captured.update(original=x[0])),
              student.shrink_conv.register_forward_pre_hook(lambda m,x:captured.update(student=x[0]))]
     hooks += [getattr(student.backbone.resnet,'layer%d'%i).register_forward_hook(count(i-1)) for i in (1,2)]
+    if split is not None:
+        def split_count(i):
+            def hook(m,x,y):split_calls[i]+=1
+            return hook
+        hooks += [module.register_forward_hook(split_count(i)) for i,module in enumerate(
+            (student.backbone.deblocks[1],student.backbone.deblocks[2],split.history))]
     _,stream = loader(rows[:32],cfg,0,303)
     try:
         with torch.no_grad():
@@ -104,8 +118,9 @@ def worker(a):
                 full_pred = None
                 for name,mode in modes.items():
                     model = original if name in ('original','original_repair') else student
-                    counter = ConvCounter(model,repairs if name.endswith('_repair') or name in regional else torch.nn.ModuleList())
-                    previous = states[name];before = list(calls)
+                    extras=split if name.startswith('split_') else repairs if name.endswith('_repair') or name in regional else torch.nn.ModuleList()
+                    counter = ConvCounter(model,extras)
+                    previous = states[name];before = list(calls);before_split=list(split_calls)
                     try: pred,states[name],info = mode.step(ego,states[name],meta)
                     finally: counter.close()
                     flag = bool(info.get('local_partial'))
@@ -123,6 +138,14 @@ def worker(a):
                         if key in costs: assert costs[key] == counter.total
                         costs[key] = counter.total
                     if name == 'compact_full': full_pred = pred
+                    if name.startswith('split_'):
+                        if not flag:
+                            split_error=max(split_error,max(float((pred[k]-full_pred[k]).abs().max()) for k in pred))
+                            assert all(torch.allclose(pred[k],full_pred[k],atol=1e-4,rtol=1e-4) for k in pred)
+                        else:
+                            split_partials+=1
+                            assert calls==before and split_calls==before_split
+                            assert states[name]['cache']['value'] is previous['cache']['value']
                     if name == 'compact_repair':
                         assert torch.equal(captured['original'],captured['student']), 'Repair readout inputs differ'
                         if flag:
@@ -136,7 +159,9 @@ def worker(a):
     assert partials > 0
     write_json(out/'engineering.json',dict(status='PASSED',frames=32,partial_frames=partials,
         shared_repaired_inputs_exact=True,immutable_anchors=True,partial_deep_calls=0,conv_macs=costs,
-        regional_masked_parity_checked=bool(regional),regional_mac_hook_check=bool(regional)))
+        regional_masked_parity_checked=bool(regional),regional_mac_hook_check=bool(regional),
+        split_full_prediction_max_error=split_error,split_partial_frames_no_deep_decode=split_partials))
+    if split is not None: assert split_partials>0
     states = {k:None for k in modes}
     stats = {k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}
     times = {k:[] for k in modes};compute = {k:0 for k in modes};partial = {k:0 for k in modes}
@@ -178,6 +203,9 @@ def worker(a):
         mean_ms=float(np.mean(times[k])),p95_ms=float(np.percentile(times[k],95)),
         conv_gflops=2*compute[k]/len(rows)/1e9,partial_frames=partial[k]) for k in modes}
     for k,ap in expected.items(): assert abs(results[k]['ap70']-ap)<1e-8, 'Reloaded AP mismatch: '+k
+    if split is not None:
+        assert abs(results['split_full']['ap70']-results['compact_full']['ap70'])<1e-6, 'Split full AP differs'
+        assert partial['split_cache']==partial['compact_cache']
     for name,records in area.items():
         data = np.asarray(records)
         results[name]['area_columns'] = ['stage2_request','stage2_write','stage2_executed_input','stage3_request','stage3_write','stage3_executed_input']
@@ -185,7 +213,7 @@ def worker(a):
         results[name]['partial_frame_area_mean'] = data[data[:,0]>0,1:].mean(0).tolist()
     assert len({partial[k] for k in ('compact_cache','original_repair','compact_repair')}) == 1
     write_json(out/'report.json',dict(status='COMPLETED',results=results,scans=len(rows),labels=sum(r['supervised'] for r in rows),
-        regional=regional,regional_prediction_max_error=parity_max,
+        regional=regional,regional_prediction_max_error=parity_max,split_readout=bool(split),
         scope='Same-GPU rotating synchronized model time excluding IO/H2D/postprocess. Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warps, BN, activations. Regional modes use actual merged tile4 radius1 crops; masked_dense is an execution-equivalence control. No training.'))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
@@ -195,6 +223,7 @@ def main():
     for name in ('root','readout-run','repair-run','output'): p.add_argument('--'+name,required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true')
     p.add_argument('--regional',action='store_true')
+    p.add_argument('--split-readout',action='store_true')
     a = p.parse_args();out = Path(a.output)
     if a.worker:
         def expired(s,f): raise TimeoutError('Evaluation exceeded 2 hours')
