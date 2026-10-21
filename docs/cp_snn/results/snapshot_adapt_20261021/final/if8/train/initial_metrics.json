@@ -1,0 +1,24 @@
+{
+  "samples": 1738,
+  "indexed_samples": 1738,
+  "full_split": true,
+  "predicted_boxes": 29834,
+  "gt_boxes": 28622,
+  "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+  "ap": {
+    "0.3": 0.7591173534627802,
+    "0.5": 0.7072772011168511,
+    "0.7": 0.5816517634982137
+  },
+  "feature_packets": {
+    "count": 1738,
+    "mean_bytes": 2045.391829689298,
+    "median_bytes": 2046.0,
+    "min_bytes": 2032,
+    "max_bytes": 2048,
+    "p95_bytes": 2048.0,
+    "total_bytes": 3554891,
+    "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+  },
+  "epoch": 0
+}
