@@ -169,15 +169,53 @@ def execute(folder,family,mode,limit):
     print(json.dumps(dict(family=family,mode=mode,frames=result['samples'],ap=result['ap'],bytes=result['feature_packets'])),flush=True)
 
 
-def coordinate(root,gpu):
+def verify_finished(folder,stage,limit,mode):
+    replay=read(folder/'offline_replay.json');result=read(folder/'evaluation.json')
+    assert replay['passed'] and replay['exact_match'] and replay['all_file_hashes_verified']
+    assert replay['ap']==result['ap'] and replay['ap_3d']==result['ap_3d']
+    assert result['samples']==(limit or 1738)
+    audit=read(folder/'wire_audit.json');assert audit['passed'] and audit['all_state_unchanged']
+    assert result['wire_audit_sha256']==sha(folder/'wire_audit.json')
+    assert result['predictions']['index_sha256']==sha(folder/'predictions/index.json')
+    for frame in read(folder/'predictions/index.json')['frames']:
+        assert sha(folder/'predictions'/frame['file'])==frame['sha256']
+    for row in audit['records']:
+        assert sha(folder/'packets'/row['packet_file'])==row['packet_sha256'] and row['direct_wire_exact']
+        if mode=='b2048':assert row['actual_bytes']<=2048
+    if stage=='smoke' and mode=='full':assert all(r['original_full_exact'] for r in audit['records'])
+    if stage=='audit64':
+        assert float(np.mean([r['audit_forward_seconds'] for r in audit['records']]))<=5.
+
+
+def coordinate(root,gpu,resume=False):
     from opencood.tools.launch_e3dsnn_joint_round import check_gpu
     try:
         for stage,limit in (('smoke',2),('audit64',64),('full',0)):
             for family in SOURCES:
                 for mode in MODES:
                     name=family+'_'+mode;folder=root/stage/name
+                    if resume and folder.exists():
+                        # Resource admission stops before a child starts. Never
+                        # overwrite or restart a partially evaluated child.
+                        verify_finished(folder,stage,limit,mode)
+                        manifest=read(folder/'manifest_snapshot.json')
+                        assert manifest['checkpoint_sha256']==SOURCES[family][2]
+                        continue
                     write_json(root/'status.json',dict(state='running',stage=stage,current=name))
-                    write_json(root/(stage+'_'+name+'_admission.json'),check_gpu(gpu,True,.2))
+                    # Resource waiting does not rerun an evaluated model. Bound
+                    # it to two minutes; model/check failures still stop once.
+                    for attempt in range(3):
+                        try:
+                            admission=check_gpu(gpu,True,.2)
+                            break
+                        except RuntimeError as error:
+                            if 'shared admission failed' not in str(error) or attempt==2:raise
+                            write_json(root/(stage+'_'+name+'_resource_wait_'+str(attempt)+'.json'),
+                                dict(error=str(error),at_unix=time.time(),retry_after_seconds=60))
+                            write_json(root/'status.json',dict(state='waiting_resource',stage=stage,current=name))
+                            time.sleep(60)
+                    write_json(root/(stage+'_'+name+'_admission.json'),admission)
+                    write_json(root/'status.json',dict(state='running',stage=stage,current=name))
                     with (root/(stage+'_'+name+'.log')).open('xb') as log:
                         subprocess.run([sys.executable,'-u','-m','opencood.tools.evaluate_e3dsnn_ann_snapshot',
                             '--root',str(folder),'--family',family,'--mode',mode,'--limit',str(limit)],
@@ -186,12 +224,7 @@ def coordinate(root,gpu):
                         subprocess.run([sys.executable,'-u','-m','opencood.tools.replay_e3dsnn_predictions','--evaluation-dir',str(folder)],
                             cwd=str(REPO),env=dict(os.environ,CUDA_VISIBLE_DEVICES=''),stdin=subprocess.DEVNULL,
                             stdout=log,stderr=subprocess.STDOUT,check=True,timeout=3600)
-                    replay=read(folder/'offline_replay.json');assert replay['passed'] and replay['exact_match'] and replay['all_file_hashes_verified']
-                    audit=read(folder/'wire_audit.json');assert audit['passed'] and audit['all_state_unchanged']
-                    if stage=='smoke' and mode=='full':assert all(r['original_full_exact'] for r in audit['records'])
-                    if stage=='audit64':
-                        mean=float(np.mean([r['audit_forward_seconds'] for r in audit['records']]))
-                        assert mean<=5.,'Reference forward audit exceeds pre-registered execution cost gate'
+                    verify_finished(folder,stage,limit,mode)
             write_json(root/(stage+'_complete.json'),dict(passed=True,limit=limit))
         results={}
         for family in SOURCES:
@@ -210,12 +243,20 @@ def coordinate(root,gpu):
         raise
 
 
-def launch(root,gpu):
+def launch(root,gpu,resume=False):
     from opencood.tools.launch_e3dsnn_joint_round import check_gpu
-    if root.exists():raise FileExistsError('Fresh pipeline root required')
+    if resume:
+        previous=read(root/'status.json')
+        assert previous['state']=='failed' and 'shared admission failed' in previous['error']
+        assert not (root/'resume_launch.json').exists(),'Only one explicit resource resume registered'
+    elif root.exists():raise FileExistsError('Fresh pipeline root required')
     for checkpoint,_,digest in SOURCES.values():assert sha(checkpoint)==digest
-    admission=check_gpu(gpu,True,.2);root.mkdir()
-    write_json(root/'protocol.json',dict(sources={f:dict(checkpoint=str(c),config=str(y),sha256=h) for f,(c,y,h) in SOURCES.items()},
+    admission=check_gpu(gpu,True,.2)
+    if resume:
+        write_json(root/'resource_failure_before_resume.json',previous)
+    else:
+        root.mkdir()
+        write_json(root/'protocol.json',dict(sources={f:dict(checkpoint=str(c),config=str(y),sha256=h) for f,(c,y,h) in SOURCES.items()},
         modes=list(MODES),budget_bytes=2048,seed=20260929,training=False,
         gates='smoke2 original full source equality and CPU replay; audit64 wire equality, hard bytes and <=5s audit forward; full1738',
         ann_selection='original raw-feature L1 ordering within original 50% candidates; complete 2bit rows; first actual-byte overflow stops',
@@ -223,19 +264,22 @@ def launch(root,gpu):
         codec='common E3TS1 spatial rows/channel mask; nonzero values 2bit ANN or 4bit IF; ANN FP32 channel scales included',
         limitation='different historical training, receivers and selection; engineering reference, not isolated SNN causality'))
     env=dict(os.environ,CUDA_VISIBLE_DEVICES=str(gpu),PYTHONPATH=str(REPO),OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1')
-    with (root/'pipeline.log').open('xb') as log:
-        p=subprocess.Popen([sys.executable,'-u','-m','opencood.tools.evaluate_e3dsnn_ann_snapshot','--root',str(root),'--coordinate','--gpu',str(gpu)],
+    with (root/('resume_pipeline.log' if resume else 'pipeline.log')).open('xb') as log:
+        command=[sys.executable,'-u','-m','opencood.tools.evaluate_e3dsnn_ann_snapshot','--root',str(root),'--coordinate','--gpu',str(gpu)]
+        if resume:command+=['--resume']
+        p=subprocess.Popen(command,
             cwd=str(REPO),env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
     record=dict(pid=p.pid,gpu=gpu,admission=admission,started_unix=time.time(),
         code_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=str(REPO)).decode().strip())
-    write_json(root/'launch.json',record);print(json.dumps(record),flush=True)
+    write_json(root/('resume_launch.json' if resume else 'launch.json'),record);print(json.dumps(record),flush=True)
 
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',required=True)
     p.add_argument('--family',choices=tuple(SOURCES));p.add_argument('--mode',choices=MODES)
     p.add_argument('--limit',type=int,choices=(0,2,64),default=0);p.add_argument('--coordinate',action='store_true')
+    p.add_argument('--resume',action='store_true')
     p.add_argument('--gpu',type=int,default=0);a=p.parse_args()
     if a.family:execute(Path(a.root),a.family,a.mode,a.limit)
-    elif a.coordinate:coordinate(Path(a.root),a.gpu)
-    else:launch(Path(a.root),a.gpu)
+    elif a.coordinate:coordinate(Path(a.root),a.gpu,a.resume)
+    else:launch(Path(a.root),a.gpu,a.resume)
