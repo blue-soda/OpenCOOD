@@ -1,0 +1,54 @@
+{
+  "crop_masked_prediction_max_error": 0.0,
+  "labels": 1738,
+  "results": {
+    "cached": {
+      "ap50": 0.8293572735996714,
+      "ap70": 0.752781663200643,
+      "conv_gflops": 164.928132444874,
+      "mean_ms": 18.741582356028474,
+      "p95_ms": 30.083340185228735,
+      "partial_frames": 3789,
+      "partial_repair_input_area": 0.0
+    },
+    "full": {
+      "ap50": 0.832712474888943,
+      "ap70": 0.7562138415770423,
+      "conv_gflops": 252.1387008,
+      "mean_ms": 29.333587693584114,
+      "p95_ms": 30.60447134776041,
+      "partial_frames": 0,
+      "partial_repair_input_area": null
+    },
+    "initial": {
+      "ap50": 0.8299608687589851,
+      "ap70": 0.7532738909256946,
+      "conv_gflops": 164.95113348086988,
+      "mean_ms": 20.5943868250778,
+      "p95_ms": 30.113783315755427,
+      "partial_frames": 3789,
+      "partial_repair_input_area": 0.06608559866279581
+    },
+    "masked": {
+      "ap50": 0.830170440396426,
+      "ap70": 0.7531622521947638,
+      "conv_gflops": 165.27618158812564,
+      "mean_ms": 20.14320132583135,
+      "p95_ms": 30.134946119505912,
+      "partial_frames": 3789,
+      "partial_repair_input_area": 1.0
+    },
+    "repaired": {
+      "ap50": 0.830170440396426,
+      "ap70": 0.7531622521947638,
+      "conv_gflops": 164.95113348086988,
+      "mean_ms": 20.549523343248705,
+      "p95_ms": 30.13026394182816,
+      "partial_frames": 3789,
+      "partial_repair_input_area": 0.06608559866279581
+    }
+  },
+  "scans": 5794,
+  "scope": "Fixed masks; real cropped inference. Same GPU rotating model time excludes IO/H2D/postprocess. Standard convolution MACs x2 only, including executed halos. Training itself is dense masked.",
+  "status": "COMPLETED"
+}
