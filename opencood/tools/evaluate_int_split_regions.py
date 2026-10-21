@@ -44,14 +44,27 @@ def worker(a):
         for p in m.parameters():p.requires_grad_(False)
     modes=dict(original=teacher,full=SplitReadoutDetector(student,cfg,split,1),
         cached=SplitReadoutDetector(student,cfg,split,3),dense=SplitReadoutDetector(student,cfg,split,3,repair))
-    regional=[]
-    for tag,threshold in (('05',.5),('10',1.)):
-        for execution in ('sparse','masked_dense'):
-            name=tag+'_'+execution;regional.append(name)
-            modes[name]=SplitReadoutDetector(student,cfg,split,3,repair,threshold,execution)
+    regional=[];pairs=[]
+    if a.selection_diagnostic:
+        for policy in ('change','energy','complement'):
+            name='diagnostic_'+policy;regional.append(name)
+            modes[name]=SplitReadoutDetector(student,cfg,split,3,repair,.5,'masked_dense',policy)
+        # Independent old masked execution verifies the diagnostic change path.
+        regional.append('05_masked_dense')
+        modes['05_masked_dense']=SplitReadoutDetector(student,cfg,split,3,repair,.5,'masked_dense')
+        pairs=[('diagnostic_change','05_masked_dense')]
+    else:
+        for tag,threshold in (('05',.5),('10',1.)):
+            for execution in ('sparse','masked_dense'):
+                name=tag+'_'+execution;regional.append(name)
+                modes[name]=SplitReadoutDetector(student,cfg,split,3,repair,threshold,execution)
+            pairs.append((tag+'_sparse',tag+'_masked_dense'))
     expected=dict(original=.758736104616861,full=.7562138415770423,cached=.752781663200643,dense=best['ap70'])
+    if a.selection_diagnostic:expected['diagnostic_change']=.7532738909256946
     write_json(out/'provenance.json',dict(source=provenance,repair=best,readout=readout_best,
-        expected_ap70=expected,thresholds=[.5,1.],tile=4,radius=1,period=3,
+        expected_ap70=expected,thresholds=[.5] if a.selection_diagnostic else [.5,1.],tile=4,radius=1,period=3,
+        selection_diagnostic=a.selection_diagnostic,
+        diagnostic_scope='Energy ranking consumes full correction and matches change tile count; complement tests corrections outside selected changes. Neither is a compute-saving deployment result or an AP upper bound.' if a.selection_diagnostic else None,
         protocol='No training. Current shallow branch and spatial readout always dense; immutable deep-contribution anchors. Regional requests use current versus aligned anchor shallow descriptor and uncovered cells.'))
     tests=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     (out/'unit_tests.log').write_bytes(tests.stdout);assert tests.returncode==0
@@ -89,8 +102,8 @@ def worker(a):
                         key=name+('_partial' if flag else '_full')
                         if key in costs:assert costs[key]==counter.total
                         costs[key]=counter.total
-                for tag in ('05','10'):
-                    p,q=predictions[tag+'_sparse'],predictions[tag+'_masked_dense']
+                for left,right in pairs:
+                    p,q=predictions[left],predictions[right]
                     for k in p:
                         maximum=max(maximum,float((p[k]-q[k]).abs().max()))
                         assert torch.allclose(p[k],q[k],atol=1e-4,rtol=1e-4)
@@ -101,6 +114,7 @@ def worker(a):
         crop_masked_prediction_max_error=maximum,conv_macs=costs,regional_cost_hook_parity=True,immutable_anchor=True))
     states={k:None for k in modes};stats={k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}
     times={k:[] for k in modes};compute={k:0 for k in modes};partial={k:0 for k in modes};areas={k:[] for k in regional}
+    diagnostics={k:[] for k in regional if k.startswith('diagnostic_')}
     dataset,stream=loader(rows,cfg,4,303)
     with torch.no_grad():
         for index,sample in enumerate(stream):
@@ -115,12 +129,15 @@ def worker(a):
                 flag=bool(info.get('local_partial'));partial[name]+=flag;compute[name]+=macs(name,info)
                 if name in regional:
                     predictions[name]=pred
-                    if flag:areas[name].append([info['repair_stats'][k] for k in ('requested_fraction','actual_write_fraction','executed_input_area_ratio')])
+                    if flag:
+                        areas[name].append([info['repair_stats'][k] for k in ('requested_fraction','actual_write_fraction','executed_input_area_ratio')])
+                        if name in diagnostics:diagnostics[name].append({k:info['repair_stats'][k] for k in (
+                            'correction_energy_kept','selected_tiles','change_tiles','uncovered_tiles','overlap_change_tiles')})
                 if meta['supervised']:
                     data=dict(ego=ego);boxes,scores=dataset.post.post_process(data,dict(ego=pred));gt=dataset.post.generate_gt_bbx(data)
                     for t in stats[name]:eval_utils.caluclate_tp_fp(boxes,scores,gt,stats[name],t)
-            for tag in ('05','10'):
-                p,q=predictions[tag+'_sparse'],predictions[tag+'_masked_dense']
+            for left,right in pairs:
+                p,q=predictions[left],predictions[right]
                 for k in p:
                     maximum=max(maximum,float((p[k]-q[k]).abs().max()))
                     assert torch.allclose(p[k],q[k],atol=1e-4,rtol=1e-4)
@@ -135,8 +152,10 @@ def worker(a):
         results[k]['partial_area_columns']=['request','write','executed_input']
         results[k]['partial_area_mean']=np.asarray(data).mean(0).tolist()
         results[k]['repair_execution_area_per_all_frames']=sum(r[2] for r in data)/len(rows)
+    for k,data in diagnostics.items():
+        results[k]['diagnostic_means']={field:float(np.mean([r[field] for r in data])) for field in data[0]}
     write_json(out/'report.json',dict(status='COMPLETED',scans=len(rows),labels=sum(r['supervised'] for r in rows),results=results,
-        crop_masked_prediction_max_error=maximum,
+        crop_masked_prediction_max_error=maximum,selection_diagnostic=a.selection_diagnostic,
         scope='Same GPU rotating model latency excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2, not all model operations. Regional repair costs include halo duplication. Repair area per all frames counts zero on full refresh, whose heavy network work is separately included in total conv cost.'))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
@@ -145,6 +164,7 @@ def main():
     p=argparse.ArgumentParser()
     for name in ('root','readout-run','training-run','output'):p.add_argument('--'+name,required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true')
+    p.add_argument('--selection-diagnostic',action='store_true')
     a=p.parse_args();out=Path(a.output)
     if a.worker:
         def expired(s,f):raise TimeoutError('Regional evaluation exceeded 2 hours')

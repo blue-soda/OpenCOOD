@@ -3,11 +3,35 @@ import torch
 import torch.nn.functional as F
 from opencood.models.sub_modules.codyntrust_downsample_conv import DownsampleConv
 from opencood.models.sub_modules.int_compact_readout import compact_shrink
-from opencood.models.sub_modules.int_split_readout import SplitCompactReadout
+from opencood.models.sub_modules.int_split_readout import SplitCompactReadout,diagnostic_repair_selection
 from opencood.models.sub_modules.int_light_repair import LightRepair
 
 
 class SplitReadoutTests(unittest.TestCase):
+    def test_diagnostic_selection_keeps_budget_and_uncovered_boundary(self):
+        old=torch.zeros(1,2,7,9);candidate=old.clone()
+        candidate[:,:,4:7,4:8]=3.;candidate[:,:,:4,:4]=1.
+        valid=torch.ones_like(old[:,:1],dtype=torch.bool);valid[:,:,:,-1]=False
+        request=~valid;request[:,:,:4,:4]=True
+        selected,stats=diagnostic_repair_selection(candidate,old,request,valid,'energy')
+        self.assertEqual(stats['selected_tiles'],stats['change_tiles'])
+        self.assertEqual(stats['uncovered_tiles'],2)
+        self.assertTrue(torch.equal(selected[:,:,4:7,4:8],candidate[:,:,4:7,4:8]))
+        self.assertEqual(float(selected[:,:,:4,:4].sum()),0.)
+        changed,_=diagnostic_repair_selection(candidate,old,request,valid,'change')
+        other,_=diagnostic_repair_selection(candidate,old,request,valid,'complement')
+        self.assertTrue(torch.equal(changed+other,candidate))  # Uncovered cells have zero residual here.
+        self.assertEqual(float(old.sum()),0.)
+
+    def test_diagnostic_empty_and_complete_masks(self):
+        old=torch.zeros(1,2,5,7);candidate=torch.ones_like(old)
+        valid=torch.ones_like(old[:,:1],dtype=torch.bool)
+        for filled in (False,True):
+            mask=torch.full_like(valid,filled)
+            out,stats=diagnostic_repair_selection(candidate,old,mask,valid,'energy')
+            self.assertTrue(torch.equal(out,candidate if filled else old))
+            self.assertEqual(stats['executed_input_area_ratio'],1.)
+
     def make_source(self):
         torch.manual_seed(41)
         source=DownsampleConv(dict(input_dim=12,kernal_size=[3],dim=[8],stride=[1],padding=[1])).eval()

@@ -1,0 +1,117 @@
+{
+  "crop_masked_prediction_max_error": 0.0,
+  "labels": 1738,
+  "results": {
+    "05_masked_dense": {
+      "ap50": 0.8299608687589851,
+      "ap70": 0.7532738909256946,
+      "conv_gflops": 165.27618158812564,
+      "mean_ms": 20.136074513352487,
+      "p95_ms": 30.06366117624566,
+      "partial_area_columns": [
+        "request",
+        "write",
+        "executed_input"
+      ],
+      "partial_area_mean": [
+        0.03272350482581025,
+        0.05438700764605974,
+        1.0
+      ],
+      "partial_frames": 3789,
+      "repair_execution_area_per_all_frames": 0.6539523645150155
+    },
+    "05_sparse": {
+      "ap50": 0.8299608687589851,
+      "ap70": 0.7532738909256946,
+      "conv_gflops": 164.95113348086988,
+      "mean_ms": 20.578856644406464,
+      "p95_ms": 30.080103082582355,
+      "partial_area_columns": [
+        "request",
+        "write",
+        "executed_input"
+      ],
+      "partial_area_mean": [
+        0.03272350482581025,
+        0.05438700764605974,
+        0.06608559866279479
+      ],
+      "partial_frames": 3789,
+      "repair_execution_area_per_all_frames": 0.043216833505925
+    },
+    "10_masked_dense": {
+      "ap50": 0.8299104905090369,
+      "ap70": 0.7531320937311364,
+      "conv_gflops": 165.27618158812564,
+      "mean_ms": 20.09316449435035,
+      "p95_ms": 30.06560883950442,
+      "partial_area_columns": [
+        "request",
+        "write",
+        "executed_input"
+      ],
+      "partial_area_mean": [
+        0.01590616244185214,
+        0.03416774377098585,
+        1.0
+      ],
+      "partial_frames": 3789,
+      "repair_execution_area_per_all_frames": 0.6539523645150155
+    },
+    "10_sparse": {
+      "ap50": 0.8299104905090369,
+      "ap70": 0.7531320937311364,
+      "conv_gflops": 164.94329839828788,
+      "mean_ms": 20.348810915333473,
+      "p95_ms": 30.059824232012033,
+      "partial_area_columns": [
+        "request",
+        "write",
+        "executed_input"
+      ],
+      "partial_area_mean": [
+        0.01590616244185214,
+        0.03416774377098585,
+        0.04357417252112335
+      ],
+      "partial_frames": 3789,
+      "repair_execution_area_per_all_frames": 0.028495433151973826
+    },
+    "cached": {
+      "ap50": 0.8293572735996714,
+      "ap70": 0.752781663200643,
+      "conv_gflops": 164.928132444874,
+      "mean_ms": 18.783100589724672,
+      "p95_ms": 30.17081645084545,
+      "partial_frames": 3789
+    },
+    "dense": {
+      "ap50": 0.8325700560673862,
+      "ap70": 0.7553967658970537,
+      "conv_gflops": 165.27618158812564,
+      "mean_ms": 18.982142079623163,
+      "p95_ms": 30.13762760674581,
+      "partial_frames": 3789
+    },
+    "full": {
+      "ap50": 0.832712474888943,
+      "ap70": 0.7562138415770423,
+      "conv_gflops": 252.1387008,
+      "mean_ms": 29.60654117216428,
+      "p95_ms": 30.586296983528882,
+      "partial_frames": 0
+    },
+    "original": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "mean_ms": 32.045707932205154,
+      "p95_ms": 33.397687843535095,
+      "partial_frames": 0
+    }
+  },
+  "scans": 5794,
+  "scope": "Same GPU rotating model latency excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2, not all model operations. Regional repair costs include halo duplication. Repair area per all frames counts zero on full refresh, whose heavy network work is separately included in total conv cost.",
+  "status": "COMPLETED"
+}

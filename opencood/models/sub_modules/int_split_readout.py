@@ -12,7 +12,37 @@ from opencood.models.sub_modules.int_anchor_residual import refresh_reason, pred
 from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.models.sub_modules.int_early_cache import early_descriptor
 from opencood.models.sub_modules.int_local_cache import local_change_mask
-from opencood.models.sub_modules.int_cache_repair import expand_tiles,refresh_tiles
+from opencood.models.sub_modules.int_cache_repair import expand_tiles,refresh_tiles,tile_mask
+
+
+def diagnostic_repair_selection(candidate,old,request,valid,policy,tile=4):
+    """Full-repair-informed diagnostic, NOT a compute-saving selector.
+
+    Energy selection matches the change mask's tile count and preserves all
+    uncovered tiles. Complement isolates correction outside the change mask.
+    The candidate must already have been computed over the complete image.
+    """
+    active=tile_mask(request,tile);required=tile_mask(~valid,tile)
+    assert bool((active | ~required).all())
+    energy=(candidate-old).square().mean(1,keepdim=True)
+    if policy=='energy':
+        score=F.avg_pool2d(energy,tile,tile,ceil_mode=True,count_include_pad=False)
+        chosen=required.clone();count=int(active.sum()-required.sum())
+        if count:
+            rank=score.masked_fill(required,-float('inf')).flatten()
+            chosen.view(-1)[rank.topk(count,sorted=False).indices]=True
+        assert int(chosen.sum())==int(active.sum())
+    elif policy=='complement':chosen=~active | required
+    elif policy=='change':chosen=active
+    else:raise ValueError('Unknown diagnostic selection')
+    written=expand_tiles(chosen,tile,old.shape[-2:])
+    assert bool((written | valid).all())
+    stats=dict(requested_fraction=float(written.float().mean()),
+        actual_write_fraction=float(written.float().mean()),executed_input_area_ratio=1.,
+        correction_energy_kept=float((energy*written).sum()/energy.sum().clamp_min(1e-12)),
+        selected_tiles=int(chosen.sum()),change_tiles=int(active.sum()),
+        uncovered_tiles=int(required.sum()),overlap_change_tiles=int((chosen & active).sum()))
+    return torch.where(written,candidate,old),stats
 
 
 class SplitCompactReadout(nn.Module):
@@ -59,7 +89,7 @@ class SplitReadoutDetector:
     Optional correction supports dense or explicitly requested regional execution.
     """
     def __init__(self, model, config, readout, period=3, repair=None,
-                 threshold=None,execution='sparse'):
+                 threshold=None,execution='sparse',diagnostic_policy=None):
         if model.training or readout.training or period not in (1,3):
             raise ValueError('Frozen models and period1/3 required')
         if len(model.backbone.deblocks)!=3 or not model.shrink_flag:
@@ -72,6 +102,10 @@ class SplitReadoutDetector:
             raise ValueError('Regional correction needs repair and finite nonnegative threshold')
         if execution not in ('sparse','masked_dense'):raise ValueError('Unknown repair execution')
         self.threshold,self.execution=threshold,execution
+        if diagnostic_policy is not None and (threshold is None or execution!='masked_dense' or
+                                              diagnostic_policy not in ('change','energy','complement')):
+            raise ValueError('Diagnostic selection requires threshold and full repair execution')
+        self.diagnostic_policy=diagnostic_policy
         self.bounds=config['model']['args']['lidar_range']
 
     def step(self,data,state,meta):
@@ -110,8 +144,12 @@ class SplitReadoutDetector:
                     aligned,covered=warp_bev(cache['desc'],cache['pose'],meta['pose'],self.bounds)
                     changed=expand_tiles(local_change_mask(desc,aligned,covered,self.threshold),4,first.shape[-2:])
                     request=(F.max_pool2d(changed.float(),3,1,1)>0) | ~valid
-                    projected,_,repair_stats=refresh_tiles(self.repair,packed,projected,request,1,1,tile=4,
-                        allow_fallback=False,execution=self.execution)
+                    if self.diagnostic_policy is None:
+                        projected,_,repair_stats=refresh_tiles(self.repair,packed,projected,request,1,1,tile=4,
+                            allow_fallback=False,execution=self.execution)
+                    else:
+                        projected,repair_stats=diagnostic_repair_selection(self.repair(packed),projected,
+                            request,valid,self.diagnostic_policy)
             cache=dict(cache,frames=cache['frames']+1)
         assert current.shape==projected.shape
         prediction=predict(m,self.readout.fuse(current,projected))
