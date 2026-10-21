@@ -1,0 +1,124 @@
+{
+  "family": "ann2bit",
+  "source_sha256": "d0dc7b9ab4ccaad531a8fc63e0a7e8b91a62ab5fa7cf4d0740e366c6422b4bd8",
+  "trainable": [
+    "content.project.weight",
+    "content.expand.weight"
+  ],
+  "trainable_parameters": 8192,
+  "original_comparisons": [
+    {
+      "frame": 0,
+      "mode": "b2048",
+      "heads_and_packet_exact": true
+    },
+    {
+      "frame": 0,
+      "mode": "full",
+      "heads_and_packet_exact": true
+    },
+    {
+      "frame": 1,
+      "mode": "b2048",
+      "heads_and_packet_exact": true
+    },
+    {
+      "frame": 1,
+      "mode": "full",
+      "heads_and_packet_exact": true
+    }
+  ],
+  "augmented_wire": [
+    {
+      "budget": 0,
+      "bytes": [
+        0,
+        0
+      ],
+      "exact": true
+    },
+    {
+      "budget": 2048,
+      "bytes": [
+        2044,
+        2043
+      ],
+      "exact": true
+    },
+    {
+      "budget": 4096,
+      "bytes": [
+        4096,
+        4092
+      ],
+      "exact": true
+    }
+  ],
+  "zero_equals_ego": true,
+  "passed": true,
+  "gradient_l1": {
+    "content.project.weight": 6.9080963134765625,
+    "content.expand.weight": 5.207759857177734
+  },
+  "optimizer_step_discarded": true,
+  "other_state_unchanged": true,
+  "training_step_seconds": 0.20321110100485384,
+  "audit64": {
+    "samples": 64,
+    "indexed_samples": 1738,
+    "full_split": false,
+    "predicted_boxes": 837,
+    "gt_boxes": 917,
+    "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+    "ap": {
+      "0.3": 0.7389732604758917,
+      "0.5": 0.6738514580449914,
+      "0.7": 0.5279809934571867
+    },
+    "feature_packets": {
+      "count": 64,
+      "mean_bytes": 2045.21875,
+      "median_bytes": 2045.0,
+      "min_bytes": 2040,
+      "max_bytes": 2048,
+      "p95_bytes": 2048.0,
+      "total_bytes": 130894,
+      "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+    },
+    "profile": {
+      "batch_size": 1,
+      "warmup_frames_excluded": 20,
+      "timed_frames": 44,
+      "milliseconds": {
+        "batch_wait_ms": {
+          "mean": 11.31516689201817,
+          "median": 10.37390751298517,
+          "p95": 17.9150560637936
+        },
+        "h2d_ms": {
+          "mean": 11.737073824571615,
+          "median": 11.159330373629928,
+          "p95": 13.759287202265114
+        },
+        "forward_ms": {
+          "mean": 92.100517639086,
+          "median": 89.59407149814069,
+          "p95": 107.56013755453752
+        },
+        "postprocess_ms": {
+          "mean": 17.266604678959332,
+          "median": 16.456649522297084,
+          "p95": 24.541066435631365
+        },
+        "ready_batch_inference_ms": {
+          "mean": 121.10419614261694,
+          "median": 117.31083760969341,
+          "p95": 138.79456070717424
+        }
+      },
+      "peak_allocated_bytes": 432093696,
+      "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+    }
+  },
+  "source_checkpoint_unchanged": true
+}

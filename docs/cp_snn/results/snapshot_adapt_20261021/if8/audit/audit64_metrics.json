@@ -1,0 +1,57 @@
+{
+  "samples": 64,
+  "indexed_samples": 1738,
+  "full_split": false,
+  "predicted_boxes": 887,
+  "gt_boxes": 917,
+  "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+  "ap": {
+    "0.3": 0.713494231471608,
+    "0.5": 0.6310080499212299,
+    "0.7": 0.4888938458178628
+  },
+  "feature_packets": {
+    "count": 64,
+    "mean_bytes": 2044.890625,
+    "median_bytes": 2045.5,
+    "min_bytes": 2036,
+    "max_bytes": 2048,
+    "p95_bytes": 2048.0,
+    "total_bytes": 130873,
+    "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+  },
+  "profile": {
+    "batch_size": 1,
+    "warmup_frames_excluded": 20,
+    "timed_frames": 44,
+    "milliseconds": {
+      "batch_wait_ms": {
+        "mean": 10.529552014883269,
+        "median": 9.479337022639811,
+        "p95": 15.326945076230913
+      },
+      "h2d_ms": {
+        "mean": 11.271752702834254,
+        "median": 10.885994066484272,
+        "p95": 14.460839028470218
+      },
+      "forward_ms": {
+        "mean": 662.89568656992,
+        "median": 659.8425830015913,
+        "p95": 724.2426897748373
+      },
+      "postprocess_ms": {
+        "mean": 17.87963351869786,
+        "median": 17.142570461146533,
+        "p95": 27.30147959664464
+      },
+      "ready_batch_inference_ms": {
+        "mean": 692.0470727914521,
+        "median": 690.5482988804579,
+        "p95": 751.5718874288723
+      }
+    },
+    "peak_allocated_bytes": 445284864,
+    "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "pid": 6045,
+  "gpu": 0,
+  "admission": {
+    "accepted": true,
+    "minimum_free_mib": 8192,
+    "allocator_fraction": 0.2,
+    "mean_util_percent": 0.0,
+    "samples": [
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      }
+    ],
+    "policy": "user_authorized_shared"
+  },
+  "started_unix": 1792573243.1703277,
+  "code_commit": "f21be13d34c8019b24a20efda0271b173cb2b2e0"
+}

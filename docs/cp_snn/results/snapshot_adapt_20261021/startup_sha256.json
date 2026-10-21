@@ -1,0 +1,12 @@
+{
+  "launch.json": "9b4f4eb5b24ac74b27d140bd7480ee61f368fb6c9bbc7f25e14d3c15ca9a0879",
+  "protocol.json": "f283a8fe9bfe632cc0c278e01d41e33cb1c0f1438269c5a4a736c6df3ed8698f",
+  "audits_complete.json": "3dcac20b39db21e07313b9d0b87578b0c340bc2ef0a629e10c05703b27ba0041",
+  "if8/audit/audit.json": "c6cc02fa92953817f29e31c6de321b1e9c172c72e1b6e9c9c29e334baf55bf25",
+  "if8/audit/audit64_metrics.json": "8d60ae278c8ae4a02c2db529d5c14f6e03ae2cc5802bcceeba05fd102bbcf44b",
+  "if8/train.yaml": "f6379384c110847efbeee7326ade495826c19a9d39da6db42a1138794b588f3f",
+  "ann2bit/audit/audit.json": "00b7b990449ba62c5ba60d65acad6445c6259f22366919a571482485f61b1306",
+  "ann2bit/audit/audit64_metrics.json": "810e4e13179cf5cdcf6fd3b9b0f7db2eb422b0a4475eb7f4a64890128755b691",
+  "ann2bit/train.yaml": "be1a356191de13bdc5f6115d2ee06e0a43ab193a939780b0dd31bbae83a9d7b7",
+  "startup_snapshot.json": "a19d4a3b7b1663d5f42a836f972fe1e24492668920c7266d7bef41782f327f3f"
+}

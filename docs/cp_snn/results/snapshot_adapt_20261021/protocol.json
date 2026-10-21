@@ -1,0 +1,42 @@
+{
+  "sources": {
+    "if8": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_event_receiver_20261021/receiver/train/best_ap70.pth",
+      "sha256": "60b7e0ff84e992862902aa9325b56ac13ab5658d70c4aacb194028638f5105dc"
+    },
+    "ann2bit": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn_adapt10/best_ap70.pth",
+      "sha256": "d0dc7b9ab4ccaad531a8fc63e0a7e8b91a62ab5fa7cf4d0740e366c6422b4bd8"
+    }
+  },
+  "config_hashes": {
+    "if8/train.yaml": "f6379384c110847efbeee7326ade495826c19a9d39da6db42a1138794b588f3f",
+    "if8/b0.yaml": "62997dd58b252fcf6078601c995826bde58bc6e61d9cf7ccda4c6bb18bafee11",
+    "if8/b2048.yaml": "4eb708cb2aec92686edbb2ac5395d426d8966bbf5082d6006b0b63702a24660e",
+    "if8/b4096.yaml": "f063dc08ed58eff65e5a1dc5b6975fb7e36532a5da4661b0c021106e92f6e289",
+    "if8/full.yaml": "54c74d7e75f54a139281e1be9f10bab063a30ed771f05a5b96713be876ef2146",
+    "ann2bit/train.yaml": "be1a356191de13bdc5f6115d2ee06e0a43ab193a939780b0dd31bbae83a9d7b7",
+    "ann2bit/b0.yaml": "33ae493bee37a937e3980164245a2bcfa9cc19821f45825e3762ebd9ea3dbe97",
+    "ann2bit/b2048.yaml": "400adf72f06f16a3d9d4965add3672f4e9f4ce015df58c4290a6127cd38f7b68",
+    "ann2bit/b4096.yaml": "bdda578062ffc3049741621c85d200dc045a70823afd86ee18a0869815cc9ab3",
+    "ann2bit/full.yaml": "e1b9bc223433996d79a6eb5d8192a1469abbc6cef8044a7bc9027104c115d818"
+  },
+  "trainable": [
+    "content.project.weight",
+    "content.expand.weight"
+  ],
+  "epochs": 10,
+  "seed": 20260929,
+  "training_budget_bytes": 2048,
+  "selection": "max validation BEV AP70 at 2048 bytes, epochs 0..10",
+  "final_budgets": [
+    0,
+    2048,
+    4096,
+    null
+  ],
+  "limitation": "same additional training only; historical systems and selection/receivers differ",
+  "gradient": "existing quantizer or fixed-frontier STE; sorting and actual bytes not differentiable",
+  "objective": "one fused detection loss; frozen ego auxiliary disabled identically; no distillation/rate loss",
+  "exit": "one two-family P+D round; no extra LR/epochs/codec sweep"
+}

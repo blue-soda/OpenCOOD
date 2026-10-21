@@ -1,0 +1,12 @@
+{
+  "at_unix": 1792573409.420024,
+  "status": {
+    "state": "running",
+    "stage": "train_if8",
+    "started_unix": 1792573393.856049
+  },
+  "if8_progress": {
+    "state": "initial_validation",
+    "epoch": 0
+  }
+}
