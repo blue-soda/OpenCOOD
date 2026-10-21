@@ -1,0 +1,16 @@
+{
+  "conv_macs": {
+    "cached_full": 126069350400,
+    "cached_partial": 59389747200,
+    "full_full": 126069350400,
+    "repaired_full": 126069350400,
+    "repaired_partial": 59655859200
+  },
+  "frames": 32,
+  "gradient_checked": true,
+  "partial_deep_decode_calls": 0,
+  "partial_frames": 21,
+  "probe_weights_restored": true,
+  "status": "PASSED",
+  "train_deploy_max_error": 0.0
+}
