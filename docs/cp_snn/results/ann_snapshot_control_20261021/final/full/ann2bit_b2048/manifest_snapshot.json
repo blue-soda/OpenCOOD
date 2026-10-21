@@ -1,0 +1,20 @@
+{
+  "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn_adapt10/best_ap70.pth",
+  "checkpoint_sha256": "d0dc7b9ab4ccaad531a8fc63e0a7e8b91a62ab5fa7cf4d0740e366c6422b4bd8",
+  "config": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn/full.yaml",
+  "config_sha256": "b97bd53ddfe06ae9edcaec03e1afb0e7b66acd1d88c0d81c961e5f1fd986134a",
+  "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+  "split_sha256": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+  },
+  "git_commit": "a4650688140dc06a8503663c9c5940ba56f9e097",
+  "family": "ann2bit",
+  "mode": "b2048",
+  "limit": 0,
+  "seed": 20260929,
+  "training": false,
+  "cuda_allocator_memory_fraction": 0.2,
+  "scale_policy": "ANN transmits 32 FP32 scales; IF unit scales declared",
+  "comparison": "Frozen historical systems; different receivers, selection and training; not causal activation-only control"
+}

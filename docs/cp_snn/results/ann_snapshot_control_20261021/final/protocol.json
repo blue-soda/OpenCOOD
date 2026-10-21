@@ -1,0 +1,26 @@
+{
+  "sources": {
+    "if8": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_event_receiver_20261021/receiver/train/best_ap70.pth",
+      "config": "/data1/tzm/workspace/diagnostics/e3dsnn_event_receiver_20261021/receiver/b4096.yaml",
+      "sha256": "60b7e0ff84e992862902aa9325b56ac13ab5658d70c4aacb194028638f5105dc"
+    },
+    "ann2bit": {
+      "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn_adapt10/best_ap70.pth",
+      "config": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn/full.yaml",
+      "sha256": "d0dc7b9ab4ccaad531a8fc63e0a7e8b91a62ab5fa7cf4d0740e366c6422b4bd8"
+    }
+  },
+  "modes": [
+    "full",
+    "b2048"
+  ],
+  "budget_bytes": 2048,
+  "seed": 20260929,
+  "training": false,
+  "gates": "smoke2 original full source equality and CPU replay; audit64 wire equality, hard bytes and <=5s audit forward; full1738",
+  "ann_selection": "original raw-feature L1 ordering within original 50% candidates; complete 2bit rows; first actual-byte overflow stops",
+  "snn_selection": "original IF unit-event ordering; first actual-byte overflow stops",
+  "codec": "common E3TS1 spatial rows/channel mask; nonzero values 2bit ANN or 4bit IF; ANN FP32 channel scales included",
+  "limitation": "different historical training, receivers and selection; engineering reference, not isolated SNN causality"
+}

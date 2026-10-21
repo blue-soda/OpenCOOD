@@ -1,0 +1,36 @@
+{
+  "samples": 1738,
+  "indexed_samples": 1738,
+  "full_split": true,
+  "predicted_boxes": 26585,
+  "gt_boxes": 28622,
+  "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+  "ap": {
+    "0.3": 0.7503194705746975,
+    "0.5": 0.7092735273674309,
+    "0.7": 0.5931790234372386
+  },
+  "ap_3d": {
+    "0.3": 0.7395198866379522,
+    "0.5": 0.6612044966487868,
+    "0.7": 0.42567393728133107
+  },
+  "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+  "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+  "predictions": {
+    "directory": "predictions",
+    "frames": 1738,
+    "index_sha256": "49b1f4081b417af7667251c44d08525d7b6e447fd98943bb736d0d9eb3929e18"
+  },
+  "feature_packets": {
+    "count": 1738,
+    "mean_bytes": 2044.7364787111624,
+    "median_bytes": 2045.0,
+    "min_bytes": 2034,
+    "max_bytes": 2048,
+    "p95_bytes": 2048.0,
+    "total_bytes": 3553752,
+    "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+  },
+  "wire_audit_sha256": "a411c0c0be6678a55209dbdf8f1f0571fb58242da47578229f4c1b10be62459c"
+}
