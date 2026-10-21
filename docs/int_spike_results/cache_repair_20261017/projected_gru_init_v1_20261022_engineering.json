@@ -1,0 +1,19 @@
+{
+  "conv_macs": {
+    "base_cached_full": 126069350400,
+    "base_cached_partial": 59655859200,
+    "base_full_full": 126069350400,
+    "original_full": 150532300800,
+    "r32_cached_full": 110586470400,
+    "r32_cached_partial": 44172979200,
+    "r32_full_full": 110586470400,
+    "r64_cached_full": 117398937600,
+    "r64_cached_partial": 50985446400,
+    "r64_full_full": 117398937600
+  },
+  "finite_predictions": true,
+  "frames": 32,
+  "immutable_anchors": true,
+  "partial_checks": 60,
+  "status": "PASSED"
+}
