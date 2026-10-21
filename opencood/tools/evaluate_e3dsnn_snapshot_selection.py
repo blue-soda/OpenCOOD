@@ -226,12 +226,55 @@ def run(root, source, audit, limit=0):
         raise
 
 
+def coordinate(root, source, audit, gpu):
+    from opencood.tools.launch_e3dsnn_joint_round import check_gpu
+    try:
+        for name,limit in (('smoke',2),('full',0)):
+            write(root/(name+'_admission.json'),check_gpu(gpu,True,.2))
+            write(root/'pipeline_status.json',dict(state='running',stage=name))
+            with (root/(name+'.log')).open('xb') as log:
+                subprocess.run([sys.executable,'-u','-m','opencood.tools.evaluate_e3dsnn_snapshot_selection',
+                    '--root',str(root/name),'--source',str(source),'--audit',str(audit),'--limit',str(limit)],
+                    stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=21600)
+            assert json.loads((root/name/'summary.json').read_text())['passed']
+        write(root/'pipeline_status.json',dict(state='complete',summary_sha256=sha(root/'full/summary.json')))
+    except Exception:
+        write(root/'pipeline_status.json',dict(state='failed',error=traceback.format_exc(),note='No automatic retry'))
+        raise
+
+
+def launch(root, source, audit, gpu):
+    from opencood.tools.launch_e3dsnn_joint_round import check_gpu
+    from opencood.tools.launch_e3dsnn_hybrid_round import REPO
+    check=json.loads((audit/'summary.json').read_text())
+    assert check['passed'] and check['full_evaluation_cost_gate']
+    assert json.loads((audit/'reference_equivalence.json').read_text())['passed']
+    assert sha(source/'train/best_ap70.pth')==SOURCE_SHA
+    if root.exists(): raise FileExistsError('Fresh launch directory required')
+    admission=check_gpu(gpu,True,.2)
+    root.mkdir()
+    env=dict(os.environ,CUDA_VISIBLE_DEVICES=str(gpu),PYTHONPATH=str(REPO),
+        OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1')
+    with (root/'pipeline.log').open('xb') as log:
+        process=subprocess.Popen([sys.executable,'-u','-m','opencood.tools.evaluate_e3dsnn_snapshot_selection',
+            '--root',str(root),'--source',str(source),'--audit',str(audit),'--gpu',str(gpu),'--coordinate'],
+            cwd=str(REPO),env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+    record=dict(pid=process.pid,gpu=gpu,admission=admission,audit_sha256=sha(audit/'summary.json'),
+        code_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=str(REPO)).decode().strip(),
+        started_unix=time.time(),protocol='2-frame real smoke plus CPU replay then paired 1738-frame frozen comparison')
+    write(root/'launch.json',record); print(json.dumps(record),flush=True)
+
+
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',required=True)
     p.add_argument('--cache');p.add_argument('--source');p.add_argument('--audit')
     p.add_argument('--verify-reference')
+    p.add_argument('--launch',action='store_true');p.add_argument('--coordinate',action='store_true')
+    p.add_argument('--gpu',type=int,default=0)
     p.add_argument('--limit',type=int,choices=(0,2),default=0)
     a=p.parse_args()
-    if a.verify_reference: verify_reference(Path(a.root),Path(a.verify_reference))
+    if a.launch: launch(Path(a.root),Path(a.source),Path(a.audit),a.gpu)
+    elif a.coordinate: coordinate(Path(a.root),Path(a.source),Path(a.audit),a.gpu)
+    elif a.verify_reference: verify_reference(Path(a.root),Path(a.verify_reference))
     elif a.cache: cache_audit(Path(a.root),Path(a.cache))
     else: run(Path(a.root),Path(a.source),Path(a.audit),a.limit)
