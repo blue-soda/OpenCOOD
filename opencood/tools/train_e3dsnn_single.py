@@ -261,7 +261,7 @@ def execute(args, output_dir):
             prefixes=getattr(model, 'content_prefix_semantics',
                 'min(count,k); fixed frame scales; aligned latent sum'),
             projection='bias-free 128->32->128; frozen/learned content control')
-            if hasattr(model,'content_family') and not hasattr(model,'event_budget') else None,
+            if hasattr(model,'content_family') and not hasattr(model,'event_budget') and not hasattr(model,'snapshot_family') else None,
         'joint_membrane': dict(local_precount_used=model.joint_receiver.use_local_membrane,
             retain_post_readout_residual=model.joint_receiver.retain_residual,
             learned_order=model.joint_learn_order,
@@ -271,7 +271,7 @@ def execute(args, output_dir):
             state='U=Q_previous+R_previous+aligned_current; Q=Count4(U); R=U-Q',
             schedule='learned disjoint latent voxel batches; sender-local scores',
             detector_backend='frozen ANN BEV and continuous heads')
-            if hasattr(model, 'joint_receiver') and not hasattr(model,'event_budget') else None,
+            if hasattr(model, 'joint_receiver') and not hasattr(model,'event_budget') and not hasattr(model,'snapshot_family') else None,
         'event_stream': dict(schema='if-unit-events-v1',threshold=1.,horizon=1.,
             max_spikes=model.event_max_spikes,budget_bytes=model.event_budget,
             train_budget_range=model.event_train_budgets,packet_events=model.event_packet_events,
@@ -284,7 +284,7 @@ def execute(args, output_dir):
             transport=model.event_transport,
             state_scope='one frame, one infrastructure sender',
             compute='CPU scheduling/dense readout reference; not event-kernel efficiency')
-            if hasattr(model,'event_budget') else None,
+            if hasattr(model,'event_budget') and not hasattr(model,'snapshot_family') else None,
         'progressive': dict(packets=model.progressive_packets,readout_prefix=model.readout_prefix,
             sender_order=model.sender_order,retain_residual=model.membrane_fusion.retain_residual,
             adaptive_gate=model.membrane_fusion.adaptive_gate,geometry_dtype='float64',
