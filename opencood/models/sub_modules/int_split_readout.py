@@ -15,6 +15,13 @@ from opencood.models.sub_modules.int_local_cache import local_change_mask
 from opencood.models.sub_modules.int_cache_repair import expand_tiles,refresh_tiles,tile_mask
 
 
+def split_change_request(desc,old_desc,old_pose,pose,bounds,valid,threshold,shape):
+    """Same-layer shallow comparison used by training and regional inference."""
+    aligned,covered=warp_bev(old_desc,old_pose,pose,bounds)
+    changed=expand_tiles(local_change_mask(desc,aligned,covered,threshold),4,shape)
+    return (F.max_pool2d(changed.float(),3,1,1)>0) | ~valid
+
+
 def diagnostic_repair_selection(candidate,old,request,valid,policy,tile=4):
     """Full-repair-informed diagnostic, NOT a compute-saving selector.
 
@@ -141,9 +148,8 @@ class SplitReadoutDetector:
                     projected=self.repair(packed)
                     repair_stats=dict(requested_fraction=1.,actual_write_fraction=1.,executed_input_area_ratio=1.)
                 else:
-                    aligned,covered=warp_bev(cache['desc'],cache['pose'],meta['pose'],self.bounds)
-                    changed=expand_tiles(local_change_mask(desc,aligned,covered,self.threshold),4,first.shape[-2:])
-                    request=(F.max_pool2d(changed.float(),3,1,1)>0) | ~valid
+                    request=split_change_request(desc,cache['desc'],cache['pose'],meta['pose'],self.bounds,
+                        valid,self.threshold,first.shape[-2:])
                     if self.diagnostic_policy is None:
                         projected,_,repair_stats=refresh_tiles(self.repair,packed,projected,request,1,1,tile=4,
                             allow_fallback=False,execution=self.execution)

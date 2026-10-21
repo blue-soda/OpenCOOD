@@ -1,0 +1,139 @@
+{
+  "crop_masked_prediction_max_error": 0.0,
+  "labels": 1738,
+  "results": {
+    "05_masked_dense": {
+      "ap50": 0.8299608687589851,
+      "ap70": 0.7532738909256946,
+      "conv_gflops": 165.27618158812564,
+      "mean_ms": 20.03689015279028,
+      "p95_ms": 30.003412126097828,
+      "partial_area_columns": [
+        "request",
+        "write",
+        "executed_input"
+      ],
+      "partial_area_mean": [
+        0.03272350482581025,
+        0.05438700764605974,
+        1.0
+      ],
+      "partial_frames": 3789,
+      "repair_execution_area_per_all_frames": 0.6539523645150155
+    },
+    "cached": {
+      "ap50": 0.8293572735996714,
+      "ap70": 0.752781663200643,
+      "conv_gflops": 164.928132444874,
+      "mean_ms": 18.740496981163144,
+      "p95_ms": 30.13247677590698,
+      "partial_frames": 3789
+    },
+    "dense": {
+      "ap50": 0.8325700560673862,
+      "ap70": 0.7553967658970537,
+      "conv_gflops": 165.27618158812564,
+      "mean_ms": 18.922059840989977,
+      "p95_ms": 30.061557504814118,
+      "partial_frames": 3789
+    },
+    "diagnostic_change": {
+      "ap50": 0.8299608687589851,
+      "ap70": 0.7532738909256946,
+      "conv_gflops": 165.27618158812564,
+      "diagnostic_means": {
+        "change_tiles": 85.65954077593032,
+        "correction_energy_kept": 0.12301350704212514,
+        "overlap_change_tiles": 85.65954077593032,
+        "selected_tiles": 85.65954077593032,
+        "uncovered_tiles": 41.31221958300343
+      },
+      "mean_ms": 20.218598148750107,
+      "p95_ms": 30.04694962874055,
+      "partial_area_columns": [
+        "request",
+        "write",
+        "executed_input"
+      ],
+      "partial_area_mean": [
+        0.05438700764605974,
+        0.05438700764605974,
+        1.0
+      ],
+      "partial_frames": 3789,
+      "repair_execution_area_per_all_frames": 0.6539523645150155
+    },
+    "diagnostic_complement": {
+      "ap50": 0.8325643378558167,
+      "ap70": 0.7553171965327031,
+      "conv_gflops": 165.27618158812564,
+      "diagnostic_means": {
+        "change_tiles": 85.65954077593032,
+        "correction_energy_kept": 0.9708553557110889,
+        "overlap_change_tiles": 41.31221958300343,
+        "selected_tiles": 1530.652678807073,
+        "uncovered_tiles": 41.31221958300343
+      },
+      "mean_ms": 20.16675337971308,
+      "p95_ms": 30.007723218295723,
+      "partial_area_columns": [
+        "request",
+        "write",
+        "executed_input"
+      ],
+      "partial_area_mean": [
+        0.9718429187288634,
+        0.9718429187288634,
+        1.0
+      ],
+      "partial_frames": 3789,
+      "repair_execution_area_per_all_frames": 0.6539523645150155
+    },
+    "diagnostic_energy": {
+      "ap50": 0.8300533134719331,
+      "ap70": 0.7534431999829808,
+      "conv_gflops": 165.27618158812564,
+      "diagnostic_means": {
+        "change_tiles": 85.65954077593032,
+        "correction_energy_kept": 0.2516539549863007,
+        "overlap_change_tiles": 44.91844813935075,
+        "selected_tiles": 85.65954077593032,
+        "uncovered_tiles": 41.31221958300343
+      },
+      "mean_ms": 20.300225830616952,
+      "p95_ms": 30.016922508366406,
+      "partial_area_columns": [
+        "request",
+        "write",
+        "executed_input"
+      ],
+      "partial_area_mean": [
+        0.05438700764605974,
+        0.05438700764605974,
+        1.0
+      ],
+      "partial_frames": 3789,
+      "repair_execution_area_per_all_frames": 0.6539523645150155
+    },
+    "full": {
+      "ap50": 0.832712474888943,
+      "ap70": 0.7562138415770423,
+      "conv_gflops": 252.1387008,
+      "mean_ms": 29.546248943195195,
+      "p95_ms": 30.547808832488954,
+      "partial_frames": 0
+    },
+    "original": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "mean_ms": 32.01452976028772,
+      "p95_ms": 33.33816850790754,
+      "partial_frames": 0
+    }
+  },
+  "scans": 5794,
+  "scope": "Same GPU rotating model latency excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2, not all model operations. Regional repair costs include halo duplication. Repair area per all frames counts zero on full refresh, whose heavy network work is separately included in total conv cost.",
+  "selection_diagnostic": true,
+  "status": "COMPLETED"
+}
