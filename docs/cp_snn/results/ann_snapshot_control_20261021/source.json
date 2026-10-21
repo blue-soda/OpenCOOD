@@ -1,0 +1,102 @@
+{
+  "passed": true,
+  "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn_adapt10/best_ap70.pth",
+  "checkpoint_sha256": "d0dc7b9ab4ccaad531a8fc63e0a7e8b91a62ab5fa7cf4d0740e366c6422b4bd8",
+  "config": "/data1/tzm/workspace/diagnostics/e3dsnn_content_round1_v2_20261019/ann_learn/full.yaml",
+  "config_sha256": "b97bd53ddfe06ae9edcaec03e1afb0e7b66acd1d88c0d81c961e5f1fd986134a",
+  "summary_sha256": "a182257ab9d88c60c4dbe238dfb9e9cd8b198817b6266f1426e5741bd65771f3",
+  "model": {
+    "args": {
+      "activation": "relu",
+      "anchor_number": 2,
+      "budget_codec": {
+        "bits": 2,
+        "keep_fraction": 0.5
+      },
+      "content_full_packet": true,
+      "content_trainable": true,
+      "dir_args": {
+        "anchor_yaw": [
+          0,
+          90
+        ],
+        "dir_offset": 0.7853,
+        "num_bins": 2
+      },
+      "ego_aux_weight": 1.0,
+      "enable_ego_aux": true,
+      "freeze_detector_bn": true,
+      "fusion_activation_kind": "relu",
+      "fusion_mode": "residual",
+      "identity_fusion_init": true,
+      "lidar_range": [
+        -100.8,
+        -40,
+        -3.5,
+        100.8,
+        40,
+        1.5
+      ],
+      "message_dropout": 0.1,
+      "readout_prefix": 3,
+      "receiver_activation": "relu",
+      "train_encoder": false,
+      "voxel_size": [
+        0.2,
+        0.2,
+        0.1
+      ]
+    },
+    "core_method": "e3dsnn_content_detector"
+  },
+  "full_ap": {
+    "0.3": 0.7831793305147338,
+    "0.5": 0.7397680941428165,
+    "0.7": 0.6109844245889968
+  },
+  "full_bytes": {
+    "count": 1738,
+    "mean_bytes": 7646.221518987341,
+    "median_bytes": 7609.0,
+    "min_bytes": 5296,
+    "max_bytes": 9735,
+    "p95_bytes": 9284.9,
+    "total_bytes": 13289133,
+    "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+  },
+  "p1_ap": {
+    "0.3": 0.7744093056493756,
+    "0.5": 0.7315146309151241,
+    "0.7": 0.6107374375108049
+  },
+  "p1_bytes": {
+    "count": 1738,
+    "mean_bytes": 6940.575373993095,
+    "median_bytes": 6916.5,
+    "min_bytes": 4718,
+    "max_bytes": 8681,
+    "p95_bytes": 8300.349999999999,
+    "total_bytes": 12062720,
+    "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+  },
+  "full_replay": {
+    "passed": true,
+    "samples": 1738,
+    "predicted_boxes": 28423,
+    "gt_boxes": 28622,
+    "ap": {
+      "0.3": 0.7831793305147338,
+      "0.5": 0.7397680941428165,
+      "0.7": 0.6109844245889968
+    },
+    "exact_match": true,
+    "all_file_hashes_verified": true,
+    "ap_3d": {
+      "0.3": 0.7713427088458337,
+      "0.5": 0.6858442563249182,
+      "0.7": 0.4279849919606858
+    }
+  },
+  "ordered_gt_sha256": "54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee",
+  "purpose": "Frozen strong ANN engineering reference; historical training and receiver differ; not matched causal SNN/ANN ablation"
+}

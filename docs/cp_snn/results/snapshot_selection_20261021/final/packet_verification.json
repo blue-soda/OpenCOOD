@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "packets": 3476,
+  "paired_frames": 1738,
+  "all_packet_hashes_and_hard_budgets_verified": true,
+  "shared_source_event_hashes_verified": true
+}

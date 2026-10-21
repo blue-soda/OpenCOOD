@@ -1,0 +1,19 @@
+{
+  "checkpoint_sha256": "60b7e0ff84e992862902aa9325b56ac13ab5658d70c4aacb194028638f5105dc",
+  "budget_bytes": 2048,
+  "modes": [
+    "events",
+    "rows"
+  ],
+  "selection": "first serialized overflow stops; no monotonicity or maximality claim",
+  "shared_source": true,
+  "training": false,
+  "audit_sha256": "80d8f9e56bc14851cc541fa1af5dbf01dce5f06cef2ffcecdf988c335881d2b5",
+  "seed": 20260929,
+  "full_frames": 1738,
+  "full_gt": 28622,
+  "limit": 0,
+  "code_commit": "ee06fe6e3072a3626d298af18707269f5eb1dece",
+  "limitation": "complete rows use future within-frame counts; offline scheduling, not online causality",
+  "exit": "one matched selection contrast; no parameter sweep if row selection has no benefit"
+}

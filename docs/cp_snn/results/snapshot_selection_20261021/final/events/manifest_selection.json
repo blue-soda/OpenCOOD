@@ -1,0 +1,28 @@
+{
+  "checkpoint_sha256": "60b7e0ff84e992862902aa9325b56ac13ab5658d70c4aacb194028638f5105dc",
+  "budget_bytes": 2048,
+  "modes": [
+    "events",
+    "rows"
+  ],
+  "selection": "first serialized overflow stops; no monotonicity or maximality claim",
+  "shared_source": true,
+  "training": false,
+  "audit_sha256": "80d8f9e56bc14851cc541fa1af5dbf01dce5f06cef2ffcecdf988c335881d2b5",
+  "seed": 20260929,
+  "full_frames": 1738,
+  "full_gt": 28622,
+  "limit": 0,
+  "code_commit": "ee06fe6e3072a3626d298af18707269f5eb1dece",
+  "limitation": "complete rows use future within-frame counts; offline scheduling, not online causality",
+  "exit": "one matched selection contrast; no parameter sweep if row selection has no benefit",
+  "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_event_receiver_20261021/receiver/train/best_ap70.pth",
+  "config_sha256": "07244b9ea3db4601f2c8dcad94f028c361e29a175d57ad10f222d8d8966eb5d0",
+  "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+  "split_sha256": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+  },
+  "selection_mode": "events",
+  "cuda_allocator_memory_fraction": 0.2
+}
