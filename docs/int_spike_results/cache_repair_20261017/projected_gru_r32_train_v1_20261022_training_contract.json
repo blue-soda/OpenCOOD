@@ -1,0 +1,49 @@
+{
+  "data": {
+    "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+    "fm_only_epochs": 1,
+    "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+    "lr": 0.0001,
+    "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+    "min_delta": 0.001,
+    "min_epochs": 20,
+    "mode": "gru",
+    "patience": 10,
+    "seed": 303,
+    "state_policy": "whole-segment/tbptt/v1",
+    "tbptt_steps": 4
+  },
+  "epochs_max": 12,
+  "frozen": "Pillar, all backbone/deblocks/readout/heads, R, post_fusion and BN running statistics. Only three projected gates including BN affine learn.",
+  "optimizer": "AdamW1e-4 wd1e-4 clip5, full AP plateau factor.5 patience1 threshold.001; min6 epochs then stale4 and lr<=1e-5 stop.",
+  "rank": 32,
+  "readout": {
+    "ap70": 0.753534819214323,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/compact_readout_r96_v2_20261021/epoch_005/readout.pth",
+    "epoch": 5,
+    "sha256": "8bbf94e975997b2803c4a4c443fee2258589276e427dbc0a2550de6b562d7a0d"
+  },
+  "recurrence": "Own previous hidden state detached per frame; no teacher forcing, no multi-frame BPTT. Own detached full deep anchors every3 frames/age.25.",
+  "repair": {
+    "ap70": 0.7553967658970537,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/split_repair_r96_w32_v1_20261021/epoch_008/repair.pth",
+    "epoch": 8,
+    "sha256": "9f0997e23752683aa3a8fa6f5b9c9e65ddd91c7a1f2dca89e1beb7500a755fbd"
+  },
+  "retained_weight_energy": {
+    "candidate_conv": 0.6235523615941521,
+    "reset_gate_conv": 0.6985515054123507,
+    "update_gate_conv": 0.7098159310828772
+  },
+  "seed": 303,
+  "selection": "Primary best uses full AP; cached AP is reported for that same checkpoint. Preserve epoch0 as fallback. Dense GRU only; no new regional skipping.",
+  "source": {
+    "bev_ap70": 0.758736104616861,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+    "epoch": 17,
+    "sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8"
+  },
+  "timeout_seconds": 28800,
+  "train": "GT + .2 frozen compact base head KD per full/cached view; equal mean on partial frames, one full view on refresh. Add .5 current stage1 feature KD. No augmentation/delay.",
+  "trainable_parameters": 67968
+}

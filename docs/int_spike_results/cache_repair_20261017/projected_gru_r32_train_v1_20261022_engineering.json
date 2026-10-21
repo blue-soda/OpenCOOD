@@ -1,0 +1,17 @@
+{
+  "conv_macs": {
+    "base_cached_full": 126069350400,
+    "base_cached_partial": 59655859200,
+    "base_full_full": 126069350400,
+    "cached_full": 110586470400,
+    "cached_partial": 44172979200,
+    "full_full": 110586470400
+  },
+  "frames": 32,
+  "frozen_rest": true,
+  "immutable_own_anchors": true,
+  "own_recurrent_state": true,
+  "status": "PASSED",
+  "three_gate_gradients": true,
+  "train_deploy_max_error": 7.62939453125e-06
+}
