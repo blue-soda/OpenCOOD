@@ -1,0 +1,18 @@
+{
+  "conv_macs": {
+    "compact_cache_full": 134533324800,
+    "compact_cache_partial": 70950297600,
+    "compact_full_full": 134533324800,
+    "compact_repair_full": 134533324800,
+    "compact_repair_partial": 71329507200,
+    "original_full": 150532300800,
+    "original_repair_full": 150532300800,
+    "original_repair_partial": 87328483200
+  },
+  "frames": 32,
+  "immutable_anchors": true,
+  "partial_deep_calls": 0,
+  "partial_frames": 20,
+  "shared_repaired_inputs_exact": true,
+  "status": "PASSED"
+}
