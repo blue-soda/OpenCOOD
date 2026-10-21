@@ -1,0 +1,64 @@
+{
+  "labels": 1738,
+  "results": {
+    "base_cached": {
+      "ap50": 0.8325700560673862,
+      "ap70": 0.7553967658970537,
+      "conv_gflops": 165.27618158812564,
+      "mean_ms": 19.10406780952651,
+      "p95_ms": 30.230191187001765,
+      "partial_frames": 3789
+    },
+    "base_full": {
+      "ap50": 0.832712474888943,
+      "ap70": 0.7562138415770423,
+      "conv_gflops": 252.1387008,
+      "mean_ms": 29.74015414227898,
+      "p95_ms": 30.664762761443853,
+      "partial_frames": 0
+    },
+    "original": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "mean_ms": 32.30408057476262,
+      "p95_ms": 33.470371388830245,
+      "partial_frames": 0
+    },
+    "r32_cached": {
+      "ap50": 0.8313106238894136,
+      "ap70": 0.7515662092686006,
+      "conv_gflops": 134.31042158812565,
+      "mean_ms": 17.44899141931015,
+      "p95_ms": 28.47880248446017,
+      "partial_frames": 3789
+    },
+    "r32_full": {
+      "ap50": 0.8315042242812652,
+      "ap70": 0.7528362281190099,
+      "conv_gflops": 221.1729408,
+      "mean_ms": 28.03698794952984,
+      "p95_ms": 29.03065870050341,
+      "partial_frames": 0
+    },
+    "r64_cached": {
+      "ap50": 0.8322774102513919,
+      "ap70": 0.753797275546895,
+      "conv_gflops": 147.93535598812565,
+      "mean_ms": 18.11323336119162,
+      "p95_ms": 29.13403579732403,
+      "partial_frames": 3789
+    },
+    "r64_full": {
+      "ap50": 0.8326581947932195,
+      "ap70": 0.7554850768747318,
+      "conv_gflops": 234.7978752,
+      "mean_ms": 28.58045466160814,
+      "p95_ms": 29.6371701057069,
+      "partial_frames": 0
+    }
+  },
+  "scans": 5794,
+  "scope": "Untrained SVD initialization, not a convergence or capacity test. Same GPU rotating model latency excluding IO/H2D/postprocess. Standard convolution MACs x2 only. Dense projected GRU; no GRU region skipping.",
+  "status": "COMPLETED"
+}
