@@ -173,7 +173,7 @@ def run(root, source, audit, limit=0):
                     boxes,scores,gt=dataset.post_process_no_fusion(batch,{'ego':output})
                     for threshold in stats[mode]:
                         eval_utils.caluclate_tp_fp(boxes,scores,gt,stats[mode],threshold)
-                        eval_3d_utils.calculate_tp_fp_3d(boxes,scores,gt,stats3d[mode],threshold)
+                    eval_3d_utils.calculate_tp_fp_3d(boxes,scores,gt,stats3d[mode])
                     pred=boxes.cpu().numpy() if boxes is not None else np.empty((0,8,3),dtype=np.float32)
                     score=scores.cpu().numpy() if scores is not None else np.empty(0,dtype=np.float32)
                     assert np.isfinite(pred).all() and np.isfinite(score).all()
