@@ -1,0 +1,195 @@
+{
+  "labels": 1738,
+  "regional": {
+    "region_05_masked_dense": {
+      "execution": "masked_dense",
+      "threshold": 0.5
+    },
+    "region_05_sparse": {
+      "execution": "sparse",
+      "threshold": 0.5
+    },
+    "region_10_masked_dense": {
+      "execution": "masked_dense",
+      "threshold": 1.0
+    },
+    "region_10_sparse": {
+      "execution": "sparse",
+      "threshold": 1.0
+    }
+  },
+  "regional_prediction_max_error": 0.0,
+  "results": {
+    "compact_cache": {
+      "ap50": 0.8287628065889572,
+      "ap70": 0.753534819214323,
+      "conv_gflops": 168.9781588390749,
+      "mean_ms": 23.89725907750809,
+      "p95_ms": 30.648547096643597,
+      "partial_frames": 3789
+    },
+    "compact_full": {
+      "ap50": 0.8327124786795623,
+      "ap70": 0.7562138411720454,
+      "conv_gflops": 252.1387008,
+      "mean_ms": 30.04667843224411,
+      "p95_ms": 31.191593571566045,
+      "partial_frames": 0
+    },
+    "compact_repair": {
+      "ap50": 0.8300084031471423,
+      "ap70": 0.7545810714968547,
+      "conv_gflops": 169.4741288682085,
+      "mean_ms": 24.31780467039962,
+      "p95_ms": 30.687102861702442,
+      "partial_frames": 3789
+    },
+    "original": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "mean_ms": 32.331916635118894,
+      "p95_ms": 33.969322266057134,
+      "partial_frames": 0
+    },
+    "original_repair": {
+      "ap50": 0.8365891795643114,
+      "ap70": 0.7582348967543591,
+      "conv_gflops": 218.4000296682085,
+      "mean_ms": 27.00654840284255,
+      "p95_ms": 33.366075810045004,
+      "partial_frames": 3789
+    },
+    "region_05_masked_dense": {
+      "all_frame_area_mean": [
+        0.3695624636691346,
+        0.3879876811128195,
+        1.0,
+        0.37108239949796434,
+        0.40258406088126497,
+        1.0
+      ],
+      "ap50": 0.8292125626292789,
+      "ap70": 0.7539964126289274,
+      "area_columns": [
+        "stage2_request",
+        "stage2_write",
+        "stage2_executed_input",
+        "stage3_request",
+        "stage3_write",
+        "stage3_executed_input"
+      ],
+      "conv_gflops": 169.4741288682085,
+      "mean_ms": 25.507929151118404,
+      "p95_ms": 30.68572727497667,
+      "partial_frame_area_mean": [
+        0.03595801385562575,
+        0.06413318141136876,
+        1.0,
+        0.03828224404624057,
+        0.08645343065348361,
+        1.0
+      ],
+      "partial_frames": 3789
+    },
+    "region_05_sparse": {
+      "all_frame_area_mean": [
+        0.3695624636691346,
+        0.3879876811128195,
+        0.4003397329476127,
+        0.37108239949796434,
+        0.40258406088126497,
+        0.4174483729747769
+      ],
+      "ap50": 0.8292125626292789,
+      "ap70": 0.7539964126289274,
+      "area_columns": [
+        "stage2_request",
+        "stage2_write",
+        "stage2_executed_input",
+        "stage3_request",
+        "stage3_write",
+        "stage3_executed_input"
+      ],
+      "conv_gflops": 169.0233428645247,
+      "mean_ms": 25.86830727458786,
+      "p95_ms": 30.69622896146029,
+      "partial_frame_area_mean": [
+        0.03595801385562575,
+        0.06413318141136876,
+        0.08302148659234841,
+        0.03828224404624057,
+        0.08645343065348361,
+        0.10918339219210256
+      ],
+      "partial_frames": 3789
+    },
+    "region_10_masked_dense": {
+      "all_frame_area_mean": [
+        0.35781487088027875,
+        0.3697393570582501,
+        1.0,
+        0.3576364159075467,
+        0.36938715921467363,
+        1.0
+      ],
+      "ap50": 0.8290247732695065,
+      "ap70": 0.7538617645538986,
+      "area_columns": [
+        "stage2_request",
+        "stage2_write",
+        "stage2_executed_input",
+        "stage3_request",
+        "stage3_write",
+        "stage3_executed_input"
+      ],
+      "conv_gflops": 169.4741288682085,
+      "mean_ms": 25.430674334832776,
+      "p95_ms": 30.617993697524064,
+      "partial_frame_area_mean": [
+        0.01799402530491816,
+        0.0362285127462394,
+        1.0,
+        0.017721138497842556,
+        0.03568994470567935,
+        1.0
+      ],
+      "partial_frames": 3789
+    },
+    "region_10_sparse": {
+      "all_frame_area_mean": [
+        0.35781487088027875,
+        0.3697393570582501,
+        0.37847762600611684,
+        0.3576364159075467,
+        0.36938715921467363,
+        0.37692347310572977
+      ],
+      "ap50": 0.8290247732695065,
+      "ap70": 0.7538617645538986,
+      "area_columns": [
+        "stage2_request",
+        "stage2_write",
+        "stage2_executed_input",
+        "stage3_request",
+        "stage3_write",
+        "stage3_executed_input"
+      ],
+      "conv_gflops": 169.00239029192682,
+      "mean_ms": 25.54616712984232,
+      "p95_ms": 30.64884883351624,
+      "partial_frame_area_mean": [
+        0.01799402530491816,
+        0.0362285127462394,
+        0.0495907535179101,
+        0.017721138497842556,
+        0.03568994470567935,
+        0.04721419983494461
+      ],
+      "partial_frames": 3789
+    }
+  },
+  "scans": 5794,
+  "scope": "Same-GPU rotating synchronized model time excluding IO/H2D/postprocess. Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warps, BN, activations. Regional modes use actual merged tile4 radius1 crops; masked_dense is an execution-equivalence control. No training.",
+  "status": "COMPLETED"
+}
