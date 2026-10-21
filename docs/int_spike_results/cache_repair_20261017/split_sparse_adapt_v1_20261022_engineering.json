@@ -1,0 +1,62 @@
+{
+  "conv_macs": {
+    "cached_full": 126069350400,
+    "cached_partial": 59389747200,
+    "full_full": 126069350400,
+    "repaired_full": 126069350400,
+    "repaired_partial": 59655859200
+  },
+  "frames": 32,
+  "gradient_checked": true,
+  "partial_deep_decode_calls": 0,
+  "partial_frames": 21,
+  "probe_weights_restored": true,
+  "regional": {
+    "area_cost_hook_parity": true,
+    "frames": 32,
+    "immutable_anchors": true,
+    "masked_gradient_checked": true,
+    "module_conv_macs": {
+      "full": {
+        "classification_head": 12902400,
+        "current_decode": 412876800,
+        "current_projection": 309657600,
+        "deep_decode2": 825753600,
+        "deep_decode3": 1651507200,
+        "deep_projection": 619315200,
+        "direction_head": 25804800,
+        "feature_memory": 26127360000,
+        "regression_head": 90316800,
+        "repair": 0,
+        "spatial_readout_first": 5573836800,
+        "spatial_readout_tail": 6193152000,
+        "stage1": 20643840000,
+        "stage2": 28075622400,
+        "stage3": 35507404800
+      },
+      "partial_masked_dense": {
+        "classification_head": 12902400,
+        "current_decode": 412876800,
+        "current_projection": 309657600,
+        "deep_decode2": 0,
+        "deep_decode3": 0,
+        "deep_projection": 0,
+        "direction_head": 25804800,
+        "feature_memory": 26127360000,
+        "regression_head": 90316800,
+        "repair": 266112000,
+        "spatial_readout_first": 5573836800,
+        "spatial_readout_tail": 6193152000,
+        "stage1": 20643840000,
+        "stage2": 0,
+        "stage3": 0
+      }
+    },
+    "partial_frames": 21,
+    "partial_heavy_calls": 0,
+    "status": "PASSED",
+    "train_sparse_masked_max_error": 0.0
+  },
+  "status": "PASSED",
+  "train_deploy_max_error": 0.0
+}
