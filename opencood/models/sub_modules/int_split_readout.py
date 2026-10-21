@@ -1,14 +1,18 @@
 """Separate fresh shallow evidence from cacheable deep readout contributions.
 
 The split is before any spatial convolution, BN or activation in shrink.
-Only the bias-free deep projection is eligible for a future temporal cache.
-This module alone does not implement temporal reuse or regional execution.
+Only the bias-free deep projection is eligible for temporal caching.
+The detector below supports immutable anchors and optional regional correction.
 """
 import copy
 import torch
+import torch.nn.functional as F
 from torch import nn
 from opencood.models.sub_modules.int_anchor_residual import refresh_reason, predict
 from opencood.models.sub_modules.int_feature_memory import warp_bev
+from opencood.models.sub_modules.int_early_cache import early_descriptor
+from opencood.models.sub_modules.int_local_cache import local_change_mask
+from opencood.models.sub_modules.int_cache_repair import expand_tiles,refresh_tiles
 
 
 class SplitCompactReadout(nn.Module):
@@ -52,9 +56,10 @@ class SplitReadoutDetector:
 
     Current stage1, its upsampling/projection, and all spatial readout layers
     run every frame. No intermediate prediction is written back to the anchor.
-    This zero-correction diagnostic is not regional execution.
+    Optional correction supports dense or explicitly requested regional execution.
     """
-    def __init__(self, model, config, readout, period=3, repair=None):
+    def __init__(self, model, config, readout, period=3, repair=None,
+                 threshold=None,execution='sparse'):
         if model.training or readout.training or period not in (1,3):
             raise ValueError('Frozen models and period1/3 required')
         if len(model.backbone.deblocks)!=3 or not model.shrink_flag:
@@ -63,6 +68,10 @@ class SplitReadoutDetector:
             raise ValueError('Current branch channel split does not match')
         self.model,self.readout,self.period=model,readout,period
         self.repair=repair
+        if threshold is not None and (repair is None or not 0<=threshold<float('inf')):
+            raise ValueError('Regional correction needs repair and finite nonnegative threshold')
+        if execution not in ('sparse','masked_dense'):raise ValueError('Unknown repair execution')
+        self.threshold,self.execution=threshold,execution
         self.bounds=config['model']['args']['lidar_range']
 
     def step(self,data,state,meta):
@@ -76,25 +85,39 @@ class SplitReadoutDetector:
             spatial=m.cls_head.weight.new_zeros(1,64,int(ny),int(nx))
         temporal,fm,info=m.feature_memory.step(spatial,None if state is None else state['fm'],meta)
         first=m.backbone.resnet.layer0(temporal)
+        desc=early_descriptor(first,4) if self.threshold is not None else None
         current=self.readout.current(m.backbone.deblocks[0](first))
         cache=None if state is None else state['cache']
         reason=refresh_reason(cache,meta,info['reset'],self.period)
+        repair_stats=dict(requested_fraction=0.,actual_write_fraction=0.,executed_input_area_ratio=0.)
         if reason:
             second=m.backbone.resnet.layer1(first)
             third=m.backbone.resnet.layer2(second)
             deep=torch.cat([m.backbone.deblocks[1](second),m.backbone.deblocks[2](third)],1)
             projected=self.readout.history(deep)
             cache=dict(value=projected,pose=meta['pose'],stamp=int(meta['timestamp_us']),frames=0)
+            if desc is not None:cache['desc']=desc
             uncovered=0.
         else:
             projected,valid=warp_bev(cache['value'],cache['pose'],meta['pose'],self.bounds)
             uncovered=float((~valid).float().mean())
             if self.repair is not None:
-                projected=self.repair(torch.cat([first,projected,valid.to(projected.dtype)],1))
+                packed=torch.cat([first,projected,valid.to(projected.dtype)],1)
+                if self.threshold is None:
+                    projected=self.repair(packed)
+                    repair_stats=dict(requested_fraction=1.,actual_write_fraction=1.,executed_input_area_ratio=1.)
+                else:
+                    aligned,covered=warp_bev(cache['desc'],cache['pose'],meta['pose'],self.bounds)
+                    changed=expand_tiles(local_change_mask(desc,aligned,covered,self.threshold),4,first.shape[-2:])
+                    request=(F.max_pool2d(changed.float(),3,1,1)>0) | ~valid
+                    projected,_,repair_stats=refresh_tiles(self.repair,packed,projected,request,1,1,tile=4,
+                        allow_fallback=False,execution=self.execution)
             cache=dict(cache,frames=cache['frames']+1)
         assert current.shape==projected.shape
         prediction=predict(m,self.readout.fuse(current,projected))
         info.update(local_partial=reason is None,anchor_stamp=cache['stamp'],
                     anchor_depth=cache['frames'],uncovered_fraction=uncovered,
-                    anchor_bytes=cache['value'].numel()*cache['value'].element_size())
+                    repair_stats=repair_stats,
+                    anchor_bytes=cache['value'].numel()*cache['value'].element_size()+
+                    (cache['desc'].numel()*cache['desc'].element_size() if 'desc' in cache else 0))
         return prediction,dict(fm=fm,cache=cache),info

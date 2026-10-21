@@ -1,0 +1,506 @@
+[
+  {
+    "epoch": 1,
+    "loss": 0.2447542489046505,
+    "lr": 0.001,
+    "stale": 0,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.722552321075153,
+          "p95_ms": 30.008730478584766,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.420324913968358,
+          "p95_ms": 30.528552329633385,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.8311150232975829,
+          "ap70": 0.7543747997933632,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.959129889679875,
+          "p95_ms": 29.96516692219302,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "epoch": 2,
+    "loss": 0.23515952101866658,
+    "lr": 0.001,
+    "stale": 1,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.71513096245494,
+          "p95_ms": 29.973711993079633,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.420224658840233,
+          "p95_ms": 30.521513253916055,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.8318085317129448,
+          "ap70": 0.754251613472349,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.94898215096404,
+          "p95_ms": 29.95199003489688,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "epoch": 3,
+    "loss": 0.2314857931182115,
+    "lr": 0.0005,
+    "stale": 2,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.664474151033474,
+          "p95_ms": 29.908533836714923,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.35758191491748,
+          "p95_ms": 30.541700636968017,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.8321894450195149,
+          "ap70": 0.7548409022625181,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.90876381228102,
+          "p95_ms": 29.85893173608929,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "epoch": 4,
+    "loss": 0.22810763343495735,
+    "lr": 0.0005,
+    "stale": 3,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.642572748430013,
+          "p95_ms": 29.84845065511763,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.329487353171714,
+          "p95_ms": 30.498827632982284,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.8324788495968286,
+          "ap70": 0.755195299536648,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.88235948527719,
+          "p95_ms": 29.810669063590463,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "epoch": 5,
+    "loss": 0.22638397964674914,
+    "lr": 0.00025,
+    "stale": 4,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.71258039759275,
+          "p95_ms": 29.940279363654554,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.37832812848372,
+          "p95_ms": 30.517846823204305,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.8326077214221775,
+          "ap70": 0.7552722904125455,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.95715246184112,
+          "p95_ms": 29.92629646323621,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "epoch": 6,
+    "loss": 0.2246048944418923,
+    "lr": 0.00025,
+    "stale": 5,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.767839235741192,
+          "p95_ms": 29.927203163970262,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.44525212170569,
+          "p95_ms": 30.619235895574093,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.8325588175349216,
+          "ap70": 0.7551138787891872,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 19.014635995260015,
+          "p95_ms": 29.902472079265863,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "epoch": 7,
+    "loss": 0.22362962700347225,
+    "lr": 0.000125,
+    "stale": 6,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.790804492356383,
+          "p95_ms": 29.916040890384465,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.47247845846432,
+          "p95_ms": 30.614719388540834,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.8328120291596632,
+          "ap70": 0.7549767798477983,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 19.04827590618298,
+          "p95_ms": 29.868475394323468,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "epoch": 8,
+    "loss": 0.22269041449195018,
+    "lr": 0.000125,
+    "stale": 0,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.65331929837699,
+          "p95_ms": 29.859577165916562,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.320522711691506,
+          "p95_ms": 30.53876420017332,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.88961767848487,
+          "p95_ms": 29.838622792158276,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "epoch": 9,
+    "loss": 0.22219731327064382,
+    "lr": 0.000125,
+    "stale": 1,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.680033719690098,
+          "p95_ms": 29.85220425762236,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.347626107067313,
+          "p95_ms": 30.583809316158295,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.832434110774568,
+          "ap70": 0.7551610171924685,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.909959362051417,
+          "p95_ms": 29.81926061911508,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "epoch": 10,
+    "loss": 0.22184657787280213,
+    "lr": 6.25e-05,
+    "stale": 2,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.63263606356765,
+          "p95_ms": 29.831072164233774,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.322902902770455,
+          "p95_ms": 30.51529199583456,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.8324080710533217,
+          "ap70": 0.7551468453737058,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.870834209371736,
+          "p95_ms": 29.797983646858484,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "epoch": 11,
+    "loss": 0.2214114889734726,
+    "lr": 6.25e-05,
+    "stale": 3,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.644273474800915,
+          "p95_ms": 29.82566737337038,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.310504230050714,
+          "p95_ms": 30.486494302749634,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.8324460433044172,
+          "ap70": 0.7551242018220936,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.894878499115524,
+          "p95_ms": 29.81489374069497,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "epoch": 12,
+    "loss": 0.22117704648503872,
+    "lr": 3.125e-05,
+    "stale": 4,
+    "updates_by_depth": {
+      "1": 2855,
+      "2": 2766
+    },
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "cached": {
+          "ap50": 0.8293572735996714,
+          "ap70": 0.752781663200643,
+          "conv_gflops": 164.928132444874,
+          "mean_ms": 18.765026752506596,
+          "p95_ms": 29.925618472043425,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.411630156413906,
+          "p95_ms": 30.73134705191478,
+          "partial_frames": 0
+        },
+        "repaired": {
+          "ap50": 0.832478413116088,
+          "ap70": 0.7553194278470219,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 19.010107647073692,
+          "p95_ms": 29.920971929095685,
+          "partial_frames": 3789
+        }
+      },
+      "scans": 5794,
+      "scope": "Same GPU rotating synchronized model time, excluding IO/H2D/postprocess. Standard Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warp, BN and activations. Dense small correction, no regional skipping.",
+      "status": "COMPLETED"
+    }
+  }
+]
