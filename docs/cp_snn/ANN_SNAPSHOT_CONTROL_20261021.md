@@ -6,6 +6,8 @@
 
 四项两帧smoke均已通过：SNN/ANN满消息各自与原模型同次源编码的真实forward预测逐值一致，全部8次直接/真实解码检查、冻结状态和独立CPU BEV/3D复算通过；已进入64帧审计，通过后自动进入四项全量。任何门槛失败会停止并保留证据，无自动重试；没有新的最终AP。首轮实现采用同一空间行/通道掩码/CRC/zlib协议，ANN两位码＋包内FP32尺度，SNN四位计数＋协议约定单位尺度，二者完整身份/几何信息全部计费。
 
+资源续行记录：首个64帧点完成后，GPU0阶段准入均值56%超过原50%门槛，流水线按规则停止，未启动该后续点；这不是模型或解码失败。保留失败记录，重新五次采样均值43%通过后，以PID **61449**、代码`bbff69e`继续。已完成点的预测/包/审计SHA及CPU复算逐项核验后跳过，不重跑、不覆盖；只续行尚未启动点。后续资源波动允许最多两次间隔60秒的准入等待，期间不启动模型；计算或校验失败仍立即停止且不自动重试。见[资源停止记录](results/ann_snapshot_control_20261021/resource_failure_before_resume.json)与[续行准入](results/ann_snapshot_control_20261021/resume_launch.json)。
+
 下一轮读取根目录`status.json`，检查smoke_complete/audit64_complete以及最终summary。全量完成前不将两帧或64帧AP作为结论。若ANN原模型等价失败，先检查读出顺序或接口，不能通过调模型权重绕过；若工程参照差异明显，仍保留历史训练、接收器和选择粒度差异的限定。
 
 证据：[资源准入与启动](results/ann_snapshot_control_20261021/launch.json)、[锁定协议](results/ann_snapshot_control_20261021/protocol.json)。[两家族真实smoke复核](results/ann_snapshot_control_20261021/smoke_review.json)。原SNN选择对照已结束，后续不再启动其完整体素分支。
