@@ -1,0 +1,67 @@
+{
+  "labels": 1738,
+  "regional": {},
+  "regional_prediction_max_error": 0.0,
+  "results": {
+    "compact_cache": {
+      "ap50": 0.8287628065889572,
+      "ap70": 0.753534819214323,
+      "conv_gflops": 168.9781588390749,
+      "mean_ms": 23.771853990752035,
+      "p95_ms": 30.496701854281127,
+      "partial_frames": 3789
+    },
+    "compact_full": {
+      "ap50": 0.8327124786795623,
+      "ap70": 0.7562138411720454,
+      "conv_gflops": 252.1387008,
+      "mean_ms": 29.95225440654105,
+      "p95_ms": 31.034811364952475,
+      "partial_frames": 0
+    },
+    "compact_repair": {
+      "ap50": 0.8300084031471423,
+      "ap70": 0.7545810714968547,
+      "conv_gflops": 169.4741288682085,
+      "mean_ms": 24.178859718896856,
+      "p95_ms": 30.551939620636404,
+      "partial_frames": 3789
+    },
+    "original": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "mean_ms": 32.49976285852435,
+      "p95_ms": 33.82443253649399,
+      "partial_frames": 0
+    },
+    "original_repair": {
+      "ap50": 0.8365891795643114,
+      "ap70": 0.7582348967543591,
+      "conv_gflops": 218.4000296682085,
+      "mean_ms": 26.901764287054604,
+      "p95_ms": 33.23653066763654,
+      "partial_frames": 3789
+    },
+    "split_cache": {
+      "ap50": 0.8293572735996714,
+      "ap70": 0.752781663200643,
+      "conv_gflops": 164.928132444874,
+      "mean_ms": 19.18442363468035,
+      "p95_ms": 30.475498898886144,
+      "partial_frames": 3789
+    },
+    "split_full": {
+      "ap50": 0.832712474888943,
+      "ap70": 0.7562138415770423,
+      "conv_gflops": 252.1387008,
+      "mean_ms": 29.747117490537935,
+      "p95_ms": 31.02946928702295,
+      "partial_frames": 0
+    }
+  },
+  "scans": 5794,
+  "scope": "Same-GPU rotating synchronized model time excluding IO/H2D/postprocess. Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warps, BN, activations. Regional modes use actual merged tile4 radius1 crops; masked_dense is an execution-equivalence control. No training.",
+  "split_readout": true,
+  "status": "COMPLETED"
+}

@@ -54,7 +54,7 @@ class SplitReadoutDetector:
     run every frame. No intermediate prediction is written back to the anchor.
     This zero-correction diagnostic is not regional execution.
     """
-    def __init__(self, model, config, readout, period=3):
+    def __init__(self, model, config, readout, period=3, repair=None):
         if model.training or readout.training or period not in (1,3):
             raise ValueError('Frozen models and period1/3 required')
         if len(model.backbone.deblocks)!=3 or not model.shrink_flag:
@@ -62,6 +62,7 @@ class SplitReadoutDetector:
         if model.backbone.deblocks[0][0].out_channels!=readout.current_channels:
             raise ValueError('Current branch channel split does not match')
         self.model,self.readout,self.period=model,readout,period
+        self.repair=repair
         self.bounds=config['model']['args']['lidar_range']
 
     def step(self,data,state,meta):
@@ -88,6 +89,8 @@ class SplitReadoutDetector:
         else:
             projected,valid=warp_bev(cache['value'],cache['pose'],meta['pose'],self.bounds)
             uncovered=float((~valid).float().mean())
+            if self.repair is not None:
+                projected=self.repair(torch.cat([first,projected,valid.to(projected.dtype)],1))
             cache=dict(cache,frames=cache['frames']+1)
         assert current.shape==projected.shape
         prediction=predict(m,self.readout.fuse(current,projected))

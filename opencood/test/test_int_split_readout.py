@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from opencood.models.sub_modules.codyntrust_downsample_conv import DownsampleConv
 from opencood.models.sub_modules.int_compact_readout import compact_shrink
 from opencood.models.sub_modules.int_split_readout import SplitCompactReadout
+from opencood.models.sub_modules.int_light_repair import LightRepair
 
 
 class SplitReadoutTests(unittest.TestCase):
@@ -32,6 +33,22 @@ class SplitReadoutTests(unittest.TestCase):
         grid=F.affine_grid(theta,old.shape,align_corners=False)
         warp=lambda x:F.grid_sample(x,grid,align_corners=False,padding_mode='zeros')
         self.assertTrue(torch.allclose(warp(split.history(old)),split.history(warp(old)),atol=1e-6,rtol=1e-5))
+
+    def test_zero_correction_preserves_cache_and_learns_through_frozen_readout(self):
+        split=SplitCompactReadout(self.make_source(),4).eval()
+        for p in split.parameters():p.requires_grad_(False)
+        repair=LightRepair(4,width=8).eval()
+        evidence=torch.randn(1,128,9,13)
+        old=torch.randn(1,4,9,13);saved=old.clone()
+        current=torch.randn_like(old)
+        packed=torch.cat([evidence,old,torch.ones_like(old[:,:1])],1)
+        corrected=repair(packed)
+        self.assertTrue(torch.equal(corrected,old))
+        self.assertTrue(torch.equal(split.fuse(current,corrected),split.fuse(current,old)))
+        split.fuse(current,corrected).square().mean().backward()
+        self.assertGreater(float(repair.net[-1].weight.grad.abs().sum()),0.)
+        self.assertTrue(all(p.grad is None for p in split.parameters()))
+        self.assertTrue(torch.equal(old,saved))
 
 
 if __name__=='__main__':unittest.main()
