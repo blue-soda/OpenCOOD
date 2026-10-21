@@ -1,0 +1,25 @@
+{
+  "conv_macs": {
+    "compact_cache_full": 126069350400,
+    "compact_cache_partial": 62486323200,
+    "compact_full_full": 126069350400,
+    "compact_repair_full": 126069350400,
+    "compact_repair_partial": 62865532800,
+    "original_full": 150532300800,
+    "original_repair_full": 150532300800,
+    "original_repair_partial": 87328483200,
+    "split_cache_full": 126069350400,
+    "split_cache_partial": 59389747200,
+    "split_full_full": 126069350400
+  },
+  "frames": 32,
+  "immutable_anchors": true,
+  "partial_deep_calls": 0,
+  "partial_frames": 20,
+  "regional_mac_hook_check": false,
+  "regional_masked_parity_checked": false,
+  "shared_repaired_inputs_exact": true,
+  "split_full_prediction_max_error": 7.62939453125e-06,
+  "split_partial_frames_no_deep_decode": 20,
+  "status": "PASSED"
+}

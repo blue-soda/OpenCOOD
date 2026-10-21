@@ -1,0 +1,24 @@
+{
+  "code_commit": "738a523d66282ab27ea3848cbce7ffc6bd9b2bd9",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.evaluate_int_compact_repair",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--readout-run",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/compact_readout_r96_v2_20261021",
+    "--repair-run",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/light_repair_dense_period3",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/split_readout_r96_v1_20261021",
+    "--gpu",
+    "0",
+    "--split-readout",
+    "--worker"
+  ],
+  "created_unix": 1792570694.0634444,
+  "gpu": 0,
+  "pid": 3155,
+  "timeout_seconds": 7200
+}
