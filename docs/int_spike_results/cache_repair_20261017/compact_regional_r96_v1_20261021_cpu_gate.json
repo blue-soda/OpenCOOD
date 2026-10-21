@@ -1,0 +1,12 @@
+{
+  "tests": 121,
+  "regional_run": "NOT_LAUNCHED",
+  "threads": 2,
+  "seconds": 23.47,
+  "resource_note": "181 GPU0 other tzm research, GPU1-7 system_info training; 187 insufficient free memory",
+  "gpu_engineering": "PENDING_RESOURCE",
+  "command": "CUDA_VISIBLE_DEVICES= OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 /data1/tzm/miniconda3/envs/opencood/bin/python -m unittest discover -s opencood/test -p test_int*.py",
+  "code_commit": "5c9e2b1",
+  "device": "CPU",
+  "status": "PASSED"
+}
