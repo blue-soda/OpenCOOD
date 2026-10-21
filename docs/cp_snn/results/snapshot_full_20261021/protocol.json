@@ -1,0 +1,22 @@
+{
+  "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_event_receiver_20261021/receiver/train/best_ap70.pth",
+  "checkpoint_sha256": "60b7e0ff84e992862902aa9325b56ac13ab5658d70c4aacb194028638f5105dc",
+  "config_sha256": {
+    "4096": "07244b9ea3db4601f2c8dcad94f028c361e29a175d57ad10f222d8d8966eb5d0",
+    "8192": "f5e4d9f92754d11884a0d4705e163a4494bb288d11c87ed191b3f3fabb80e734",
+    "16384": "a148b90fcf8364169157192315c283cdeee83ccee0ea90ab8152f10c7bb98017"
+  },
+  "reference_budgets": [
+    4096,
+    8192,
+    16384
+  ],
+  "semantics": "Original session_zlib/256-event-packet prefix reference budget; actual transport is one E3GS1 cumulative count snapshot with full metadata. No event-order preservation, no snapshot-budget optimization, no online incremental protocol.",
+  "seed": 20260929,
+  "frames": 1738,
+  "gt_boxes": 28622,
+  "training": false,
+  "gate": "two real frames plus independent CPU replay before full split",
+  "audit": "per-frame direct/event-wire/snapshot-wire count equality, state/head equality; frozen state; CPU BEV/3D replay",
+  "limitations": "No event-order preservation; no matched ANN control or robust cross-seed superiority claim"
+}

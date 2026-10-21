@@ -1,0 +1,37 @@
+{
+  "samples": 1738,
+  "indexed_samples": 1738,
+  "full_split": true,
+  "predicted_boxes": 28489,
+  "gt_boxes": 28622,
+  "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+  "ap": {
+    "0.3": 0.7391991782713939,
+    "0.5": 0.6930296047599801,
+    "0.7": 0.5797914429576264
+  },
+  "ap_3d": {
+    "0.3": 0.7249579058569213,
+    "0.5": 0.6440650732702985,
+    "0.7": 0.40867557354401624
+  },
+  "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+  "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+  "predictions": {
+    "directory": "predictions",
+    "frames": 1738,
+    "index_sha256": "397c5b112124abe810e2009fbf17582a0262cd427fd5de7c1a3b92233657daf1"
+  },
+  "feature_packets": {
+    "count": 1738,
+    "mean_bytes": 1262.246835443038,
+    "median_bytes": 1258.0,
+    "min_bytes": 1133,
+    "max_bytes": 1456,
+    "p95_bytes": 1351.0,
+    "total_bytes": 2193785,
+    "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+  },
+  "snapshot_audit_sha256": "9e30e6968d13bcc51c5c118fea02d3ca97d65c444b4da567d682e3522d95443e",
+  "transport_semantics": "Original session_zlib/256-event-packet prefix reference budget; actual transport is one E3GS1 cumulative count snapshot with full metadata. No event-order preservation, no snapshot-budget optimization, no online incremental protocol."
+}

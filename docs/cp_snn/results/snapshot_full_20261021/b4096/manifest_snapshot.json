@@ -1,0 +1,21 @@
+{
+  "checkpoint_sha256": "60b7e0ff84e992862902aa9325b56ac13ab5658d70c4aacb194028638f5105dc",
+  "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_event_receiver_20261021/receiver/train/best_ap70.pth",
+  "config_sha256": "07244b9ea3db4601f2c8dcad94f028c361e29a175d57ad10f222d8d8966eb5d0",
+  "config": "/data1/tzm/workspace/diagnostics/e3dsnn_snapshot_full_20261021/b4096.yaml",
+  "seed": 20260929,
+  "git_commit": "11f2153e4c8eb623a456181bc41c93fc5f4e3a86",
+  "split_sha256": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+  },
+  "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+  "torch": "1.10.0+cu113",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "gpu_visible": "2",
+  "cuda_allocator_memory_fraction": 0.2,
+  "semantics": "Original session_zlib/256-event-packet prefix reference budget; actual transport is one E3GS1 cumulative count snapshot with full metadata. No event-order preservation, no snapshot-budget optimization, no online incremental protocol.",
+  "reference_budget_bytes": 4096,
+  "limit": 0,
+  "training": false
+}
