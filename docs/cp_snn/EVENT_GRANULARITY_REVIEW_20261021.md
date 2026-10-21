@@ -1,5 +1,29 @@
 # 高IoU误差复核与消息粒度对照（2026-10-21）
 
+## 真实2048bytes选择对照已进入流水线（2026-10-21，最新）
+
+64帧同一源事件缓存×两种选择的128项审计全部通过，每帧真实包不超过2048bytes，稀疏/密集序列化逐字节相同，解码计数一致；缓存SHA与已归档64帧来源逐项匹配。本地/181各5项CPU检查通过。两个算法均在第一次实际包长超额时停止；不宣称最大可行前缀。
+
+| 64帧审计（不是全量AP） | 平均实际bytes | 平均未用bytes | 平均发送单位事件计数 | 平均源体素数 |
+|---|---:|---:|---:|---:|
+| 单位IF事件前缀 | 2044.7031 | 3.2969 | 3461.97 | 206.69 |
+| 完整体素，按首次IF越界顺序 | 2040.6719 | 7.3281 | 12672.17 | 90.86 |
+
+完整行包含更多同址通道/计数，但覆盖的体素更少；这是待评估的内容取舍，不是检测提升结论。计数不同来自固定选择方式，不是重新训练。完整行包含帧内后续计数，仍属于离线帧内调度。
+
+CPU实现将同一帧不变的身份/姿态校验和JSON序列化移出逐事件循环，避免反复计算；保留最终完整校验及逐字节对照。64帧优化前后所有非计时字段及包SHA完全相同，单位事件选择平均2.708→0.578秒/帧、行选择0.067→0.021秒/帧。两模式合计低于预先设定的3.5秒实验成本门槛。此为参考选择器的CPU计时，不是模型部署时延或SNN能耗收益。
+
+冻结权重SHA仍为`60b7e0ff84e992862902aa9325b56ac13ab5658d70c4aacb194028638f5105dc`。181 GPU0五次准入均0%利用率、约24GB可用，20% PyTorch分配上限；GPU2–7已有高占用任务，未使用。当前修复后流水线PID **49134**，代码`ee06fe6`，根目录`/data1/tzm/workspace/diagnostics/e3dsnn_snapshot_selection_full_r1_20261021`。先执行`smoke/`两帧真实检测与独立CPU复算，通过后自动进入`full/`两组共享源编码的1738帧评估，失败不重试。
+
+首次PID48438的两帧smoke在3D AP统计API处失败：新评估器误向“一次累计全部阈值”的四参数接口传入第五个阈值参数。计数/接收预测检查已执行，但没有形成有效AP或启动全量。已将3D统计调用移至阈值循环外并保留原失败目录；修复后用全新`_r1_`目录重新执行smoke→full，不覆盖失败证据、不改变模型或选择器。见[失败记录](results/snapshot_selection_20261021/initial_smoke_failed.json)和[修复后启动](results/snapshot_selection_20261021/launch_r1.json)。
+
+修复后两帧真实检测已通过：两种选择共4次计数/状态/预测逐值一致，全部权重/BN不变，两个独立CPU BEV/3D复算通过。流水线已进入full全量评估，尚无新全量AP。证据：[smoke汇总](results/snapshot_selection_20261021/smoke_r1_summary.json)、[逐项审计](results/snapshot_selection_20261021/smoke_r1_audit.json)。
+
+本记录时尚无全量新AP。下一轮先读`pipeline_status.json`和`full/status.json`；完成后取回`full/summary.json`、`selection_audit.json`以及两组evaluation/manifest/offline_replay，验证GT、实际硬预算、预测SHA、CPU精确复算和全部权重/BN不变，再按通信—AP决定是否保留完整体素策略。不得依据64帧计数多少判断精度，不另起训练或参数扫描。
+
+证据：[64帧优化后审计](results/snapshot_selection_20261021/audit_fast/summary.json)、[优化前后逐项一致](results/snapshot_selection_20261021/audit_fast/reference_equivalence.json)、[原始参考审计](results/snapshot_selection_20261021/audit_reference/summary.json)、[GPU准入及启动](results/snapshot_selection_20261021/launch.json)。优化后summary SHA=`80d8f9e56bc14851cc541fa1af5dbf01dce5f06cef2ffcecdf988c335881d2b5`。
+
+
 ## 2048bytes选择对照实现准备（2026-10-21 13:12后）
 
 新增`utils/snapshot_selection.py`与`tools/evaluate_e3dsnn_snapshot_selection.py`。采用同一E3GS1格式和“首次实际序列化超额即停”的保守规则，逐事件前缀与完整体素行两种选择均计入全部元数据；不假设压缩长度单调。稀疏行序列化与原密集计数序列化必须逐字节相同。完整行按原IF序列首次出现排序，内容为同一帧完整发放计数，因此仍明确属于离线帧内调度。

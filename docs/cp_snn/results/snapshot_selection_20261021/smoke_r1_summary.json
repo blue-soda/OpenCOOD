@@ -1,0 +1,132 @@
+{
+  "passed": true,
+  "protocol": {
+    "checkpoint_sha256": "60b7e0ff84e992862902aa9325b56ac13ab5658d70c4aacb194028638f5105dc",
+    "budget_bytes": 2048,
+    "modes": [
+      "events",
+      "rows"
+    ],
+    "selection": "first serialized overflow stops; no monotonicity or maximality claim",
+    "shared_source": true,
+    "training": false,
+    "audit_sha256": "80d8f9e56bc14851cc541fa1af5dbf01dce5f06cef2ffcecdf988c335881d2b5",
+    "seed": 20260929,
+    "full_frames": 1738,
+    "full_gt": 28622,
+    "limit": 2,
+    "code_commit": "ee06fe6e3072a3626d298af18707269f5eb1dece",
+    "limitation": "complete rows use future within-frame counts; offline scheduling, not online causality",
+    "exit": "one matched selection contrast; no parameter sweep if row selection has no benefit"
+  },
+  "results": {
+    "events": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6905393457117595,
+          "0.7": 0.6015500856349663
+        },
+        "ap_3d": {
+          "0.3": 0.7161803713527851,
+          "0.5": 0.6590831803033395,
+          "0.7": 0.36139483735637584
+        },
+        "metric": "BEV and upright 3D AP; paired shared source snapshot selection",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "36514388b32ae8ad7a756e1e7cfa619b897380681315d8974229844a55c00c5e"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 2044.5,
+          "median_bytes": 2044.5,
+          "min_bytes": 2042,
+          "max_bytes": 2047,
+          "p95_bytes": 2046.75,
+          "total_bytes": 4089,
+          "scope": "serialized payload and full metadata; excludes network framing and retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6905393457117595,
+          "0.7": 0.6015500856349663
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7161803713527851,
+          "0.5": 0.6590831803033395,
+          "0.7": 0.36139483735637584
+        }
+      }
+    },
+    "rows": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 34,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7427350427350428,
+          "0.5": 0.6860805860805861,
+          "0.7": 0.5618729096989967
+        },
+        "ap_3d": {
+          "0.3": 0.7427350427350428,
+          "0.5": 0.6070512820512821,
+          "0.7": 0.30184551866474063
+        },
+        "metric": "BEV and upright 3D AP; paired shared source snapshot selection",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "0a85c114d4146ae140fb678629fb84d8aca0672995c6c921bc44c699eec23836"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 2042.5,
+          "median_bytes": 2042.5,
+          "min_bytes": 2041,
+          "max_bytes": 2044,
+          "p95_bytes": 2043.85,
+          "total_bytes": 4085,
+          "scope": "serialized payload and full metadata; excludes network framing and retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 34,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7427350427350428,
+          "0.5": 0.6860805860805861,
+          "0.7": 0.5618729096989967
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7427350427350428,
+          "0.5": 0.6070512820512821,
+          "0.7": 0.30184551866474063
+        }
+      }
+    }
+  },
+  "audit_sha256": "dcfbdbd6079d438096340ef106cc30834276f68dd716ea3c8e89f6c80f0b0bf5",
+  "all_state_unchanged": true
+}

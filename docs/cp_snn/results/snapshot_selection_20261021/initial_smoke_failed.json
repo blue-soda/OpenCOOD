@@ -1,0 +1,5 @@
+{
+  "state": "failed",
+  "error": "Traceback (most recent call last):\n  File \"/data1/tzm/workspace/OpenCOOD/opencood/tools/evaluate_e3dsnn_snapshot_selection.py\", line 176, in run\n    eval_3d_utils.calculate_tp_fp_3d(boxes,scores,gt,stats3d[mode],threshold)\nTypeError: calculate_tp_fp_3d() takes 4 positional arguments but 5 were given\n",
+  "note": "No automatic retry"
+}

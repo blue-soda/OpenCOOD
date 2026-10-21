@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "records": 128,
+  "reference_path": "/data1/tzm/workspace/diagnostics/e3dsnn_snapshot_selection_audit_20261021/summary.json",
+  "reference_sha256": "728113701babde794b2aa82913efe64f7ce57f29061ddb175716bd07788d6f65",
+  "optimized_sha256": "80d8f9e56bc14851cc541fa1af5dbf01dce5f06cef2ffcecdf988c335881d2b5",
+  "all_non_timing_fields_identical": true
+}

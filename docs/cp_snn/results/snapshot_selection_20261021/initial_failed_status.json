@@ -1,0 +1,5 @@
+{
+  "state": "failed",
+  "error": "Traceback (most recent call last):\n  File \"/data1/tzm/workspace/OpenCOOD/opencood/tools/evaluate_e3dsnn_snapshot_selection.py\", line 238, in coordinate\n    stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=21600)\n  File \"/data1/tzm/miniconda3/envs/opencood/lib/python3.7/subprocess.py\", line 512, in run\n    output=stdout, stderr=stderr)\nsubprocess.CalledProcessError: Command '['/data1/tzm/miniconda3/envs/opencood/bin/python', '-u', '-m', 'opencood.tools.evaluate_e3dsnn_snapshot_selection', '--root', '/data1/tzm/workspace/diagnostics/e3dsnn_snapshot_selection_full_20261021/smoke', '--source', '/data1/tzm/workspace/diagnostics/e3dsnn_event_receiver_20261021/receiver', '--audit', '/data1/tzm/workspace/diagnostics/e3dsnn_snapshot_selection_fast_audit_20261021', '--limit', '2']' returned non-zero exit status 1.\n",
+  "note": "No automatic retry"
+}
