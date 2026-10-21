@@ -1,0 +1,16 @@
+{
+  "conv_macs": {
+    "cached_full": 126069350400,
+    "cached_partial": 59389747200,
+    "dense_full": 126069350400,
+    "dense_partial": 59655859200,
+    "full_full": 126069350400,
+    "original_full": 150532300800
+  },
+  "crop_masked_prediction_max_error": 0.0,
+  "frames": 32,
+  "immutable_anchor": true,
+  "regional_cost_hook_parity": true,
+  "regional_partial_checks": 80,
+  "status": "PASSED"
+}
