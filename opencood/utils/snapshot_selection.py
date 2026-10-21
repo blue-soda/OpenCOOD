@@ -27,9 +27,15 @@ def encode_rows(coords, rows, metadata):
         raise ValueError('Invalid sorted snapshot rows')
     if not len(coords):
         return b''
+    context = json.dumps(metadata, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf8')
+    return _encode_validated_rows(coords, rows, context)
+
+
+def _encode_validated_rows(coords, rows, context):
+    """Private inner loop: caller validated identity and generated in-range rows."""
+    if not len(coords): return b''
     mask = rows != 0; values = rows[mask]
     raw = coords.astype('<u4').tobytes() + pack(mask, 1).tobytes() + pack(values, 4).tobytes()
-    context = json.dumps(metadata, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf8')
     body = context + zlib.compress(raw)
     return HEADER.pack(b'E3GS1', len(context), len(coords), len(values), len(raw), zlib.crc32(body)) + body
 
@@ -38,6 +44,8 @@ def select_snapshot(addresses, metadata, budget, mode):
     """Check each prefix, stop at its FIRST overflow; not maximal feasible search."""
     started = time.perf_counter()
     contract = validate_metadata(metadata)
+    if metadata['max_spikes'] > 15: raise ValueError('Unsupported snapshot ceiling')
+    context = json.dumps(metadata, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf8')
     size = int(np.prod(contract.shape_zyx))
     addresses = np.asarray(addresses)
     if (addresses.ndim != 1 or not np.issubdtype(addresses.dtype, np.integer) or
@@ -57,24 +65,28 @@ def select_snapshot(addresses, metadata, budget, mode):
         _, first = np.unique(spatial, return_index=True)
         order = np.sort(first)
     selected = np.zeros((len(coords), 32), dtype=np.uint8)
+    active = np.zeros(len(coords), dtype=bool)
     packet = b''; accepted = 0; rejected_bytes = None; attempts = 0
     for event_index in order:
         slot = lookup[event_index]
         previous = selected[slot].copy()
+        was_active = active[slot]
         if mode == 'events':
             selected[slot, int(addresses[event_index]) // size] += 1
         else:
             selected[slot] = full[coords[slot]]
-        mask = np.any(selected != 0, axis=1)
-        candidate = encode_rows(coords[mask], selected[mask], metadata)
+        active[slot] = True
+        candidate = _encode_validated_rows(coords[active], selected[active], context)
         attempts += 1
         if len(candidate) > budget:
             selected[slot] = previous
+            active[slot] = was_active
             rejected_bytes = len(candidate)
             break
         packet = candidate
         accepted += 1
     mask = np.any(selected != 0, axis=1)
+    assert np.array_equal(active, mask)
     assert packet == encode_rows(coords[mask], selected[mask], metadata)
     decoded = decode_snapshot(packet, metadata)
     restored = decoded.reshape(32, size).T

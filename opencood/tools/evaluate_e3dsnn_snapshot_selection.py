@@ -31,6 +31,17 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def verify_reference(root, reference):
+    new=json.loads((root/'summary.json').read_text())
+    old=json.loads((reference/'summary.json').read_text())
+    assert new['passed'] and old['passed'] and len(new['records'])==len(old['records'])==128
+    for a,b in zip(new['records'],old['records']):
+        assert {k:v for k,v in a.items() if k!='selection_seconds'} == {k:v for k,v in b.items() if k!='selection_seconds'}
+    write(root/'reference_equivalence.json',dict(passed=True,records=128,
+        reference_path=str(reference/'summary.json'),reference_sha256=sha(reference/'summary.json'),
+        optimized_sha256=sha(root/'summary.json'),all_non_timing_fields_identical=True))
+
+
 def cache_audit(root, cache):
     root.mkdir(parents=True, exist_ok=False)
     status = root / 'status.json'
@@ -72,7 +83,7 @@ def cache_audit(root, cache):
         raise
 
 
-def run(root, source, audit):
+def run(root, source, audit, limit=0):
     import torch
     from torch.utils.data import DataLoader
     from opencood.hypes_yaml.yaml_utils import load_yaml
@@ -87,6 +98,16 @@ def run(root, source, audit):
     report = json.loads((audit / 'summary.json').read_text())
     assert report['passed'] and report['full_evaluation_cost_gate']
     assert report['checkpoint_sha256'] == SOURCE_SHA
+    equivalence=json.loads((audit/'reference_equivalence.json').read_text())
+    assert equivalence['passed'] and equivalence['all_non_timing_fields_identical']
+    assert equivalence['optimized_sha256']==sha(audit/'summary.json')
+    assert equivalence['reference_sha256']==sha(Path(equivalence['reference_path']))
+    provenance = Path(__file__).resolve().parents[2] / 'docs/cp_snn/results/event_granularity_20261021/sha256.json'
+    expected_cache = json.loads(provenance.read_text())['cache_files']
+    assert len(report['records']) == 128
+    for row in report['records']:
+        assert row['source_sha256'] == expected_cache['{:04d}.npz'.format(row['frame'])]
+        assert row['dense_sparse_packet_exact'] and row['decode_exact'] and row['actual_bytes'] <= 2048
     root.mkdir(parents=True, exist_ok=False)
     try:
         checkpoint = source / 'train/best_ap70.pth'; config = source / 'b4096.yaml'
@@ -108,7 +129,7 @@ def run(root, source, audit):
         protocol = dict(checkpoint_sha256=SOURCE_SHA, budget_bytes=2048, modes=MODES,
             selection='first serialized overflow stops; no monotonicity or maximality claim',
             shared_source=True, training=False, audit_sha256=sha(audit/'summary.json'),
-            seed=20260929, full_frames=1738, full_gt=28622, code_commit=commit,
+            seed=20260929, full_frames=1738, full_gt=28622, limit=limit, code_commit=commit,
             limitation='complete rows use future within-frame counts; offline scheduling, not online causality',
             exit='one matched selection contrast; no parameter sweep if row selection has no benefit')
         write_json(root/'protocol.json',protocol)
@@ -121,6 +142,7 @@ def run(root, source, audit):
         started=time.time()
         with torch.no_grad():
             for i,batch in enumerate(loader):
+                if limit and i >= limit: break
                 if time.time()-started>14400: raise TimeoutError('Four hour paired inference cap exceeded')
                 batch=train_utils.to_device(batch,torch.device('cuda')); data=batch['ego']
                 _,membrane=model.encode_membrane(data['processed_lidar'],1)
@@ -167,7 +189,7 @@ def run(root, source, audit):
                 if (i+1)%50==0:
                     write_json(root/'status.json',dict(state='running',frames=i+1,total=len(dataset)))
                     print(json.dumps(dict(frames=i+1)),flush=True)
-        assert len(audit_rows)==3476 and len(dataset)==1738
+        assert len(audit_rows)==2*(limit or 1738) and len(dataset)==1738
         assert all(torch.equal(v.cpu(),initial[k]) for k,v in model.state_dict().items())
         assert sha(checkpoint)==SOURCE_SHA
         write_json(root/'selection_audit.json',dict(passed=True,all_state_unchanged=True,records=audit_rows))
@@ -176,7 +198,7 @@ def run(root, source, audit):
             folder=root/mode; rows=frames[mode];lengths=[r['communication']['total_bytes'] for r in rows]
             assert max(lengths)<=2048
             write_json(folder/'predictions/index.json',dict(schema=1,frames=rows,order='validation loader order'))
-            metrics=dict(samples=len(rows),indexed_samples=len(dataset),full_split=True,
+            metrics=dict(samples=len(rows),indexed_samples=len(dataset),full_split=len(rows)==len(dataset),
                 predicted_boxes=sum(r['predicted_boxes'] for r in rows),gt_boxes=sum(r['gt_boxes'] for r in rows),
                 ap={str(t):eval_utils.calculate_ap(stats[mode],t)[0] for t in stats[mode]},
                 ap_3d={str(t):eval_utils.calculate_ap(stats3d[mode],t)[0] for t in stats3d[mode]},
@@ -190,7 +212,12 @@ def run(root, source, audit):
             with (root/(mode+'_replay.log')).open('xb') as log:
                 subprocess.run([sys.executable,'-u','-m','opencood.tools.replay_e3dsnn_predictions','--evaluation-dir',str(folder)],
                     env=dict(os.environ,CUDA_VISIBLE_DEVICES=''),stdout=log,stderr=subprocess.STDOUT,check=True,timeout=3600)
-            results[mode]=evaluation(folder)
+            if limit:
+                replay=json.loads((folder/'offline_replay.json').read_text())
+                assert replay['passed'] and replay['exact_match'] and replay['all_file_hashes_verified']
+                results[mode]=dict(evaluation=metrics,replay=replay)
+            else:
+                results[mode]=evaluation(folder)
         write_json(root/'summary.json',dict(passed=True,protocol=protocol,results=results,
             audit_sha256=sha(root/'selection_audit.json'),all_state_unchanged=True))
         write_json(root/'status.json',dict(state='complete',summary_sha256=sha(root/'summary.json')))
@@ -202,6 +229,9 @@ def run(root, source, audit):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',required=True)
     p.add_argument('--cache');p.add_argument('--source');p.add_argument('--audit')
+    p.add_argument('--verify-reference')
+    p.add_argument('--limit',type=int,choices=(0,2),default=0)
     a=p.parse_args()
-    if a.cache: cache_audit(Path(a.root),Path(a.cache))
-    else: run(Path(a.root),Path(a.source),Path(a.audit))
+    if a.verify_reference: verify_reference(Path(a.root),Path(a.verify_reference))
+    elif a.cache: cache_audit(Path(a.root),Path(a.cache))
+    else: run(Path(a.root),Path(a.source),Path(a.audit),a.limit)
