@@ -52,16 +52,19 @@ different pose/time anchors into the saved reference. Stage3 requests use the
 ACTUAL stage2 write mask, including a possible full-stage fallback.
 """
     def __init__(self,model,config,threshold,period=2,verify=False,repair_modules=None,repair_dense=False,
-                 readout_evidence='current'):
+                 readout_evidence='current',repair_execution='sparse'):
         if model.training or model.feature_memory.mode!='gru' or period not in (1,2,3):
             raise ValueError('Frozen GRU and period 1/2/3 required')
-        if period==3 and (repair_modules is None or not repair_dense):
-            raise ValueError('Period3 requires dense learned repair')
+        if period==3 and repair_modules is None:
+            raise ValueError('Period3 requires learned repair modules')
+        if repair_execution not in ('sparse','masked_dense'):
+            raise ValueError('Unknown repair execution')
         self.model=model;self.bounds=config['model']['args']['lidar_range']
         assert config['model']['args']['base_bev_backbone']['layer_nums']==[3,4,5]
         self.threshold=threshold;self.period=period;self.verify=verify
         self.repair_modules=repair_modules
         self.repair_dense=repair_dense
+        self.repair_execution=repair_execution
         if readout_evidence not in ('current','anchor'):
             raise ValueError('Unknown readout evidence control')
         self.readout_evidence=readout_evidence
@@ -124,7 +127,8 @@ ACTUAL stage2 write mask, including a possible full-stage fallback.
                         stat=dict(requested_fraction=1.,selected_fraction=1.,crop_area_ratio_before_fallback=1.,
                                   tiles=1,fallback=False,executed_input_area_ratio=1.,actual_write_fraction=1.)
                     else:
-                        result,written,stat=refresh_tiles(module,stage_input,old,request,1,1,tile=4,allow_fallback=False)
+                        result,written,stat=refresh_tiles(module,stage_input,old,request,1,1,tile=4,allow_fallback=False,
+                                                        execution=self.repair_execution)
                 if self.verify:
                     # Engineering only; never enabled in measured inference.
                     reference=module(stage_input)

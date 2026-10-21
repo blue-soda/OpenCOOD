@@ -65,14 +65,31 @@ def worker(a):
         compact_cache=LocalCacheDetector(student,cfg,0.,period=3,repair_modules=cached_features(),repair_dense=True),
         original_repair=LocalCacheDetector(original,cfg,0.,period=3,repair_modules=repairs,repair_dense=True),
         compact_repair=LocalCacheDetector(student,cfg,0.,period=3,repair_modules=repairs,repair_dense=True))
+    regional = {}
+    if a.regional:
+        for tag,threshold in (('05',.5),('10',1.)):
+            for execution in ('sparse','masked_dense'):
+                name = 'region_'+tag+'_'+execution
+                regional[name] = dict(threshold=threshold,execution=execution)
+                modes[name] = LocalCacheDetector(student,cfg,threshold,period=3,
+                    repair_modules=repairs,repair_execution=execution)
     expected = dict(original=.758736104616861,compact_cache=readout_best['ap70'],original_repair=repair_best['ap70'])
     write_json(out/'provenance.json',dict(source=provenance,readout=readout_best,repair=repair_best,
         rank=readout['contract']['rank'],protocol='Frozen transfer; period3 immutable stage2/3 anchors, current E and compact readout every frame; full-image repairs only.',
-        expected_ap70=expected))
+        expected_ap70=expected,regional=regional))
     test = subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     (out/'unit_tests.log').write_bytes(test.stdout)
     assert test.returncode == 0
     costs = {};states = {k:None for k in modes};partials = 0;captured = {};calls = [0,0]
+    # Every LightRepair convolution keeps spatial size, hence exact standard
+    # convolution MACs are linear in executed input area, including crop halos.
+    per_pixel = [sum(layer.in_channels*layer.out_channels//layer.groups*layer.kernel_size[0]*layer.kernel_size[1]
+                     for layer in module.modules() if isinstance(layer,torch.nn.Conv2d)) for module in repairs]
+    def regional_cost(info):
+        if not info['local_partial']: return costs['compact_cache_full']
+        return costs['compact_cache_partial'] + sum(
+            per_pixel[i]*h*w*info['cache_stages'][i+1]['executed_input_area_ratio']
+            for i,(h,w) in enumerate(((50,126),(25,63))))
     def count(i):
         def hook(m,x,y): calls[i] += 1
         return hook
@@ -87,14 +104,24 @@ def worker(a):
                 full_pred = None
                 for name,mode in modes.items():
                     model = original if name in ('original','original_repair') else student
-                    counter = ConvCounter(model,repairs if name.endswith('_repair') else torch.nn.ModuleList())
+                    counter = ConvCounter(model,repairs if name.endswith('_repair') or name in regional else torch.nn.ModuleList())
                     previous = states[name];before = list(calls)
                     try: pred,states[name],info = mode.step(ego,states[name],meta)
                     finally: counter.close()
                     flag = bool(info.get('local_partial'))
                     key = name+('_partial' if flag else '_full')
-                    if key in costs: assert costs[key] == counter.total
-                    costs[key] = counter.total
+                    if name in regional:
+                        assert abs(regional_cost(info)-counter.total)<.1, 'Regional MAC accounting differs from executed hooks'
+                        if flag:
+                            assert calls == before
+                            assert all(x is y for x,y in zip(previous['cache']['values'],states[name]['cache']['values']))
+                        if name.endswith('_sparse'):
+                            sparse_pred = pred
+                        else:
+                            assert all(torch.allclose(pred[k],sparse_pred[k],atol=1e-4,rtol=1e-4) for k in pred)
+                    else:
+                        if key in costs: assert costs[key] == counter.total
+                        costs[key] = counter.total
                     if name == 'compact_full': full_pred = pred
                     if name == 'compact_repair':
                         assert torch.equal(captured['original'],captured['student']), 'Repair readout inputs differ'
@@ -108,15 +135,18 @@ def worker(a):
         for hook in hooks: hook.remove()
     assert partials > 0
     write_json(out/'engineering.json',dict(status='PASSED',frames=32,partial_frames=partials,
-        shared_repaired_inputs_exact=True,immutable_anchors=True,partial_deep_calls=0,conv_macs=costs))
+        shared_repaired_inputs_exact=True,immutable_anchors=True,partial_deep_calls=0,conv_macs=costs,
+        regional_masked_parity_checked=bool(regional),regional_mac_hook_check=bool(regional)))
     states = {k:None for k in modes}
     stats = {k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}
     times = {k:[] for k in modes};compute = {k:0 for k in modes};partial = {k:0 for k in modes}
+    area = {k:[] for k in regional};parity_max = 0.
     dataset,stream = loader(rows,cfg,4,303)
     with torch.no_grad():
         for index,sample in enumerate(stream):
             ego = to_device(sample['ego'],torch.device('cuda'));meta = sample['meta']
             names = list(modes);offset = index%len(names);names = names[offset:]+names[:offset]
+            regional_predictions = {}
             for name in names:
                 torch.cuda.synchronize();tick = time.perf_counter()
                 pred,states[name],info = modes[name].step(ego,states[name],meta)
@@ -124,12 +154,23 @@ def worker(a):
                 assert all(torch.isfinite(x).all() for x in pred.values())
                 if index >= 10: times[name].append(ms)
                 flag = bool(info.get('local_partial'));partial[name] += flag
-                compute[name] += costs[name+('_partial' if flag else '_full')]
+                compute[name] += regional_cost(info) if name in regional else costs[name+('_partial' if flag else '_full')]
+                if name in regional:
+                    regional_predictions[name] = pred
+                    area[name].append([flag]+[info['cache_stages'][i][k] for i in (1,2)
+                        for k in ('requested_fraction','actual_write_fraction','executed_input_area_ratio')])
                 if meta['supervised']:
                     data = dict(ego=ego)
                     boxes,scores = dataset.post.post_process(data,dict(ego=pred))
                     gt = dataset.post.generate_gt_bbx(data)
                     for t in stats[name]: eval_utils.caluclate_tp_fp(boxes,scores,gt,stats[name],t)
+            if regional:
+                for tag in ('05','10'):
+                    sparse = regional_predictions['region_'+tag+'_sparse']
+                    masked = regional_predictions['region_'+tag+'_masked_dense']
+                    for key in sparse:
+                        parity_max = max(parity_max,float((sparse[key]-masked[key]).abs().max()))
+                        assert torch.allclose(sparse[key],masked[key],atol=1e-4,rtol=1e-4)
             if (index+1)%200 == 0:
                 write_json(out/'status.json',dict(status='RUNNING',phase='validation',scans=index+1))
     assert index+1 == len(rows)
@@ -137,9 +178,15 @@ def worker(a):
         mean_ms=float(np.mean(times[k])),p95_ms=float(np.percentile(times[k],95)),
         conv_gflops=2*compute[k]/len(rows)/1e9,partial_frames=partial[k]) for k in modes}
     for k,ap in expected.items(): assert abs(results[k]['ap70']-ap)<1e-8, 'Reloaded AP mismatch: '+k
+    for name,records in area.items():
+        data = np.asarray(records)
+        results[name]['area_columns'] = ['stage2_request','stage2_write','stage2_executed_input','stage3_request','stage3_write','stage3_executed_input']
+        results[name]['all_frame_area_mean'] = data[:,1:].mean(0).tolist()
+        results[name]['partial_frame_area_mean'] = data[data[:,0]>0,1:].mean(0).tolist()
     assert len({partial[k] for k in ('compact_cache','original_repair','compact_repair')}) == 1
     write_json(out/'report.json',dict(status='COMPLETED',results=results,scans=len(rows),labels=sum(r['supervised'] for r in rows),
-        scope='Same-GPU rotating synchronized model time excluding IO/H2D/postprocess. Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warps, BN, activations. Whole-image small repair; no regional execution or training.'))
+        regional=regional,regional_prediction_max_error=parity_max,
+        scope='Same-GPU rotating synchronized model time excluding IO/H2D/postprocess. Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warps, BN, activations. Regional modes use actual merged tile4 radius1 crops; masked_dense is an execution-equivalence control. No training.'))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
 
@@ -147,6 +194,7 @@ def main():
     p = argparse.ArgumentParser()
     for name in ('root','readout-run','repair-run','output'): p.add_argument('--'+name,required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true')
+    p.add_argument('--regional',action='store_true')
     a = p.parse_args();out = Path(a.output)
     if a.worker:
         def expired(s,f): raise TimeoutError('Evaluation exceeded 2 hours')

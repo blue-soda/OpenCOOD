@@ -1,0 +1,48 @@
+{
+  "labels": 1738,
+  "results": {
+    "compact_cache": {
+      "ap50": 0.8287628065889572,
+      "ap70": 0.753534819214323,
+      "conv_gflops": 168.9781588390749,
+      "mean_ms": 30.05688525394976,
+      "p95_ms": 55.88199102785436,
+      "partial_frames": 3789
+    },
+    "compact_full": {
+      "ap50": 0.8327124786795623,
+      "ap70": 0.7562138411720454,
+      "conv_gflops": 252.1387008,
+      "mean_ms": 35.73540949851518,
+      "p95_ms": 65.3272000607103,
+      "partial_frames": 0
+    },
+    "compact_repair": {
+      "ap50": 0.8300084031471423,
+      "ap70": 0.7545810714968547,
+      "conv_gflops": 169.4741288682085,
+      "mean_ms": 31.247380370661272,
+      "p95_ms": 60.0233755656516,
+      "partial_frames": 3789
+    },
+    "original": {
+      "ap50": 0.8380867977929637,
+      "ap70": 0.758736104616861,
+      "conv_gflops": 301.0646016,
+      "mean_ms": 37.97529908116903,
+      "p95_ms": 65.48228091560293,
+      "partial_frames": 0
+    },
+    "original_repair": {
+      "ap50": 0.8365891795643114,
+      "ap70": 0.7582348967543591,
+      "conv_gflops": 218.4000296682085,
+      "mean_ms": 33.847702053561676,
+      "p95_ms": 62.309204298071535,
+      "partial_frames": 3789
+    }
+  },
+  "scans": 5794,
+  "scope": "Same-GPU rotating synchronized model time excluding IO/H2D/postprocess. Conv2d/ConvTranspose2d MACs x2 only; excludes VFE Linear, warps, BN, activations. Whole-image small repair; no regional execution or training.",
+  "status": "COMPLETED"
+}

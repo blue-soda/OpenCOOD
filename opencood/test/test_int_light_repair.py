@@ -5,6 +5,29 @@ from opencood.models.sub_modules.int_cache_repair import refresh_tiles
 
 
 class LightRepairTests(unittest.TestCase):
+    def test_sparse_and_masked_repair_match_and_skip_empty_requests(self):
+        torch.manual_seed(17)
+        module=LightRepair(256,width=8).eval()
+        torch.nn.init.normal_(module.net[-1].weight,std=.03)
+        x=torch.randn(1,385,13,19);old=x[:,128:384]
+        for pattern in ('empty','edges','full'):
+            mask=torch.zeros(1,1,13,19,dtype=torch.bool)
+            if pattern=='edges':mask[...,0,0]=True;mask[...,-1,-1]=True
+            if pattern=='full':mask.fill_(True)
+            calls=[]
+            hook=module.register_forward_hook(lambda m,i,o:calls.append(i[0].numel()))
+            sparse,written,stats=refresh_tiles(module,x,old,mask,1,1,4,allow_fallback=False)
+            hook.remove()
+            masked,reference_written,control=refresh_tiles(module,x,old,mask,1,1,4,
+                allow_fallback=False,execution='masked_dense')
+            self.assertTrue(torch.equal(written,reference_written))
+            self.assertTrue(torch.allclose(sparse,masked,atol=1e-5,rtol=1e-5))
+            self.assertTrue(torch.equal(sparse[~written.expand_as(old)],old[~written.expand_as(old)]))
+            self.assertEqual(control['executed_input_area_ratio'],1.)
+            if pattern=='empty':
+                self.assertEqual(calls,[])
+                self.assertEqual(stats['executed_input_area_ratio'],0.)
+
     def test_foreground_box_loss_is_not_diluted_by_background_area(self):
         results=[]
         for width in [2,32]:
