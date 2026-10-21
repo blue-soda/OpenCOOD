@@ -4,7 +4,7 @@ Historical training, receiver and selection differ: NOT an activation-only
 causal ablation. Full-message source equivalence precedes any full-split AP.
 """
 import argparse
-from dataclasses import asdict, replace
+from dataclasses import asdict
 import hashlib
 import json
 import os
@@ -19,6 +19,7 @@ import torch
 from opencood.utils import task_snapshot_packet as wire
 from opencood.tools.launch_e3dsnn_hybrid_round import REPO, read, sha, evaluation
 from opencood.tools.train_e3dsnn_single import validate, write_json
+from opencood.models.fuse_modules.e3dsnn_snapshot_readout import ann_readout
 
 BASE=Path('/data1/tzm/workspace/diagnostics')
 SOURCES={
@@ -29,27 +30,6 @@ SOURCES={
         BASE/'e3dsnn_content_round1_v2_20261019/ann_learn/full.yaml',
         'd0dc7b9ab4ccaad531a8fc63e0a7e8b91a62ab5fa7cf4d0740e366c6422b4bd8')}
 MODES=('full','b2048')
-
-
-def ann_readout(model,ego,counts,scales,contract,pose):
-    from opencood.models.fuse_modules.e3dsnn_content_receiver import ContentAccumulator
-    from opencood.models.fuse_modules.e3dsnn_readout import residual_readout
-    basis=model.content.basis_digest()
-    native=replace(contract,channel_basis='content32-'+basis)
-    receiver=ContentAccumulator(basis,'ann2bit')
-    state=receiver.begin(counts,native,pose,scales)
-    for k in (1,2,3):
-        event=(counts>=k).to(ego.dtype)
-        latent,coverage=receiver.receive(state,event,native,pose,scales,k)
-    nonempty=(state.source_counts.detach().abs().sum()>0).to(ego.dtype)
-    mask=(coverage*nonempty).flatten(1,2);supported=mask.amax(1,keepdim=True)
-    local=ego.flatten(1,2);remote=model.content.decode(latent).flatten(1,2)
-    delta=model.fusion_net(torch.cat((local,remote,mask),1))
-    residual=model.fusion_scale*supported*delta
-    fused=residual_readout(local,residual,supported,model.fusion_activation,model.fusion_readout)
-    fused=torch.where(supported>0,fused,local)
-    receiver.finish(state)
-    return latent,fused
 
 
 class FrozenSnapshot(torch.nn.Module):

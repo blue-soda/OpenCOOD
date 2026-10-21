@@ -237,6 +237,12 @@ def execute(args, output_dir):
         'gpu_visible': os.getenv('CUDA_VISIBLE_DEVICES'), 'parameters': sum(p.numel() for p in model.parameters()),
         'cuda_allocator_memory_fraction': memory_fraction,
         'architecture': cfg['model']['core_method'],
+        'snapshot_adaptation': dict(family=model.snapshot_family,budget_bytes=model.snapshot_budget,
+            trainable=[k for k,p in model.named_parameters() if p.requires_grad],
+            transport='E3TS1 common snapshot; paid ANN FP32 channel scales',
+            gradient='existing quantizer/fixed-frontier STE; no sorting or bytes gradient',
+            limitation='matched additional adaptation only; historical models differ')
+            if hasattr(model,'snapshot_family') else None,
         'activation': cfg['model']['args'].get('activation', 'count4'),
         'fusion_readout': getattr(model, 'fusion_readout', 'activated'),
         'encoder_activation': getattr(model, 'encoder_activation', cfg['model']['args'].get('activation', 'count4')),
