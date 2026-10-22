@@ -17,7 +17,7 @@ import traceback
 import numpy as np
 import torch
 from opencood.tools.profile_e3dsnn_snapshot_charge import SOURCE,DIGEST
-from opencood.tools.launch_e3dsnn_hybrid_round import REPO,sha
+from opencood.tools.launch_e3dsnn_hybrid_round import sha
 from opencood.tools.train_e3dsnn_single import write_json,checked_forward
 
 
@@ -39,7 +39,10 @@ def delete_events(counts,gradient,seed):
     return result,k
 
 
-def run(root):
+REPO=Path(__file__).resolve().parents[2]
+
+
+def run(root,source=SOURCE):
     from opencood.hypes_yaml.yaml_utils import load_yaml
     from opencood.data_utils.datasets import build_dataset
     from opencood.tools import train_utils
@@ -50,14 +53,14 @@ def run(root):
     try:
         seed=20260929;random.seed(seed);np.random.seed(seed);torch.manual_seed(seed);torch.cuda.manual_seed_all(seed)
         torch.cuda.set_per_process_memory_fraction(.2)
-        cfg=load_yaml(str(SOURCE/'train.yaml'));cfg['data_augment']=[]
+        cfg=load_yaml(str(source/'train.yaml'));cfg['data_augment']=[]
         data=build_dataset(cfg,train=True)
         manifest=json.loads(Path(cfg['data_manifest']).read_text())
         assert set(data.data)==set(manifest['splits']['train']['valid_ids'])
         assert not set(data.data)&set(manifest['splits']['val']['valid_ids'])
         indices=np.linspace(0,len(data)-1,16,dtype=np.int64).tolist()
         assert len(set(indices))==16
-        checkpoint=SOURCE/'train/best_ap70.pth';assert sha(checkpoint)==DIGEST
+        checkpoint=source/'train/best_ap70.pth';assert sha(checkpoint)==DIGEST
         model=train_utils.create_model(cfg).cuda().eval();state=torch.load(str(checkpoint),map_location='cpu')
         model.load_state_dict(state,strict=True);model.requires_grad_(False)
         model.snapshot_budget=2048;model.packet_roundtrip=True;model.snapshot_audit=True
@@ -67,7 +70,7 @@ def run(root):
             captured.update(membrane=membrane,counts=leaf,pose=pose,contract=contract,receiver=receiver,decode=decode)
             return native(membrane,leaf,pose,contract,receiver,decode)
         adapter.stream_readout=observed
-        protocol=dict(checkpoint_sha256=DIGEST,source_config_sha256=sha(SOURCE/'train.yaml'),
+        protocol=dict(checkpoint_sha256=DIGEST,source_config_sha256=sha(source/'train.yaml'),source=str(source),
             data_manifest_sha256=sha(Path(cfg['data_manifest'])),train_split_sha256=sha(Path(cfg['root_dir'])),
             split='train only; no validation samples',indices=indices,seed=seed,augmentation=[],budget_bytes=2048,
             deletion='up to 32 positive-gradient sent unit events; random same number, seed+frame index',
@@ -127,14 +130,14 @@ def run(root):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--root',required=True);p.add_argument('--launch',action='store_true');p.add_argument('--gpu',type=int,default=0);a=p.parse_args();root=Path(a.root)
+    p=argparse.ArgumentParser();p.add_argument('--root',required=True);p.add_argument('--source',default=str(SOURCE));p.add_argument('--launch',action='store_true');p.add_argument('--gpu',type=int,default=0);a=p.parse_args();root=Path(a.root)
     if a.launch:
         from opencood.tools.launch_e3dsnn_joint_round import check_gpu
         if root.exists():raise FileExistsError(str(root))
         admission=check_gpu(a.gpu,True,.2)
         env=dict(os.environ,CUDA_VISIBLE_DEVICES=str(a.gpu),PYTHONPATH=str(REPO),OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1')
         with Path(str(root)+'.log').open('xb') as f:
-            proc=subprocess.Popen([sys.executable,'-u','-m','opencood.tools.probe_e3dsnn_event_utility','--root',str(root)],cwd=str(REPO),env=env,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
+            proc=subprocess.Popen([sys.executable,'-u','-m','opencood.tools.probe_e3dsnn_event_utility','--root',str(root),'--source',a.source],cwd=str(REPO),env=env,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
         write_json(Path(str(root)+'_launch.json'),dict(pid=proc.pid,gpu=a.gpu,admission=admission,started_unix=time.time()))
         print(json.dumps(dict(pid=proc.pid,root=str(root))))
-    else:run(root)
+    else:run(root,Path(a.source))
