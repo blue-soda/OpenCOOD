@@ -1,0 +1,23 @@
+{
+  "code_commit": "af6069136e8c531c8d1723d25c1a058c8c8d9b4c",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.profile_int_projected_locality",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--checkpoint",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_gru_r32_train_v1_20261022/epoch_006/memory.pth",
+    "--sha256",
+    "c114df425f78dc4f35a045e6543b1d6400165312d6dfc2d89bca708950115493",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_locality_r32_e6_v1_20261022",
+    "--gpu",
+    "2",
+    "--worker"
+  ],
+  "created_unix": 1792628236.65671,
+  "gpu": 2,
+  "pid": 18901,
+  "timeout_seconds": 7200
+}
