@@ -99,7 +99,7 @@ def engineering(base,student,split,repair,cfg,rows):
         own_recurrent_state=True,immutable_own_anchors=True,three_gate_gradients=True,frozen_rest=True)
 
 
-def evaluate(base,student,split,repair,cfg,rows,directory,costs,epoch):
+def evaluate(base,student,split,repair,cfg,rows,directory,costs,epoch,expected_base=None,scope=None):
     modes=make_modes(base,student,split,repair,cfg);states={k:None for k in modes}
     stats={k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}
     timing={k:[] for k in modes};compute={k:0 for k in modes};partials={k:0 for k in modes}
@@ -122,10 +122,11 @@ def evaluate(base,student,split,repair,cfg,rows,directory,costs,epoch):
     results={k:dict(ap70=eval_utils.calculate_ap(stats[k],.7)[0],ap50=eval_utils.calculate_ap(stats[k],.5)[0],
         mean_ms=float(np.mean(timing[k])),p95_ms=float(np.percentile(timing[k],95)),
         conv_gflops=2*compute[k]/len(rows)/1e9,partial_frames=partials[k]) for k in modes}
-    assert abs(results['base_full']['ap70']-.7562138415770423)<1e-8
-    assert abs(results['base_cached']['ap70']-.7553967658970537)<1e-8
+    expected_base=expected_base or (.7562138415770423,.7553967658970537)
+    assert abs(results['base_full']['ap70']-expected_base[0])<1e-8
+    assert abs(results['base_cached']['ap70']-expected_base[1])<1e-8
     report=dict(status='COMPLETED',scans=len(rows),labels=sum(r['supervised'] for r in rows),results=results,
-        scope='Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.')
+        scope=scope or 'Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.')
     write_json(directory/'report.json',report);return report
 
 
