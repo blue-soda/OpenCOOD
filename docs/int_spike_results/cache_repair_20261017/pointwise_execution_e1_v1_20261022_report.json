@@ -1,0 +1,58 @@
+{
+  "max_abs_error": 0.0,
+  "max_relative_rms": 0.0,
+  "results": {
+    "0.0": {
+      "conv_gflops": 12.1411584,
+      "stage_mean_ms": 1.6999731694037716,
+      "stage_p95_ms": 1.7262363224290311,
+      "timed_samples": 84,
+      "update_output_fraction": 0.0
+    },
+    "0.1": {
+      "conv_gflops": 15.11645184,
+      "stage_mean_ms": 2.4429807589123294,
+      "stage_p95_ms": 2.4445045506581664,
+      "timed_samples": 84,
+      "update_output_fraction": 0.09999999403953552
+    },
+    "0.25": {
+      "conv_gflops": 19.579392,
+      "stage_mean_ms": 3.1069751324442527,
+      "stage_p95_ms": 3.1144357984885573,
+      "timed_samples": 84,
+      "update_output_fraction": 0.2499999850988388
+    },
+    "0.5": {
+      "conv_gflops": 27.0176256,
+      "stage_mean_ms": 3.9454710703077063,
+      "stage_p95_ms": 3.928188467398286,
+      "timed_samples": 84,
+      "update_output_fraction": 0.4999999701976776
+    },
+    "0.75": {
+      "conv_gflops": 34.4558592,
+      "stage_mean_ms": 4.928607477008232,
+      "stage_p95_ms": 4.961474577430636,
+      "timed_samples": 84,
+      "update_output_fraction": 0.7499999403953552
+    },
+    "1.0": {
+      "conv_gflops": 41.8940928,
+      "stage_mean_ms": 6.096270883322826,
+      "stage_p95_ms": 6.087382952682674,
+      "timed_samples": 84,
+      "update_output_fraction": 0.9999999403953552
+    },
+    "dense": {
+      "conv_gflops": 41.8940928,
+      "stage_mean_ms": 5.720410124576163,
+      "stage_p95_ms": 5.7882083230651915,
+      "timed_samples": 84,
+      "update_output_fraction": 1.0
+    }
+  },
+  "scans": 32,
+  "scope": "Kernel feasibility only, first32 train scans and fixed epoch1 weights. Precomputed deterministic random masks, zero spatial history/valid as phaseA. No motion alignment, selector, state recurrence, detection AP or end-to-end speedup claim. Timing includes mature stem, depthwise context, pack, selected gather, update, scatter; excludes mask construction, warp and all other detector modules. First4 scans warmup; three repeats per scan.",
+  "status": "COMPLETED"
+}
