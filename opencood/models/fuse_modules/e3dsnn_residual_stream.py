@@ -11,15 +11,16 @@ from torch import nn
 
 def signed_if(v):
     hard = torch.sign(v) * (v.abs() >= 1).to(v.dtype)
-    # Nonzero surrogate on both sides of the firing threshold. A clipped
-    # identity would kill all selected-event gradients for |v|>1.
-    soft = torch.tanh(v)
+    # Identity STE is deliberately biased. tanh/clipped STE starves exactly
+    # the high-magnitude events admitted by competition (verified on real data).
+    # Global gradient clipping bounds training; hard forward is unchanged.
+    soft = v
     return soft + (hard-soft).detach()
 
 
 def ann_quant(v):
-    soft = v.clamp(-3,3)
-    return soft + (soft.round()-soft).detach()
+    hard = v.clamp(-3,3).round()
+    return v + (hard-v).detach()
 
 
 def select_symbols(symbols, priority, limit, step):

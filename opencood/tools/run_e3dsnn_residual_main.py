@@ -128,15 +128,17 @@ def audit(root,family):
             'legacy_receiver.' if family=='old_snn' else 'receiver.')
     gradient={prefix:sum(float(p.grad.abs().sum()) for k,p in model.named_parameters() if k.startswith(prefix) and p.grad is not None) for prefix in groups}
     assert all(np.isfinite(v) and v>0 for v in gradient.values()),gradient
+    task_fraction=task_gradient['sender.project.']/max(gradient['sender.project.'],1e-12)
+    assert task_fraction>=.001,('Task gradient dominated by rate proxy',task_fraction)
     torch.nn.utils.clip_grad_norm_(model.parameters(),10.,error_if_nonfinite=True);opt.step();check_frozen(model,frozen)
-    torch.cuda.synchronize();report.update(gradient=gradient,task_only_gradient=task_gradient,step_seconds=time.perf_counter()-tic,
+    torch.cuda.synchronize();report.update(gradient=gradient,task_only_gradient=task_gradient,task_gradient_fraction=task_fraction,step_seconds=time.perf_counter()-tic,
         peak_allocated_bytes=torch.cuda.max_memory_allocated(),step_records=model.last_records)
     model.load_state_dict(initial,strict=True);model.eval();model.bounds=[2048,8192]
     model.set_stage('interface');assert all(not p.requires_grad for k,p in model.named_parameters() if k.startswith(('backbone_3d.','backbone_2d.','cls_head.','reg_head.','dir_head.')))
     report.update(passed=True,zero_equals_local=True,frozen_buffers_unchanged=True,optimizer_step_discarded=True,
                   code_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=str(REPO)).decode().strip(),
                   elapsed_seconds=time.time()-start,initial_sha256=digest(folder/'initial.pth'))
-    target=folder/'audit_task_gradient.json' if (folder/'audit.json').exists() else folder/'audit.json'
+    target=folder/('audit_final.json' if (folder/'audit_task_gradient_launch.json').exists() else 'audit.json')
     if target.exists():raise FileExistsError('Audit extension already recorded')
     write_json(target,report);print(json.dumps({k:report[k] for k in ('passed','task_only_gradient','step_seconds','peak_allocated_bytes')}),flush=True)
 
@@ -171,9 +173,8 @@ def train(root,family):
     protocol=read(root/'protocol.json')
     assert all(read(root/f/'audit.json')['passed'] for f in FAMILIES),'All three audits required'
     for family_gate in FAMILIES:
-        path=root/family_gate/'audit_task_gradient.json'
-        gate=read(path if path.exists() else root/family_gate/'audit.json')
-        assert gate['passed'] and all(v>0 for v in gate['task_only_gradient'].values())
+        gate=read(root/family_gate/'audit_final.json')
+        assert gate['passed'] and gate['task_gradient_fraction']>=.001
     folder,cfg,model=load(root,family);out=folder/'train';out.mkdir(exist_ok=False)
     train_data=build_dataset(cfg,train=True);val=build_dataset(cfg,train=False)
     criterion=train_utils.create_loss(cfg).cuda();frozen=frozen_state(model)
@@ -226,10 +227,9 @@ def train(root,family):
 def coordinate(root):
     from opencood.tools.launch_e3dsnn_joint_round import check_gpu
     for family in FAMILIES:
-        gate=root/family/'audit_task_gradient.json'
-        if not gate.exists():gate=root/family/'audit.json'
+        gate=root/family/'audit_final.json'
         audit_report=read(gate)
-        assert audit_report['passed'] and all(v>0 for v in audit_report['task_only_gradient'].values())
+        assert audit_report['passed'] and audit_report['task_gradient_fraction']>=.001
     jobs=[]
     try:
         for gpu,family in enumerate(FAMILIES):

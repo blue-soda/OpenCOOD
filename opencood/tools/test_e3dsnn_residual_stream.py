@@ -27,6 +27,13 @@ class ResidualTests(unittest.TestCase):
         torch.testing.assert_close(v+total,original)
         (v+total).sum().backward();self.assertTrue(torch.isfinite(original.grad_fn.next_functions[0][0].variable.grad).all())
 
+    def test_selected_large_events_have_task_surrogate(self):
+        from opencood.models.fuse_modules.e3dsnn_residual_stream import ann_quant
+        for function in (signed_if,ann_quant):
+            x=torch.tensor([-20.,20.],requires_grad=True)
+            function(x).sum().backward()
+            self.assertTrue(torch.equal(x.grad,torch.ones_like(x)))
+
     def test_sender_feedback_and_gradients(self):
         torch.manual_seed(1);sender=ResidualSender(4,2)
         x=torch.randn(1,4,2,3,4,requires_grad=True)
