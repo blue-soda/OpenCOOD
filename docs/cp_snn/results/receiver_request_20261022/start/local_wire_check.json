@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "mode_frames": 12,
+  "both_directions_decoded": true,
+  "all_total_budgets_verified": true,
+  "blind_query_requests_identical": true
+}

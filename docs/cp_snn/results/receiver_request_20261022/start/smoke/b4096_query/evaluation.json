@@ -1,0 +1,34 @@
+{
+  "samples": 2,
+  "indexed_samples": 1738,
+  "full_split": false,
+  "predicted_boxes": 33,
+  "gt_boxes": 39,
+  "ap": {
+    "0.3": 0.740301724137931,
+    "0.5": 0.7110759079149883,
+    "0.7": 0.6098953728264074
+  },
+  "ap_3d": {
+    "0.3": 0.7120255755313226,
+    "0.5": 0.6335715689163967,
+    "0.7": 0.31034755842448153
+  },
+  "metric": "BEV and upright3D AP; both communication directions paid",
+  "predictions": {
+    "directory": "predictions",
+    "frames": 2,
+    "index_sha256": "154d3800f2cd86354a3864500e2cc1497dff43e61bb4ddc66c112794ba7ec1f9"
+  },
+  "feature_packets": {
+    "count": 2,
+    "mean_bytes": 4090.5,
+    "median_bytes": 4090.5,
+    "min_bytes": 4085,
+    "max_bytes": 4096,
+    "p95_bytes": 4095.45,
+    "total_bytes": 8181,
+    "mean_reverse_bytes": 956.5,
+    "scope": "forward+reverse serialized payload and complete metadata; excludes network framing/retransmission"
+  }
+}

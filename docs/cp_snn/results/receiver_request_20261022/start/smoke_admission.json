@@ -1,0 +1,34 @@
+{
+  "accepted": true,
+  "minimum_free_mib": 8192,
+  "allocator_fraction": 0.2,
+  "mean_util_percent": 0.0,
+  "samples": [
+    {
+      "total_mib": 24576,
+      "free_mib": 24134,
+      "util_percent": 0
+    },
+    {
+      "total_mib": 24576,
+      "free_mib": 24134,
+      "util_percent": 0
+    },
+    {
+      "total_mib": 24576,
+      "free_mib": 24134,
+      "util_percent": 0
+    },
+    {
+      "total_mib": 24576,
+      "free_mib": 24134,
+      "util_percent": 0
+    },
+    {
+      "total_mib": 24576,
+      "free_mib": 24134,
+      "util_percent": 0
+    }
+  ],
+  "policy": "user_authorized_shared"
+}

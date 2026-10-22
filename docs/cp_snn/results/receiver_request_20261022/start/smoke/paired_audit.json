@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "all_state_unchanged": true,
+  "records": [
+    {
+      "index": 0,
+      "frame_id": "000211",
+      "request_bytes": 956,
+      "request_sha256": "27946a78726c62392df2c49481c807dfb0818b22518b60eb877a2e59f9aeab75",
+      "request_roundtrip_exact": true,
+      "event_multiset_unchanged": true,
+      "smoke_native_exact_budgets": [
+        2048,
+        4096
+      ],
+      "requested_source_sites": 1513,
+      "covered_source_sites": 3357
+    },
+    {
+      "index": 1,
+      "frame_id": "000212",
+      "request_bytes": 957,
+      "request_sha256": "4c74dae2f86dc4f66889eacfceaddd8adc4bee7ae91913dede87f24c838f9e31",
+      "request_roundtrip_exact": true,
+      "event_multiset_unchanged": true,
+      "smoke_native_exact_budgets": [
+        2048,
+        4096
+      ],
+      "requested_source_sites": 1530,
+      "covered_source_sites": 3455
+    }
+  ]
+}

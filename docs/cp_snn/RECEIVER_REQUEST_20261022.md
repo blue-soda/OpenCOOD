@@ -1,5 +1,17 @@
 # 接收端膜电位请求：对齐、双向预算与冻结AP对照（2026-10-22）
 
+## 实现及两帧门禁通过，六模式全量AP评估已启动（2026-10-22，最新）
+
+代码`b7c1238`已提交main、push并在146 pull；本地及146各3项CPU检查通过，覆盖请求身份/损坏、边缘高度、平移/亚体素/旋转方向及事件守恒。146 GPU0五次准入通过，20%显存分配上限，协调PID390817。实验目录`/data1/zhh/gzc/diagnostics/e3dsnn_receiver_request_20261022`。
+
+真实两帧审计通过：两个预算的原native输出与原模型cls/reg/dir及bytes逐值一致；请求编码/解码与事件多重集不变，所有权重和缓冲不变。六模式均通过独立CPU BEV/3D复算。启动证据已取回SHA校验，本地再解码12组双向消息，确认总bytes准入及blind/query请求逐字节相同。
+
+两帧请求分别956、957bytes，已含完整元数据；约占2KB预算的47%。这是明显的反馈开销，不能以312bytes数值本体替代。实际双向平均bytes为：2KB下native/blind/query=2046/2047/2047.5；4KB下4086/4089.5/4090.5。两帧仅用于接口核验，不能解释为全量通信均值或AP收益。
+
+已自动进入1738帧、六模式配对评估及最终CPU复核。尚无全量AP；不启动训练、不扫描请求块/阈值。后续按预登记检验query是否在计入反馈后同时优于native和blind，失败则关闭该固定启发式，避免把请求机制已有工作包装成SNN创新。
+
+证据：[两帧完整汇总](results/receiver_request_20261022/start/smoke/summary.json)、[配对审计](results/receiver_request_20261022/start/smoke/paired_audit.json)、[本地双向解码](results/receiver_request_20261022/start/local_wire_check.json)、[启动记录](results/receiver_request_20261022/start/launch.json)、[下载SHA](results/receiver_request_20261022/start/start_archive_sha256.json)。smoke summary SHA `7caf3cf506c2b59333d5f7e7586b7ab5f4e8bf4994303d985582a636892b25a1`。以下保留启动前协议。
+
 ## 总目标与已有方法边界
 
 研究总目标是SNN风格协作的合格通信—AP。仅源端线性效用预测已失败，不增加其网络宽度或继续调正则。本轮尝试接收侧参与消息优先级，但不把失败解释为“缺少接收信息是唯一原因”。

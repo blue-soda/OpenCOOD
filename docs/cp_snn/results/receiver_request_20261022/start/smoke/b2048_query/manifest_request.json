@@ -1,0 +1,30 @@
+{
+  "checkpoint_sha256": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78",
+  "source": "/data1/zhh/gzc/diagnostics/e3dsnn_event_utility_source_20261022",
+  "config_sha256": "4a312991ed0d60af7af7f70fbe12591db16c564e8c2ad8ead020cce719ccefdd",
+  "data_manifest_sha256": "fcdf853f70a83006c8a9937feef1c4957f27de07b6e738912afd56f34a31453d",
+  "split_sha256": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+  },
+  "seed": 20260929,
+  "limit": 2,
+  "training": false,
+  "modes": [
+    "b2048_native",
+    "b2048_blind",
+    "b2048_query",
+    "b4096_native",
+    "b4096_blind",
+    "b4096_query"
+  ],
+  "request_policy": "positive-count4-residual-max-2bit-xy4-v1",
+  "paired": "one local/road encoding and full event multiset per frame, all modes",
+  "budgets": "2048 and4096, reverse request plus forward response including both full metadata envelopes",
+  "blind": "transmit same actual request then ignore it; native IF reply with reduced remaining budget",
+  "semantics": "scalar spatial request, no semantic channel addition; ego-to-road inverse warp; no GT request inputs",
+  "gate": "query AP70 >= native and blind +0.1pp at at least one registered budget; report both; only promotes further study, not overall success",
+  "exit": "one fixed heuristic and two budgets; no query threshold/block/bit depth/weight sweep or automatic training",
+  "code_commit": "b7c12387d384c846e8f7fd95796eb6cd63520bd4",
+  "mode": "b2048_query"
+}

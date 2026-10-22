@@ -1,0 +1,360 @@
+{
+  "passed": true,
+  "all_state_unchanged": true,
+  "protocol": {
+    "checkpoint_sha256": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78",
+    "source": "/data1/zhh/gzc/diagnostics/e3dsnn_event_utility_source_20261022",
+    "config_sha256": "4a312991ed0d60af7af7f70fbe12591db16c564e8c2ad8ead020cce719ccefdd",
+    "data_manifest_sha256": "fcdf853f70a83006c8a9937feef1c4957f27de07b6e738912afd56f34a31453d",
+    "split_sha256": {
+      "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+      "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+    },
+    "seed": 20260929,
+    "limit": 2,
+    "training": false,
+    "modes": [
+      "b2048_native",
+      "b2048_blind",
+      "b2048_query",
+      "b4096_native",
+      "b4096_blind",
+      "b4096_query"
+    ],
+    "request_policy": "positive-count4-residual-max-2bit-xy4-v1",
+    "paired": "one local/road encoding and full event multiset per frame, all modes",
+    "budgets": "2048 and4096, reverse request plus forward response including both full metadata envelopes",
+    "blind": "transmit same actual request then ignore it; native IF reply with reduced remaining budget",
+    "semantics": "scalar spatial request, no semantic channel addition; ego-to-road inverse warp; no GT request inputs",
+    "gate": "query AP70 >= native and blind +0.1pp at at least one registered budget; report both; only promotes further study, not overall success",
+    "exit": "one fixed heuristic and two budgets; no query threshold/block/bit depth/weight sweep or automatic training",
+    "code_commit": "b7c12387d384c846e8f7fd95796eb6cd63520bd4"
+  },
+  "results": {
+    "b2048_native": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6923076923076923,
+          "0.7": 0.5515510130894746
+        },
+        "ap_3d": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6590693257359922,
+          "0.7": 0.3604790864406249
+        },
+        "metric": "BEV and upright3D AP; both communication directions paid",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "915544eb92f683b6b3c1ae1cd7d038549bd4a286dc73fef0c7fef69a3946d289"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 2046.0,
+          "median_bytes": 2046.0,
+          "min_bytes": 2044,
+          "max_bytes": 2048,
+          "p95_bytes": 2047.8,
+          "total_bytes": 4092,
+          "mean_reverse_bytes": 0.0,
+          "scope": "forward+reverse serialized payload and complete metadata; excludes network framing/retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6923076923076923,
+          "0.7": 0.5515510130894746
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6590693257359922,
+          "0.7": 0.3604790864406249
+        }
+      }
+    },
+    "b2048_blind": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7411858974358975,
+          "0.5": 0.7138278388278388,
+          "0.7": 0.5865384615384616
+        },
+        "ap_3d": {
+          "0.3": 0.7411858974358975,
+          "0.5": 0.6410256410256411,
+          "0.7": 0.3641890516890517
+        },
+        "metric": "BEV and upright3D AP; both communication directions paid",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "28d483f18c5e9f930083aea7d4ec5314f98a4f36b75746f90fdf1cc1a75d2118"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 2047.0,
+          "median_bytes": 2047.0,
+          "min_bytes": 2047,
+          "max_bytes": 2047,
+          "p95_bytes": 2047.0,
+          "total_bytes": 4094,
+          "mean_reverse_bytes": 956.5,
+          "scope": "forward+reverse serialized payload and complete metadata; excludes network framing/retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7411858974358975,
+          "0.5": 0.7138278388278388,
+          "0.7": 0.5865384615384616
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7411858974358975,
+          "0.5": 0.6410256410256411,
+          "0.7": 0.3641890516890517
+        }
+      }
+    },
+    "b2048_query": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 31,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7145515774548032,
+          "0.5": 0.6871676710386387,
+          "0.7": 0.5854700854700855
+        },
+        "ap_3d": {
+          "0.3": 0.7145515774548032,
+          "0.5": 0.632124542124542,
+          "0.7": 0.3632733007733007
+        },
+        "metric": "BEV and upright3D AP; both communication directions paid",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "64bf19c1b916ad04ed3a655ad345a29d5657de0073bb30c3bb3fb2c896d737e6"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 2047.5,
+          "median_bytes": 2047.5,
+          "min_bytes": 2047,
+          "max_bytes": 2048,
+          "p95_bytes": 2047.95,
+          "total_bytes": 4095,
+          "mean_reverse_bytes": 956.5,
+          "scope": "forward+reverse serialized payload and complete metadata; excludes network framing/retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 31,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7145515774548032,
+          "0.5": 0.6871676710386387,
+          "0.7": 0.5854700854700855
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7145515774548032,
+          "0.5": 0.632124542124542,
+          "0.7": 0.3632733007733007
+        }
+      }
+    },
+    "b4096_native": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7427350427350428,
+          "0.5": 0.6923076923076923,
+          "0.7": 0.5700591749409446
+        },
+        "ap_3d": {
+          "0.3": 0.717948717948718,
+          "0.5": 0.6600189933523265,
+          "0.7": 0.3189715532336791
+        },
+        "metric": "BEV and upright3D AP; both communication directions paid",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "95a6503af995282234de88e7dd0b36bf55ccce6ba24aaf1b10f0b6b107726dda"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 4086.0,
+          "median_bytes": 4086.0,
+          "min_bytes": 4077,
+          "max_bytes": 4095,
+          "p95_bytes": 4094.1,
+          "total_bytes": 8172,
+          "mean_reverse_bytes": 0.0,
+          "scope": "forward+reverse serialized payload and complete metadata; excludes network framing/retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7427350427350428,
+          "0.5": 0.6923076923076923,
+          "0.7": 0.5700591749409446
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.717948717948718,
+          "0.5": 0.6600189933523265,
+          "0.7": 0.3189715532336791
+        }
+      }
+    },
+    "b4096_blind": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6923076923076923,
+          "0.7": 0.5682874630243052
+        },
+        "ap_3d": {
+          "0.3": 0.7170645446507515,
+          "0.5": 0.6600189933523265,
+          "0.7": 0.35330104211425156
+        },
+        "metric": "BEV and upright3D AP; both communication directions paid",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "ac9afcb4c86739e89170ada55aa7724fd1ae15a850140285b5ec55e8d878c155"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 4089.5,
+          "median_bytes": 4089.5,
+          "min_bytes": 4085,
+          "max_bytes": 4094,
+          "p95_bytes": 4093.55,
+          "total_bytes": 8179,
+          "mean_reverse_bytes": 956.5,
+          "scope": "forward+reverse serialized payload and complete metadata; excludes network framing/retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6923076923076923,
+          "0.7": 0.5682874630243052
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7170645446507515,
+          "0.5": 0.6600189933523265,
+          "0.7": 0.35330104211425156
+        }
+      }
+    },
+    "b4096_query": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 33,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.740301724137931,
+          "0.5": 0.7110759079149883,
+          "0.7": 0.6098953728264074
+        },
+        "ap_3d": {
+          "0.3": 0.7120255755313226,
+          "0.5": 0.6335715689163967,
+          "0.7": 0.31034755842448153
+        },
+        "metric": "BEV and upright3D AP; both communication directions paid",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "154d3800f2cd86354a3864500e2cc1497dff43e61bb4ddc66c112794ba7ec1f9"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 4090.5,
+          "median_bytes": 4090.5,
+          "min_bytes": 4085,
+          "max_bytes": 4096,
+          "p95_bytes": 4095.45,
+          "total_bytes": 8181,
+          "mean_reverse_bytes": 956.5,
+          "scope": "forward+reverse serialized payload and complete metadata; excludes network framing/retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 33,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.740301724137931,
+          "0.5": 0.7110759079149883,
+          "0.7": 0.6098953728264074
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7120255755313226,
+          "0.5": 0.6335715689163967,
+          "0.7": 0.31034755842448153
+        }
+      }
+    }
+  },
+  "paired_audit_sha256": "6eb65f4df98f09e84a496e464fa7ce87771b3b37dfd264729068d365ea5e3c15"
+}
