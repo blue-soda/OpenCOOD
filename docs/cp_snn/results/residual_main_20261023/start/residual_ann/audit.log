@@ -1,0 +1,3 @@
+/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+{"passed": true, "gradient": {"backbone_3d.conv4.": 93.73361574858427, "backbone_3d.conv_out.": 22.106577455997467, "backbone_2d.": 504.7342773079872, "cls_head.": 0.5095673650503159, "reg_head.": 22.49570631980896, "dir_head.": 0.2459884136915207, "sender.project.": 0.007830138318240643, "sender.decode.": 0.4210742712020874, "receiver.": 4.7167553305625916}, "step_seconds": 2.105102339060977, "peak_allocated_bytes": 1813962752}
