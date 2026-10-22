@@ -1,0 +1,171 @@
+{
+  "actual_dense_fm_conv_gflops": 21.28896,
+  "resets": 12,
+  "results": {
+    "0.0": {
+      "estimated_fm_conv_gflops": 21.28896,
+      "gates": {
+        "candidate_conv": {
+          "mean_conditional_output_relative_rms": 0.0,
+          "mean_crops": 1.0,
+          "mean_planned_input_area": 1.0,
+          "mean_request": 0.999999943189323,
+          "mean_write": 0.999999943189323,
+          "p95_conditional_output_relative_rms": 0.0,
+          "p95_planned_input_area": 1.0
+        },
+        "reset_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.0,
+          "mean_crops": 1.0,
+          "mean_planned_input_area": 1.0,
+          "mean_request": 0.999999943189323,
+          "mean_write": 0.999999943189323,
+          "p95_conditional_output_relative_rms": 0.0,
+          "p95_planned_input_area": 1.0
+        },
+        "update_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.0,
+          "mean_crops": 1.0,
+          "mean_planned_input_area": 1.0,
+          "mean_request": 0.999999943189323,
+          "mean_write": 0.999999943189323,
+          "p95_conditional_output_relative_rms": 0.0,
+          "p95_planned_input_area": 1.0
+        }
+      }
+    },
+    "0.1": {
+      "estimated_fm_conv_gflops": 22.262742864,
+      "gates": {
+        "candidate_conv": {
+          "mean_conditional_output_relative_rms": 0.00030858181969506404,
+          "mean_crops": 97.890625,
+          "mean_planned_input_area": 1.0880176943824407,
+          "mean_request": 0.8024201754014939,
+          "mean_write": 0.8477665800601244,
+          "p95_conditional_output_relative_rms": 0.0007173075719038025,
+          "p95_planned_input_area": 1.229657738095238
+        },
+        "reset_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.0005064266193812728,
+          "mean_crops": 100.85546875,
+          "mean_planned_input_area": 1.0861869109623017,
+          "mean_request": 0.797651682049036,
+          "mean_write": 0.8446930437348783,
+          "p95_conditional_output_relative_rms": 0.00115733384154737,
+          "p95_planned_input_area": 1.2224751984126985
+        },
+        "update_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.0005812071066202407,
+          "mean_crops": 97.87890625,
+          "mean_planned_input_area": 1.0878544301835318,
+          "mean_request": 0.8026750870049,
+          "mean_write": 0.8480214157607406,
+          "p95_conditional_output_relative_rms": 0.001296344184083864,
+          "p95_planned_input_area": 1.225639880952381
+        }
+      }
+    },
+    "0.25": {
+      "estimated_fm_conv_gflops": 21.858397344,
+      "gates": {
+        "candidate_conv": {
+          "mean_conditional_output_relative_rms": 0.0010669327714367682,
+          "mean_crops": 148.29296875,
+          "mean_planned_input_area": 1.0522326078869049,
+          "mean_request": 0.7026751721277833,
+          "mean_write": 0.7813814147375524,
+          "p95_conditional_output_relative_rms": 0.0030173849663697183,
+          "p95_planned_input_area": 1.1757738095238095
+        },
+        "reset_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.0014770846396459092,
+          "mean_crops": 153.0546875,
+          "mean_planned_input_area": 1.0494352601066468,
+          "mean_request": 0.6951338227372617,
+          "mean_write": 0.777543991105631,
+          "p95_conditional_output_relative_rms": 0.0030125618213787675,
+          "p95_planned_input_area": 1.1717485119047617
+        },
+        "update_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.0016920644584388356,
+          "mean_crops": 149.859375,
+          "mean_planned_input_area": 1.051575947110615,
+          "mean_request": 0.7002853056183085,
+          "mean_write": 0.7805381624493748,
+          "p95_conditional_output_relative_rms": 0.003347989870235324,
+          "p95_planned_input_area": 1.1723487103174604
+        }
+      }
+    },
+    "0.5": {
+      "estimated_fm_conv_gflops": 20.607502896,
+      "gates": {
+        "candidate_conv": {
+          "mean_conditional_output_relative_rms": 0.00539048955670296,
+          "mean_crops": 213.98046875,
+          "mean_planned_input_area": 0.9470013330853174,
+          "mean_request": 0.5574266996700317,
+          "mean_write": 0.6693848934955895,
+          "p95_conditional_output_relative_rms": 0.010666716611012816,
+          "p95_planned_input_area": 1.061185515873016
+        },
+        "reset_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.008347490912456124,
+          "mean_crops": 233.4609375,
+          "mean_planned_input_area": 0.932909419952877,
+          "mean_request": 0.5326718484284356,
+          "mean_write": 0.6564762878697366,
+          "p95_conditional_output_relative_rms": 0.012641988461837173,
+          "p95_planned_input_area": 1.0450868055555556
+        },
+        "update_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.010393626060249517,
+          "mean_crops": 232.19921875,
+          "mean_planned_input_area": 0.9366992962549603,
+          "mean_request": 0.5358848165487871,
+          "mean_write": 0.6589917890960351,
+          "p95_conditional_output_relative_rms": 0.015350128524005413,
+          "p95_planned_input_area": 1.0492088293650794
+        }
+      }
+    }
+  },
+  "scans": 256,
+  "scope": "Estimated crop FM-only convolution includes dense projections/post_fusion plus planned spatial crops and duplicated halos. Optional separately reported selected execution is conditional, not deployed. No full-model FLOPs savings or AP claim. Output errors are pre-BN responses under dense recurrence; they do not include nonlinear/feedback accumulation.",
+  "selected_execution": {
+    "conditional_fm_conv_gflops": 17.516784384,
+    "gates": {
+      "candidate_conv": {
+        "dense_kernel_mean_ms": 0.4445370267773789,
+        "dense_kernel_p95_ms": 0.5131697980687022,
+        "executed_output_fraction": 0.6693849206349206,
+        "executed_spatial_gflops": 2.487361536,
+        "max_masked_dense_abs_error": 7.2479248046875e-05,
+        "selected_kernel_mean_ms": 4.235071241779904,
+        "selected_kernel_p95_ms": 6.017712294124067
+      },
+      "reset_gate_conv": {
+        "dense_kernel_mean_ms": 0.4294588489881982,
+        "dense_kernel_p95_ms": 0.50933106103912,
+        "executed_output_fraction": 0.656476314484127,
+        "executed_spatial_gflops": 2.43939456,
+        "max_masked_dense_abs_error": 8.7738037109375e-05,
+        "selected_kernel_mean_ms": 4.339225464349052,
+        "selected_kernel_p95_ms": 6.31002988666296
+      },
+      "update_gate_conv": {
+        "dense_kernel_mean_ms": 0.4343793205008274,
+        "dense_kernel_p95_ms": 0.4999582888558507,
+        "executed_output_fraction": 0.6589918154761905,
+        "executed_spatial_gflops": 2.448741888,
+        "max_masked_dense_abs_error": 9.1552734375e-05,
+        "selected_kernel_mean_ms": 4.20101059456848,
+        "selected_kernel_p95_ms": 6.085424509365112
+      }
+    },
+    "scope": "Actual selected linear MACs plus unchanged dense projection/post-fusion MACs. Diagnostic additionally computes dense reference gates; this is NOT whole-run savings. Kernel times include gathering/chunking/scatter but exclude selector/warp/other modules. No approximate state feedback, no end-to-end latency or AP claim.",
+    "threshold": 0.5
+  },
+  "status": "COMPLETED"
+}

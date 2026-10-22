@@ -1,0 +1,15 @@
+{
+  "dense_hook_macs": {
+    "('baseline', False, True)": 110586470400,
+    "('baseline', True, True)": 44172979200,
+    "('masked_dense', False, True)": 110586470400,
+    "('masked_dense', True, False)": 44172979200,
+    "('selected', False, True)": 110586470400,
+    "('selected', True, False)": 38599142400
+  },
+  "frames": 32,
+  "recursive_prediction_max_abs_error": 1.1444091796875e-05,
+  "scope": "Selected and masked-dense own recurrences; tolerance1e-3. Kernel roundoff may alter threshold decisions, so full validation reports both APs.",
+  "selected_fraction_disagreements": 0,
+  "status": "PASSED"
+}
