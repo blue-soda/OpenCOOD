@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "packet_files_rehashed": 20856,
+  "blind_query_requests_identical_both_budgets": true,
+  "all_actual_total_budgets_passed": true,
+  "summary_sha256": "5c494602def83727e02546e7195637c9f622251561c38c778de62f44e0a320f7"
+}

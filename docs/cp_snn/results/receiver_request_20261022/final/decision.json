@@ -1,0 +1,14 @@
+{
+  "hypothesis_gate": false,
+  "query_minus_control_pp": {
+    "2048": {
+      "native": -0.9284294507748481,
+      "blind": -0.4659439409843702
+    },
+    "4096": {
+      "native": -1.516969337032259,
+      "blind": -1.7093301115978177
+    }
+  },
+  "decision": "close fixed residual request heuristic; no sweep or automatic training"
+}
