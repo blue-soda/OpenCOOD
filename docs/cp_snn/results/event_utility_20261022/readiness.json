@@ -1,0 +1,19 @@
+{
+  "heartbeat_utc": "2026-10-22T08:34:43.327Z",
+  "implementation_commit": "bd60385",
+  "local_cpu_checks": [
+    "deletion conservation and nonnegative counts",
+    "zero positive gradients leaves original counts",
+    "deterministic address tie-break and 32-event cap",
+    "same seed reproduces random deletion"
+  ],
+  "local_compile": true,
+  "git_diff_check": true,
+  "remote_ssh_181_attempts": 2,
+  "remote_status": "banner exchange timeout",
+  "vpn_status": "No connections",
+  "deployed": false,
+  "launched": false,
+  "new_AP": false,
+  "next": "Deploy existing bounded training-only probe after connectivity returns; do not rerun completed range control"
+}
