@@ -40,5 +40,22 @@ class PointwiseSpatialStateTests(unittest.TestCase):
                     if p.grad is not None:p.add_(p.grad,alpha=-.01)
         self.assertGreater(float(model.wide.weight.grad.abs().sum()),0.)
 
+    def test_linear_layout_matches_nonzero_history_and_counts_executed_macs(self):
+        model=self.make()
+        with torch.no_grad():
+            model.update[-1].weight.normal_(0,.02)
+            model.update[0].weight[:,384:].normal_(0,.02)
+            current,evidence=model.observe(torch.randn(1,64,15,21))
+            old=torch.randn_like(current);valid=torch.rand_like(current[:,:1])>.1
+            dense=F.relu(current+model.update(model.pack(evidence,old,valid)))
+            weights=sum(m.weight.numel() for m in model.update if isinstance(m,torch.nn.Conv2d))
+            for kind in ('empty','full','random'):
+                mask=torch.rand_like(valid.float())>.5
+                if kind!='random':mask.fill_(kind=='full')
+                actual=model.linear_selected_update(current,evidence,old,valid,mask)
+                self.assertTrue(torch.allclose(actual,torch.where(mask,dense,old),atol=3e-6,rtol=1e-5))
+                self.assertTrue(torch.equal(actual[~mask.expand_as(actual)],old[~mask.expand_as(old)]))
+                self.assertEqual(model.last_selected_linear_macs,int(mask.sum())*weights)
+
 
 if __name__=='__main__':unittest.main()

@@ -9,7 +9,6 @@ import sys
 import time
 import numpy as np
 import torch
-from torch.nn import functional as F
 from opencood.models.sub_modules.int_pointwise_spatial_state import ContextualPointwiseStage
 from opencood.models.sub_modules.int_projected_gru import projected_gru
 from opencood.tools.train_int_anchor_residual import ConvCounter
@@ -39,17 +38,20 @@ def worker(a):
     scope=('Kernel feasibility only, first32 train scans and fixed epoch1 weights. '
         'Precomputed deterministic random masks, zero spatial history/valid as phaseA. '
         'No motion alignment, selector, state recurrence, detection AP or end-to-end speedup claim. '
+        'Compare original Conv2d layout and row-major functional linear with identical weights. '
         'Timing includes mature stem, depthwise context, pack, selected gather, update, scatter; '
         'excludes mask construction, warp and all other detector modules. First4 scans warmup; three repeats per scan.')
     write_json(out/'provenance.json',dict(source=source,checkpoint=a.checkpoint,sha256=a.sha256,memory=a.memory,scope=scope))
     fractions=(0.,.1,.25,.5,.75,1.)
     records={str(f):[] for f in fractions};records['dense']=[]
+    records.update({'linear_'+str(f):[] for f in fractions})
     costs={};memory_state=None;max_error=0.;max_relative=0.
     generator=torch.Generator().manual_seed(303)
     order=torch.randperm(100*252,generator=generator)
     masks={str(f):torch.zeros(100*252,dtype=torch.bool) for f in fractions}
     for f in fractions:masks[str(f)][order[:round(f*100*252)]]=True
     masks={k:v.reshape(1,1,100,252).cuda() for k,v in masks.items()}
+    masks.update({'linear_'+k:v for k,v in list(masks.items())})
     _,stream=loader(rows,cfg,2,303)
     with torch.no_grad():
         for index,sample in enumerate(stream):
@@ -64,6 +66,7 @@ def worker(a):
             def execute(name):
                 if name=='dense':return stage(temporal)
                 current,evidence=stage.observe(temporal)
+                if name.startswith('linear_'):return stage.linear_selected_update(current,evidence,old,valid,masks[name])
                 return stage.selected_update(current,evidence,old,valid,masks[name])
             dense=execute('dense')
             for name in masks:
@@ -78,6 +81,7 @@ def worker(a):
                     try:execute(name)
                     finally:counter.close()
                     costs[name]=counter.total
+                    if name.startswith('linear_'):costs[name]+=stage.last_selected_linear_macs
                 # Fixed current observation cost is paid even for an empty mask.
                 assert costs['0.0']<costs['dense'] and costs['1.0']==costs['dense']
                 for name,mask in masks.items():

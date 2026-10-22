@@ -72,3 +72,30 @@ class ContextualPointwiseStage(nn.Module):
         value=F.relu(current.reshape(1,128,-1)[:,:,selected]+residual)
         output=aligned.reshape(1,128,-1).clone();output[:,:,selected]=value
         return output.reshape(1,128,h,w)
+
+    def linear_selected_update(self,current,evidence,aligned,valid,mask):
+        """Same frozen update in row-major layout, without per-layer transposes.
+
+        Keep original parameters/state_dict and the training forward unchanged.
+        Explicit MACs count the executed functional linear layers, which Conv2d
+        hooks cannot see. Current observation and cache management are separate.
+        """
+        if self.training or torch.is_grad_enabled():raise ValueError('Frozen selected inference only')
+        h,w=current.shape[-2:]
+        if current.shape[0]!=1 or mask.shape!=(1,1,h,w) or mask.dtype!=torch.bool:
+            raise ValueError('Expected a matching single-frame boolean mask')
+        self.last_selected_linear_macs=0
+        selected=mask.reshape(-1).nonzero(as_tuple=False).flatten()
+        if not selected.numel():return aligned.clone()
+        packed=self.pack(evidence,aligned,valid)
+        values=packed.reshape(513,-1)[:,selected].transpose(0,1).contiguous()
+        for layer in self.update:
+            if isinstance(layer,nn.Conv2d):
+                assert layer.kernel_size==(1,1) and layer.groups==1
+                values=F.linear(values,layer.weight[:,:,0,0],layer.bias)
+                self.last_selected_linear_macs+=selected.numel()*layer.weight.numel()
+            elif isinstance(layer,CellNorm):values=layer.norm(values)
+            else:values=layer(values)
+        value=F.relu(current.reshape(128,-1)[:,selected]+values.transpose(0,1))
+        output=aligned.reshape(128,-1).clone();output[:,selected]=value
+        return output.reshape(1,128,h,w)
