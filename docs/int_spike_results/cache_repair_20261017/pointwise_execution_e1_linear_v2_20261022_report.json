@@ -1,0 +1,100 @@
+{
+  "max_abs_error": 1.52587890625e-05,
+  "max_relative_rms": 2.747289613580506e-07,
+  "results": {
+    "0.0": {
+      "conv_gflops": 12.1411584,
+      "stage_mean_ms": 1.715788384899497,
+      "stage_p95_ms": 1.745929301250726,
+      "timed_samples": 84,
+      "update_output_fraction": 0.0
+    },
+    "0.1": {
+      "conv_gflops": 15.11645184,
+      "stage_mean_ms": 2.425031913887887,
+      "stage_p95_ms": 2.463488432113081,
+      "timed_samples": 84,
+      "update_output_fraction": 0.09999999403953552
+    },
+    "0.25": {
+      "conv_gflops": 19.579392,
+      "stage_mean_ms": 3.1259551594432975,
+      "stage_p95_ms": 3.1265144236385822,
+      "timed_samples": 84,
+      "update_output_fraction": 0.2499999850988388
+    },
+    "0.5": {
+      "conv_gflops": 27.0176256,
+      "stage_mean_ms": 3.895323346590712,
+      "stage_p95_ms": 3.938980645034462,
+      "timed_samples": 84,
+      "update_output_fraction": 0.4999999701976776
+    },
+    "0.75": {
+      "conv_gflops": 34.4558592,
+      "stage_mean_ms": 4.904765225503416,
+      "stage_p95_ms": 4.958582611288875,
+      "timed_samples": 84,
+      "update_output_fraction": 0.7499999403953552
+    },
+    "1.0": {
+      "conv_gflops": 41.8940928,
+      "stage_mean_ms": 6.02645982178815,
+      "stage_p95_ms": 6.074252747930586,
+      "timed_samples": 84,
+      "update_output_fraction": 0.9999999403953552
+    },
+    "dense": {
+      "conv_gflops": 41.8940928,
+      "stage_mean_ms": 5.805102734094752,
+      "stage_p95_ms": 6.04798626154661,
+      "timed_samples": 84,
+      "update_output_fraction": 1.0
+    },
+    "linear_0.0": {
+      "conv_gflops": 12.1411584,
+      "stage_mean_ms": 1.729415557790725,
+      "stage_p95_ms": 1.7333338153548539,
+      "timed_samples": 84,
+      "update_output_fraction": 0.0
+    },
+    "linear_0.1": {
+      "conv_gflops": 15.11645184,
+      "stage_mean_ms": 2.307174896400067,
+      "stage_p95_ms": 2.2986919386312366,
+      "timed_samples": 84,
+      "update_output_fraction": 0.09999999403953552
+    },
+    "linear_0.25": {
+      "conv_gflops": 19.579392,
+      "stage_mean_ms": 2.784684078679198,
+      "stage_p95_ms": 2.815554989501834,
+      "timed_samples": 84,
+      "update_output_fraction": 0.2499999850988388
+    },
+    "linear_0.5": {
+      "conv_gflops": 27.0176256,
+      "stage_mean_ms": 3.5067999907325778,
+      "stage_p95_ms": 3.542441874742508,
+      "timed_samples": 84,
+      "update_output_fraction": 0.4999999701976776
+    },
+    "linear_0.75": {
+      "conv_gflops": 34.4558592,
+      "stage_mean_ms": 4.297836636570061,
+      "stage_p95_ms": 4.326053301338106,
+      "timed_samples": 84,
+      "update_output_fraction": 0.7499999403953552
+    },
+    "linear_1.0": {
+      "conv_gflops": 41.8940928,
+      "stage_mean_ms": 5.0874722628144635,
+      "stage_p95_ms": 5.124795215670019,
+      "timed_samples": 84,
+      "update_output_fraction": 0.9999999403953552
+    }
+  },
+  "scans": 32,
+  "scope": "Kernel feasibility only, first32 train scans and fixed epoch1 weights. Precomputed deterministic random masks, zero spatial history/valid as phaseA. No motion alignment, selector, state recurrence, detection AP or end-to-end speedup claim. Compare original Conv2d layout and row-major functional linear with identical weights. Timing includes mature stem, depthwise context, pack, selected gather, update, scatter; excludes mask construction, warp and all other detector modules. First4 scans warmup; three repeats per scan.",
+  "status": "COMPLETED"
+}
