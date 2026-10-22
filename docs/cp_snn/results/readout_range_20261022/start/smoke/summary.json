@@ -1,0 +1,244 @@
+{
+  "passed": true,
+  "protocol": {
+    "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_snapshot_adapt_20261021/if8/train/best_ap70.pth",
+    "checkpoint_sha256": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78",
+    "config_sha256": "f6379384c110847efbeee7326ade495826c19a9d39da6db42a1138794b588f3f",
+    "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+    "split_sha256": {
+      "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+      "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+    },
+    "seed": 20260929,
+    "limit": 2,
+    "training": false,
+    "modes": [
+      "b2048_capped",
+      "b2048_uncapped",
+      "full_capped",
+      "full_uncapped"
+    ],
+    "cuda_allocator_memory_fraction": 0.2,
+    "shared_source_packet_and_current": true,
+    "code_commit": "6ded2627354ee32c3d659165ccf291ebaddd32bf",
+    "intervention": "Remove only receiver output ceiling on original remote-supported spatial sites",
+    "unchanged": "sender max8, IF ordering, bytes, geometry, local-only path, D/gain, BEV/head and all weights",
+    "exit": "one paired 2048/full comparison, no ceiling/gain/temperature sweep or automatic retraining"
+  },
+  "results": {
+    "b2048_capped": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6923076923076923,
+          "0.7": 0.5515510130894746
+        },
+        "ap_3d": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6590693257359922,
+          "0.7": 0.3604790864406249
+        },
+        "metric": "BEV and upright 3D AP; shared source/packet/current; output ceiling only",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "50d36d4c56f0ac030e02c25d1efef142ecdfa3cd35044f1fec0f0319c9f873bf"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 2046.0,
+          "median_bytes": 2046.0,
+          "min_bytes": 2044,
+          "max_bytes": 2048,
+          "p95_bytes": 2047.8,
+          "total_bytes": 4092,
+          "scope": "serialized payload and full metadata; excludes network framing/retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6923076923076923,
+          "0.7": 0.5515510130894746
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6590693257359922,
+          "0.7": 0.3604790864406249
+        }
+      }
+    },
+    "b2048_uncapped": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6923076923076923,
+          "0.7": 0.5495240545407769
+        },
+        "ap_3d": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6590693257359922,
+          "0.7": 0.360083648545187
+        },
+        "metric": "BEV and upright 3D AP; shared source/packet/current; output ceiling only",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "f449713d6ff8a1626dc05017e95e5ae9bb7a3cc377aef77d04ad68c01f6fd6bb"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 2046.0,
+          "median_bytes": 2046.0,
+          "min_bytes": 2044,
+          "max_bytes": 2048,
+          "p95_bytes": 2047.8,
+          "total_bytes": 4092,
+          "scope": "serialized payload and full metadata; excludes network framing/retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 32,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6923076923076923,
+          "0.7": 0.5495240545407769
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7435897435897436,
+          "0.5": 0.6590693257359922,
+          "0.7": 0.360083648545187
+        }
+      }
+    },
+    "full_capped": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 34,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.735518961325413,
+          "0.5": 0.6783487480261674,
+          "0.7": 0.5244755244755243
+        },
+        "ap_3d": {
+          "0.3": 0.7129859387923904,
+          "0.5": 0.5897435897435898,
+          "0.7": 0.3034896015665246
+        },
+        "metric": "BEV and upright 3D AP; shared source/packet/current; output ceiling only",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "712aa41e28b916c7c22de55f56f59db4baf9bc6d9f67a59dc65c473799d18456"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 12736.5,
+          "median_bytes": 12736.5,
+          "min_bytes": 12320,
+          "max_bytes": 13153,
+          "p95_bytes": 13111.35,
+          "total_bytes": 25473,
+          "scope": "serialized payload and full metadata; excludes network framing/retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 34,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.735518961325413,
+          "0.5": 0.6783487480261674,
+          "0.7": 0.5244755244755243
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.7129859387923904,
+          "0.5": 0.5897435897435898,
+          "0.7": 0.3034896015665246
+        }
+      }
+    },
+    "full_uncapped": {
+      "evaluation": {
+        "samples": 2,
+        "indexed_samples": 1738,
+        "full_split": false,
+        "predicted_boxes": 35,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.717948717948718,
+          "0.5": 0.6390532544378699,
+          "0.7": 0.5282222793928479
+        },
+        "ap_3d": {
+          "0.3": 0.6886446886446886,
+          "0.5": 0.6092101878055056,
+          "0.7": 0.3159845290412092
+        },
+        "metric": "BEV and upright 3D AP; shared source/packet/current; output ceiling only",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 2,
+          "index_sha256": "b6387e48b0527b729fd1f444676904755716d0192a5f77c580777809edf9ba13"
+        },
+        "feature_packets": {
+          "count": 2,
+          "mean_bytes": 12736.5,
+          "median_bytes": 12736.5,
+          "min_bytes": 12320,
+          "max_bytes": 13153,
+          "p95_bytes": 13111.35,
+          "total_bytes": 25473,
+          "scope": "serialized payload and full metadata; excludes network framing/retransmission"
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 2,
+        "predicted_boxes": 35,
+        "gt_boxes": 39,
+        "ap": {
+          "0.3": 0.717948717948718,
+          "0.5": 0.6390532544378699,
+          "0.7": 0.5282222793928479
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.6886446886446886,
+          "0.5": 0.6092101878055056,
+          "0.7": 0.3159845290412092
+        }
+      }
+    }
+  },
+  "all_state_unchanged": true,
+  "paired_audit_sha256": "6768d7bdcf16e6d9729d13836ad7f40636a20311d1152bc11b931a560f19ab2e"
+}

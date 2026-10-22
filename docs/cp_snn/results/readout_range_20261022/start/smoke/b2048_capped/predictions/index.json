@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "frames": [
+    {
+      "index": 0,
+      "frame_id": "000211",
+      "file": "000000.npz",
+      "sha256": "9130949423e2fad9fefc802587e37b37f500a952a624515feac9f7da030a821f",
+      "predicted_boxes": 16,
+      "gt_boxes": 19,
+      "communication": {
+        "road_to_vehicle_packet_bytes": [
+          2044
+        ],
+        "total_bytes": 2044
+      }
+    },
+    {
+      "index": 1,
+      "frame_id": "000212",
+      "file": "000001.npz",
+      "sha256": "c53ea25da262edd2c825dd801d347a698f5c4920039b626ca423d4d5dbf4069e",
+      "predicted_boxes": 16,
+      "gt_boxes": 20,
+      "communication": {
+        "road_to_vehicle_packet_bytes": [
+          2048
+        ],
+        "total_bytes": 2048
+      }
+    }
+  ],
+  "order": "validation loader order"
+}
