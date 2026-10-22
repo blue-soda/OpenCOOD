@@ -23,6 +23,7 @@ from opencood.tools.run_int_cache_repair import setup
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
 from opencood.loss.point_pillar_dir_loss import PointPillarDirLoss
+from opencood.tools.int_spatial_resume import load_completed_spatial_resume
 
 
 def worker(a):
@@ -57,6 +58,10 @@ def worker(a):
         objective='GT when supervised + .2 head KD +1.0 first-stage feature KD. Own e11 FM state, detached each frame. No cached-view loss in phase A; report its compatibility separately.',
         schedule='AdamW3e-4 wd1e-4 clip5; fullAP plateau factor.5 patience1 threshold.001; min6 then stale4 and lr<=1e-5; max12epochs/8hours.',
         selection='Full AP primary best; cached AP from same checkpoint. Epoch0 retained. Precision recovery, not a sparse-compute result.')
+    resume=load_completed_spatial_resume(a.resume_run,contract) if a.resume_run else None
+    if resume:
+        stage.load_state_dict(resume['saved']['stage'],strict=True)
+        contract['resume']=resume['provenance']
     write_json(out/'contract.json',contract);write_json(out/'provenance.json',source)
     tests=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     (out/'unit_tests.log').write_bytes(tests.stdout);assert tests.returncode==0
@@ -82,14 +87,21 @@ def worker(a):
         path=directory/'stage.pth';torch.save(dict(stage=stage.state_dict(),contract=contract,epoch=epoch),str(path))
         report=evaluate(base,student,split,repair,cfg,val,directory,costs,epoch,expected,scope)
         return report,path
-    report,path=assess(0);best=significant=report['results']['full']['ap70'];stale=0
     def save_best(report,path,epoch):
         write_json(out/'best.json',dict(epoch=epoch,ap70=report['results']['full']['ap70'],cached_ap70=report['results']['cached']['ap70'],checkpoint=str(path),sha256=digest(path)))
-    save_best(report,path,0)
     optimizer=torch.optim.AdamW(parameters,lr=3e-4,weight_decay=1e-4)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=1,threshold=.001,threshold_mode='abs',min_lr=1e-6)
-    criterion=PointPillarDirLoss(cfg['loss']['args']).cuda();history=[];stop='budget_not_convergence'
-    for epoch in range(1,13):
+    if resume:
+        optimizer.load_state_dict(resume['saved']['optimizer']);scheduler.load_state_dict(resume['saved']['scheduler'])
+        history=resume['saved']['history'];start_epoch=resume['epoch']
+        best=resume['best']['ap70'];significant=resume['significant'];stale=resume['stale']
+        write_json(out/'best.json',resume['best']);write_json(out/'history.json',history)
+        write_json(out/'resume.json',resume['provenance'])
+    else:
+        report,path=assess(0);best=significant=report['results']['full']['ap70'];stale=0
+        save_best(report,path,0);history=[];start_epoch=0
+    criterion=PointPillarDirLoss(cfg['loss']['args']).cuda();stop='budget_not_convergence'
+    for epoch in range(start_epoch+1,start_epoch+13):
         stage.train();ts=ss=None;losses=[];tc,th=capture_features(base);sc,sh=capture_features(student)
         _,stream=loader(train,cfg,4,303+epoch)
         try:
@@ -111,15 +123,18 @@ def worker(a):
         else:stale+=1
         history.append(dict(epoch=epoch,loss=float(np.mean(losses)),lr=optimizer.param_groups[0]['lr'],stale=stale,validation=report))
         write_json(out/'history.json',history)
-        torch.save(dict(stage=stage.state_dict(),optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),history=history,contract=contract),str(out/'latest.pth'))
+        torch.save(dict(stage=stage.state_dict(),optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),history=history,contract=contract,
+            significant=significant,stale=stale),str(out/'latest.pth'))
         if epoch>=6 and stale>=4 and optimizer.param_groups[0]['lr']<=1e-5:stop='plateau';break
-    write_json(out/'report.json',dict(status='COMPLETED',epochs=len(history),stop_reason=stop,best=json.loads((out/'best.json').read_text())))
+    write_json(out/'report.json',dict(status='COMPLETED',epochs=len(history),phase_epochs=len(history)-start_epoch,
+        stop_reason=stop,best=json.loads((out/'best.json').read_text())))
     write_json(out/'status.json',dict(status='COMPLETED',epochs=len(history)))
 
 
 def main():
     p=argparse.ArgumentParser()
     for key in ('root','readout-run','repair-run','memory-run','output'):p.add_argument('--'+key,required=True)
+    p.add_argument('--resume-run',help='Completed budget-limited spatial run; continue in a new output directory')
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.worker:
         def expired(s,f):raise TimeoutError('Pointwise spatial recovery exceeded8 hours')
