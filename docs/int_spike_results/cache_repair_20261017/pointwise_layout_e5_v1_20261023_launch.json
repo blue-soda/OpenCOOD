@@ -1,0 +1,23 @@
+{
+  "code_commit": "5e472ed9fb58daf8b471c30c835a9df9e79b8c21",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.evaluate_int_pointwise_layout",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--checkpoint",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_spatial_dense_v1_20261022/epoch_005/stage.pth",
+    "--sha256",
+    "94f9888148a6534240e1756a16b794a5b1ce34843c582a4d81a0444edd4384b3",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_layout_e5_v1_20261023",
+    "--gpu",
+    "0",
+    "--worker"
+  ],
+  "created_unix": 1792687648.12056,
+  "gpu": 0,
+  "pid": 38404,
+  "timeout_seconds": 7200
+}

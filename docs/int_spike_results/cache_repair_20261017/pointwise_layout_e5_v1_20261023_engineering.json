@@ -1,0 +1,16 @@
+{
+  "all_spatial_cells_update": true,
+  "conv_macs": {
+    "base_cached_full": 110889676800,
+    "base_cached_partial": 44476185600,
+    "base_full_full": 110889676800,
+    "cached_full": 110889676800,
+    "cached_partial": 44476185600,
+    "full_full": 110889676800
+  },
+  "frames": 32,
+  "immutable_own_deep_anchors": true,
+  "max_prediction_error": 8.58306884765625e-06,
+  "owns_recurrent_states": true,
+  "status": "PASSED"
+}
