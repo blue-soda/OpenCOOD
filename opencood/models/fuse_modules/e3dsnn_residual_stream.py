@@ -81,7 +81,9 @@ class ResidualReceiver(nn.Module):
 
     def context(self,local,remote,support):
         x=self.input(torch.cat((local,remote,support),1))
-        return x+self.spatial(x)
+        # Nonlinear context is essential: subtracting two purely linear maps
+        # would cancel the local input exactly, defeating local conditioning.
+        return torch.tanh(x+self.spatial(x))
 
     def begin(self,local):
         remote=torch.zeros_like(local);support=local[:,:1]*0
@@ -99,6 +101,6 @@ class ResidualReceiver(nn.Module):
             hidden=state['total']
         elif family=='residual_ann':
             state['potential']=state['potential']+delta
-            hidden=torch.tanh(state['potential'])
+            hidden=state['potential']
         else:raise ValueError('Unknown receiver family')
         return self.output(hidden)*support

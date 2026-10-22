@@ -115,19 +115,30 @@ def audit(root,family):
     model.bounds=[4096,4096];model.set_stage('joint');model.train()
     criterion=train_utils.create_loss(cfg).cuda();opt=torch.optim.Adam([p for p in model.parameters() if p.requires_grad],lr=5e-5)
     torch.cuda.reset_peak_memory_stats();tic=time.perf_counter();opt.zero_grad(set_to_none=True)
-    output,loss=checked_forward(model,criterion,batch);loss.backward()
+    output,loss=checked_forward(model,criterion,batch)
+    # A rate penalty alone must not satisfy the communication gradient gate.
+    task=criterion(output,batch['ego']['label_dict'])
+    task_names=[k for k,p in model.named_parameters() if p.requires_grad and k.startswith(('sender.','receiver.','legacy_receiver.'))]
+    task_grads=torch.autograd.grad(task,[dict(model.named_parameters())[k] for k in task_names],retain_graph=True,allow_unused=True)
+    task_gradient={prefix:sum(float(g.abs().sum()) for k,g in zip(task_names,task_grads) if k.startswith(prefix) and g is not None)
+                   for prefix in ('sender.project.','sender.decode.','legacy_receiver.' if family=='old_snn' else 'receiver.')}
+    assert all(np.isfinite(v) and v>0 for v in task_gradient.values()),task_gradient
+    loss.backward()
     groups=('backbone_3d.conv4.','backbone_3d.conv_out.','backbone_2d.','cls_head.','reg_head.','dir_head.','sender.project.','sender.decode.',
             'legacy_receiver.' if family=='old_snn' else 'receiver.')
     gradient={prefix:sum(float(p.grad.abs().sum()) for k,p in model.named_parameters() if k.startswith(prefix) and p.grad is not None) for prefix in groups}
     assert all(np.isfinite(v) and v>0 for v in gradient.values()),gradient
     torch.nn.utils.clip_grad_norm_(model.parameters(),10.,error_if_nonfinite=True);opt.step();check_frozen(model,frozen)
-    torch.cuda.synchronize();report.update(gradient=gradient,step_seconds=time.perf_counter()-tic,
+    torch.cuda.synchronize();report.update(gradient=gradient,task_only_gradient=task_gradient,step_seconds=time.perf_counter()-tic,
         peak_allocated_bytes=torch.cuda.max_memory_allocated(),step_records=model.last_records)
     model.load_state_dict(initial,strict=True);model.eval();model.bounds=[2048,8192]
     model.set_stage('interface');assert all(not p.requires_grad for k,p in model.named_parameters() if k.startswith(('backbone_3d.','backbone_2d.','cls_head.','reg_head.','dir_head.')))
     report.update(passed=True,zero_equals_local=True,frozen_buffers_unchanged=True,optimizer_step_discarded=True,
+                  code_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=str(REPO)).decode().strip(),
                   elapsed_seconds=time.time()-start,initial_sha256=digest(folder/'initial.pth'))
-    write_json(folder/'audit.json',report);print(json.dumps({k:report[k] for k in ('passed','gradient','step_seconds','peak_allocated_bytes')}),flush=True)
+    target=folder/'audit_task_gradient.json' if (folder/'audit.json').exists() else folder/'audit.json'
+    if target.exists():raise FileExistsError('Audit extension already recorded')
+    write_json(target,report);print(json.dumps({k:report[k] for k in ('passed','task_only_gradient','step_seconds','peak_allocated_bytes')}),flush=True)
 
 
 def evaluate_budgets(model,val,workers,budgets,output=None):
@@ -159,6 +170,10 @@ def evaluate_budgets(model,val,workers,budgets,output=None):
 def train(root,family):
     protocol=read(root/'protocol.json')
     assert all(read(root/f/'audit.json')['passed'] for f in FAMILIES),'All three audits required'
+    for family_gate in FAMILIES:
+        path=root/family_gate/'audit_task_gradient.json'
+        gate=read(path if path.exists() else root/family_gate/'audit.json')
+        assert gate['passed'] and all(v>0 for v in gate['task_only_gradient'].values())
     folder,cfg,model=load(root,family);out=folder/'train';out.mkdir(exist_ok=False)
     train_data=build_dataset(cfg,train=True);val=build_dataset(cfg,train=False)
     criterion=train_utils.create_loss(cfg).cuda();frozen=frozen_state(model)
@@ -191,6 +206,7 @@ def train(root,family):
                 cuda_state=torch.cuda.get_rng_state_all(),loader_state=generator.get_state(),protocol_sha256=digest(root/'protocol.json')))
         if epoch%2==0:
             write_json(folder/'status.json',dict(state='validating',epoch=epoch))
+            model.contract_identity=digest(out/'last.pt') if epoch else digest(folder/'initial.pth')
             rows=evaluate_budgets(model,val,2,(2048,4096,8192))
             assert all(v['samples']==1738 and v['gt_boxes']==28622 for v in rows.values())
             score=sum(v['ap']['0.7'] for v in rows.values())/3
@@ -207,13 +223,60 @@ def train(root,family):
     write_json(folder/'status.json',dict(state='complete',summary_sha256=digest(folder/'summary.json')))
 
 
+def coordinate(root):
+    from opencood.tools.launch_e3dsnn_joint_round import check_gpu
+    for family in FAMILIES:
+        gate=root/family/'audit_task_gradient.json'
+        if not gate.exists():gate=root/family/'audit.json'
+        audit_report=read(gate)
+        assert audit_report['passed'] and all(v>0 for v in audit_report['task_only_gradient'].values())
+    jobs=[]
+    try:
+        for gpu,family in enumerate(FAMILIES):
+            folder=root/family
+            if (folder/'train_launch.json').exists():raise FileExistsError('No duplicate training launch')
+            admission=check_gpu(gpu,True,.2)
+            env=dict(os.environ,CUDA_VISIBLE_DEVICES=str(gpu),OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',PYTHONPATH=str(REPO))
+            with (folder/'train.log').open('xb') as log:
+                proc=subprocess.Popen([sys.executable,'-u','-m','opencood.tools.run_e3dsnn_residual_main','--root',str(root),
+                    '--mode','train','--family',family],cwd=str(REPO),env=env,stdin=subprocess.DEVNULL,
+                    stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+            jobs.append((family,proc,time.time()))
+            write_json(folder/'train_launch.json',dict(pid=proc.pid,gpu=gpu,admission=admission,started_unix=time.time(),
+                code_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=str(REPO)).decode().strip()))
+        while jobs:
+            pending=[];states={}
+            for family,proc,started in jobs:
+                code=proc.poll()
+                if code is None:
+                    if time.time()-started>5*24*3600:
+                        proc.terminate();raise TimeoutError('Own experiment timeout: '+family)
+                    pending.append((family,proc,started));states[family]='running'
+                elif code:
+                    states[family]='failed';write_json(root/'group_failure.json',dict(family=family,exit_code=code))
+                else:states[family]='complete'
+            write_json(root/'pipeline_status.json',dict(state='running' if pending else 'finished',groups=states))
+            jobs=pending
+            if jobs:time.sleep(30)
+        if (root/'group_failure.json').exists():raise RuntimeError('A main group failed; preserve other completed groups')
+        results={f:read(root/f/'summary.json') for f in FAMILIES}
+        write_json(root/'summary.json',dict(passed=True,results=results,protocol=read(root/'protocol.json')))
+        write_json(root/'pipeline_status.json',dict(state='complete',summary_sha256=digest(root/'summary.json')))
+    except Exception:
+        # Do not kill other valid groups on one group's failure. Their own
+        # status remains authoritative; no automatic replacement run.
+        write_json(root/'pipeline_failure.json',dict(error=traceback.format_exc(),no_automatic_retry=True))
+        raise
+
+
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',type=Path,required=True)
-    p.add_argument('--mode',choices=('prepare','audit','train'),required=True);p.add_argument('--family',choices=FAMILIES)
+    p.add_argument('--mode',choices=('prepare','audit','train','coordinate'),required=True);p.add_argument('--family',choices=FAMILIES)
     p.add_argument('--base',type=Path);p.add_argument('--sources',type=Path);a=p.parse_args()
     try:
         if a.mode=='prepare':prepare(a.root,a.base,a.sources)
         elif a.mode=='audit':audit(a.root,a.family)
+        elif a.mode=='coordinate':coordinate(a.root)
         else:train(a.root,a.family)
     except Exception:
         dest=a.root/a.family if a.family else a.root

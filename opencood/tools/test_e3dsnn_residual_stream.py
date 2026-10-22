@@ -49,5 +49,13 @@ class ResidualTests(unittest.TestCase):
             b=receiver.receive(receiver.begin(local),local,road,mask,family)
             self.assertTrue(torch.equal(a,b));mask.zero_()
 
+    def test_local_context_does_not_cancel(self):
+        torch.manual_seed(3);r=ResidualReceiver(4,2)
+        zero=torch.zeros(1,4,2,3,4);road=torch.randn_like(zero);support=torch.ones_like(zero[:,:1])
+        a=r.context(zero,road,support)-r.context(zero,zero,support*0)
+        local=torch.ones_like(zero)*2
+        b=r.context(local,road,support)-r.context(local,zero,support*0)
+        self.assertFalse(torch.allclose(a,b))
+
 
 if __name__=='__main__':unittest.main()
