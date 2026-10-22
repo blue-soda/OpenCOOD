@@ -1,0 +1,7 @@
+{
+  "additional_epochs_max": 12,
+  "completed_epoch": 12,
+  "latest_sha256": "85416eb9596fb6f12ef7eebce4ea3244d952a7cf74c60ab4af4843f197bb5a66",
+  "policy": "Restore weights, AdamW moments, scheduler, significant best and global epoch. No learning-rate reset. New output; source unchanged.",
+  "source_run": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_spatial_dense_v1_20261022"
+}
