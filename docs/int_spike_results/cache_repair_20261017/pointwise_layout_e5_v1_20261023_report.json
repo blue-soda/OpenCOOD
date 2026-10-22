@@ -1,0 +1,40 @@
+{
+  "labels": 1738,
+  "results": {
+    "base_cached": {
+      "ap50": 0.819399100432191,
+      "ap70": 0.7379026105478765,
+      "conv_gflops": 134.91683438812564,
+      "mean_ms": 19.791132093160535,
+      "p95_ms": 30.789055849891156,
+      "partial_frames": 3789
+    },
+    "base_full": {
+      "ap50": 0.8193665391529347,
+      "ap70": 0.7390408859632943,
+      "conv_gflops": 221.7793536,
+      "mean_ms": 30.155140153133345,
+      "p95_ms": 31.469583848956972,
+      "partial_frames": 0
+    },
+    "cached": {
+      "ap50": 0.8193990961119352,
+      "ap70": 0.7379026109172215,
+      "conv_gflops": 134.91683438812564,
+      "mean_ms": 19.136045203624064,
+      "p95_ms": 30.133071029558778,
+      "partial_frames": 3789
+    },
+    "full": {
+      "ap50": 0.8193665383644064,
+      "ap70": 0.7390408907299438,
+      "conv_gflops": 221.7793536,
+      "mean_ms": 29.49163978172268,
+      "p95_ms": 30.751161242369562,
+      "partial_frames": 0
+    }
+  },
+  "scans": 5794,
+  "scope": "Frozen pointwise spatial checkpoint; base_full/base_cached use original Conv2d layout, full/cached use equivalent row-major linear layout. All spatial cells update, zero new spatial history. Existing deep cache period3 only; each view owns FM/deep states. Same-GPU rotating full-detector timing excludes IO/H2D/postprocess. Conv MACsx2 includes explicit functional linear MACs. This is a layout audit, not a regional reuse or convergence result.",
+  "status": "COMPLETED"
+}
