@@ -61,7 +61,7 @@ def worker(a):
     _,stream=loader(train[:32],cfg,0,303)
     with torch.no_grad():
         for sample in stream:
-            ego=to_device(sample['ego'],torch.device('cuda'));predictions={};details={}
+            ego=to_device(sample['ego'],torch.device('cuda'));predictions={};details={};row_costs={}
             for name,mode in modes.items():
                 counter=ConvCounter(roots[name],torch.nn.ModuleList([split,repair]))
                 previous=states[name]
@@ -70,8 +70,14 @@ def worker(a):
                 k=key(name,info)
                 if k in costs:assert costs[k]==counter.total
                 costs[k]=counter.total
+                row_costs[name]=counter.total
                 if info['local_partial']:assert states[name]['cache']['value'] is previous['cache']['value']
                 predictions[name]=pred;details[name]=info
+            height,width=states['baseline']['fm']['value'].shape[-2:]
+            gate_spatial_macs=sum(height*width*getattr(base.feature_memory.fusion,n)[1][1].weight.numel()
+                for n in ('reset_gate_conv','update_gate_conv','candidate_conv'))
+            assert row_costs['masked_dense']==row_costs['baseline']
+            assert row_costs['selected']==row_costs['baseline']-(0 if details['selected']['gate_refresh'] else gate_spatial_macs)
             mask_disagreements+=int(details['selected']['gate_selected_fraction']!=details['masked_dense']['gate_selected_fraction'])
             for k in predictions['selected']:
                 a1,b1=predictions['selected'][k],predictions['masked_dense'][k]
@@ -92,7 +98,12 @@ def worker(a):
                 torch.cuda.synchronize();elapsed=1000*(time.perf_counter()-tick)
                 if index>=10:timing[name].append(elapsed)
                 assert all(torch.isfinite(v).all() for v in pred.values())
-                compute[name]+=costs[key(name,info)]+info.get('gate_extra_linear_macs',0)
+                # Deep age protection can refresh on a different frame from the
+                # gate period. Account for both decisions independently, rather
+                # than assuming the warm-up observed every possible combination.
+                dense_macs=costs[('baseline',bool(info['local_partial']),True)]
+                skipped=gate_spatial_macs if name=='selected' and not info['gate_refresh'] else 0
+                compute[name]+=dense_macs-skipped+info.get('gate_extra_linear_macs',0)
                 fractions[name].append(info.get('gate_selected_fraction',1.))
                 bytes_used[name].append(info['state_bytes']+info['anchor_bytes'])
                 refreshes[name]+=int(info.get('gate_refresh',True))
