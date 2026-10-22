@@ -1,0 +1,59 @@
+{
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_gru_r32_train_v1_20261022/epoch_011/memory.pth",
+  "device": "cpu",
+  "epoch": 11,
+  "results": {
+    "candidate_conv": {
+      "full": {
+        "executed_conv_macs": 1857945600,
+        "max_abs_error": 4.76837158203125e-06,
+        "output_fraction": 1.0,
+        "selected_outputs": 100800
+      },
+      "tiled": {
+        "executed_conv_macs": 1227718656,
+        "max_abs_error": 4.76837158203125e-06,
+        "output_fraction": 0.6607936507936508,
+        "selected_outputs": 66608
+      }
+    },
+    "reset_gate_conv": {
+      "full": {
+        "executed_conv_macs": 1857945600,
+        "max_abs_error": 4.291534423828125e-06,
+        "output_fraction": 1.0,
+        "selected_outputs": 100800
+      },
+      "tiled": {
+        "executed_conv_macs": 1220935680,
+        "max_abs_error": 4.0531158447265625e-06,
+        "output_fraction": 0.6571428571428571,
+        "selected_outputs": 66240
+      }
+    },
+    "update_gate_conv": {
+      "full": {
+        "executed_conv_macs": 1857945600,
+        "max_abs_error": 5.245208740234375e-06,
+        "output_fraction": 1.0,
+        "selected_outputs": 100800
+      },
+      "tiled": {
+        "executed_conv_macs": 1207074816,
+        "max_abs_error": 4.291534423828125e-06,
+        "output_fraction": 0.6496825396825396,
+        "selected_outputs": 65488
+      }
+    }
+  },
+  "scope": "Frozen trained gate weights; synthetic inputs and full/random4x4 tile masks. Numerical equivalence and actual linear MAC accounting only. No real-data locality, GPU timing, recurrent feedback or AP claim.",
+  "sha256": "1a267575ef735f203526fa3b8196334d32d9ff8a9080449c3b6206247913e5ef",
+  "shape": [
+    1,
+    32,
+    200,
+    504
+  ],
+  "status": "PASSED",
+  "threads": 2
+}
