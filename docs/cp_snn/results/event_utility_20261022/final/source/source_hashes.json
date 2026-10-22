@@ -1,0 +1,11 @@
+{
+  "files": {
+    "train_original.yaml": "f6379384c110847efbeee7326ade495826c19a9d39da6db42a1138794b588f3f",
+    "train/best_ap70.pth": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78",
+    "pair_manifest_original.json": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356"
+  },
+  "split_hashes": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+  }
+}

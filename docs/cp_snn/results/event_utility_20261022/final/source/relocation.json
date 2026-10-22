@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "only_config_paths_changed": {
+    "data_dir": {
+      "before": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+      "after": "/data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure"
+    },
+    "root_dir": {
+      "before": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/train.json",
+      "after": "/data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/train.json"
+    },
+    "validate_dir": {
+      "before": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json",
+      "after": "/data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json"
+    },
+    "data_manifest": {
+      "before": "/data1/tzm/workspace/diagnostics/e3dsnn_ap70_20261016_181/pair_manifest.json",
+      "after": "/data1/zhh/gzc/diagnostics/e3dsnn_event_utility_source_20261022/pair_manifest.json"
+    }
+  },
+  "manifest_change": "data_root only",
+  "source_hashes": {
+    "files": {
+      "train_original.yaml": "f6379384c110847efbeee7326ade495826c19a9d39da6db42a1138794b588f3f",
+      "train/best_ap70.pth": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78",
+      "pair_manifest_original.json": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356"
+    },
+    "split_hashes": {
+      "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+      "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+    }
+  },
+  "verified_input_files": 96,
+  "checkpoint_sha256": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78"
+}

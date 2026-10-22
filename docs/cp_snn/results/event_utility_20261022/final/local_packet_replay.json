@@ -1,0 +1,296 @@
+{
+  "passed": true,
+  "packets": 48,
+  "checks": [
+    {
+      "index": 0,
+      "mode": "baseline",
+      "bytes": 2047,
+      "decoded_exact": true
+    },
+    {
+      "index": 0,
+      "mode": "oracle",
+      "bytes": 2057,
+      "decoded_exact": true
+    },
+    {
+      "index": 0,
+      "mode": "random",
+      "bytes": 2066,
+      "decoded_exact": true
+    },
+    {
+      "index": 311,
+      "mode": "baseline",
+      "bytes": 2048,
+      "decoded_exact": true
+    },
+    {
+      "index": 311,
+      "mode": "oracle",
+      "bytes": 2060,
+      "decoded_exact": true
+    },
+    {
+      "index": 311,
+      "mode": "random",
+      "bytes": 2063,
+      "decoded_exact": true
+    },
+    {
+      "index": 623,
+      "mode": "baseline",
+      "bytes": 2048,
+      "decoded_exact": true
+    },
+    {
+      "index": 623,
+      "mode": "oracle",
+      "bytes": 2068,
+      "decoded_exact": true
+    },
+    {
+      "index": 623,
+      "mode": "random",
+      "bytes": 2075,
+      "decoded_exact": true
+    },
+    {
+      "index": 935,
+      "mode": "baseline",
+      "bytes": 2048,
+      "decoded_exact": true
+    },
+    {
+      "index": 935,
+      "mode": "oracle",
+      "bytes": 2065,
+      "decoded_exact": true
+    },
+    {
+      "index": 935,
+      "mode": "random",
+      "bytes": 2058,
+      "decoded_exact": true
+    },
+    {
+      "index": 1247,
+      "mode": "baseline",
+      "bytes": 2047,
+      "decoded_exact": true
+    },
+    {
+      "index": 1247,
+      "mode": "oracle",
+      "bytes": 2066,
+      "decoded_exact": true
+    },
+    {
+      "index": 1247,
+      "mode": "random",
+      "bytes": 2069,
+      "decoded_exact": true
+    },
+    {
+      "index": 1559,
+      "mode": "baseline",
+      "bytes": 2047,
+      "decoded_exact": true
+    },
+    {
+      "index": 1559,
+      "mode": "oracle",
+      "bytes": 2049,
+      "decoded_exact": true
+    },
+    {
+      "index": 1559,
+      "mode": "random",
+      "bytes": 2046,
+      "decoded_exact": true
+    },
+    {
+      "index": 1870,
+      "mode": "baseline",
+      "bytes": 2046,
+      "decoded_exact": true
+    },
+    {
+      "index": 1870,
+      "mode": "oracle",
+      "bytes": 2058,
+      "decoded_exact": true
+    },
+    {
+      "index": 1870,
+      "mode": "random",
+      "bytes": 2061,
+      "decoded_exact": true
+    },
+    {
+      "index": 2182,
+      "mode": "baseline",
+      "bytes": 2045,
+      "decoded_exact": true
+    },
+    {
+      "index": 2182,
+      "mode": "oracle",
+      "bytes": 2063,
+      "decoded_exact": true
+    },
+    {
+      "index": 2182,
+      "mode": "random",
+      "bytes": 2059,
+      "decoded_exact": true
+    },
+    {
+      "index": 2494,
+      "mode": "baseline",
+      "bytes": 2044,
+      "decoded_exact": true
+    },
+    {
+      "index": 2494,
+      "mode": "oracle",
+      "bytes": 2053,
+      "decoded_exact": true
+    },
+    {
+      "index": 2494,
+      "mode": "random",
+      "bytes": 2052,
+      "decoded_exact": true
+    },
+    {
+      "index": 2806,
+      "mode": "baseline",
+      "bytes": 2046,
+      "decoded_exact": true
+    },
+    {
+      "index": 2806,
+      "mode": "oracle",
+      "bytes": 2047,
+      "decoded_exact": true
+    },
+    {
+      "index": 2806,
+      "mode": "random",
+      "bytes": 2050,
+      "decoded_exact": true
+    },
+    {
+      "index": 3118,
+      "mode": "baseline",
+      "bytes": 2045,
+      "decoded_exact": true
+    },
+    {
+      "index": 3118,
+      "mode": "oracle",
+      "bytes": 2048,
+      "decoded_exact": true
+    },
+    {
+      "index": 3118,
+      "mode": "random",
+      "bytes": 2046,
+      "decoded_exact": true
+    },
+    {
+      "index": 3429,
+      "mode": "baseline",
+      "bytes": 2048,
+      "decoded_exact": true
+    },
+    {
+      "index": 3429,
+      "mode": "oracle",
+      "bytes": 2060,
+      "decoded_exact": true
+    },
+    {
+      "index": 3429,
+      "mode": "random",
+      "bytes": 2075,
+      "decoded_exact": true
+    },
+    {
+      "index": 3741,
+      "mode": "baseline",
+      "bytes": 2047,
+      "decoded_exact": true
+    },
+    {
+      "index": 3741,
+      "mode": "oracle",
+      "bytes": 2058,
+      "decoded_exact": true
+    },
+    {
+      "index": 3741,
+      "mode": "random",
+      "bytes": 2062,
+      "decoded_exact": true
+    },
+    {
+      "index": 4053,
+      "mode": "baseline",
+      "bytes": 2048,
+      "decoded_exact": true
+    },
+    {
+      "index": 4053,
+      "mode": "oracle",
+      "bytes": 2050,
+      "decoded_exact": true
+    },
+    {
+      "index": 4053,
+      "mode": "random",
+      "bytes": 2055,
+      "decoded_exact": true
+    },
+    {
+      "index": 4365,
+      "mode": "baseline",
+      "bytes": 2048,
+      "decoded_exact": true
+    },
+    {
+      "index": 4365,
+      "mode": "oracle",
+      "bytes": 2053,
+      "decoded_exact": true
+    },
+    {
+      "index": 4365,
+      "mode": "random",
+      "bytes": 2062,
+      "decoded_exact": true
+    },
+    {
+      "index": 4677,
+      "mode": "baseline",
+      "bytes": 2047,
+      "decoded_exact": true
+    },
+    {
+      "index": 4677,
+      "mode": "oracle",
+      "bytes": 2056,
+      "decoded_exact": true
+    },
+    {
+      "index": 4677,
+      "mode": "random",
+      "bytes": 2054,
+      "decoded_exact": true
+    }
+  ],
+  "all_download_hashes_verified": true,
+  "all_deletions_reproduced": true
+}
