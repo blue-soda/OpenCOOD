@@ -1,0 +1,38 @@
+{
+  "labels": 1738,
+  "results": {
+    "baseline": {
+      "ap50": 0.8321027698682837,
+      "ap70": 0.7555532616222492,
+      "conv_gflops": 134.31042158812565,
+      "gate_refresh_frames": 5794,
+      "mean_gate_write_fraction": 1.0,
+      "mean_ms": 17.28153892242566,
+      "mean_state_bytes": 35884800.0,
+      "p95_ms": 28.330409480258822
+    },
+    "masked_dense": {
+      "ap50": 0.8321780671760938,
+      "ap70": 0.7555849811160423,
+      "conv_gflops": 134.31042158812565,
+      "gate_refresh_frames": 2003,
+      "mean_gate_write_fraction": 0.7695370781304505,
+      "mean_ms": 20.128984293808006,
+      "mean_state_bytes": 152006400.0,
+      "p95_ms": 28.671696328092366
+    },
+    "selected": {
+      "ap50": 0.8321780685925754,
+      "ap70": 0.7555849918156423,
+      "conv_gflops": 131.7412962600207,
+      "gate_refresh_frames": 2003,
+      "mean_gate_write_fraction": 0.7695370872623201,
+      "mean_ms": 27.640482531350045,
+      "mean_state_bytes": 152006400.0,
+      "p95_ms": 30.909328022971742
+    }
+  },
+  "scans": 5794,
+  "scope": "Own approximate recurrence, fixed .5 threshold/period3. Model wall time includes selection/warping/gather/scatter, excludes IO/H2D/postprocess. Standard convolution plus executed selected linear MACsx2; not total operator FLOPs. Masked-dense computes all spatial gates despite partial writes.",
+  "status": "COMPLETED"
+}
