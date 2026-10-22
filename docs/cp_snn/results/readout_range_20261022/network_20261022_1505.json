@@ -1,0 +1,13 @@
+{
+  "checked_utc": "2026-10-22T07:07:27.609943+00:00",
+  "heartbeat_utc": "2026-10-22T07:05:09.764Z",
+  "ssh181_attempts": 2,
+  "ssh181": "banner exchange timed out",
+  "ssh187": "banner exchange timed out",
+  "vpn_initial_status": "No connections",
+  "vpn_saved_profile_reconnect": "Remote Access error 628; connection terminated by remote computer",
+  "remote_experiment_state": "unknown",
+  "last_verified_state": "full evaluation running at 100/1738 frames during previous heartbeat",
+  "relaunch_attempted": false,
+  "needs": "Restore VPN/server connectivity, then read existing results before any new launch"
+}
