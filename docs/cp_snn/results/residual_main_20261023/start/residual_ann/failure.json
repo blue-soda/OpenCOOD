@@ -1,0 +1,5 @@
+{
+  "error": "Traceback (most recent call last):\n  File \"/data1/zhh/gzc/OpenCOOD/opencood/tools/run_e3dsnn_residual_main.py\", line 278, in <module>\n    elif a.mode=='audit':audit(a.root,a.family)\n  File \"/data1/zhh/gzc/OpenCOOD/opencood/tools/run_e3dsnn_residual_main.py\", line 125, in audit\n    assert all(np.isfinite(v) and v>0 for v in task_gradient.values()),task_gradient\nAssertionError: {'sender.project.': 0.0, 'sender.decode.': 0.41890037059783936, 'receiver.': 4.702994965016842}\n",
+  "mode": "audit",
+  "no_automatic_retry": true
+}

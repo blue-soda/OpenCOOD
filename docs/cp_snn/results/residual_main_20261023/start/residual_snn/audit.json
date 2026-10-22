@@ -1,0 +1,474 @@
+{
+  "wire": [
+    {
+      "budget": 0,
+      "bytes": [
+        0,
+        0
+      ],
+      "exact": true,
+      "records": []
+    },
+    {
+      "budget": 2048,
+      "bytes": [
+        2047,
+        2048
+      ],
+      "exact": true,
+      "records": [
+        {
+          "frame_id": "000010",
+          "actual_bytes": 2047,
+          "events": 409,
+          "steps": 4,
+          "metadata": {
+            "contract": {
+              "receiver_frame": "000010",
+              "sender_frame": "006689",
+              "sender_id": "infrastructure",
+              "encoder_sha256": "3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+              "channel_basis": "residual32-3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+              "shape_zyx": [
+                3,
+                50,
+                126
+              ],
+              "origin_xyz": [
+                -100.7,
+                -39.9,
+                -2.65
+              ],
+              "step_xyz": [
+                1.6,
+                1.6,
+                1.6
+              ],
+              "timestamps_us": [
+                1626155123981443,
+                1626155124004314
+              ]
+            },
+            "source_to_ego": [
+              [
+                -0.01911892183125019,
+                -0.999817430973053,
+                -7.106279440449725e-07,
+                97.75337982177734
+              ],
+              [
+                0.9996418952941895,
+                -0.019115500152111053,
+                -0.018737513571977615,
+                3.9464831352233887
+              ],
+              [
+                0.018734052777290344,
+                -0.00035895430482923985,
+                0.999824047088623,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ],
+            "channels": 32,
+            "shape_zyx": [
+              3,
+              50,
+              126
+            ],
+            "steps": 16,
+            "family": "residual_snn",
+            "schema": "ordered-residual-v1"
+          },
+          "sha256": "9d4b3a71fa424a801aab0c5f196e8b5f1f070646d5c36448ad41ed97ff50637c"
+        },
+        {
+          "frame_id": "000011",
+          "actual_bytes": 2048,
+          "events": 420,
+          "steps": 4,
+          "metadata": {
+            "contract": {
+              "receiver_frame": "000011",
+              "sender_frame": "006690",
+              "sender_id": "infrastructure",
+              "encoder_sha256": "3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+              "channel_basis": "residual32-3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+              "shape_zyx": [
+                3,
+                50,
+                126
+              ],
+              "origin_xyz": [
+                -100.7,
+                -39.9,
+                -2.65
+              ],
+              "step_xyz": [
+                1.6,
+                1.6,
+                1.6
+              ],
+              "timestamps_us": [
+                1626155124081532,
+                1626155124087197
+              ]
+            },
+            "source_to_ego": [
+              [
+                -0.020220700651407242,
+                0.9997612237930298,
+                -0.008286258205771446,
+                97.9773178100586
+              ],
+              [
+                -0.9996508359909058,
+                -0.020076017826795578,
+                0.017185091972351074,
+                42.263526916503906
+              ],
+              [
+                0.01701461151242256,
+                0.00863085500895977,
+                0.9998176097869873,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ],
+            "channels": 32,
+            "shape_zyx": [
+              3,
+              50,
+              126
+            ],
+            "steps": 16,
+            "family": "residual_snn",
+            "schema": "ordered-residual-v1"
+          },
+          "sha256": "18de7f27a1a7c3703beeff81cd8d256b338323c16e208f494ed3b9d65c623c60"
+        }
+      ]
+    },
+    {
+      "budget": 4096,
+      "bytes": [
+        4096,
+        4094
+      ],
+      "exact": true,
+      "records": [
+        {
+          "frame_id": "000010",
+          "actual_bytes": 4096,
+          "events": 1126,
+          "steps": 9,
+          "metadata": {
+            "contract": {
+              "receiver_frame": "000010",
+              "sender_frame": "006689",
+              "sender_id": "infrastructure",
+              "encoder_sha256": "3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+              "channel_basis": "residual32-3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+              "shape_zyx": [
+                3,
+                50,
+                126
+              ],
+              "origin_xyz": [
+                -100.7,
+                -39.9,
+                -2.65
+              ],
+              "step_xyz": [
+                1.6,
+                1.6,
+                1.6
+              ],
+              "timestamps_us": [
+                1626155123981443,
+                1626155124004314
+              ]
+            },
+            "source_to_ego": [
+              [
+                -0.01911892183125019,
+                -0.999817430973053,
+                -7.106279440449725e-07,
+                97.75337982177734
+              ],
+              [
+                0.9996418952941895,
+                -0.019115500152111053,
+                -0.018737513571977615,
+                3.9464831352233887
+              ],
+              [
+                0.018734052777290344,
+                -0.00035895430482923985,
+                0.999824047088623,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ],
+            "channels": 32,
+            "shape_zyx": [
+              3,
+              50,
+              126
+            ],
+            "steps": 16,
+            "family": "residual_snn",
+            "schema": "ordered-residual-v1"
+          },
+          "sha256": "10b4c6d7453fb0a7e6b1f3325c192ff8eea11e5d6d9666beeea27ce28d8fa958"
+        },
+        {
+          "frame_id": "000011",
+          "actual_bytes": 4094,
+          "events": 1121,
+          "steps": 9,
+          "metadata": {
+            "contract": {
+              "receiver_frame": "000011",
+              "sender_frame": "006690",
+              "sender_id": "infrastructure",
+              "encoder_sha256": "3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+              "channel_basis": "residual32-3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+              "shape_zyx": [
+                3,
+                50,
+                126
+              ],
+              "origin_xyz": [
+                -100.7,
+                -39.9,
+                -2.65
+              ],
+              "step_xyz": [
+                1.6,
+                1.6,
+                1.6
+              ],
+              "timestamps_us": [
+                1626155124081532,
+                1626155124087197
+              ]
+            },
+            "source_to_ego": [
+              [
+                -0.020220700651407242,
+                0.9997612237930298,
+                -0.008286258205771446,
+                97.9773178100586
+              ],
+              [
+                -0.9996508359909058,
+                -0.020076017826795578,
+                0.017185091972351074,
+                42.263526916503906
+              ],
+              [
+                0.01701461151242256,
+                0.00863085500895977,
+                0.9998176097869873,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ],
+            "channels": 32,
+            "shape_zyx": [
+              3,
+              50,
+              126
+            ],
+            "steps": 16,
+            "family": "residual_snn",
+            "schema": "ordered-residual-v1"
+          },
+          "sha256": "c22098881bd8be8afa931facf8c4d72ba094476195cb43ca8e7739dd15d9a6cc"
+        }
+      ]
+    }
+  ],
+  "gradient": {
+    "backbone_3d.conv4.": 58.55118631757796,
+    "backbone_3d.conv_out.": 22.218913078308105,
+    "backbone_2d.": 544.0435749217868,
+    "cls_head.": 0.5106157511472702,
+    "reg_head.": 20.84632182121277,
+    "dir_head.": 0.23320983350276947,
+    "sender.project.": 0.01100901234894991,
+    "sender.decode.": 0.01826581172645092,
+    "receiver.": 0.0804155906662345
+  },
+  "step_seconds": 3.0643235240131617,
+  "peak_allocated_bytes": 2059597312,
+  "step_records": [
+    {
+      "frame_id": "000010",
+      "actual_bytes": 4096,
+      "events": 1126,
+      "steps": 9,
+      "metadata": {
+        "contract": {
+          "receiver_frame": "000010",
+          "sender_frame": "006689",
+          "sender_id": "infrastructure",
+          "encoder_sha256": "3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+          "channel_basis": "residual32-3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+          "shape_zyx": [
+            3,
+            50,
+            126
+          ],
+          "origin_xyz": [
+            -100.7,
+            -39.9,
+            -2.65
+          ],
+          "step_xyz": [
+            1.6,
+            1.6,
+            1.6
+          ],
+          "timestamps_us": [
+            1626155123981443,
+            1626155124004314
+          ]
+        },
+        "source_to_ego": [
+          [
+            -0.01911892183125019,
+            -0.999817430973053,
+            -7.106279440449725e-07,
+            97.75337982177734
+          ],
+          [
+            0.9996418952941895,
+            -0.019115500152111053,
+            -0.018737513571977615,
+            3.9464831352233887
+          ],
+          [
+            0.018734052777290344,
+            -0.00035895430482923985,
+            0.999824047088623,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "channels": 32,
+        "shape_zyx": [
+          3,
+          50,
+          126
+        ],
+        "steps": 16,
+        "family": "residual_snn",
+        "schema": "ordered-residual-v1"
+      },
+      "sha256": "10b4c6d7453fb0a7e6b1f3325c192ff8eea11e5d6d9666beeea27ce28d8fa958"
+    },
+    {
+      "frame_id": "000011",
+      "actual_bytes": 4094,
+      "events": 1121,
+      "steps": 9,
+      "metadata": {
+        "contract": {
+          "receiver_frame": "000011",
+          "sender_frame": "006690",
+          "sender_id": "infrastructure",
+          "encoder_sha256": "3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+          "channel_basis": "residual32-3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088",
+          "shape_zyx": [
+            3,
+            50,
+            126
+          ],
+          "origin_xyz": [
+            -100.7,
+            -39.9,
+            -2.65
+          ],
+          "step_xyz": [
+            1.6,
+            1.6,
+            1.6
+          ],
+          "timestamps_us": [
+            1626155124081532,
+            1626155124087197
+          ]
+        },
+        "source_to_ego": [
+          [
+            -0.020220700651407242,
+            0.9997612237930298,
+            -0.008286258205771446,
+            97.9773178100586
+          ],
+          [
+            -0.9996508359909058,
+            -0.020076017826795578,
+            0.017185091972351074,
+            42.263526916503906
+          ],
+          [
+            0.01701461151242256,
+            0.00863085500895977,
+            0.9998176097869873,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "channels": 32,
+        "shape_zyx": [
+          3,
+          50,
+          126
+        ],
+        "steps": 16,
+        "family": "residual_snn",
+        "schema": "ordered-residual-v1"
+      },
+      "sha256": "c22098881bd8be8afa931facf8c4d72ba094476195cb43ca8e7739dd15d9a6cc"
+    }
+  ],
+  "passed": true,
+  "zero_equals_local": true,
+  "frozen_buffers_unchanged": true,
+  "optimizer_step_discarded": true,
+  "elapsed_seconds": 10.136826753616333,
+  "initial_sha256": "3cfddac224d0185bc0dcfc04d178bfdd368c0b78c9fec9355b2865da02dbd088"
+}

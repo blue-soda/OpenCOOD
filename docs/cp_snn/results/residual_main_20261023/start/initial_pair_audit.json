@@ -1,0 +1,17 @@
+{
+  "snn_pair_all_initial_tensors_identical": true,
+  "groups": {
+    "residual_snn": {
+      "parameters": 3133622,
+      "trainable_parameters": 2120308
+    },
+    "old_snn": {
+      "parameters": 3133622,
+      "trainable_parameters": 2122645
+    },
+    "residual_ann": {
+      "parameters": 3133622,
+      "trainable_parameters": 2120308
+    }
+  }
+}

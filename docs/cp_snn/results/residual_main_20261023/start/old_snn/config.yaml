@@ -1,0 +1,184 @@
+binomial_n: 0
+binomial_p: 0
+comm_range: 100
+data_augment:
+- ALONG_AXIS_LIST:
+  - x
+  NAME: random_world_flip
+- NAME: random_world_rotation
+  WORLD_ROT_ANGLE:
+  - -0.78539816
+  - 0.78539816
+- NAME: random_world_scaling
+  WORLD_SCALE_RANGE:
+  - 0.95
+  - 1.05
+data_dir: /data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure
+data_manifest: /data1/zhh/gzc/diagnostics/e3dsnn_event_utility_source_20261022/pair_manifest.json
+dataset: dairv2x
+fusion:
+  args:
+    clip_pc: false
+    proj_first: false
+  core_method: PairedDAIRFusion
+loss:
+  args:
+    cls_weight: 1.0
+    dir_args:
+      anchor_yaw:
+      - 0
+      - 90
+      args:
+        anchor_yaw:
+        - 0
+        - 90
+        dir_offset: 0.7853
+        num_bins: 2
+      dir_weight: 0.2
+    reg: 2.0
+  core_method: point_pillar_dir_loss
+lr_scheduler:
+  core_method: multistep
+  gamma: 0.1
+  step_size:
+  - 7
+  - 9
+model:
+  args:
+    activation: count4
+    anchor_number: 2
+    budget_codec:
+      bits: 3
+      keep_fraction: 0.25
+    content_full_packet: false
+    content_trainable: true
+    dir_args:
+      anchor_yaw:
+      - 0
+      - 90
+      dir_offset: 0.7853
+      num_bins: 2
+    ego_aux_weight: 0.5
+    enable_ego_aux: true
+    event_stream:
+      budget_bytes: 4096
+      max_spikes: 8
+      packet_events: 256
+      sampling: log_uniform
+      train_budget_range:
+      - 2048
+      - 16384
+      train_scope: receiver
+      transport: session_zlib
+    freeze_detector: false
+    freeze_detector_bn: true
+    fusion_activation_kind: count4
+    fusion_mode: residual
+    identity_fusion_init: true
+    joint_prefix_weights: null
+    joint_rate_weight: 0.0
+    lidar_range:
+    - -100.8
+    - -40
+    - -3.5
+    - 100.8
+    - 40
+    - 1.5
+    message_dropout: 0.1
+    message_support: geometry
+    packet_roundtrip: false
+    readout_prefix: 3
+    receiver_activation: relu
+    residual_stream:
+      budget_bytes: 4096
+      checkpoint_identity: 3c1a2ae7bc23eab1318f805b960aed4194bae153f27b849f692f0bfeda1fdeb8
+      event_cap: 128
+      family: old_snn
+      rate_weight: 0.001
+      steps: 16
+      train_budget_range:
+      - 2048
+      - 8192
+    snapshot:
+      budget_bytes: 2048
+      family: if8
+    train_encoder: false
+    voxel_size:
+    - 0.2
+    - 0.2
+    - 0.1
+  core_method: e3dsnn_residual_coop
+name: message_snn_geometry
+noise_setting:
+  add_noise: false
+num_sweep_frames: 1
+only_vis_ego: true
+optimizer:
+  args:
+    eps: 1.0e-08
+    weight_decay: 0.0001
+  core_method: Adam
+  lr: 5.0e-05
+postprocess:
+  anchor_args:
+    cav_lidar_range:
+    - -100.8
+    - -40
+    - -3.5
+    - 100.8
+    - 40
+    - 1.5
+    feature_stride: 8
+    h: 1.56
+    l: 4.5
+    num: 2
+    r:
+    - 0
+    - 90
+    w: 2
+  core_method: VoxelPostprocessor
+  dir_args:
+    anchor_yaw:
+    - 0
+    - 90
+    dir_offset: 0.7853
+    num_bins: 2
+  gt_range:
+  - -100.8
+  - -40
+  - -3.5
+  - 100.8
+  - 40
+  - 1.5
+  max_num: 100
+  nms_thresh: 0.15
+  order: hwl
+  target_args:
+    neg_threshold: 0.45
+    pos_threshold: 0.6
+    score_threshold: 0.2
+preprocess:
+  args:
+    max_points_per_voxel: 32
+    max_voxel_test: 70000
+    max_voxel_train: 70000
+    voxel_size:
+    - 0.2
+    - 0.2
+    - 0.1
+  cav_lidar_range:
+  - -100.8
+  - -40
+  - -3.5
+  - 100.8
+  - 40
+  - 1.5
+  core_method: SpVoxelPreprocessor
+  voxel_backend: spconv2
+root_dir: /data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/train.json
+test_dir: /data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json
+train_params:
+  batch_size: 2
+  epoches: 20
+validate_dir: /data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/val.json
+yaml_parser: load_e3dsnn_params
