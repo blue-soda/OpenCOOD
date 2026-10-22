@@ -1,0 +1,61 @@
+{
+  "dense_identity_max_abs_error": 0.0,
+  "results": {
+    "dense_scaffold": {
+      "conv_gflops": 42.9456384,
+      "fallback_frames": 0,
+      "instrumented_stage_mean_ms": 3.6300178550986377,
+      "instrumented_stage_p95_ms": 4.0894573903642595,
+      "mean_executed_update_input_area": 1.0,
+      "mean_planned_area_before_fallback": 1.0,
+      "mean_relative_rms": 0.0,
+      "mean_write_fraction": 1.0,
+      "p95_relative_rms": 0.0,
+      "refresh_frames": 256,
+      "state_bytes": 14515200
+    },
+    "masked_dense": {
+      "conv_gflops": 42.9456384,
+      "fallback_frames": 166,
+      "instrumented_stage_mean_ms": 4.565131413273331,
+      "instrumented_stage_p95_ms": 5.78157656127587,
+      "mean_executed_update_input_area": 1.0,
+      "mean_planned_area_before_fallback": 1.3436160714285714,
+      "mean_relative_rms": 0.0,
+      "mean_write_fraction": 1.0,
+      "p95_relative_rms": 0.0,
+      "refresh_frames": 90,
+      "state_bytes": 14515200
+    },
+    "original": {
+      "conv_gflops": 41.28768,
+      "fallback_frames": 0,
+      "instrumented_stage_mean_ms": 3.3645115743535077,
+      "instrumented_stage_p95_ms": 3.5888130078092217,
+      "mean_executed_update_input_area": 1.0,
+      "mean_planned_area_before_fallback": 1.0,
+      "mean_relative_rms": 0.0,
+      "mean_write_fraction": 1.0,
+      "p95_relative_rms": 0.0,
+      "refresh_frames": 256,
+      "state_bytes": 0
+    },
+    "sparse": {
+      "conv_gflops": 42.9456384,
+      "fallback_frames": 166,
+      "instrumented_stage_mean_ms": 4.59659111125743,
+      "instrumented_stage_p95_ms": 5.792618845589459,
+      "mean_executed_update_input_area": 1.0,
+      "mean_planned_area_before_fallback": 1.3436160714285714,
+      "mean_relative_rms": 0.0,
+      "mean_write_fraction": 1.0,
+      "p95_relative_rms": 0.0,
+      "refresh_frames": 90,
+      "state_bytes": 14515200
+    }
+  },
+  "scans": 256,
+  "scope": "Measured stage-only convolution costs and instrumented timing. Frozen identity mixer; no training, AP, whole-model savings or learned history-prediction claim. Stage state owns its reused outputs; dense controls never overwrite it.",
+  "sparse_masked_max_abs_error": 0.0,
+  "status": "COMPLETED"
+}
