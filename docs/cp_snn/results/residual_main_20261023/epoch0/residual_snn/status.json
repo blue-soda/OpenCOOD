@@ -1,0 +1,12 @@
+{
+  "state": "training",
+  "epoch": 1,
+  "batch": 401,
+  "total_batches": 2339,
+  "loss": 1.347949550272859,
+  "communication_means": {
+    "bytes": 4446.9788029925185,
+    "events": 1242.3092269326683,
+    "steps": 10.129675810473815
+  }
+}
