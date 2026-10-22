@@ -1,0 +1,614 @@
+[
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 1,
+    "loss": 0.13993846853835687,
+    "lr": 0.0001,
+    "stale": 1,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.872189985631344,
+          "p95_ms": 29.892804729752243,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.3260983587613,
+          "p95_ms": 30.444373795762658,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.828497693817616,
+          "ap70": 0.750780140620633,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.245732622355078,
+          "p95_ms": 28.213959373533726,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8285067921327368,
+          "ap70": 0.7525255501183019,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 27.753532103106334,
+          "p95_ms": 28.80626805126667,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 2,
+    "loss": 0.1390206013311636,
+    "lr": 0.0001,
+    "stale": 2,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 19.378752560215652,
+          "p95_ms": 30.241767317056656,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.63337132206153,
+          "p95_ms": 31.055786996148527,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8288476066054714,
+          "ap70": 0.7515450639402074,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.873312457537736,
+          "p95_ms": 28.743569750804454,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8289347085427256,
+          "ap70": 0.7533403287792092,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 28.20438257729175,
+          "p95_ms": 29.636334208771586,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 3,
+    "loss": 0.13849581471816902,
+    "lr": 0.0001,
+    "stale": 0,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 19.37318880034979,
+          "p95_ms": 30.204984755255282,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.608388915347234,
+          "p95_ms": 31.015258212573826,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8290467279037028,
+          "ap70": 0.752049064661408,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.860380485141842,
+          "p95_ms": 28.686079825274646,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8290667576404968,
+          "ap70": 0.7540385510672573,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 28.179457567920096,
+          "p95_ms": 29.560413223225623,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 4,
+    "loss": 0.13812878366606457,
+    "lr": 0.0001,
+    "stale": 1,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 19.387935303667827,
+          "p95_ms": 30.25146344443783,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.607560210101266,
+          "p95_ms": 31.020405143499374,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8293279908030776,
+          "ap70": 0.7527175410732277,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.886950138004376,
+          "p95_ms": 28.702776366844773,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8291232569132392,
+          "ap70": 0.7542037508651913,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 28.175707632433596,
+          "p95_ms": 29.5745407929644,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 5,
+    "loss": 0.1378252400632072,
+    "lr": 5e-05,
+    "stale": 2,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 19.29024611020887,
+          "p95_ms": 30.168137175496668,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.555086875171757,
+          "p95_ms": 30.94929513754323,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8296517745382755,
+          "ap70": 0.7529731826667707,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.771355480071282,
+          "p95_ms": 28.612570744007826,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8296028244015077,
+          "ap70": 0.7547674462441151,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 28.093224032595238,
+          "p95_ms": 29.479829350020736,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 6,
+    "loss": 0.13691051634222118,
+    "lr": 5e-05,
+    "stale": 0,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 19.046046636901398,
+          "p95_ms": 29.974724573548883,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.403782107662487,
+          "p95_ms": 30.57610859395936,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8303425144759989,
+          "ap70": 0.7537397714728026,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.408031910444695,
+          "p95_ms": 28.36564042372629,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8298419256482421,
+          "ap70": 0.7556243987739202,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 27.911913989934256,
+          "p95_ms": 29.11016074940562,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 7,
+    "loss": 0.1366620171409948,
+    "lr": 5e-05,
+    "stale": 1,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.878854622882127,
+          "p95_ms": 29.83226951910183,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.32882816650722,
+          "p95_ms": 30.448006989900023,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8305347900238329,
+          "ap70": 0.7538330428885661,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.26788555048593,
+          "p95_ms": 28.149890468921512,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.829949019217531,
+          "ap70": 0.7555178297116631,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 27.8070951044079,
+          "p95_ms": 28.84293677052483,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 8,
+    "loss": 0.13649725003264707,
+    "lr": 2.5e-05,
+    "stale": 2,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.775723165087594,
+          "p95_ms": 29.78185275569558,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.260334568848528,
+          "p95_ms": 30.395968176890165,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8304806272325894,
+          "ap70": 0.754038042806165,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.14800382180321,
+          "p95_ms": 28.07801014278084,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8297940769651422,
+          "ap70": 0.7553713473505381,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 27.67413101582672,
+          "p95_ms": 28.74912250554189,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 9,
+    "loss": 0.13610996307595144,
+    "lr": 2.5e-05,
+    "stale": 3,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.783177040415246,
+          "p95_ms": 29.79387055383995,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.2624510145752,
+          "p95_ms": 30.401593074202538,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8314399636815483,
+          "ap70": 0.754823686963618,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.158063688285825,
+          "p95_ms": 28.09433442307636,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8302847106051041,
+          "ap70": 0.7561076827842842,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 27.682527965437078,
+          "p95_ms": 28.750059613958,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 10,
+    "loss": 0.1359828734577598,
+    "lr": 1.25e-05,
+    "stale": 4,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.839007666827865,
+          "p95_ms": 29.911197011824697,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.357519438896034,
+          "p95_ms": 30.4485070053488,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8315531162264443,
+          "ap70": 0.7550151455161209,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.213100845174203,
+          "p95_ms": 28.203399758785963,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8303944684530951,
+          "ap70": 0.7562743303516611,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 27.773958879148132,
+          "p95_ms": 28.803764248732477,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 11,
+    "loss": 0.13578514692601037,
+    "lr": 1.25e-05,
+    "stale": 0,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.888614978464155,
+          "p95_ms": 29.943462612573057,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.3569961343528,
+          "p95_ms": 30.490157229360193,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8321027698682837,
+          "ap70": 0.7555532616222492,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.262307998705282,
+          "p95_ms": 28.229074808768928,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8311640141378542,
+          "ap70": 0.7567024378706645,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 27.79337310865502,
+          "p95_ms": 28.851041034795344,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "0": 2972,
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 12,
+    "loss": 0.1357030711896031,
+    "lr": 1.25e-05,
+    "stale": 1,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8325700560673862,
+          "ap70": 0.7553967658970537,
+          "conv_gflops": 165.27618158812564,
+          "mean_ms": 18.847313185688108,
+          "p95_ms": 29.89361616782844,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.832712474888943,
+          "ap70": 0.7562138415770423,
+          "conv_gflops": 252.1387008,
+          "mean_ms": 29.33960833069405,
+          "p95_ms": 30.44546612072736,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8320896421141667,
+          "ap70": 0.7554969361428208,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.2134217867991,
+          "p95_ms": 28.175860026385635,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8312612989524125,
+          "ap70": 0.7564613163374675,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 27.773079834781836,
+          "p95_ms": 28.82458047242835,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected GRU. Current states and anchors belong to each model; no teacher injections. Same GPU rotating model latency excluding IO/H2D/postprocess; standard convolution MACs x2 only.",
+      "status": "COMPLETED"
+    }
+  }
+]

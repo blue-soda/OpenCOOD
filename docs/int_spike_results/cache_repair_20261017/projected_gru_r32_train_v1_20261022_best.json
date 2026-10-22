@@ -1,0 +1,7 @@
+{
+  "ap70": 0.7567024378706645,
+  "cached_ap70": 0.7555532616222492,
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_gru_r32_train_v1_20261022/epoch_011/memory.pth",
+  "epoch": 11,
+  "sha256": "1a267575ef735f203526fa3b8196334d32d9ff8a9080449c3b6206247913e5ef"
+}
