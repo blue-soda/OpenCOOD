@@ -1,0 +1,26 @@
+{
+  "checkpoint": "/data1/tzm/workspace/diagnostics/e3dsnn_snapshot_adapt_20261021/if8/train/best_ap70.pth",
+  "checkpoint_sha256": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78",
+  "config_sha256": "f6379384c110847efbeee7326ade495826c19a9d39da6db42a1138794b588f3f",
+  "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+  "split_sha256": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814"
+  },
+  "seed": 20260929,
+  "limit": 0,
+  "training": false,
+  "modes": [
+    "b2048_capped",
+    "b2048_uncapped",
+    "full_capped",
+    "full_uncapped"
+  ],
+  "cuda_allocator_memory_fraction": 0.2,
+  "shared_source_packet_and_current": true,
+  "code_commit": "6ded2627354ee32c3d659165ccf291ebaddd32bf",
+  "intervention": "Remove only receiver output ceiling on original remote-supported spatial sites",
+  "unchanged": "sender max8, IF ordering, bytes, geometry, local-only path, D/gain, BEV/head and all weights",
+  "exit": "one paired 2048/full comparison, no ceiling/gain/temperature sweep or automatic retraining",
+  "mode": "full_capped"
+}

@@ -1,0 +1,33 @@
+{
+  "samples": 1738,
+  "indexed_samples": 1738,
+  "full_split": true,
+  "predicted_boxes": 29587,
+  "gt_boxes": 28622,
+  "ap": {
+    "0.3": 0.7533939861027852,
+    "0.5": 0.7034992430597753,
+    "0.7": 0.5804074534202243
+  },
+  "ap_3d": {
+    "0.3": 0.7383856934820697,
+    "0.5": 0.6522081149306292,
+    "0.7": 0.3981734631111198
+  },
+  "metric": "BEV and upright 3D AP; shared source/packet/current; output ceiling only",
+  "predictions": {
+    "directory": "predictions",
+    "frames": 1738,
+    "index_sha256": "486484666dafc1b5fc1bcda34830325447ef5ad716d7ff552db652bc90754130"
+  },
+  "feature_packets": {
+    "count": 1738,
+    "mean_bytes": 2046.1191024165707,
+    "median_bytes": 2047.0,
+    "min_bytes": 2035,
+    "max_bytes": 2048,
+    "p95_bytes": 2048.0,
+    "total_bytes": 3556155,
+    "scope": "serialized payload and full metadata; excludes network framing/retransmission"
+  }
+}
