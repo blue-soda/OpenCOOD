@@ -1,0 +1,69 @@
+{
+  "samples": 1738,
+  "indexed_samples": 1738,
+  "full_split": true,
+  "predicted_boxes": 27479,
+  "gt_boxes": 28622,
+  "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+  "ap": {
+    "0.3": 0.7221298503535081,
+    "0.5": 0.6810800555238739,
+    "0.7": 0.5832966997497054
+  },
+  "ap_3d": {
+    "0.3": 0.7093361364688046,
+    "0.5": 0.6374232871789577,
+    "0.7": 0.4261877995106543
+  },
+  "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+  "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+  "predictions": {
+    "directory": "predictions",
+    "frames": 1738,
+    "index_sha256": "dbc11fadbc15c767a6a4e07d509468996d8ca6e58e9230cd2a03d37b221cbb2e"
+  },
+  "feature_packets": {
+    "count": 1738,
+    "mean_bytes": 0.0,
+    "median_bytes": 0.0,
+    "min_bytes": 0,
+    "max_bytes": 0,
+    "p95_bytes": 0.0,
+    "total_bytes": 0,
+    "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+  },
+  "profile": {
+    "batch_size": 1,
+    "warmup_frames_excluded": 20,
+    "timed_frames": 1718,
+    "milliseconds": {
+      "batch_wait_ms": {
+        "mean": 9.162214741179106,
+        "median": 8.77246051095426,
+        "p95": 13.343723688740283
+      },
+      "h2d_ms": {
+        "mean": 8.173739686266794,
+        "median": 7.765652961097658,
+        "p95": 11.625402921345085
+      },
+      "forward_ms": {
+        "mean": 65.71527755124293,
+        "median": 66.1451059859246,
+        "p95": 70.6691638333723
+      },
+      "postprocess_ms": {
+        "mean": 18.706517717426987,
+        "median": 16.375624458305538,
+        "p95": 39.600144326686845
+      },
+      "ready_batch_inference_ms": {
+        "mean": 92.59553495493671,
+        "median": 90.15020192600787,
+        "p95": 114.12587208906189
+      }
+    },
+    "peak_allocated_bytes": 224481792,
+    "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+  }
+}

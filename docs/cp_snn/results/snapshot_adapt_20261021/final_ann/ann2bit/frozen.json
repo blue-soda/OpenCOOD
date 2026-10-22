@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "checkpoints": {
+    "last.pt": {
+      "sha256": "6317026c4c130b5b513a2eac36cf14d7e5083ffbcddd1afc823866d6846c5c79",
+      "changed": [
+        "content.project.weight",
+        "content.expand.weight"
+      ]
+    },
+    "best_ap70.pth": {
+      "sha256": "0d56ef8ff55ef407cbc0b90be4b68195a56db9e388391e6cbf1efc695b588e18",
+      "changed": [
+        "content.project.weight",
+        "content.expand.weight"
+      ]
+    }
+  }
+}
