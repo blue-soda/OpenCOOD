@@ -1,0 +1,777 @@
+{
+  "passed": true,
+  "source_only_scores_reproduced_frames": 32,
+  "selection_rules_reproduced_frames": 32,
+  "decoded_packets": 128,
+  "all_within_2048": true,
+  "records": [
+    {
+      "index": 3535,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3535,
+      "mode": "student",
+      "bytes": 2039,
+      "roundtrip": true
+    },
+    {
+      "index": 3535,
+      "mode": "random",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 3535,
+      "mode": "oracle",
+      "bytes": 2044,
+      "roundtrip": true
+    },
+    {
+      "index": 3572,
+      "mode": "baseline",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3572,
+      "mode": "student",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3572,
+      "mode": "random",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 3572,
+      "mode": "oracle",
+      "bytes": 2044,
+      "roundtrip": true
+    },
+    {
+      "index": 3609,
+      "mode": "baseline",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 3609,
+      "mode": "student",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 3609,
+      "mode": "random",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3609,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3645,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3645,
+      "mode": "student",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 3645,
+      "mode": "random",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 3645,
+      "mode": "oracle",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3682,
+      "mode": "baseline",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3682,
+      "mode": "student",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3682,
+      "mode": "random",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3682,
+      "mode": "oracle",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3719,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3719,
+      "mode": "student",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3719,
+      "mode": "random",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 3719,
+      "mode": "oracle",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3756,
+      "mode": "baseline",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 3756,
+      "mode": "student",
+      "bytes": 2044,
+      "roundtrip": true
+    },
+    {
+      "index": 3756,
+      "mode": "random",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3756,
+      "mode": "oracle",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 3793,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3793,
+      "mode": "student",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3793,
+      "mode": "random",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 3793,
+      "mode": "oracle",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 3829,
+      "mode": "baseline",
+      "bytes": 2044,
+      "roundtrip": true
+    },
+    {
+      "index": 3829,
+      "mode": "student",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 3829,
+      "mode": "random",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 3829,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3866,
+      "mode": "baseline",
+      "bytes": 2041,
+      "roundtrip": true
+    },
+    {
+      "index": 3866,
+      "mode": "student",
+      "bytes": 2042,
+      "roundtrip": true
+    },
+    {
+      "index": 3866,
+      "mode": "random",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 3866,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3903,
+      "mode": "baseline",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3903,
+      "mode": "student",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3903,
+      "mode": "random",
+      "bytes": 2044,
+      "roundtrip": true
+    },
+    {
+      "index": 3903,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3940,
+      "mode": "baseline",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 3940,
+      "mode": "student",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 3940,
+      "mode": "random",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 3940,
+      "mode": "oracle",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 3977,
+      "mode": "baseline",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 3977,
+      "mode": "student",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 3977,
+      "mode": "random",
+      "bytes": 2040,
+      "roundtrip": true
+    },
+    {
+      "index": 3977,
+      "mode": "oracle",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4014,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4014,
+      "mode": "student",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4014,
+      "mode": "random",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4014,
+      "mode": "oracle",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4050,
+      "mode": "baseline",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4050,
+      "mode": "student",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4050,
+      "mode": "random",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4050,
+      "mode": "oracle",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4087,
+      "mode": "baseline",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4087,
+      "mode": "student",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4087,
+      "mode": "random",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4087,
+      "mode": "oracle",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4124,
+      "mode": "baseline",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4124,
+      "mode": "student",
+      "bytes": 2043,
+      "roundtrip": true
+    },
+    {
+      "index": 4124,
+      "mode": "random",
+      "bytes": 2043,
+      "roundtrip": true
+    },
+    {
+      "index": 4124,
+      "mode": "oracle",
+      "bytes": 2044,
+      "roundtrip": true
+    },
+    {
+      "index": 4161,
+      "mode": "baseline",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4161,
+      "mode": "student",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4161,
+      "mode": "random",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4161,
+      "mode": "oracle",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4198,
+      "mode": "baseline",
+      "bytes": 2042,
+      "roundtrip": true
+    },
+    {
+      "index": 4198,
+      "mode": "student",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4198,
+      "mode": "random",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4198,
+      "mode": "oracle",
+      "bytes": 2042,
+      "roundtrip": true
+    },
+    {
+      "index": 4235,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4235,
+      "mode": "student",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4235,
+      "mode": "random",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4235,
+      "mode": "oracle",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4271,
+      "mode": "baseline",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4271,
+      "mode": "student",
+      "bytes": 2044,
+      "roundtrip": true
+    },
+    {
+      "index": 4271,
+      "mode": "random",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4271,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4308,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4308,
+      "mode": "student",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4308,
+      "mode": "random",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4308,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4345,
+      "mode": "baseline",
+      "bytes": 2041,
+      "roundtrip": true
+    },
+    {
+      "index": 4345,
+      "mode": "student",
+      "bytes": 2044,
+      "roundtrip": true
+    },
+    {
+      "index": 4345,
+      "mode": "random",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4345,
+      "mode": "oracle",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4382,
+      "mode": "baseline",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4382,
+      "mode": "student",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4382,
+      "mode": "random",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4382,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4419,
+      "mode": "baseline",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4419,
+      "mode": "student",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4419,
+      "mode": "random",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4419,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4456,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4456,
+      "mode": "student",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4456,
+      "mode": "random",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4456,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4492,
+      "mode": "baseline",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4492,
+      "mode": "student",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4492,
+      "mode": "random",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4492,
+      "mode": "oracle",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4529,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4529,
+      "mode": "student",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4529,
+      "mode": "random",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4529,
+      "mode": "oracle",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4566,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4566,
+      "mode": "student",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4566,
+      "mode": "random",
+      "bytes": 2044,
+      "roundtrip": true
+    },
+    {
+      "index": 4566,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4603,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4603,
+      "mode": "student",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4603,
+      "mode": "random",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4603,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4640,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4640,
+      "mode": "student",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4640,
+      "mode": "random",
+      "bytes": 2046,
+      "roundtrip": true
+    },
+    {
+      "index": 4640,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4677,
+      "mode": "baseline",
+      "bytes": 2047,
+      "roundtrip": true
+    },
+    {
+      "index": 4677,
+      "mode": "student",
+      "bytes": 2048,
+      "roundtrip": true
+    },
+    {
+      "index": 4677,
+      "mode": "random",
+      "bytes": 2045,
+      "roundtrip": true
+    },
+    {
+      "index": 4677,
+      "mode": "oracle",
+      "bytes": 2048,
+      "roundtrip": true
+    }
+  ]
+}

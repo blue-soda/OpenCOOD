@@ -1,0 +1,677 @@
+{
+  "frames": [
+    {
+      "index": 0,
+      "frame_id": "000010",
+      "rows": 278,
+      "file": "fit/0/features_teacher.npz",
+      "sha256": "c13f0a5db96fc0c8207df9a106151ce054d0cc729bf94255495f3e6255356229"
+    },
+    {
+      "index": 36,
+      "frame_id": "000070",
+      "rows": 272,
+      "file": "fit/36/features_teacher.npz",
+      "sha256": "cbdc2334dc6804baccdadcc73c058842423ce11708706b967b8afff7b9154dbb"
+    },
+    {
+      "index": 73,
+      "frame_id": "000116",
+      "rows": 268,
+      "file": "fit/73/features_teacher.npz",
+      "sha256": "c3d62afb3aff5f4e443f8e9fc42c6e80d90db23d21f5ae9de18bfe2f0cd6a97d"
+    },
+    {
+      "index": 110,
+      "frame_id": "000201",
+      "rows": 275,
+      "file": "fit/110/features_teacher.npz",
+      "sha256": "70fb5575f7e8bf50c24a5a815cd55a1236512b25acecbfc3577641f0fc77cf80"
+    },
+    {
+      "index": 147,
+      "frame_id": "000266",
+      "rows": 266,
+      "file": "fit/147/features_teacher.npz",
+      "sha256": "45519e1c3a64647e0c7175c018fb6de1df0999ecabe01d3f33cfd5b650f0131e"
+    },
+    {
+      "index": 184,
+      "frame_id": "000330",
+      "rows": 230,
+      "file": "fit/184/features_teacher.npz",
+      "sha256": "a3a0a3279f2ad80a0179d0f03adb0731e0b39bfbf0e0cda8cd2c6d9859f20e38"
+    },
+    {
+      "index": 220,
+      "frame_id": "000399",
+      "rows": 264,
+      "file": "fit/220/features_teacher.npz",
+      "sha256": "3c36d81b97cbf23da572a2022577d0942adc7584c7c58be34fb65742ba4038f9"
+    },
+    {
+      "index": 257,
+      "frame_id": "000472",
+      "rows": 285,
+      "file": "fit/257/features_teacher.npz",
+      "sha256": "f74604a7f5214eabe3dcd1ed136cb2fcac5a592daa22529e27878fe01b64bc4a"
+    },
+    {
+      "index": 294,
+      "frame_id": "000548",
+      "rows": 272,
+      "file": "fit/294/features_teacher.npz",
+      "sha256": "34e7787a517e4ad1a513fa6e00f70b07ccdbaa91249491441fcb3e4489f8acdf"
+    },
+    {
+      "index": 331,
+      "frame_id": "000606",
+      "rows": 272,
+      "file": "fit/331/features_teacher.npz",
+      "sha256": "c0ad3a8483d2f4efc51be8c0d3714b9d8ba5106074a14a78560196f149edbc05"
+    },
+    {
+      "index": 368,
+      "frame_id": "000659",
+      "rows": 281,
+      "file": "fit/368/features_teacher.npz",
+      "sha256": "a3a7eaa3cf35498583cd2f7301ec42d7f6742a115b27b5a062488154c756be6a"
+    },
+    {
+      "index": 405,
+      "frame_id": "000719",
+      "rows": 284,
+      "file": "fit/405/features_teacher.npz",
+      "sha256": "4bd17f4db8e8509b524e64449f6183aaaceed79e68f4e1a7337321e2da5eabef"
+    },
+    {
+      "index": 441,
+      "frame_id": "000792",
+      "rows": 273,
+      "file": "fit/441/features_teacher.npz",
+      "sha256": "24a3d60d38af72227dc8beab9a70256de3bc176650401e2f8b6ba839d05e5c52"
+    },
+    {
+      "index": 478,
+      "frame_id": "001083",
+      "rows": 242,
+      "file": "fit/478/features_teacher.npz",
+      "sha256": "97031544479b5d7d0e84d93a1592a52a6ef439ffbb123acac705f19354c5dd8b"
+    },
+    {
+      "index": 515,
+      "frame_id": "001160",
+      "rows": 246,
+      "file": "fit/515/features_teacher.npz",
+      "sha256": "3cc9db0d2d2afc0ea4fdbf03274e388388fd0c7fd381d9e6ba2a415e8c8e6d8a"
+    },
+    {
+      "index": 552,
+      "frame_id": "001223",
+      "rows": 271,
+      "file": "fit/552/features_teacher.npz",
+      "sha256": "b915e23e143bdaeb2cf5aee3d7a0ff3497e817ea94a8f82ffc0e14de9d91bbd3"
+    },
+    {
+      "index": 589,
+      "frame_id": "001274",
+      "rows": 267,
+      "file": "fit/589/features_teacher.npz",
+      "sha256": "9ed5d4a367618f53db3ecb8c9e15801a70d3fdf0f54cb33626d82c3add7a49c5"
+    },
+    {
+      "index": 626,
+      "frame_id": "001336",
+      "rows": 279,
+      "file": "fit/626/features_teacher.npz",
+      "sha256": "bfd0c1f9acf3319f245e8967e5aab27ae847c05888d4162a369ad81b3f5e1d1c"
+    },
+    {
+      "index": 662,
+      "frame_id": "001394",
+      "rows": 270,
+      "file": "fit/662/features_teacher.npz",
+      "sha256": "1288b9519d561b2f99fffa83a19e06402b096c871a6e1ebe2325b86101e9ca38"
+    },
+    {
+      "index": 699,
+      "frame_id": "001459",
+      "rows": 266,
+      "file": "fit/699/features_teacher.npz",
+      "sha256": "fe9afdcad6fad20244e7d96ee21b4bc2f6c485021cebbc265947cdccf83c92ef"
+    },
+    {
+      "index": 736,
+      "frame_id": "001907",
+      "rows": 252,
+      "file": "fit/736/features_teacher.npz",
+      "sha256": "c74d54cf5f5d9ec9d3e82f8721037216ea0f259b1979738c6b1ea04becbb1aea"
+    },
+    {
+      "index": 773,
+      "frame_id": "001976",
+      "rows": 281,
+      "file": "fit/773/features_teacher.npz",
+      "sha256": "8215017a74d5ae9e2a5249ed821ad2b01fcdb4cfb62557aae90c291a16ce888c"
+    },
+    {
+      "index": 810,
+      "frame_id": "002043",
+      "rows": 272,
+      "file": "fit/810/features_teacher.npz",
+      "sha256": "d001470ee3fc791ed118d5841650f4a0cda33f8c0e89da0144b97f177b98831a"
+    },
+    {
+      "index": 847,
+      "frame_id": "002490",
+      "rows": 240,
+      "file": "fit/847/features_teacher.npz",
+      "sha256": "8215b61d04a19aa651eb119c1015b64abb3d0d5dda331607753e2e6ee1885b9f"
+    },
+    {
+      "index": 883,
+      "frame_id": "002568",
+      "rows": 241,
+      "file": "fit/883/features_teacher.npz",
+      "sha256": "4fc4e404399df16225bbdc1eca98da65a9434847d3a0563d25d3675f7a96212f"
+    },
+    {
+      "index": 920,
+      "frame_id": "003434",
+      "rows": 233,
+      "file": "fit/920/features_teacher.npz",
+      "sha256": "fd6667df7cdb5bccce9875e0c439637a495e517a2744095fca50046a89edc3c3"
+    },
+    {
+      "index": 957,
+      "frame_id": "003519",
+      "rows": 249,
+      "file": "fit/957/features_teacher.npz",
+      "sha256": "768871ef2fb279b085914e08d5d80f52a53c33ed50e29b130591a2e02662f993"
+    },
+    {
+      "index": 994,
+      "frame_id": "003557",
+      "rows": 260,
+      "file": "fit/994/features_teacher.npz",
+      "sha256": "29d69bfecfabc0f91529d6a66c3313ec99b6c44d674813a70d290c1928c20351"
+    },
+    {
+      "index": 1031,
+      "frame_id": "003758",
+      "rows": 260,
+      "file": "fit/1031/features_teacher.npz",
+      "sha256": "b65dbf7666d32f7952ce58b0083fc7b24ee42231416843edaab105a78df3737b"
+    },
+    {
+      "index": 1067,
+      "frame_id": "004491",
+      "rows": 228,
+      "file": "fit/1067/features_teacher.npz",
+      "sha256": "6cdee2941e446cd9b2aabb7600f6b9f2b0808ce3cfb169b78cf4d08f961a5c5d"
+    },
+    {
+      "index": 1104,
+      "frame_id": "004529",
+      "rows": 228,
+      "file": "fit/1104/features_teacher.npz",
+      "sha256": "35f90de98893ac4a22bf0cd2c4be8acf86cdf0a438a472ddf2b944d2042f2085"
+    },
+    {
+      "index": 1141,
+      "frame_id": "004601",
+      "rows": 240,
+      "file": "fit/1141/features_teacher.npz",
+      "sha256": "fc4d9d556714e266be7333c02f008d92f4d527e330185c17274c2841fe54696e"
+    },
+    {
+      "index": 1178,
+      "frame_id": "004639",
+      "rows": 242,
+      "file": "fit/1178/features_teacher.npz",
+      "sha256": "2e2a6b5fc288d27eb9c8cf56784aa304d34141536fa38771bb326ec8dd61c6ad"
+    },
+    {
+      "index": 1215,
+      "frame_id": "004719",
+      "rows": 233,
+      "file": "fit/1215/features_teacher.npz",
+      "sha256": "e5a6a01da45b494ccdc188e963ed18654c2ad69739d220077007633694bd9f41"
+    },
+    {
+      "index": 1252,
+      "frame_id": "004898",
+      "rows": 280,
+      "file": "fit/1252/features_teacher.npz",
+      "sha256": "8479bc00dc1f34e0e35cde69ef83e8f0f2b3bcd8431d003cc58eb7b52e7fab7e"
+    },
+    {
+      "index": 1288,
+      "frame_id": "004980",
+      "rows": 242,
+      "file": "fit/1288/features_teacher.npz",
+      "sha256": "82a26c4d330d725d54ca3e79640a02a968cd51af3e10e72bc1b8286fa4edd528"
+    },
+    {
+      "index": 1325,
+      "frame_id": "005019",
+      "rows": 245,
+      "file": "fit/1325/features_teacher.npz",
+      "sha256": "d210c67e7b0f901546accdd4bd492a1052f09d64a49de98fc11edf4a1899928a"
+    },
+    {
+      "index": 1362,
+      "frame_id": "005626",
+      "rows": 238,
+      "file": "fit/1362/features_teacher.npz",
+      "sha256": "64062c8b5b8b897d9477053a77b5ce356f10bc5de51de85a7ef927de2871beb1"
+    },
+    {
+      "index": 1399,
+      "frame_id": "005709",
+      "rows": 273,
+      "file": "fit/1399/features_teacher.npz",
+      "sha256": "6744f80991fb39794a40cc822601c79b804c607e63fbfc58f42b96b8dffd1aa5"
+    },
+    {
+      "index": 1436,
+      "frame_id": "005749",
+      "rows": 243,
+      "file": "fit/1436/features_teacher.npz",
+      "sha256": "4c02f8c8f8b7ef4e2664039d1e693dd4c48ab5e644fbb39e4196f76c079131f9"
+    },
+    {
+      "index": 1473,
+      "frame_id": "005860",
+      "rows": 239,
+      "file": "fit/1473/features_teacher.npz",
+      "sha256": "2707b81bcdda501304474d403399fdbb245d6bd22694cad15a626a5e207548fd"
+    },
+    {
+      "index": 1509,
+      "frame_id": "005898",
+      "rows": 236,
+      "file": "fit/1509/features_teacher.npz",
+      "sha256": "acf3a2139c031dfcb18fbe4c2fd11955fe9ca65d84819e0eb1d365c2b6c1ce78"
+    },
+    {
+      "index": 1546,
+      "frame_id": "006172",
+      "rows": 242,
+      "file": "fit/1546/features_teacher.npz",
+      "sha256": "00d12fff4eb0b46fed2a24f90a3a70e53d2ad02fd3185442b0d7eab9a0fdcf90"
+    },
+    {
+      "index": 1583,
+      "frame_id": "006209",
+      "rows": 236,
+      "file": "fit/1583/features_teacher.npz",
+      "sha256": "f8cfe9f9e3c302afa52ec8c46af5af9ac27f890bed7e3e1f721806d43fa58a30"
+    },
+    {
+      "index": 1620,
+      "frame_id": "006290",
+      "rows": 239,
+      "file": "fit/1620/features_teacher.npz",
+      "sha256": "254918477b5e0eec1ece28e01412c618eedc1fed6614412c1f53c69e996f275f"
+    },
+    {
+      "index": 1657,
+      "frame_id": "006329",
+      "rows": 224,
+      "file": "fit/1657/features_teacher.npz",
+      "sha256": "a005ddd05b46a180d543c6d04006487477adae392e744b2ef28342dccfccd6f9"
+    },
+    {
+      "index": 1694,
+      "frame_id": "006409",
+      "rows": 258,
+      "file": "fit/1694/features_teacher.npz",
+      "sha256": "4cfe368ca8558d48ae9fa5908505ad60df1e5cfe8b06b0a58432ffee32306d0a"
+    },
+    {
+      "index": 1730,
+      "frame_id": "006447",
+      "rows": 246,
+      "file": "fit/1730/features_teacher.npz",
+      "sha256": "c02c8ee734f4376013dc68abeabc7a85f4ba4a077134ac8904fb7c2abf605b05"
+    },
+    {
+      "index": 1767,
+      "frame_id": "006489",
+      "rows": 230,
+      "file": "fit/1767/features_teacher.npz",
+      "sha256": "f7b4ba1146566943bba8ed58f361b29244fa59e2a7ac95ac06533d675a76a9ac"
+    },
+    {
+      "index": 1804,
+      "frame_id": "006567",
+      "rows": 259,
+      "file": "fit/1804/features_teacher.npz",
+      "sha256": "2a17bff3c78c3902a175259b21beb61ff323f618502e538d14b51cf1a693f5e8"
+    },
+    {
+      "index": 1841,
+      "frame_id": "006608",
+      "rows": 235,
+      "file": "fit/1841/features_teacher.npz",
+      "sha256": "55d4dcaaa5927396e2da3f4619629e502c052cc4a6817d75aeebf57d71196534"
+    },
+    {
+      "index": 1878,
+      "frame_id": "006688",
+      "rows": 233,
+      "file": "fit/1878/features_teacher.npz",
+      "sha256": "ad0850b683dc9ddbb93e8e37cc0b30d52b824c3ee6a0b648177f64611e84136e"
+    },
+    {
+      "index": 1914,
+      "frame_id": "006727",
+      "rows": 294,
+      "file": "fit/1914/features_teacher.npz",
+      "sha256": "aa31b08c8ec18c84cd84b7f636c1225ab27e4613feac6e21f3a6f6e57c2699ae"
+    },
+    {
+      "index": 1951,
+      "frame_id": "006767",
+      "rows": 269,
+      "file": "fit/1951/features_teacher.npz",
+      "sha256": "8c4e933bdbbb592b435ad2cfc3c8048b89c887e785567f760a6f9dd3f2568987"
+    },
+    {
+      "index": 1988,
+      "frame_id": "006805",
+      "rows": 298,
+      "file": "fit/1988/features_teacher.npz",
+      "sha256": "be68b4e7bffac71e39472ea291868815a56a6cc56c0202d924c209491b62a1eb"
+    },
+    {
+      "index": 2025,
+      "frame_id": "006901",
+      "rows": 289,
+      "file": "fit/2025/features_teacher.npz",
+      "sha256": "d9976c3829b6ad1e74d4d5db7ac47432ad374f4a38a6facf72bb031c9225083f"
+    },
+    {
+      "index": 2062,
+      "frame_id": "006939",
+      "rows": 289,
+      "file": "fit/2062/features_teacher.npz",
+      "sha256": "1da423d4a99dab793433350829d7bfa1b24ca06a47f9f677b3223080bd38f2b4"
+    },
+    {
+      "index": 2099,
+      "frame_id": "006976",
+      "rows": 281,
+      "file": "fit/2099/features_teacher.npz",
+      "sha256": "f7653ae10bfe7379289e869da1dda635d0178dad3e2260214ebda7d234e734cb"
+    },
+    {
+      "index": 2135,
+      "frame_id": "007489",
+      "rows": 265,
+      "file": "fit/2135/features_teacher.npz",
+      "sha256": "82e50bed467edb8bf43c78fb05e557caaa3f38642518beff4f3e69dd3541c1b2"
+    },
+    {
+      "index": 2172,
+      "frame_id": "007539",
+      "rows": 305,
+      "file": "fit/2172/features_teacher.npz",
+      "sha256": "7933ec38e638d9152a2f9a3d52822aea1d4af64b61481e776054f66610001c7c"
+    },
+    {
+      "index": 2209,
+      "frame_id": "007584",
+      "rows": 262,
+      "file": "fit/2209/features_teacher.npz",
+      "sha256": "602f09c3e8c0ee96db7199d8960f2e566df0c7f8437c3e7ed788062cbcd87b01"
+    },
+    {
+      "index": 2246,
+      "frame_id": "007624",
+      "rows": 297,
+      "file": "fit/2246/features_teacher.npz",
+      "sha256": "60551ee9b0bac2fe2cd4f798f94637df8a32c214967fa3118d28be48833104c1"
+    },
+    {
+      "index": 2283,
+      "frame_id": "007774",
+      "rows": 286,
+      "file": "fit/2283/features_teacher.npz",
+      "sha256": "54b0065b1b2a7b466e965eaf00f5d81fb1546c362016bbc50296477fd9424ba0"
+    },
+    {
+      "index": 2320,
+      "frame_id": "008800",
+      "rows": 282,
+      "file": "fit/2320/features_teacher.npz",
+      "sha256": "df020eca63555243847dd6064bcb24c7144c78c6671a7b90a1a0dda012c05bda"
+    },
+    {
+      "index": 2356,
+      "frame_id": "008837",
+      "rows": 271,
+      "file": "fit/2356/features_teacher.npz",
+      "sha256": "7368e3d9b076ae9860d4022116040270f7a53eabdba9adbc3b15b88e1f41d75e"
+    },
+    {
+      "index": 2393,
+      "frame_id": "008876",
+      "rows": 279,
+      "file": "fit/2393/features_teacher.npz",
+      "sha256": "562f5c45cd78de9c385d51f61c8394e8f51115fb7ca2c32bf3005f54b641eb20"
+    },
+    {
+      "index": 2430,
+      "frame_id": "008914",
+      "rows": 283,
+      "file": "fit/2430/features_teacher.npz",
+      "sha256": "4585a1950b4dd92ccd9d0c028868f0a2d8427e50d19d8c849583aad4716fdc92"
+    },
+    {
+      "index": 2467,
+      "frame_id": "008991",
+      "rows": 262,
+      "file": "fit/2467/features_teacher.npz",
+      "sha256": "5081ec6b03d36e5995edf61501d92aa639aecce5bfa2139aea490b83b5d36359"
+    },
+    {
+      "index": 2504,
+      "frame_id": "009038",
+      "rows": 260,
+      "file": "fit/2504/features_teacher.npz",
+      "sha256": "503a760a0ee184dff67adeb6749984875a19b9010a8162bf8dbd1b9b2e9bf8b4"
+    },
+    {
+      "index": 2541,
+      "frame_id": "009079",
+      "rows": 259,
+      "file": "fit/2541/features_teacher.npz",
+      "sha256": "80e721f75116d15b9df76e9e25aa611e7755904236f3ab55dae7656e9e703e72"
+    },
+    {
+      "index": 2577,
+      "frame_id": "009119",
+      "rows": 262,
+      "file": "fit/2577/features_teacher.npz",
+      "sha256": "44a6b5d1a7df7bd63bd91a2a84e64059ec040ce119c1a23f8443b145248a3bfe"
+    },
+    {
+      "index": 2614,
+      "frame_id": "009164",
+      "rows": 262,
+      "file": "fit/2614/features_teacher.npz",
+      "sha256": "bcb9139ffc5a440bccf2628d7bc29f3d7defa4d7a6e4849eabda5bb9c678f7d2"
+    },
+    {
+      "index": 2651,
+      "frame_id": "009315",
+      "rows": 289,
+      "file": "fit/2651/features_teacher.npz",
+      "sha256": "4acc77fd971c0647d5f9196a81d301567fae3e305ceeebe77b42214da2098537"
+    },
+    {
+      "index": 2688,
+      "frame_id": "009355",
+      "rows": 294,
+      "file": "fit/2688/features_teacher.npz",
+      "sha256": "83b70b1f107703a7290eb54a5c722ba1b6bb5811026883f4ebf33ad0f923cca6"
+    },
+    {
+      "index": 2725,
+      "frame_id": "009394",
+      "rows": 290,
+      "file": "fit/2725/features_teacher.npz",
+      "sha256": "79b18fa4a9492cdcbc0c755597f3049098bcdf1a45471f22c092f8615e98f761"
+    },
+    {
+      "index": 2762,
+      "frame_id": "009432",
+      "rows": 237,
+      "file": "fit/2762/features_teacher.npz",
+      "sha256": "10e938868bdb9abf25ff130e0dc416f1729bcb0b8e2981faa53f3c45c7672181"
+    },
+    {
+      "index": 2798,
+      "frame_id": "009468",
+      "rows": 239,
+      "file": "fit/2798/features_teacher.npz",
+      "sha256": "132d5e9b88f955835777adaa7d96c84a9332a1b441d48461eae4d54cd957f610"
+    },
+    {
+      "index": 2835,
+      "frame_id": "010208",
+      "rows": 274,
+      "file": "fit/2835/features_teacher.npz",
+      "sha256": "b3961e7bafd6fa4701e5f9d585f5265c2de1cc692b11568f6e50a6f0852e243e"
+    },
+    {
+      "index": 2872,
+      "frame_id": "010251",
+      "rows": 280,
+      "file": "fit/2872/features_teacher.npz",
+      "sha256": "e093f2d8d0c7d8598501a74db57fb2345758eb703a30c8de9a94fe9aacbe7a4d"
+    },
+    {
+      "index": 2909,
+      "frame_id": "010288",
+      "rows": 281,
+      "file": "fit/2909/features_teacher.npz",
+      "sha256": "567759e2c076e70eca1f011ecc465a0525bb807b50fd88d9b7c1ce078ac96a64"
+    },
+    {
+      "index": 2946,
+      "frame_id": "010326",
+      "rows": 308,
+      "file": "fit/2946/features_teacher.npz",
+      "sha256": "a14077ae25d8a5beb55ebb3b968c2da4bab6e3e20dc03a7770a7b5a233be70b8"
+    },
+    {
+      "index": 2982,
+      "frame_id": "010363",
+      "rows": 239,
+      "file": "fit/2982/features_teacher.npz",
+      "sha256": "a9b9f034176793a21989365dd95da13040efc43e7fa3e6869832618f7ee5f668"
+    },
+    {
+      "index": 3019,
+      "frame_id": "010401",
+      "rows": 260,
+      "file": "fit/3019/features_teacher.npz",
+      "sha256": "2cd3f4a8e5ae84624a0c243a781a0934887c3c14d9a5b2cb01841804d46c8753"
+    },
+    {
+      "index": 3056,
+      "frame_id": "010440",
+      "rows": 253,
+      "file": "fit/3056/features_teacher.npz",
+      "sha256": "25290cab557dde5578272592eefd73d8b319972c21327a1c0af600728b740f76"
+    },
+    {
+      "index": 3093,
+      "frame_id": "010480",
+      "rows": 269,
+      "file": "fit/3093/features_teacher.npz",
+      "sha256": "6b1f579ce94bb974dad46f1879318c97c85fdee4978cffc060d11fdf3df86e92"
+    },
+    {
+      "index": 3130,
+      "frame_id": "010517",
+      "rows": 290,
+      "file": "fit/3130/features_teacher.npz",
+      "sha256": "b80cf5b9a00c3660f3d711c8884dad3d445f378dd638bdbd49a6cfee5a6ecc06"
+    },
+    {
+      "index": 3167,
+      "frame_id": "010555",
+      "rows": 260,
+      "file": "fit/3167/features_teacher.npz",
+      "sha256": "89455585d1bc7e4c70fba3f58925f591fb7ae77ddd7bce89d3c69de6dffe0c48"
+    },
+    {
+      "index": 3203,
+      "frame_id": "010593",
+      "rows": 283,
+      "file": "fit/3203/features_teacher.npz",
+      "sha256": "05a2d2e70374342f638dcdeb3f2db964cd0d4884995e6ed2b17e291384bb9621"
+    },
+    {
+      "index": 3240,
+      "frame_id": "010635",
+      "rows": 265,
+      "file": "fit/3240/features_teacher.npz",
+      "sha256": "9798b030f22797ed6bdcd26ee33dd8adb2ffee5bf65c86895a0538461eec80c0"
+    },
+    {
+      "index": 3277,
+      "frame_id": "010674",
+      "rows": 296,
+      "file": "fit/3277/features_teacher.npz",
+      "sha256": "825e4d13bfae33b728df26d1fa6089d9ce74e356ecd2d3e2c3a5e61048603f9f"
+    },
+    {
+      "index": 3314,
+      "frame_id": "010711",
+      "rows": 291,
+      "file": "fit/3314/features_teacher.npz",
+      "sha256": "d4deec31b8aba45f31ed0191f5f843d0e90902f838308c7ac47002a7336d4717"
+    },
+    {
+      "index": 3351,
+      "frame_id": "010754",
+      "rows": 267,
+      "file": "fit/3351/features_teacher.npz",
+      "sha256": "ab1bfae5ab111f14885bfad57a8820d19208e8d358b70b985fc96a735b1463af"
+    },
+    {
+      "index": 3388,
+      "frame_id": "010795",
+      "rows": 267,
+      "file": "fit/3388/features_teacher.npz",
+      "sha256": "593a541dadb5dbab413b70f16deee267785d8d595ece034f65e72180547723ad"
+    },
+    {
+      "index": 3424,
+      "frame_id": "011310",
+      "rows": 256,
+      "file": "fit/3424/features_teacher.npz",
+      "sha256": "4240c7be24d28e03818ed86488ce1d7c25f4088834d9622c5f9f90446444a10d"
+    },
+    {
+      "index": 3461,
+      "frame_id": "011370",
+      "rows": 241,
+      "file": "fit/3461/features_teacher.npz",
+      "sha256": "2e4c83077a7355f56e3c10276c9edab2cd4bc78923751414543a7205502dbcc4"
+    },
+    {
+      "index": 3498,
+      "frame_id": "011437",
+      "rows": 238,
+      "file": "fit/3498/features_teacher.npz",
+      "sha256": "1d066e459481a0bde33eba03185475b2f3662b72ca056ab4794c452736c48e1f"
+    }
+  ],
+  "source_probe_sha256": "92b2382f61b80564f4c477e3e46adc86a08c20665036ec77f9c013a1dc69b823"
+}
