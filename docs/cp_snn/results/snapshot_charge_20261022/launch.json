@@ -1,0 +1,41 @@
+{
+  "pid": 17200,
+  "admission": {
+    "accepted": true,
+    "minimum_free_mib": 8192,
+    "allocator_fraction": 0.2,
+    "mean_util_percent": 0.0,
+    "samples": [
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      },
+      {
+        "total_mib": 24576,
+        "free_mib": 24252,
+        "util_percent": 0
+      }
+    ],
+    "policy": "user_authorized_shared"
+  },
+  "started_unix": 1792627307.3739846,
+  "code_commit": "6595ecfff03975a931eb64f87c49322793ea0c44",
+  "synthetic_metric_checks": true,
+  "training": false
+}
