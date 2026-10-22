@@ -1,0 +1,137 @@
+{
+  "actual_dense_fm_conv_gflops": 21.28896,
+  "resets": 50,
+  "results": {
+    "0.0": {
+      "estimated_fm_conv_gflops": 21.28896,
+      "gates": {
+        "candidate_conv": {
+          "mean_conditional_output_relative_rms": 0.0,
+          "mean_crops": 1.0,
+          "mean_planned_input_area": 1.0,
+          "mean_request": 0.9999999433057383,
+          "mean_write": 0.9999999433057383,
+          "p95_conditional_output_relative_rms": 0.0,
+          "p95_planned_input_area": 1.0
+        },
+        "reset_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.0,
+          "mean_crops": 1.0,
+          "mean_planned_input_area": 1.0,
+          "mean_request": 0.9999999433057383,
+          "mean_write": 0.9999999433057383,
+          "p95_conditional_output_relative_rms": 0.0,
+          "p95_planned_input_area": 1.0
+        },
+        "update_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.0,
+          "mean_crops": 1.0,
+          "mean_planned_input_area": 1.0,
+          "mean_request": 0.9999999433057383,
+          "mean_write": 0.9999999433057383,
+          "p95_conditional_output_relative_rms": 0.0,
+          "p95_planned_input_area": 1.0
+        }
+      }
+    },
+    "0.1": {
+      "estimated_fm_conv_gflops": 22.033851444,
+      "gates": {
+        "candidate_conv": {
+          "mean_conditional_output_relative_rms": 0.0002995476481402193,
+          "mean_crops": 112.3466796875,
+          "mean_planned_input_area": 1.067869640531994,
+          "mean_request": 0.7783121513493825,
+          "mean_write": 0.82855031080544,
+          "p95_conditional_output_relative_rms": 0.0007033808738924562,
+          "p95_planned_input_area": 1.231141865079365
+        },
+        "reset_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.0004906112785363348,
+          "mean_crops": 115.38671875,
+          "mean_planned_input_area": 1.0649415806361606,
+          "mean_request": 0.7730563171498943,
+          "mean_write": 0.824919358768966,
+          "p95_conditional_output_relative_rms": 0.0010803794022649523,
+          "p95_planned_input_area": 1.227703373015873
+        },
+        "update_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.000582512508117361,
+          "mean_crops": 113.365234375,
+          "mean_planned_input_area": 1.0676498267764136,
+          "mean_request": 0.7771795611770358,
+          "mean_write": 0.8276616394869052,
+          "p95_conditional_output_relative_rms": 0.001273342448985204,
+          "p95_planned_input_area": 1.2324821428571429
+        }
+      }
+    },
+    "0.25": {
+      "estimated_fm_conv_gflops": 21.462533352,
+      "gates": {
+        "candidate_conv": {
+          "mean_conditional_output_relative_rms": 0.0009892557547459546,
+          "mean_crops": 161.146484375,
+          "mean_planned_input_area": 1.017081046937004,
+          "mean_request": 0.675709938572254,
+          "mean_write": 0.7562836059951223,
+          "p95_conditional_output_relative_rms": 0.0028258164529688617,
+          "p95_planned_input_area": 1.1656805555555556
+        },
+        "reset_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.00140080150600852,
+          "mean_crops": 165.2119140625,
+          "mean_planned_input_area": 1.0133263481987849,
+          "mean_request": 0.6688227507984266,
+          "mean_write": 0.7523424789542332,
+          "p95_conditional_output_relative_rms": 0.003172907629050313,
+          "p95_planned_input_area": 1.1641656746031745
+        },
+        "update_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.0016466487527395657,
+          "mean_crops": 162.48828125,
+          "mean_planned_input_area": 1.01630370124938,
+          "mean_request": 0.6736107554461341,
+          "mean_write": 0.7554538372787647,
+          "p95_conditional_output_relative_rms": 0.003584712697193026,
+          "p95_planned_input_area": 1.165159722222222
+        }
+      }
+    },
+    "0.5": {
+      "estimated_fm_conv_gflops": 20.154832812,
+      "gates": {
+        "candidate_conv": {
+          "mean_conditional_output_relative_rms": 0.005530711553888068,
+          "mean_crops": 219.5947265625,
+          "mean_planned_input_area": 0.9058526223803323,
+          "mean_request": 0.5301445268560201,
+          "mean_write": 0.641887531557586,
+          "p95_conditional_output_relative_rms": 0.012311703385785218,
+          "p95_planned_input_area": 1.0548164682539682
+        },
+        "reset_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.008008904821508622,
+          "mean_crops": 235.7490234375,
+          "mean_planned_input_area": 0.8929415263826885,
+          "mean_request": 0.5079002459824551,
+          "mean_write": 0.629861860506935,
+          "p95_conditional_output_relative_rms": 0.012539229681715369,
+          "p95_planned_input_area": 1.0411130952380951
+        },
+        "update_gate_conv": {
+          "mean_conditional_output_relative_rms": 0.010100678333856195,
+          "mean_crops": 235.4619140625,
+          "mean_planned_input_area": 0.8959958418588789,
+          "mean_request": 0.5108588033763226,
+          "mean_write": 0.6321963098598644,
+          "p95_conditional_output_relative_rms": 0.015307792322710154,
+          "p95_planned_input_area": 1.0432772817460318
+        }
+      }
+    }
+  },
+  "scans": 1024,
+  "scope": "Estimated FM-only convolution cost includes dense projections/post_fusion plus planned spatial crops and duplicated halos. No sparse kernel executed, no full-model FLOPs savings or AP claim. Output errors are pre-BN spatial responses under dense recurrence; they do not include nonlinear/feedback accumulation.",
+  "status": "COMPLETED"
+}
