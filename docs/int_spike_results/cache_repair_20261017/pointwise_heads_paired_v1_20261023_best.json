@@ -1,0 +1,8 @@
+{
+  "ap70": 0.7524838098482544,
+  "cached_ap70": 0.7504765761955897,
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_heads_paired_v1_20261023/epoch_001/model.pth",
+  "epoch": 1,
+  "format": "pointwise_stage_and_detection_heads_v1",
+  "sha256": "3dec376fbf4b35402bacc8681ba3ff079e1d56251441c2b8713c26359d6fc92e"
+}
