@@ -1,0 +1,40 @@
+{
+  "labels": 1738,
+  "results": {
+    "base_cached": {
+      "ap50": 0.8321027698682837,
+      "ap70": 0.7555532616222492,
+      "conv_gflops": 134.31042158812565,
+      "mean_ms": 17.258550336735482,
+      "p95_ms": 28.200216102413833,
+      "partial_frames": 3789
+    },
+    "base_full": {
+      "ap50": 0.8311640141378542,
+      "ap70": 0.7567024378706645,
+      "conv_gflops": 221.1729408,
+      "mean_ms": 27.700911547154906,
+      "p95_ms": 28.909125132486224,
+      "partial_frames": 0
+    },
+    "cached": {
+      "ap50": 0.8337104107025878,
+      "ap70": 0.7559544809175783,
+      "conv_gflops": 129.35589998812563,
+      "mean_ms": 17.061678766162505,
+      "p95_ms": 27.986546512693167,
+      "partial_frames": 3789
+    },
+    "full": {
+      "ap50": 0.8332770078200933,
+      "ap70": 0.7567910702899006,
+      "conv_gflops": 216.2184192,
+      "mean_ms": 27.494796895615906,
+      "p95_ms": 28.679728682618588,
+      "partial_frames": 0
+    }
+  },
+  "scans": 5794,
+  "scope": "Dense projected spatial rank96 recovery; unchanged mature stem/BN/residuals and four-map state interface. No new spatial reuse enabled. Own FM and original deep anchors, full and cached validation. Conv MACsx2; no inference teacher. Model timing excludes IO/H2D/postprocess.",
+  "status": "COMPLETED"
+}
