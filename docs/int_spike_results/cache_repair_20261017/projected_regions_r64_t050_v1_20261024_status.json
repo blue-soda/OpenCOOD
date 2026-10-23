@@ -1,5 +1,4 @@
 {
-  "phase": "validation",
-  "scans": 200,
-  "status": "RUNNING"
+  "error": "AssertionError('Selection changed with execution backend')",
+  "status": "FAILED"
 }

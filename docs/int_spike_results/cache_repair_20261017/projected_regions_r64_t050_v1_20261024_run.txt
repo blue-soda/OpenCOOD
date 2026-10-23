@@ -1,0 +1,14 @@
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+Traceback (most recent call last):
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/data1/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 348, in <module>
+    if __name__ == '__main__': main()
+  File "/data1/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 331, in main
+    try: worker(a)
+  File "/data1/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 266, in worker
+    assert counts['selected'] == counts['masked_dense'], 'Selection changed with execution backend'
+AssertionError: Selection changed with execution backend
