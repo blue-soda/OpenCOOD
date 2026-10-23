@@ -1,0 +1,40 @@
+{
+  "labels": 1738,
+  "results": {
+    "base_cached": {
+      "ap50": 0.8321027698682837,
+      "ap70": 0.7555532616222492,
+      "conv_gflops": 134.31042158812565,
+      "mean_ms": 17.91041863994141,
+      "p95_ms": 28.950260241981592,
+      "partial_frames": 3789
+    },
+    "base_full": {
+      "ap50": 0.8311640141378542,
+      "ap70": 0.7567024378706645,
+      "conv_gflops": 221.1729408,
+      "mean_ms": 28.206758833758244,
+      "p95_ms": 29.84677725471556,
+      "partial_frames": 0
+    },
+    "cached": {
+      "ap50": 0.8242491441744318,
+      "ap70": 0.7500605442934037,
+      "conv_gflops": 134.91683438812564,
+      "mean_ms": 20.38803516655586,
+      "p95_ms": 31.442990142386403,
+      "partial_frames": 3789
+    },
+    "full": {
+      "ap50": 0.8243573400069641,
+      "ap70": 0.7506015401518713,
+      "conv_gflops": 221.7793536,
+      "mean_ms": 30.58129787311585,
+      "p95_ms": 32.24927569972351,
+      "partial_frames": 0
+    }
+  },
+  "scans": 5794,
+  "scope": "Dense pointwise spatial baseline with frozen e11 GRU. New spatial history input is zero; no regional reuse. Own FM states/deep anchors, paired full and cached validation. Standard conv MACsx2, model latency excludes IO/H2D/postprocess.",
+  "status": "COMPLETED"
+}
