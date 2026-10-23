@@ -1,0 +1,84 @@
+{
+  "checkpoint_epoch": 4,
+  "checkpoint_sha256": "08a37006b3c437c5c1499e69afd183bf60992a929fca2c6d6e9e36a6418b0d18",
+  "frames": [
+    {
+      "label": "initial",
+      "index": 0,
+      "source_max": 17.8319091796875,
+      "source_nonzero": 478336,
+      "drive_max": 13.695831298828125,
+      "drive_mean": 0.1715032160282135,
+      "potential_bound_16": 219.13330078125,
+      "events": 1184,
+      "bytes": 4095,
+      "steps": 10,
+      "rate_proxy": 0.9668232798576355
+    },
+    {
+      "label": "initial",
+      "index": 1,
+      "source_max": 18.116050720214844,
+      "source_nonzero": 478080,
+      "drive_max": 13.61988639831543,
+      "drive_mean": 0.17381639778614044,
+      "potential_bound_16": 217.91818237304688,
+      "events": 1164,
+      "bytes": 4092,
+      "steps": 10,
+      "rate_proxy": 0.9652736783027649
+    },
+    {
+      "label": "current",
+      "index": 0,
+      "source_max": 18.066709518432617,
+      "source_nonzero": 478336,
+      "drive_max": 0.019752198830246925,
+      "drive_mean": 0.00017696627764962614,
+      "potential_bound_16": 0.3160351812839508,
+      "events": 0,
+      "bytes": 0,
+      "steps": 0,
+      "rate_proxy": 0.009562740102410316
+    },
+    {
+      "label": "current",
+      "index": 1,
+      "source_max": 18.542428970336914,
+      "source_nonzero": 478080,
+      "drive_max": 0.015839476138353348,
+      "drive_mean": 0.00017795719031710178,
+      "potential_bound_16": 0.25343161821365356,
+      "events": 0,
+      "bytes": 0,
+      "steps": 0,
+      "rate_proxy": 0.009606546722352505
+    }
+  ],
+  "initial_task_gradient": {
+    "sender.project.": 0.04745366424322128,
+    "sender.context.": 0.005380656570196152,
+    "sender.decode.": 0.00924255046993494,
+    "receiver.": 0.04418351571075618
+  },
+  "current_task_gradient": {
+    "sender.project.": 0.0,
+    "sender.context.": 0.0,
+    "sender.decode.": 0.0,
+    "receiver.": 0.0
+  },
+  "weight_changes": {
+    "sender.project.weight": {
+      "max_abs": 0.032463692128658295,
+      "delta_max": 0.33755043148994446
+    },
+    "sender.context.weight": {
+      "max_abs": 0.00700219115242362,
+      "delta_max": 0.00700219115242362
+    },
+    "sender.decode.weight": {
+      "max_abs": 0.012322128750383854,
+      "delta_max": 0.3447716236114502
+    }
+  }
+}

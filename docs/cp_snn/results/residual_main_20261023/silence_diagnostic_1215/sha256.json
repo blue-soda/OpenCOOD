@@ -1,0 +1,13 @@
+{
+  "diagnostic.json": "4b6209cacea9c90dace6353961abb3662314337e366210d63342c8a771f5b5c1",
+  "diagnose.py": "5eaf1dc8a9600722919bfc0e36f867502ad87aa4f0042a6eb339fc484aac4b46",
+  "residual_snn/history.json": "9d8de45ac61999d1d7926b2da563dfb6923fe46dcb759f6201a4e0774e6e1dd9",
+  "residual_snn/status.json": "e64c5b4d1a9f552054b29016aa84b84894b7b9d6c8e191a814b234222f2d8dff",
+  "residual_snn/best_metrics.json": "2f10d44623180cf3ef3a517359b17777bdcebdce7449e4328db3960d68a60680",
+  "old_snn/history.json": "00d44b32b982d14cac56a58ff595f934ef82b51cc86128dfbc9c77cd23bcbc49",
+  "old_snn/status.json": "1f2974918de9fc39ca28798d2f38f000c5fd0ee6090b0e08034cec22dac2391f",
+  "old_snn/best_metrics.json": "8e6809165c8880abd6ea7ab1e45ab1701b9c8e6918f5d96f06e51acf028b0b4d",
+  "residual_ann/history.json": "edcb97ae2600a53635be7e8dd93a540059839edd218156e86b88dfae78786c54",
+  "residual_ann/status.json": "54645e0621073b8b5965f8084b18ae7b00f20e56b1277d38b19665db726de990",
+  "residual_ann/best_metrics.json": "b517054363d158b31a1ff028408bd771505a9eeba9201a9390bc7baecdec8e10"
+}
