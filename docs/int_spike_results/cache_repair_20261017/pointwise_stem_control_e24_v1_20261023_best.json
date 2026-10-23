@@ -1,7 +1,7 @@
 {
-  "ap70": 0.7511534209297442,
-  "cached_ap70": 0.7502371963680611,
-  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_stem_control_e24_v1_20261023/epoch_005/stage.pth",
-  "epoch": 5,
-  "sha256": "db86bfcc294fb7645ce6981c7367ff3972d0853c86fa832927448c431409ac8d"
+  "ap70": 0.7520433283403342,
+  "cached_ap70": 0.7508480148898011,
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_stem_control_e24_v1_20261023/epoch_006/stage.pth",
+  "epoch": 6,
+  "sha256": "52672a70be1ad9f10e8fd2a7c21edebdaa47703b23f9d1037073aea7fb595731"
 }
