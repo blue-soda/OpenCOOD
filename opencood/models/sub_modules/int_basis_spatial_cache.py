@@ -86,7 +86,7 @@ class SpatialBasisCache:
         info = dict(spatial_refresh=reason is not None, spatial_refresh_reason=reason,
             spatial_write_fraction=count/float(cells),
             spatial_mixer_executed_fraction=count/float(cells) if selected_execution else 1.,
-            spatial_basis_executed_fraction=float(count > 0) if selected_execution else 1.,
+            spatial_basis_executed_fraction=0. if getattr(self.stage, 'spatial_basis_fused', False) else (float(count > 0) if selected_execution else 1.),
             spatial_selected_cells=count, spatial_cells=cells, spatial_extra_linear_macs=extra_macs,
             spatial_state_bytes=size, spatial_uncovered_fraction=uncovered,
             spatial_priority_fraction=priority_fraction, spatial_guard_added_fraction=added_fraction,
