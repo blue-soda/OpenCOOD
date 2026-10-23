@@ -1,0 +1,66 @@
+{
+  "accounting": "Actual pointwise output fraction (including dilation and full refresh), dense-basis area, executed conv+functional-linear MACsx2, same-GPU rotating model mean/P95, retained tensor bytes and peak CUDA allocated memory. Nonconv FLOPs not counted.",
+  "basis": {
+    "ap70": 0.7567024302451391,
+    "cached_ap70": 0.7555532696967787,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/basis_spatial_r9_dense_v1_20261023/epoch_000/stage.pth",
+    "epoch": 0,
+    "sha256": "c2e173eeed6dd4019319d1f421f81b2582fcf9687184a98a3091c36b16f3c928"
+  },
+  "comparison": "Compare selected to its own-approximate-recurrence masked_dense control, rank9 dense cache, and mature lowrank cache. Spatial reuse only is changed; old deep cache remains period3 for every mode. No training.",
+  "confidence_guard": 0.1,
+  "confidence_protection": "If enabled, union with previous OWN prediction max-anchor sigmoid >= guard threshold, aligned with the spatial state and expanded radius4. Uses pre-NMS confidence, no teacher/GT/current prediction; logs additional area. This may help via extra area alone, not yet a matched-area attribution.",
+  "data": {
+    "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+    "fm_only_epochs": 1,
+    "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+    "lr": 0.0001,
+    "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+    "min_delta": 0.001,
+    "min_epochs": 20,
+    "mode": "gru",
+    "patience": 10,
+    "seed": 303,
+    "state_policy": "whole-segment/tbptt/v1",
+    "tbptt_steps": 4
+  },
+  "deep_period": 3,
+  "execution_fusion": "Optional inference-only composition of full-rank basis+mix into native3x3. Refresh uses native conv; partial gathers selected neighborhoods and computes selected output rows. Replaces basis/mix weights; unchanged four activation caches, reference/guard and mask. No extra dense spatial basis. Count gathered standard convolution MACs, not basis-factor arithmetic.",
+  "fast_warp_contract": "Static metric cell centers cached; same SE2 matrix/grid arithmetic and nearest sampling. Out-of-coverage coordinates set outside before sampling instead of a channelwise output multiply. FM alignment unchanged. Per-mode persistent static geometry bytes separate from recurrent state. Engineering all modes; full validation base/prepared/fast_warp only if enabled.",
+  "fast_warp_execution": true,
+  "fused_execution": true,
+  "max_full_age_s": 0.25,
+  "memory": {
+    "ap70": 0.7567024378706645,
+    "cached_ap70": 0.7555532616222492,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_gru_r32_train_v1_20261022/epoch_011/memory.pth",
+    "epoch": 11,
+    "sha256": "1a267575ef735f203526fa3b8196334d32d9ff8a9080449c3b6206247913e5ef"
+  },
+  "prepared_contract": "Optional shared per-frame mask/nonzero/neighborhood indices for four layers; prepacked immutable weights stored as nonpersistent buffers; linear chunks16384 vs original4096. Identical masks/caches/weights/MACs. Extra packed weight bytes reported separately from recurrent state. No persistent index plan or activation patches.",
+  "prepared_execution": true,
+  "profile_frames": 0,
+  "readout": {
+    "ap70": 0.753534819214323,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/compact_readout_r96_v2_20261021/epoch_005/readout.pth",
+    "epoch": 5,
+    "sha256": "8bbf94e975997b2803c4a4c443fee2258589276e427dbc0a2550de6b562d7a0d"
+  },
+  "recurrence": "Four own post-activation maps plus matching retained descriptor warp together by metric SE2 nearest. Write only selected cells; unselected aligned complete activations persist. Save mixed state at current pose; full refresh period3/age/reset. Independent FM and deep anchor states for each mode; no teacher injections.",
+  "repair": {
+    "ap70": 0.7553967658970537,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/split_repair_r96_w32_v1_20261021/epoch_008/repair.pth",
+    "epoch": 8,
+    "sha256": "9f0997e23752683aa3a8fa6f5b9c9e65ddd91c7a1f2dca89e1beb7500a755fbd"
+  },
+  "run_kind": "full_validation",
+  "selector": "Current mature stem16-channel mean descriptor at native grid; 4x4-tile RMS relative change to aligned retained reference; radius4 dilation; all uncovered cells mandatory. No labels or current costly features used.",
+  "source": {
+    "bev_ap70": 0.758736104616861,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+    "epoch": 17,
+    "sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8"
+  },
+  "spatial_period": 3,
+  "threshold": 0.5
+}
