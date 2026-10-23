@@ -61,6 +61,9 @@ def worker(a):
     warm_start=bool(a.warm_start)
     if warm_start:
         assert not a.resume_run and a.warm_start_sha
+        assert a.warm_start_lr>0 and a.stem_lr>0
+        if a.adapt_stem and a.expand_context:
+            raise ValueError('Compare stem adaptation and context expansion separately')
         assert digest(a.warm_start)==a.warm_start_sha
         warm=torch.load(a.warm_start,map_location='cpu')
         parent_contract=dict(warm['contract']);parent_contract.pop('resume',None)
@@ -71,15 +74,20 @@ def worker(a):
         if a.expand_context:
             stage=ExpandedContextPointwiseStage.from_stage(stage)
             student.backbone.resnet.layer0=stage
+        if a.adapt_stem:stage.enable_stem_adaptation()
         parameters=[p for p in stage.parameters() if p.requires_grad]
         contract['warm_start']=dict(checkpoint=a.warm_start,sha256=a.warm_start_sha,parent_epoch=warm['epoch'],
-            expanded_context=a.expand_context,optimizer='New AdamW for both paired arms, not a continuation')
+            expanded_context=a.expand_context,adapt_stem=a.adapt_stem,
+            optimizer='New AdamW for both paired arms, not a continuation')
         contract['trainable_parameters']=sum(p.numel() for p in parameters)
         if a.expand_context:
             contract['architecture']+=' Extra two directional-initialized depthwise3 responses per stem channel; U769to512to512to128. Zero new mixing columns preserve initial output.'
-        contract['schedule']='Paired warm-start diagnostic: AdamW1e-4 wd1e-4 clip5; same plateau scheduler; max6epochs/8hours. Source optimizer deliberately not restored in either arm.'
-    elif a.expand_context or a.warm_start_sha:
-        raise ValueError('Context expansion requires an explicit fixed warm-start checkpoint and SHA')
+        if a.adapt_stem:
+            contract['architecture']=contract['architecture'].replace('Frozen mature first block','Adaptable mature first block with fixed BN statistics')
+            contract['architecture']+=' Mature first-block weights and BN affine adapt at a lower learning rate; BN running statistics remain fixed. No extra parameters or inference operators.'
+        contract['schedule']='Paired warm-start diagnostic: AdamW stage_lr=%g stem_lr=%s wd1e-4 clip5; same plateau scheduler; max6epochs/8hours. Source optimizer deliberately not restored in either arm.'%(a.warm_start_lr,str(a.stem_lr) if a.adapt_stem else 'frozen')
+    elif a.expand_context or a.warm_start_sha or a.adapt_stem:
+        raise ValueError('Architecture diagnostics require an explicit fixed warm-start checkpoint and SHA')
     resume=load_completed_spatial_resume(a.resume_run,contract) if a.resume_run else None
     if resume:
         stage.load_state_dict(resume['saved']['stage'],strict=True)
@@ -111,7 +119,13 @@ def worker(a):
         return report,path
     def save_best(report,path,epoch):
         write_json(out/'best.json',dict(epoch=epoch,ap70=report['results']['full']['ap70'],cached_ap70=report['results']['cached']['ap70'],checkpoint=str(path),sha256=digest(path)))
-    optimizer=torch.optim.AdamW(parameters,lr=1e-4 if warm_start else 3e-4,weight_decay=1e-4)
+    if warm_start and a.adapt_stem:
+        stem_parameters=list(stage.stem.parameters());stem_ids={id(p) for p in stem_parameters}
+        groups=[dict(params=[p for p in parameters if id(p) not in stem_ids],lr=a.warm_start_lr),
+                dict(params=stem_parameters,lr=a.stem_lr)]
+        optimizer=torch.optim.AdamW(groups,weight_decay=1e-4)
+    else:
+        optimizer=torch.optim.AdamW(parameters,lr=a.warm_start_lr if warm_start else 3e-4,weight_decay=1e-4)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=1,threshold=.001,threshold_mode='abs',min_lr=1e-6)
     if resume:
         optimizer.load_state_dict(resume['saved']['optimizer']);scheduler.load_state_dict(resume['saved']['scheduler'])
@@ -147,6 +161,7 @@ def worker(a):
         if ap>significant+.001:significant=ap;stale=0
         else:stale+=1
         history.append(dict(epoch=epoch,loss=float(np.mean(losses)),lr=optimizer.param_groups[0]['lr'],stale=stale,validation=report))
+        if warm_start and a.adapt_stem:history[-1]['stem_lr']=optimizer.param_groups[1]['lr']
         write_json(out/'history.json',history)
         torch.save(dict(stage=stage.state_dict(),optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),history=history,contract=contract,
             significant=significant,stale=stale),str(out/'latest.pth'))
@@ -163,6 +178,9 @@ def main():
     p.add_argument('--warm-start',help='Immutable stage checkpoint for a separate paired six-epoch capacity diagnostic')
     p.add_argument('--warm-start-sha')
     p.add_argument('--expand-context',action='store_true')
+    p.add_argument('--adapt-stem',action='store_true',help='Warm-start only: unfreeze mature stem weights but keep BN statistics fixed')
+    p.add_argument('--warm-start-lr',type=float,default=1e-4)
+    p.add_argument('--stem-lr',type=float,default=1e-5)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.worker:
         def expired(s,f):raise TimeoutError('Pointwise spatial recovery exceeded8 hours')

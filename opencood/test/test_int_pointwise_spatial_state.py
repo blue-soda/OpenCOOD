@@ -77,6 +77,30 @@ class PointwiseSpatialStateTests(unittest.TestCase):
             optimizer.step()
         self.assertGreater(float(model.extra_context.weight.grad.abs().sum()),0.)
 
+    def test_stem_adaptation_keeps_bn_fixed_and_checkpoint_complete(self):
+        model=self.make()
+        with torch.no_grad():model.update[-1].weight.normal_(0,.02)
+        temporal=torch.randn(1,64,8,12)
+        with torch.no_grad():initial=model(temporal).clone()
+        original_weight=model.stem.conv1.weight.detach().clone()
+        statistics={key:value.clone() for key,value in model.stem.state_dict().items()
+                    if 'running_' in key or 'num_batches_tracked' in key}
+        count=sum(p.numel() for p in model.parameters())
+        model.enable_stem_adaptation();model.train()
+        self.assertFalse(model.stem.training)
+        with torch.no_grad():self.assertTrue(torch.equal(model(temporal),initial))
+        optimizer=torch.optim.SGD([p for p in model.parameters() if p.requires_grad],lr=.001)
+        for step in range(2):
+            optimizer.zero_grad();model(temporal).square().mean().backward()
+            self.assertGreater(float(model.stem.conv1.weight.grad.abs().sum()),0.)
+            optimizer.step();model.train()
+        self.assertEqual(sum(p.numel() for p in model.parameters()),count)
+        self.assertFalse(torch.equal(original_weight,model.stem.conv1.weight))
+        for key,value in statistics.items():self.assertTrue(torch.equal(model.stem.state_dict()[key],value))
+        restored=self.make();restored.load_state_dict(model.state_dict(),strict=True)
+        model.eval()
+        with torch.no_grad():self.assertTrue(torch.equal(model(temporal),restored(temporal)))
+
     def test_linear_layout_matches_nonzero_history_and_counts_executed_macs(self):
         model=self.make()
         with torch.no_grad():

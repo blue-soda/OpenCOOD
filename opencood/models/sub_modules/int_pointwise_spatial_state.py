@@ -44,6 +44,11 @@ class ContextualPointwiseStage(nn.Module):
     def train(self,mode=True):
         super().train(mode);self.stem.eval();return self
 
+    def enable_stem_adaptation(self):
+        """Opt-in weight adaptation; train() still fixes mature BN statistics."""
+        for parameter in self.stem.parameters():parameter.requires_grad_(True)
+        self.stem.eval()
+
     def observe(self,temporal):
         current=self.stem(temporal)
         return current,torch.cat((current,self.local(current),self.wide(current)),1)
