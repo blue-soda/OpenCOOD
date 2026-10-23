@@ -72,6 +72,7 @@ def worker(a):
     control = SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, period=1, confidence_threshold=a.confidence_guard)
     write_json(out/'contract.json', dict(source=source['checkpoint'], data=source['contract'], memory=mb, readout=rb,
         repair=pb, basis=sb, threshold=a.threshold, confidence_guard=a.confidence_guard, fused_execution=a.fused,
+        profile_frames=a.profile_frames, run_kind='bounded_timing_profile' if a.profile_frames else 'full_validation',
         execution_fusion='Optional inference-only composition of full-rank basis+mix into native3x3. Refresh uses native conv; partial gathers selected neighborhoods and computes selected output rows. Replaces basis/mix weights; unchanged four activation caches, reference/guard and mask. No extra dense spatial basis. Count gathered standard convolution MACs, not basis-factor arithmetic.',
         spatial_period=3, max_full_age_s=.25, deep_period=3,
         selector='Current mature stem16-channel mean descriptor at native grid; 4x4-tile RMS relative change to aligned retained reference; radius4 dilation; all uncovered cells mandatory. No labels or current costly features used.',
@@ -134,6 +135,10 @@ def worker(a):
         period1_vs_dense_max_error=control_error, mean_write_fraction=float(np.mean(writes)),
         constant_hook_macs={str(k):v for k,v in costs.items()}, dense_mix_macs=mixing, dense_basis_macs=basis_cost,
         costs_verified_against_actual_conv_hooks=True, own_immutable_deep_anchors=True))
+    if a.profile_frames:
+        from opencood.tools.profile_int_basis_regions import profile_stream
+        profile_stream(a, cfg, val, modes['fused'], modes['base'], out)
+        return
     states = {k:None for k in modes}; control_state = None
     stats = {k:{t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.5, .7)} for k in modes}
     metrics = {k:dict(time=[], write=[], mix=[], basis=[], state=[], peak=[], full_age=[], uncovered=[], priority=[], guard_added=[],
@@ -201,8 +206,11 @@ def main():
     p.add_argument('--threshold', type=float, choices=(.25, .5, .75), required=True)
     p.add_argument('--confidence-guard', type=float, choices=(.1, .3), default=None)
     p.add_argument('--fused', action='store_true', help='Include equivalent composed-kernel selected execution')
+    p.add_argument('--profile-frames', type=int, default=0, help='Bounded timing diagnosis instead of AP validation (64..512 frames)')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.profile_frames and (not a.fused or not 64 <= a.profile_frames <= 512):
+        p.error('Profiling requires --fused and 64..512 frames')
     if a.worker:
         def expired(s, f): raise TimeoutError('Basis region evaluation exceeded4 hours')
         signal.signal(signal.SIGALRM, expired); signal.alarm(14400)
