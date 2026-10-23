@@ -1,0 +1,4 @@
+{
+  "error": "TypeError(\"cannot assign 'torch.nn.modules.conv.EventScopes.wrap.<locals>.measured' as child module 'current' (torch.nn.Module or None expected)\")",
+  "status": "FAILED"
+}
