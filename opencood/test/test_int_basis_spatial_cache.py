@@ -80,5 +80,40 @@ class BasisCacheTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             SpatialBasisCache(self.stage, self.bounds, confidence_threshold=1.)
 
+    def test_half_storage_keeps_compute_precision_and_static_values(self):
+        full = SpatialBasisCache(self.stage,self.bounds,threshold=1e9)
+        half = SpatialBasisCache(self.stage,self.bounds,threshold=1e9,cache_dtype=torch.float16)
+        with torch.no_grad():
+            a,sa,ia = full.step(self.x,None,self.meta)
+            b,sb,ib = half.step(self.x,None,self.meta)
+            self.assertTrue(torch.equal(a,b))
+            expected_saving = sum(v.numel()*2 for v in sa['maps'])
+            self.assertEqual(ia['spatial_state_bytes']-ib['spatial_state_bytes'],expected_saving)
+            self.assertEqual(sb['reference'].dtype,torch.float32)
+            original = [v.clone() for v in sb['maps']]
+            c,sc,ic = half.step(self.x,sb,dict(self.meta,timestamp_us=100000))
+            self.assertEqual(c.dtype,torch.float32)
+            self.assertEqual(ic['spatial_selected_cells'],0)
+            self.assertTrue(torch.equal(c,original[-1].float()))
+            for old,saved,retained in zip(original,sb['maps'],sc['maps']):
+                self.assertEqual(retained.dtype,torch.float16)
+                self.assertTrue(torch.equal(old,saved))
+                self.assertTrue(torch.equal(old,retained))
+
+    def test_half_storage_selected_matches_dense_mask_reference(self):
+        selected = SpatialBasisCache(self.stage,self.bounds,.5,cache_dtype=torch.float16)
+        dense = SpatialBasisCache(self.stage,self.bounds,.5,execution='masked_dense',cache_dtype=torch.float16)
+        ls = rs = None
+        with torch.no_grad():
+            for frame in range(6):
+                x = self.x.clone(); x[:,:,10:14,14:18] += frame*.7
+                pose = np.eye(4); pose[0,3] = frame*.5
+                meta = dict(self.meta,pose=pose,timestamp_us=frame*100000)
+                a,ls,ia = selected.step(x,ls,meta); b,rs,ib = dense.step(x,rs,meta)
+                self.assertEqual(a.dtype,torch.float32)
+                self.assertTrue(torch.allclose(a,b,atol=2e-3,rtol=2e-3))
+                self.assertEqual(ia['spatial_selected_cells'],ib['spatial_selected_cells'])
+                self.assertTrue(all(v.dtype == torch.float16 and torch.isfinite(v).all() for v in ls['maps']))
+
 
 if __name__ == '__main__': unittest.main()
