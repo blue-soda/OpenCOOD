@@ -1,7 +1,7 @@
 {
-  "epoch": 2,
-  "loss": 0.18175421866502448,
+  "epoch": 4,
+  "loss": 0.18044820231025946,
   "phase": "train",
-  "scans": 7200,
+  "scans": 7400,
   "status": "RUNNING"
 }
