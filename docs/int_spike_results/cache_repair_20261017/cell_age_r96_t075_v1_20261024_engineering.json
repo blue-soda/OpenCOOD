@@ -1,0 +1,26 @@
+{
+  "cache_fp16_vs_fp32_prediction_max_error": null,
+  "cell_age_bound_and_bytes_verified": true,
+  "compact_vs_original_state_max_error": null,
+  "constant_hook_macs": {
+    "('base', False)": 110586470400,
+    "('base', True)": 44172979200,
+    "('dense', False)": 108109209600,
+    "('dense', True)": 41695718400
+  },
+  "costs_verified_against_actual_conv_hooks": true,
+  "dense_basis_macs": 1238630400,
+  "dense_mix_macs": 11147673600,
+  "factorized_stage_parameters": 722688,
+  "fast_warp_exact_replay_max_error": null,
+  "frames": 32,
+  "fused_stage_parameters": null,
+  "fused_vs_factorized_max_error": null,
+  "long_history_vs_masked_dense_max_error": null,
+  "mean_write_fraction": 0.4795895337301587,
+  "own_immutable_deep_anchors": true,
+  "period1_vs_dense_max_error": 0.0,
+  "prepared_packed_weight_bytes": 0,
+  "selected_vs_masked_dense_max_error": 1.71661376953125e-05,
+  "status": "PASSED"
+}
