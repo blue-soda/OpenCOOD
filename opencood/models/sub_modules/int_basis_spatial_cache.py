@@ -15,7 +15,7 @@ from opencood.models.sub_modules.int_anchor_residual import refresh_reason, pred
 
 class SpatialBasisCache:
     def __init__(self, stage, bounds, threshold=.5, period=3, execution='selected', dilation=4,
-                 confidence_threshold=None, warp=None, cache_dtype=None, max_full_age_s=.25):
+                 confidence_threshold=None, warp=None, cache_dtype=None, max_full_age_s=.25, cell_age_limit_s=None):
         if not isinstance(stage, SpatialBasisStage) or stage.training:
             raise ValueError('Frozen spatial-basis stage required')
         if not math.isfinite(threshold) or threshold < 0 or period not in (1, 2, 3, 4, 5):
@@ -34,6 +34,11 @@ class SpatialBasisCache:
         if cache_dtype not in (None, torch.float16):
             raise ValueError('Only original or float16 activation cache storage supported')
         self.cache_dtype = cache_dtype
+        if cell_age_limit_s not in (None,.25):
+            raise ValueError('First cell-age experiment requires a .25 second bound')
+        if cell_age_limit_s is not None and period != 3:
+            raise ValueError('Cell-age policy replaces the period3 control only')
+        self.cell_age_limit_s = cell_age_limit_s
 
     def step(self, temporal, state, meta, reset=False):
         if torch.is_grad_enabled() or self.stage.training:
@@ -45,21 +50,28 @@ class SpatialBasisCache:
         if reason is None:
             if stamp <= state['stamp']:
                 raise ValueError('Noncausal spatial-cache stream')
-            if stamp-state['full_stamp'] >= self.max_full_age_us:
+            if self.cell_age_limit_s is None and stamp-state['full_stamp'] >= self.max_full_age_us:
                 reason = 'age'
-            elif state['frames']+1 >= self.period:
+            elif self.cell_age_limit_s is None and state['frames']+1 >= self.period:
                 reason = 'period'
         uncovered = 0.; extra_macs = 0; priority_fraction = added_fraction = 0.
+        age_added = 0.
         if reason:
             output, maps = self.stage.dense_from_stem(current)
             reference = descriptor
             mask = torch.ones_like(current[:, :1], dtype=torch.bool)
             frames, full_stamp = 0, stamp
+            if self.cell_age_limit_s is not None: ages = torch.zeros_like(current[:,:1])
         else:
             # A single warp shares geometry/coverage across all four maps and
             # their low-channel reference. Default mode matches mature FM:
             # nearest-neighbor metric SE(2), not optical-flow prediction.
             values = state['maps']+[state['reference']]
+            if self.cell_age_limit_s is not None:
+                ages = state['ages']
+                if ages.shape != current[:,:1].shape or not torch.isfinite(ages).all() or bool((ages<0).any()):
+                    raise ValueError('Valid per-cell age map required')
+                values = values+[ages]
             if self.confidence_threshold is not None:
                 confidence = state['confidence']
                 if confidence.shape != current[:, :1].shape:
@@ -83,16 +95,29 @@ class SpatialBasisCache:
                 priority_fraction = float(priority.float().mean())
                 added_fraction = float((priority & ~mask).float().mean())
                 mask = mask | priority
+            if self.cell_age_limit_s is not None:
+                offset = state_channels+descriptor.shape[1]
+                ages = aligned[:,offset:offset+1]+(stamp-state['stamp'])/1e6
+                expired = ages >= self.cell_age_limit_s
+                age_added = float((expired & ~mask).float().mean())
+                # Age alone does not indicate changed input; no extra halo
+                # dilation beyond the unchanged content/priority masks.
+                mask = mask | expired
             assert bool((mask | valid).all())
             output, maps, extra_macs = self.stage.selected_from_stem(current, old, mask, self.execution)
             reference = torch.where(mask, descriptor, reference)
             uncovered = float((~valid).float().mean())
             frames, full_stamp = state['frames']+1, state['full_stamp']
+            if self.cell_age_limit_s is not None: ages = torch.where(mask,torch.zeros_like(ages),ages)
         count = int(mask.sum()); cells = mask.numel()
         saved_maps = [v.detach().to(dtype=self.cache_dtype or v.dtype) for v in maps]
         new_state = dict(maps=saved_maps, reference=reference.detach(),
             pose=meta['pose'], stamp=stamp, full_stamp=full_stamp, scene=meta['segment'], frames=frames)
         size = sum(v.numel()*v.element_size() for v in new_state['maps']+[new_state['reference']])
+        if self.cell_age_limit_s is not None:
+            assert bool((ages < self.cell_age_limit_s).all())
+            new_state['ages'] = ages.detach()
+            size += ages.numel()*ages.element_size()
         selected_execution = not reason and self.execution == 'selected'
         info = dict(spatial_refresh=reason is not None, spatial_refresh_reason=reason,
             spatial_write_fraction=count/float(cells),
@@ -102,6 +127,8 @@ class SpatialBasisCache:
             spatial_state_bytes=size, spatial_uncovered_fraction=uncovered,
             spatial_priority_fraction=priority_fraction, spatial_guard_added_fraction=added_fraction,
             spatial_full_age=(stamp-full_stamp)/1e6)
+        if self.cell_age_limit_s is not None:
+            info.update(spatial_max_cell_age_s=float(ages.max()),spatial_age_added_fraction=age_added)
         if getattr(self.stage, 'spatial_input_projected', False):
             info['spatial_basis_executed_fraction'] = 0.
             info['spatial_projection_executed_fraction'] = 1.
@@ -114,7 +141,7 @@ class SpatialBasisCacheDetector:
     """Same mature downstream/deep cache, replacing only first-stage execution."""
     def __init__(self, model, config, readout, repair, threshold=.5,
                  period=3, execution='selected', deep_period=3, confidence_threshold=None, warp=None, cache_dtype=None,
-                 max_full_age_s=.25):
+                 max_full_age_s=.25, cell_age_limit_s=None):
         if model.training or readout.training or repair.training or deep_period not in (1, 3):
             raise ValueError('Frozen detector and deep period1/3 required')
         self.model, self.readout, self.repair = model, readout, repair
@@ -122,7 +149,7 @@ class SpatialBasisCacheDetector:
         self.warp = warp if warp is not None else warp_bev
         self.spatial = SpatialBasisCache(model.backbone.resnet.layer0, self.bounds, threshold, period, execution,
                                         confidence_threshold=confidence_threshold, warp=warp, cache_dtype=cache_dtype,
-                                        max_full_age_s=max_full_age_s)
+                                        max_full_age_s=max_full_age_s,cell_age_limit_s=cell_age_limit_s)
 
     def step(self, data, state, meta):
         m = self.model; p = data['processed_lidar']
