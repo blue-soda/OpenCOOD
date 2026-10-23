@@ -61,12 +61,14 @@ def worker(a):
         for p in m.parameters(): p.requires_grad_(False)
     modes = dict(base=SplitReadoutDetector(base, cfg, split, 3, repair),
         dense=SplitReadoutDetector(student, cfg, split, 3, repair),
-        selected=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold),
-        masked_dense=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, execution='masked_dense'))
-    control = SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, period=1)
+        selected=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, confidence_threshold=a.confidence_guard),
+        masked_dense=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, execution='masked_dense', confidence_threshold=a.confidence_guard))
+    control = SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, period=1, confidence_threshold=a.confidence_guard)
     write_json(out/'contract.json', dict(source=source['checkpoint'], data=source['contract'], memory=mb, readout=rb,
-        repair=pb, basis=sb, threshold=a.threshold, spatial_period=3, max_full_age_s=.25, deep_period=3,
+        repair=pb, basis=sb, threshold=a.threshold, confidence_guard=a.confidence_guard,
+        spatial_period=3, max_full_age_s=.25, deep_period=3,
         selector='Current mature stem16-channel mean descriptor at native grid; 4x4-tile RMS relative change to aligned retained reference; radius4 dilation; all uncovered cells mandatory. No labels or current costly features used.',
+        confidence_protection='If enabled, union with previous OWN prediction max-anchor sigmoid >= guard threshold, aligned with the spatial state and expanded radius4. Uses pre-NMS confidence, no teacher/GT/current prediction; logs additional area. This may help via extra area alone, not yet a matched-area attribution.',
         recurrence='Four own post-activation maps plus matching retained descriptor warp together by metric SE2 nearest. Write only selected cells; unselected aligned complete activations persist. Save mixed state at current pose; full refresh period3/age/reset. Independent FM and deep anchor states for each mode; no teacher injections.',
         accounting='Actual pointwise output fraction (including dilation and full refresh), dense-basis area, executed conv+functional-linear MACsx2, same-GPU rotating model mean/P95, retained tensor bytes and peak CUDA allocated memory. Nonconv FLOPs not counted.',
         comparison='Compare selected to its own-approximate-recurrence masked_dense control, rank9 dense cache, and mature lowrank cache. Spatial reuse only is changed; old deep cache remains period3 for every mode. No training.'))
@@ -118,7 +120,7 @@ def worker(a):
         costs_verified_against_actual_conv_hooks=True, own_immutable_deep_anchors=True))
     states = {k:None for k in modes}; control_state = None
     stats = {k:{t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.5, .7)} for k in modes}
-    metrics = {k:dict(time=[], write=[], mix=[], basis=[], state=[], peak=[], full_age=[], uncovered=[],
+    metrics = {k:dict(time=[], write=[], mix=[], basis=[], state=[], peak=[], full_age=[], uncovered=[], priority=[], guard_added=[],
                      macs=0, refreshes=0, partials=0) for k in modes}
     dataset, stream = loader(val, cfg, 4, 303)
     with torch.no_grad():
@@ -148,6 +150,8 @@ def worker(a):
                 item['refreshes'] += int(info.get('spatial_refresh', True))
                 item['full_age'].append(info.get('spatial_full_age', 0.))
                 item['uncovered'].append(info.get('spatial_uncovered_fraction', 0.))
+                item['priority'].append(info.get('spatial_priority_fraction', 0.))
+                item['guard_added'].append(info.get('spatial_guard_added_fraction', 0.))
                 if name in ('selected', 'masked_dense'): counts[name] = info['spatial_selected_cells']
                 if sample['meta']['supervised']:
                     data = dict(ego=ego); boxes, scores = dataset.post.post_process(data, dict(ego=pred)); gt = dataset.post.generate_gt_bbx(data)
@@ -163,6 +167,7 @@ def worker(a):
             mean_write_fraction=float(np.mean(item['write'])), mean_executed_mix_area=float(np.mean(item['mix'])),
             mean_executed_basis_area=float(np.mean(item['basis'])), mean_state_bytes=float(np.mean(item['state'])),
             max_incremental_cuda_peak_bytes=max(item['peak']), mean_uncovered_fraction=float(np.mean(item['uncovered'])),
+            mean_priority_fraction=float(np.mean(item['priority'])), mean_guard_added_fraction=float(np.mean(item['guard_added'])),
             max_spatial_full_age_s=max(item['full_age']), spatial_refresh_frames=item['refreshes'], deep_partial_frames=item['partials'])
     assert abs(results['base']['ap70']-.7555532616222492) < 1e-8
     assert abs(results['dense']['ap70']-sb['cached_ap70']) < 1e-8
@@ -175,6 +180,7 @@ def main():
     p = argparse.ArgumentParser()
     for key in ('root', 'readout-run', 'repair-run', 'memory-run', 'basis-run', 'output'): p.add_argument('--'+key, required=True)
     p.add_argument('--threshold', type=float, choices=(.25, .5), required=True)
+    p.add_argument('--confidence-guard', type=float, choices=(.1, .3), default=None)
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
     if a.worker:

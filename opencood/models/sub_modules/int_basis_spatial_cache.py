@@ -14,15 +14,19 @@ from opencood.models.sub_modules.int_anchor_residual import refresh_reason, pred
 
 
 class SpatialBasisCache:
-    def __init__(self, stage, bounds, threshold=.5, period=3, execution='selected', dilation=4):
+    def __init__(self, stage, bounds, threshold=.5, period=3, execution='selected', dilation=4,
+                 confidence_threshold=None):
         if not isinstance(stage, SpatialBasisStage) or stage.training:
             raise ValueError('Frozen spatial-basis stage required')
         if not math.isfinite(threshold) or threshold < 0 or period not in (1, 2, 3):
             raise ValueError('Finite threshold and period1/2/3 required')
         if execution not in ('selected', 'masked_dense') or dilation not in (0, 4):
             raise ValueError('Unsupported execution or change-mask dilation')
+        if confidence_threshold is not None and not 0 < confidence_threshold < 1:
+            raise ValueError('Confidence threshold must be inside (0,1)')
         self.stage, self.bounds, self.threshold = stage, bounds, threshold
         self.period, self.execution, self.dilation = period, execution, dilation
+        self.confidence_threshold = confidence_threshold
 
     def step(self, temporal, state, meta, reset=False):
         if torch.is_grad_enabled() or self.stage.training:
@@ -38,7 +42,7 @@ class SpatialBasisCache:
                 reason = 'age'
             elif state['frames']+1 >= self.period:
                 reason = 'period'
-        uncovered = 0.; extra_macs = 0
+        uncovered = 0.; extra_macs = 0; priority_fraction = added_fraction = 0.
         if reason:
             output, maps = self.stage.dense_from_stem(current)
             reference = descriptor
@@ -48,14 +52,27 @@ class SpatialBasisCache:
             # A single warp shares geometry/coverage across all four maps and
             # their low-channel reference. Default mode matches mature FM:
             # nearest-neighbor metric SE(2), not optical-flow prediction.
-            packed = torch.cat(state['maps']+[state['reference']], 1)
+            values = state['maps']+[state['reference']]
+            if self.confidence_threshold is not None:
+                confidence = state['confidence']
+                if confidence.shape != current[:, :1].shape:
+                    raise ValueError('Expected previous own detection confidence at the state grid')
+                values = values+[confidence]
+            packed = torch.cat(values, 1)
             aligned, valid = warp_bev(packed, state['pose'], meta['pose'], self.bounds)
             channels = current.shape[1]
             old = list(aligned[:, :4*channels].split(channels, 1))
-            reference = aligned[:, 4*channels:]
+            reference = aligned[:, 4*channels:4*channels+descriptor.shape[1]]
             mask = local_change_mask(descriptor, reference, valid, self.threshold)
             if self.dilation:
                 mask = F.max_pool2d(mask.float(), 2*self.dilation+1, 1, self.dilation) > 0
+            if self.confidence_threshold is not None:
+                priority = aligned[:, -1:] >= self.confidence_threshold
+                if self.dilation:
+                    priority = F.max_pool2d(priority.float(), 2*self.dilation+1, 1, self.dilation) > 0
+                priority_fraction = float(priority.float().mean())
+                added_fraction = float((priority & ~mask).float().mean())
+                mask = mask | priority
             assert bool((mask | valid).all())
             output, maps, extra_macs = self.stage.selected_from_stem(current, old, mask, self.execution)
             reference = torch.where(mask, descriptor, reference)
@@ -72,6 +89,7 @@ class SpatialBasisCache:
             spatial_basis_executed_fraction=float(count > 0) if selected_execution else 1.,
             spatial_selected_cells=count, spatial_cells=cells, spatial_extra_linear_macs=extra_macs,
             spatial_state_bytes=size, spatial_uncovered_fraction=uncovered,
+            spatial_priority_fraction=priority_fraction, spatial_guard_added_fraction=added_fraction,
             spatial_full_age=(stamp-full_stamp)/1e6)
         return output, new_state, info
 
@@ -79,12 +97,13 @@ class SpatialBasisCache:
 class SpatialBasisCacheDetector:
     """Same mature downstream/deep cache, replacing only first-stage execution."""
     def __init__(self, model, config, readout, repair, threshold=.5,
-                 period=3, execution='selected', deep_period=3):
+                 period=3, execution='selected', deep_period=3, confidence_threshold=None):
         if model.training or readout.training or repair.training or deep_period not in (1, 3):
             raise ValueError('Frozen detector and deep period1/3 required')
         self.model, self.readout, self.repair = model, readout, repair
         self.bounds = config['model']['args']['lidar_range']; self.deep_period = deep_period
-        self.spatial = SpatialBasisCache(model.backbone.resnet.layer0, self.bounds, threshold, period, execution)
+        self.spatial = SpatialBasisCache(model.backbone.resnet.layer0, self.bounds, threshold, period, execution,
+                                        confidence_threshold=confidence_threshold)
 
     def step(self, data, state, meta):
         m = self.model; p = data['processed_lidar']
@@ -113,6 +132,14 @@ class SpatialBasisCacheDetector:
             projected = self.repair(torch.cat([first, projected, valid.to(projected.dtype)], 1))
             cache = dict(cache, frames=cache['frames']+1)
         prediction = predict(m, self.readout.fuse(current, projected))
+        if self.spatial.confidence_threshold is not None:
+            # Only this mode's previous-frame prediction drives the NEXT mask.
+            # No current expensive features, teacher detections, GT or boxes.
+            confidence = prediction['psm'].sigmoid().amax(1, keepdim=True).detach()
+            if confidence.shape[-2:] != first.shape[-2:]:
+                confidence = F.interpolate(confidence, size=first.shape[-2:], mode='nearest')
+            spatial_state['confidence'] = confidence
+            detail['spatial_state_bytes'] += confidence.numel()*confidence.element_size()
         info.update(detail)
         info.update(local_partial=reason is None, anchor_stamp=cache['stamp'], anchor_depth=cache['frames'],
             uncovered_fraction=uncovered, anchor_bytes=cache['value'].numel()*cache['value'].element_size())

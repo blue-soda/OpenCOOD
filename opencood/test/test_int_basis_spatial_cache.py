@@ -65,5 +65,20 @@ class BasisCacheTests(unittest.TestCase):
             _, _, info = cache.step(self.x, old, self.meta, reset=True)
             self.assertEqual(info['spatial_refresh_reason'], 'reset')
 
+    def test_past_confidence_protects_cells_without_current_lookahead(self):
+        cache = SpatialBasisCache(self.stage, self.bounds, threshold=1e9, confidence_threshold=.1)
+        with torch.no_grad():
+            _, old, _ = cache.step(self.x, None, self.meta)
+            old['confidence'] = torch.zeros_like(self.x[:, :1])
+            old['confidence'][:, :, 12, 16] = .2
+            confidence = old['confidence'].clone()
+            _, new, info = cache.step(self.x, old, dict(self.meta, timestamp_us=100000))
+        self.assertEqual(info['spatial_selected_cells'], 81)  # radius4 around one past confident cell
+        self.assertAlmostEqual(info['spatial_guard_added_fraction'], 81./(24*32), places=6)
+        self.assertTrue(torch.equal(old['confidence'], confidence))
+        self.assertNotIn('confidence', new)  # detector must attach its OWN new prediction, never a future one
+        with self.assertRaises(ValueError):
+            SpatialBasisCache(self.stage, self.bounds, confidence_threshold=1.)
+
 
 if __name__ == '__main__': unittest.main()
