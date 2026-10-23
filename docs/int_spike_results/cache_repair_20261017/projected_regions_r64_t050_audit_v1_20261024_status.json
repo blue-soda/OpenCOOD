@@ -1,5 +1,5 @@
 {
-  "phase": "validation",
-  "scans": 400,
-  "status": "RUNNING"
+  "found_divergence": true,
+  "scans": 3007,
+  "status": "COMPLETED_DIAGNOSTIC"
 }
