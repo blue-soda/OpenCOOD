@@ -169,13 +169,15 @@ def evaluate_budgets(model,val,workers,budgets,output=None):
     return results
 
 
-def train(root,family):
+def train(root,family,resume_checkpoint=None):
     protocol=read(root/'protocol.json')
     assert all(read(root/f/'audit.json')['passed'] for f in FAMILIES),'All three audits required'
     for family_gate in FAMILIES:
         gate=read(root/family_gate/'audit_final.json')
         assert gate['passed'] and gate['task_gradient_fraction']>=.001
-    folder,cfg,model=load(root,family);out=folder/'train';out.mkdir(exist_ok=False)
+    folder,cfg,model=load(root,family);out=folder/'train'
+    if resume_checkpoint is None:out.mkdir(exist_ok=False)
+    elif not out.is_dir():raise FileNotFoundError('Resume requires an existing run')
     train_data=build_dataset(cfg,train=True);val=build_dataset(cfg,train=False)
     criterion=train_utils.create_loss(cfg).cuda();frozen=frozen_state(model)
     generator=torch.Generator().manual_seed(SEED)
@@ -183,8 +185,27 @@ def train(root,family):
                       generator=generator,worker_init_fn=seed_worker,multiprocessing_context='spawn')
     # Include all joint parameters at construction; requires_grad controls warmup.
     model.set_stage('joint');opt=torch.optim.Adam([p for p in model.parameters() if p.requires_grad],lr=5e-5,weight_decay=1e-4)
-    best=-1.;history=[];started=time.time()
-    for epoch in range(21):
+    best=-1.;history=[];started=time.time();first_epoch=0
+    if resume_checkpoint is not None:
+        saved=torch.load(str(resume_checkpoint),map_location='cpu')
+        assert saved['protocol_sha256']==digest(root/'protocol.json'),'Protocol changed'
+        # Restrict this repair path to a completed non-validation epoch. An
+        # even epoch needs explicit recovery of validation RNG consumption.
+        assert 0<saved['epoch']<20 and saved['epoch']%2==1
+        model.load_state_dict(saved['model'],strict=True);check_frozen(model,frozen)
+        opt.load_state_dict(saved['optimizer'])
+        history=read(out/'history.json');assert history[-1]['epoch']==saved['epoch']-1
+        best=max(x['mean_ap70'] for x in history);first_epoch=saved['epoch']+1
+        model.contract_identity=digest(resume_checkpoint)
+        # New digest has the same fixed-width metadata field; metadata is not
+        # compressed, so relabeling cannot alter byte admission decisions.
+        generator.set_state(saved['loader_state'])
+        random.setstate(saved['random_state']);np.random.set_state(saved['numpy_state'])
+        torch.set_rng_state(saved['torch_state']);torch.cuda.set_rng_state_all(saved['cuda_state'])
+        write_json(folder/'resume_state.json',dict(checkpoint=str(resume_checkpoint),checkpoint_sha256=digest(resume_checkpoint),
+            completed_epoch=saved['epoch'],next_epoch=first_epoch,optimizer_and_rng_restored=True,
+            protocol_sha256=digest(root/'protocol.json'),code_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=str(REPO)).decode().strip()))
+    for epoch in range(first_epoch,21):
         if time.time()-started>5*24*3600:raise TimeoutError('Five-day study group cap')
         if epoch:
             model.set_stage('interface' if epoch<=2 else 'joint');model.train();model.packet_roundtrip=False
@@ -271,14 +292,18 @@ def coordinate(root):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',type=Path,required=True)
-    p.add_argument('--mode',choices=('prepare','audit','train','coordinate'),required=True);p.add_argument('--family',choices=FAMILIES)
+    p.add_argument('--mode',choices=('prepare','audit','train','resume','coordinate'),required=True);p.add_argument('--family',choices=FAMILIES)
+    p.add_argument('--resume-checkpoint',type=Path)
     p.add_argument('--base',type=Path);p.add_argument('--sources',type=Path);a=p.parse_args()
     try:
         if a.mode=='prepare':prepare(a.root,a.base,a.sources)
         elif a.mode=='audit':audit(a.root,a.family)
         elif a.mode=='coordinate':coordinate(a.root)
+        elif a.mode=='resume':
+            if a.resume_checkpoint is None:raise ValueError('Explicit preserved checkpoint required')
+            train(a.root,a.family,a.resume_checkpoint)
         else:train(a.root,a.family)
     except Exception:
         dest=a.root/a.family if a.family else a.root
-        if dest.exists():write_json(dest/'failure.json',dict(error=traceback.format_exc(),mode=a.mode,no_automatic_retry=True))
+        if dest.exists():write_json(dest/('resume_failure.json' if a.mode=='resume' else 'failure.json'),dict(error=traceback.format_exc(),mode=a.mode,no_automatic_retry=True))
         raise

@@ -45,6 +45,25 @@ class ResidualTests(unittest.TestCase):
         for p in sender.parameters():self.assertIsNotNone(p.grad);self.assertTrue(torch.isfinite(p.grad).all())
         self.assertFalse(torch.equal(sender.drive(x),sender.drive(x-reconstruction)))
 
+    def test_exact_hard_symbols_at_extreme_finite_values(self):
+        from opencood.models.fuse_modules.e3dsnn_residual_stream import ann_quant,select_symbols
+        for dtype in (torch.float32,torch.float64):
+            for function in (signed_if,ann_quant):
+                x=torch.tensor([-1e30,-2**25,-1.1,-.5,0.,.5,1.1,2**25,1e30],dtype=dtype,requires_grad=True)
+                expected=torch.sign(x)*(x.abs()>=1) if function is signed_if else x.clamp(-3,3).round()
+                y=function(x)
+                self.assertTrue(torch.equal(y,expected))
+                y.sum().backward();self.assertTrue(torch.equal(x.grad,torch.ones_like(x)))
+                events=select_symbols(y,x.abs(),len(x),0)
+                meta=dict(channels=1,shape_zyx=[1,1,len(x)],steps=16)
+                np.testing.assert_array_equal(wire.decode(wire.encode(events,meta),meta),events)
+
+    def test_reject_invalid_symbols_before_integer_cast(self):
+        from opencood.models.fuse_modules.e3dsnn_residual_stream import select_symbols
+        for invalid in (.1,3.5,4.):
+            with self.assertRaises(ValueError):select_symbols(torch.tensor([invalid]),torch.ones(1),1,0)
+        with self.assertRaises(FloatingPointError):select_symbols(torch.tensor([float('nan')]),torch.ones(1),1,0)
+
     def test_receiver_zero_and_frame_reset(self):
         torch.manual_seed(2);receiver=ResidualReceiver(4,2)
         local=torch.randn(1,4,2,3,4);zero=torch.zeros_like(local);mask=torch.zeros_like(local[:,:1])

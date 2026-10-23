@@ -14,19 +14,24 @@ def signed_if(v):
     # Identity STE is deliberately biased. tanh/clipped STE starves exactly
     # the high-magnitude events admitted by competition (verified on real data).
     # Global gradient clipping bounds training; hard forward is unchanged.
-    soft = v
-    return soft + (hard-soft).detach()
+    # Cancel identical values first: v + (hard-v) loses the hard symbol at
+    # large finite magnitudes (e.g. FP32 2**25 can turn a 3 into a 4).
+    return hard.detach() + (v-v.detach())
 
 
 def ann_quant(v):
     hard = v.clamp(-3,3).round()
-    return v + (hard-v).detach()
+    return hard.detach() + (v-v.detach())
 
 
 def select_symbols(symbols, priority, limit, step):
     """Stable priority/address ties; candidate cap is an ablatable compute bound."""
     hard = symbols.detach().cpu().numpy().ravel()
     score = priority.detach().cpu().double().numpy().ravel()
+    if not np.isfinite(hard).all() or not np.isfinite(score).all():
+        raise FloatingPointError('Nonfinite sender symbols or priorities')
+    if np.any(hard != np.rint(hard)) or np.any(np.abs(hard)>3):
+        raise ValueError('Sender symbols must be exact integers in [-3,3]')
     ids = np.flatnonzero(hard != 0)
     ids = ids[np.lexsort((ids, -score[ids]))[:limit]]
     events = [(step,int(i),int(hard[i])) for i in ids]
