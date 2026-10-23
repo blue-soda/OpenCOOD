@@ -1,0 +1,55 @@
+{
+  "budgets": {
+    "b0": {
+      "packets_verified": 1738,
+      "all_empty": true,
+      "ap70": 0.578291791658773,
+      "ap3d70": 0.41502442424003716,
+      "cpu_exact": true
+    },
+    "b2048": {
+      "packets_verified": 1738,
+      "all_empty": true,
+      "ap70": 0.578291791658773,
+      "ap3d70": 0.41502442424003716,
+      "cpu_exact": true
+    },
+    "b3072": {
+      "packets_verified": 1738,
+      "all_empty": true,
+      "ap70": 0.578291791658773,
+      "ap3d70": 0.41502442424003716,
+      "cpu_exact": true
+    },
+    "b4096": {
+      "packets_verified": 1738,
+      "all_empty": true,
+      "ap70": 0.578291791658773,
+      "ap3d70": 0.41502442424003716,
+      "cpu_exact": true
+    },
+    "b6144": {
+      "packets_verified": 1738,
+      "all_empty": true,
+      "ap70": 0.578291791658773,
+      "ap3d70": 0.41502442424003716,
+      "cpu_exact": true
+    },
+    "b8192": {
+      "packets_verified": 1738,
+      "all_empty": true,
+      "ap70": 0.578291791658773,
+      "ap3d70": 0.41502442424003716,
+      "cpu_exact": true
+    },
+    "full": {
+      "packets_verified": 1738,
+      "all_empty": true,
+      "ap70": 0.578291791658773,
+      "ap3d70": 0.41502442424003716,
+      "cpu_exact": true
+    }
+  },
+  "checkpoint_sha256": "85cdea5cc30974483c43f7f20e61ae5df7957b4eca39b23319933a7ee5566793",
+  "all_equal_zero_budget_ap": true
+}
