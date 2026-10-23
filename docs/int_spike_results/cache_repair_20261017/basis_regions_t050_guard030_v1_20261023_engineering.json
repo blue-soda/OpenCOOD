@@ -1,0 +1,17 @@
+{
+  "constant_hook_macs": {
+    "('base', False)": 110586470400,
+    "('base', True)": 44172979200,
+    "('dense', False)": 111631564800,
+    "('dense', True)": 45218073600
+  },
+  "costs_verified_against_actual_conv_hooks": true,
+  "dense_basis_macs": 1045094400,
+  "dense_mix_macs": 14863564800,
+  "frames": 32,
+  "mean_write_fraction": 0.7512599206349206,
+  "own_immutable_deep_anchors": true,
+  "period1_vs_dense_max_error": 0.0,
+  "selected_vs_masked_dense_max_error": 6.9141387939453125e-06,
+  "status": "PASSED"
+}
