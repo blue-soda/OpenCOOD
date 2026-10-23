@@ -1,0 +1,26 @@
+/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+Traceback (most recent call last):
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/run_e3dsnn_residual_main.py", line 280, in <module>
+    else:train(a.root,a.family)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/run_e3dsnn_residual_main.py", line 196, in train
+    output,loss=checked_forward(model,criterion,batch);loss.backward()
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/train_e3dsnn_single.py", line 60, in checked_forward
+    output = model(batch['ego'])
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/models/e3dsnn_residual_coop.py", line 139, in forward
+    chunks,packet,events,rate=self.generate(source[i:i+1],metadata,budget)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/models/e3dsnn_residual_coop.py", line 86, in generate
+    events,packet,n,stopped=wire.append_prefix(events,candidate,metadata,budget)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/utils/residual_spike_packet.py", line 60, in append_prefix
+    trial = encode(events + [tuple(int(v) for v in row)], metadata)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/utils/residual_spike_packet.py", line 23, in encode
+    raise ValueError('Invalid step/address/signed value')
+ValueError: Invalid step/address/signed value

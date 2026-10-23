@@ -1,5 +1,21 @@
 # 误差反馈脉冲协作：三组联合训练主对照（2026-10-23）
 
+## ANN第8轮编码异常：数值修复后从第7轮末恢复（2026-10-24 06:40，北京时间）
+
+ANN在第8轮、最后状态1751/2339批后因`Invalid step/address/signed value`退出；不是网络或GPU阻塞。原始failure、日志、状态及第7轮末last.pt已独立保存，未删除或覆盖。保存checkpoint SHA `3eb2fff6575cbdc962f59309e35bf3a702a4f94767143f72bad85f273029f82e`。
+
+确认的实现缺陷是原identity STE表达式`v+(hard-v).detach()`在大幅FP32输入下发生消减误差：输入±2^25时ANN目标±3被算成±4，±1e8时变为0。改为`hard.detach()+(v-v.detach())`，保持精确离散前向与单位替代梯度，并在转整数前检查有限性、整数性和范围，禁止静默截断。此缺陷可解释编码拒绝，但故障即时输入未被保存，**不能断言已复现原故障批次或排除其他不稳定性**。
+
+本地与146各14项检查通过，新增极值、梯度和非法符号拒绝测试。保存的第7轮权重在两帧真实验证中direct/wire预测逐值一致，4KB分别4096/4095bytes、1642/1616事件，均13步，无优化更新。修复提交`5aa36ee`已main push并146 pull。
+
+恢复进程PID444689在146 GPU2启动：显存准入通过，仍20%分配上限。显式恢复模型、Adam状态、Python/NumPy/Torch/CUDA随机状态、DataLoader generator，重跑未完成的epoch8，最终仍20个完整epoch；数据、损失、LR、预算和选模不变。失败半轮计算保留为额外实际计算成本，不能声称三组总计算量绝对相等。恢复使用修复后的数值前向，不能声称与未中断原代码逐位等价。旧SNN路径不调用该量化函数；已完成的新SNN保持原负结果，不重训。
+
+**监控入口：** ANN用`residual_ann/resume_launch.json`、`resume_state.json`、`resume_train.log`、最新`status.json`与PID444689；`failure.json`/`group_failure.json`是已保存历史故障。原协调器PID400281只继续等待old_snn，不管理新PID，之后可能因原group_failure返回失败。最终必须按各组实际summary及恢复记录核验，并独立汇总三组，不能将旧pipeline_status作为ANN当前状态或直接删除历史失败。若恢复再次异常，先保存证据并定位，不无限重试。
+
+数值修复不等于架构/AP改进。ANN最终选中checkpoint须在修复代码下重新做七预算CPU与逐包复核；此前epoch4临时AP不替代最终结论。新SNN协作失败的既有结论不变。当前仍只完成三组主对照，不扩局部调参；90分钟任务间隔保持。
+
+证据：[故障](results/residual_main_20261023/ann_repair_20261024/residual_ann/failure.json)、[数值及真实帧审计](results/residual_main_20261023/ann_repair_20261024/repair_audit.json)、[测试](results/residual_main_20261023/ann_repair_20261024/unit_tests.txt)、[恢复启动](results/residual_main_20261023/ann_repair_20261024/resume_launch.json)、[恢复状态](results/residual_main_20261023/ann_repair_20261024/resume_state.json)、[SHA](results/residual_main_20261023/ann_repair_20261024/sha256.json)。权重副本保留146根目录`ann_failure_20261024_0635/residual_ann/train/last.pt`。
+
 ## 新SNN完成20轮及最终复核：本轮协作失败（2026-10-23 16:50，北京时间）
 
 新SNN已完成预定2轮接口＋18轮联合训练，按原三预算平均AP70选中的唯一best为epoch18。0/2048/3072/4096/6144/8192/完整消息七点均为**0字节、BEV AP70 57.82918%、3D AP70 41.50244%**，与该权重的零通信路径完全同AP。此结果不能作为协作、通信压缩或能效优势；本轮新架构未达到超越自身单车的必要目标，不追加种子、轮数或局部参数抢救。

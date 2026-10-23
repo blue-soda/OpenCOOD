@@ -1,0 +1,14 @@
+{
+  "unit_tests.txt": "13ce962106f4387c3bf159662691a10884dc773c21631ca1dce3123e5696bbb0",
+  "group_failure.json": "187fe62d2d9237a5101ca5b844f6244b2665551abeed9a6cc8fd3d3aab190d02",
+  "resumed_status.json": "8a7a15a5edbcddb8761cdb9ba26a6239a1928a584c29087fd82cc6d1a5a2a4ad",
+  "resume_launch.json": "1fb27f0e512610cd40288cc2733c0059abbaa5d390f5bcfa60d0a7803e709374",
+  "audit_repair.py": "80b6a148eae76490194de58f267d70bdd3a833ea96ffa7c1cd0a09b0f1826bb1",
+  "repair_audit.json": "dd79b76dea09f4be5f5260cf52c67203bd9574ebe74ad7c6e64fcad3e34cc0d7",
+  "resume_state.json": "ac61f8a1842d4ab3c3724c4e8763aa3638dc92870c8ed295f826f959eaf9be26",
+  "resume_train.log": "a1c6914b6f15c8cc4a2cdc9d8aba1e1ac061ddeb94d0ed106a39cc57631e29c1",
+  "residual_ann/train.log": "743b6f8fb3392e987534cc97a0947176fe68c4fb1a63099d033b7a14aff048a2",
+  "residual_ann/status.json": "04c88ceaa7960491c77a5a2b6f441139211da6d71be6185f340ff08feb0d984a",
+  "residual_ann/failure.json": "f09d1dad001459ead3b14ce0c5356957f4c4d3f4d3c80fa7cd050cff1f48f83a",
+  "residual_ann/train/history.json": "1777262ec5c576341ac1ced9be200c09d516703a331a4c51d076a615d1978143"
+}

@@ -1,0 +1,9 @@
+{
+  "checkpoint": "/data1/zhh/gzc/diagnostics/e3dsnn_residual_main_20261023/ann_failure_20261024_0635/residual_ann/train/last.pt",
+  "checkpoint_sha256": "3eb2fff6575cbdc962f59309e35bf3a702a4f94767143f72bad85f273029f82e",
+  "completed_epoch": 7,
+  "next_epoch": 8,
+  "optimizer_and_rng_restored": true,
+  "protocol_sha256": "128f18e165e6424dea09bbd15167a1f479a77d035111242be8beb1d4dfc4729a",
+  "code_commit": "5aa36ee7b796be8e54225d2110e4de466c9e4c58"
+}

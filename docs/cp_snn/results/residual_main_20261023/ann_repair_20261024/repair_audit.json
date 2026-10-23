@@ -1,0 +1,47 @@
+{
+  "checkpoint_epoch": 7,
+  "checkpoint_sha256": "3eb2fff6575cbdc962f59309e35bf3a702a4f94767143f72bad85f273029f82e",
+  "frames": [
+    {
+      "index": 0,
+      "bytes": 4096,
+      "events": 1642,
+      "steps": 13,
+      "direct_wire_exact": true
+    },
+    {
+      "index": 1,
+      "bytes": 4095,
+      "events": 1616,
+      "steps": 13,
+      "direct_wire_exact": true
+    }
+  ],
+  "synthetic_input": [
+    -33554432.0,
+    33554432.0,
+    -100000000.0,
+    100000000.0
+  ],
+  "old_symbols": [
+    -4.0,
+    4.0,
+    0.0,
+    0.0
+  ],
+  "fixed_symbols": [
+    -3.0,
+    3.0,
+    -3.0,
+    3.0
+  ],
+  "gradient": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "passed": true,
+  "optimizer_step": false,
+  "code_commit": "5aa36ee7b796be8e54225d2110e4de466c9e4c58"
+}

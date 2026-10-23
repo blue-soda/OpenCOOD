@@ -1,7 +1,7 @@
 # 可截断任务脉冲流：架构、研究假设与消融协议
 
 <!-- event-training-latest -->
-2026-10-23 16:50最新：新SNN完成20轮，best epoch18的七预算最终BEV AP70均57.82918%、3D AP70均41.50244%，12166包全空，与自身零通信路径同AP。CPU复算/逐包SHA通过，但本轮协作目标失败，不追加训练或调参。最终证据已归档镜像；旧SNN/ANN继续既定20轮与同best复核，完成后统一评估三组。见[主对照最终负结果](RESIDUAL_COOP_MAIN_20261023.md)。
+2026-10-24 06:40最新：ANN第8轮因非法消息符号中断，已保存故障与epoch7状态。修复identity STE大幅FP32消减误差，14项测试及真实两帧direct/wire审计通过；原故障批次尚未重放，不宣称唯一根因。PID444689在146 GPU2从epoch7末恢复优化器/RNG、重跑epoch8，协议不变。ANN看resume日志与最新状态，原协调器不跟踪新PID；最终独立汇总三组并保留故障。新SNN最终负结果不变，旧SNN继续原训练。见[主对照数值修复与恢复](RESIDUAL_COOP_MAIN_20261023.md)。
 <!-- /event-training-latest -->
 
 
