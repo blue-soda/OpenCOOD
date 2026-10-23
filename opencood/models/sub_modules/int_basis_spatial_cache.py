@@ -15,7 +15,8 @@ from opencood.models.sub_modules.int_anchor_residual import refresh_reason, pred
 
 class SpatialBasisCache:
     def __init__(self, stage, bounds, threshold=.5, period=3, execution='selected', dilation=4,
-                 confidence_threshold=None, warp=None, cache_dtype=None, max_full_age_s=.25, cell_age_limit_s=None):
+                 confidence_threshold=None, warp=None, cache_dtype=None, max_full_age_s=.25, cell_age_limit_s=None,
+                 allow_cache_grad=False):
         if not isinstance(stage, SpatialBasisStage) or stage.training:
             raise ValueError('Frozen spatial-basis stage required')
         if not math.isfinite(threshold) or threshold < 0 or period not in (1, 2, 3, 4, 5):
@@ -39,9 +40,12 @@ class SpatialBasisCache:
         if cell_age_limit_s is not None and period != 3:
             raise ValueError('Cell-age policy replaces the period3 control only')
         self.cell_age_limit_s = cell_age_limit_s
+        if allow_cache_grad and (execution != 'masked_dense' or not getattr(stage,'allow_cache_grad',False)):
+            raise ValueError('Cache training requires explicitly enabled compact masked-dense stage')
+        self.allow_cache_grad = allow_cache_grad
 
     def step(self, temporal, state, meta, reset=False):
-        if torch.is_grad_enabled() or self.stage.training:
+        if (torch.is_grad_enabled() and not self.allow_cache_grad) or self.stage.training:
             raise ValueError('Frozen inference required')
         current = self.stage.observe(temporal)
         descriptor = early_descriptor(current, 1)

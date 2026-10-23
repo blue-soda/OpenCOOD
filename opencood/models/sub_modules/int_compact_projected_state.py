@@ -23,6 +23,7 @@ class CompactProjectedSpatialStage(ProjectedSpatialStage):
         self.rank = source.rank
         self.spatial_input_projected = True
         self.compact_projected_state = True
+        self.allow_cache_grad = False
         self.retained_weight_energy = list(source.retained_weight_energy)
         self.cache_channels = []
         for block in self.blocks:
@@ -42,7 +43,8 @@ class CompactProjectedSpatialStage(ProjectedSpatialStage):
         return current,maps
 
     def selected_from_stem(self,current,aligned_maps,mask,execution='selected'):
-        if self.training or torch.is_grad_enabled():
+        if self.training or (torch.is_grad_enabled() and
+                not (self.allow_cache_grad and execution == 'masked_dense')):
             raise ValueError('Frozen inference required')
         if execution not in ('selected','masked_dense') or len(aligned_maps)!=4:
             raise ValueError('Four compatible cached maps required')
