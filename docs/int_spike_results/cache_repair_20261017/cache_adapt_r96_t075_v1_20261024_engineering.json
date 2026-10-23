@@ -1,0 +1,15 @@
+{
+  "actual_conv_function_macs_verified": true,
+  "bn_unchanged": true,
+  "consecutive_gradient_norms": [
+    135.0229949951172,
+    11.566287994384766,
+    27.79196548461914,
+    129.54603576660156
+  ],
+  "detached_own_spatial_fm_and_deep_states": true,
+  "frames": 32,
+  "only_factors_have_gradients": true,
+  "selected_masked_max_error": 8.58306884765625e-06,
+  "status": "PASSED"
+}
