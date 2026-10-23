@@ -15,7 +15,7 @@ from opencood.models.sub_modules.int_anchor_residual import refresh_reason, pred
 
 class SpatialBasisCache:
     def __init__(self, stage, bounds, threshold=.5, period=3, execution='selected', dilation=4,
-                 confidence_threshold=None):
+                 confidence_threshold=None, warp=None):
         if not isinstance(stage, SpatialBasisStage) or stage.training:
             raise ValueError('Frozen spatial-basis stage required')
         if not math.isfinite(threshold) or threshold < 0 or period not in (1, 2, 3):
@@ -27,6 +27,7 @@ class SpatialBasisCache:
         self.stage, self.bounds, self.threshold = stage, bounds, threshold
         self.period, self.execution, self.dilation = period, execution, dilation
         self.confidence_threshold = confidence_threshold
+        self.warp = warp if warp is not None else warp_bev
 
     def step(self, temporal, state, meta, reset=False):
         if torch.is_grad_enabled() or self.stage.training:
@@ -59,7 +60,7 @@ class SpatialBasisCache:
                     raise ValueError('Expected previous own detection confidence at the state grid')
                 values = values+[confidence]
             packed = torch.cat(values, 1)
-            aligned, valid = warp_bev(packed, state['pose'], meta['pose'], self.bounds)
+            aligned, valid = self.warp(packed, state['pose'], meta['pose'], self.bounds)
             channels = current.shape[1]
             old = list(aligned[:, :4*channels].split(channels, 1))
             reference = aligned[:, 4*channels:4*channels+descriptor.shape[1]]
@@ -97,13 +98,14 @@ class SpatialBasisCache:
 class SpatialBasisCacheDetector:
     """Same mature downstream/deep cache, replacing only first-stage execution."""
     def __init__(self, model, config, readout, repair, threshold=.5,
-                 period=3, execution='selected', deep_period=3, confidence_threshold=None):
+                 period=3, execution='selected', deep_period=3, confidence_threshold=None, warp=None):
         if model.training or readout.training or repair.training or deep_period not in (1, 3):
             raise ValueError('Frozen detector and deep period1/3 required')
         self.model, self.readout, self.repair = model, readout, repair
         self.bounds = config['model']['args']['lidar_range']; self.deep_period = deep_period
+        self.warp = warp if warp is not None else warp_bev
         self.spatial = SpatialBasisCache(model.backbone.resnet.layer0, self.bounds, threshold, period, execution,
-                                        confidence_threshold=confidence_threshold)
+                                        confidence_threshold=confidence_threshold, warp=warp)
 
     def step(self, data, state, meta):
         m = self.model; p = data['processed_lidar']
@@ -127,7 +129,7 @@ class SpatialBasisCacheDetector:
             cache = dict(value=projected, pose=meta['pose'], stamp=int(meta['timestamp_us']), frames=0)
             uncovered = 0.
         else:
-            projected, valid = warp_bev(cache['value'], cache['pose'], meta['pose'], self.bounds)
+            projected, valid = self.warp(cache['value'], cache['pose'], meta['pose'], self.bounds)
             uncovered = float((~valid).float().mean())
             projected = self.repair(torch.cat([first, projected, valid.to(projected.dtype)], 1))
             cache = dict(cache, frames=cache['frames']+1)
