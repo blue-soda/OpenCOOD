@@ -1,0 +1,40 @@
+{
+  "labels": 1738,
+  "results": {
+    "base_cached": {
+      "ap50": 0.8321027698682837,
+      "ap70": 0.7555532616222492,
+      "conv_gflops": 134.31042158812565,
+      "mean_ms": 18.190026314541722,
+      "p95_ms": 29.0204876451753,
+      "partial_frames": 3789
+    },
+    "base_full": {
+      "ap50": 0.8311640141378542,
+      "ap70": 0.7567024378706645,
+      "conv_gflops": 221.1729408,
+      "mean_ms": 28.448426928390514,
+      "p95_ms": 30.026349064428356,
+      "partial_frames": 0
+    },
+    "cached": {
+      "ap50": 0.8258360455821308,
+      "ap70": 0.7504365947495395,
+      "conv_gflops": 134.91683438812564,
+      "mean_ms": 20.693930130668324,
+      "p95_ms": 31.62567256949842,
+      "partial_frames": 3789
+    },
+    "full": {
+      "ap50": 0.8262557845985214,
+      "ap70": 0.7522774456911892,
+      "conv_gflops": 221.7793536,
+      "mean_ms": 30.812712759045205,
+      "p95_ms": 32.42448668461293,
+      "partial_frames": 0
+    }
+  },
+  "scans": 5794,
+  "scope": "Existing-head calibration on fixed recovered pointwise features. No inference operators added; spatial H remains zero. Own FM/deep anchors. Full/cache AP paired; conv MACsx2 and model-only latency.",
+  "status": "COMPLETED"
+}

@@ -1,8 +1,8 @@
 {
-  "ap70": 0.7522452114406601,
-  "cached_ap70": 0.7503205603431975,
-  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_heads_full_v1_20261023/epoch_001/model.pth",
-  "epoch": 1,
+  "ap70": 0.752268542618262,
+  "cached_ap70": 0.7503867102618356,
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_heads_full_v1_20261023/epoch_002/model.pth",
+  "epoch": 2,
   "format": "pointwise_stage_and_detection_heads_v1",
-  "sha256": "fa64bde4d40fcffd8a6438913d2160732fa2df618ad2fa2dd3e045efacc4ca73"
+  "sha256": "e1cc9db59c37277e209b522a95875939bb5ff9d72d2dacd84b49ea8292c0ac8e"
 }
