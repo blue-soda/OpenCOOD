@@ -105,7 +105,8 @@ def worker(a):
         repair=pb, basis=sb, threshold=a.threshold, confidence_guard=a.confidence_guard, fused_execution=a.fused,
         projected_spatial=bool(a.projected_run),
         projected_contract='If enabled: completed recovery run best-by-fullAP checkpoint, own dense baseline replay, dense 1x1 projection every frame and selected 3x3 output rows. All four history maps FP32, spatial/deep period3/.25s. No additional training or fused kernels. Compare selected to SAME compressed checkpoint dense and masked-dense recurrence; base is mature uncompressed spatial path.',
-        profile_frames=a.profile_frames, run_kind='bounded_timing_profile' if a.profile_frames else 'full_validation',
+        profile_frames=a.profile_frames, run_kind='selection_divergence_diagnostic' if a.audit_selection else ('bounded_timing_profile' if a.profile_frames else 'full_validation'),
+        selection_audit=a.audit_selection,
         prepared_execution=a.prepared,
         fast_warp_execution=a.fast_warp,
         cache_fp16=a.cache_fp16,
@@ -219,6 +220,9 @@ def worker(a):
         modes = {k:modes[k] for k in ('base', 'prepared', 'cache_fp16')}
     if a.long_history:
         modes = {k:modes[k] for k in ('base', 'cache_fp16', 'long_history')}
+    if a.audit_selection:
+        from opencood.tools.int_selection_audit import capture_step, divergence_audit
+        modes = {k:modes[k] for k in ('selected','masked_dense')}
     states = {k:None for k in modes}; control_state = None
     stats = {k:{t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.5, .7)} for k in modes}
     metrics = {k:dict(time=[], write=[], mix=[], basis=[], state=[], peak=[], full_age=[], uncovered=[], priority=[], guard_added=[],
@@ -229,9 +233,15 @@ def worker(a):
         for index, sample in enumerate(stream):
             ego = to_device(sample['ego'], torch.device('cuda')); names = list(modes)
             offset = index % len(names); names = names[offset:]+names[:offset]; counts = {}
+            previous_states = dict(states) if a.audit_selection else None
+            audit_masks = {}
             for name in names:
                 torch.cuda.synchronize(); before = torch.cuda.memory_allocated(); torch.cuda.reset_peak_memory_stats()
-                tick = time.perf_counter(); pred, states[name], info = modes[name].step(ego, states[name], sample['meta'])
+                tick = time.perf_counter()
+                if a.audit_selection:
+                    pred, states[name], info, audit_masks[name] = capture_step(modes[name],ego,states[name],sample['meta'])
+                else:
+                    pred, states[name], info = modes[name].step(ego, states[name], sample['meta'])
                 torch.cuda.synchronize(); elapsed = 1000*(time.perf_counter()-tick)
                 item = metrics[name]
                 if index >= 10:
@@ -263,6 +273,13 @@ def worker(a):
                     data = dict(ego=ego); boxes, scores = dataset.post.post_process(data, dict(ego=pred)); gt = dataset.post.generate_gt_bbx(data)
                     for threshold in stats[name]: eval_utils.caluclate_tp_fp(boxes, scores, gt, stats[name], threshold)
             if 'selected' in counts:
+                if a.audit_selection and not torch.equal(audit_masks['selected'],audit_masks['masked_dense']):
+                    audit = divergence_audit(modes['selected'],modes['masked_dense'],ego,previous_states,sample['meta'],audit_masks)
+                    write_json(out/'selection_audit.json',dict(audit,scans=index+1,segment=sample['meta']['segment'],timestamp_us=int(sample['meta']['timestamp_us']),
+                        scope='Diagnostic only. Independent own-state trajectories, first actual mask difference, then discarded same-input replay. No full AP or latency result.'))
+                    assert audit['same_input_masks_equal'] and audit['same_input_numerically_close'], 'Same-input backend fidelity failed'
+                    write_json(out/'status.json',dict(status='COMPLETED_DIAGNOSTIC',scans=index+1,found_divergence=True))
+                    return
                 assert counts['selected'] == counts['masked_dense'], 'Selection changed with execution backend'
             if 'fused' in counts: fusion_mask_disagreements += int(counts['fused'] != counts['selected'])
             if 'prepared' in counts and 'fused' in counts: prepared_mask_disagreements += int(counts['prepared'] != counts['fused'])
@@ -270,6 +287,10 @@ def worker(a):
             if a.cache_fp16 and not a.long_history: storage_mask_disagreements += int(counts['prepared'] != counts['cache_fp16'])
             if (index+1) % 200 == 0: write_json(out/'status.json', dict(status='RUNNING', phase='validation', scans=index+1))
     assert index+1 == len(val)
+    if a.audit_selection:
+        write_json(out/'selection_audit.json',dict(scans=len(val),found_divergence=False,scope='Diagnostic only; no full AP or timing result'))
+        write_json(out/'status.json',dict(status='COMPLETED_DIAGNOSTIC',scans=len(val),found_divergence=False))
+        return
     results = {}
     for name, item in metrics.items():
         results[name] = dict(ap70=eval_utils.calculate_ap(stats[name], .7)[0], ap50=eval_utils.calculate_ap(stats[name], .5)[0],
@@ -311,8 +332,11 @@ def main():
     p.add_argument('--cache-fp16', action='store_true', help='Validate FP16 history storage with FP32 computation')
     p.add_argument('--long-history', action='store_true', help='Compare spatial period5/.45s to period3/.25s with identical FP16 storage')
     p.add_argument('--profile-frames', type=int, default=0, help='Bounded timing diagnosis instead of AP validation (64..512 frames)')
+    p.add_argument('--audit-selection', action='store_true', help='Projected only: stop at first mask divergence, save same-input replay; no full AP result')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.audit_selection and not a.projected_run:
+        p.error('Selection diagnosis requires --projected-run')
     if a.projected_run and (a.fused or a.prepared or a.fast_warp or a.cache_fp16 or a.long_history or a.profile_frames or a.confidence_guard is None):
         p.error('Projected comparison requires confidence guard and plain FP32 four-mode validation')
     if a.profile_frames and (not a.fused or not 64 <= a.profile_frames <= 512):
