@@ -1,0 +1,13 @@
+{
+  "best": {
+    "ap70": 0.7524192761290246,
+    "cached_ap70": 0.7507399851655729,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_heads_full_v1_20261023/epoch_004/model.pth",
+    "epoch": 4,
+    "format": "pointwise_stage_and_detection_heads_v1",
+    "sha256": "25cfd73d2ee14e328f391b421e36bad8834939864b815674ae9dc4f7bd216d82"
+  },
+  "epochs": 4,
+  "status": "COMPLETED",
+  "stop_reason": "plateau"
+}

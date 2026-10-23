@@ -1,0 +1,23 @@
+{
+  "conv_macs": {
+    "base_cached_full": 110586470400,
+    "base_cached_partial": 44172979200,
+    "base_full_full": 110586470400,
+    "cached_full": 106328678400,
+    "cached_partial": 39915187200,
+    "full_full": 106328678400
+  },
+  "four_activation_maps_bytes": 51609600,
+  "frames": 32,
+  "prediction_max_abs_difference": 2.0915393829345703,
+  "random_mask_kernel_diagnostic": {
+    "basis_conv_macs": 696729600,
+    "dense_mixer_macs": 9909043200,
+    "selected_mixer_macs": 2477260800,
+    "write_fraction": 0.2499999850988388
+  },
+  "rank9_equivalence_checked": false,
+  "selected_vs_masked_dense_max_error": 8.821487426757812e-06,
+  "status": "PASSED",
+  "warning": "Kernel diagnostic excludes current stem, cache alignment and selection; not detector sparse FLOPs/AP/latency. Full validation below uses dense stage only."
+}
