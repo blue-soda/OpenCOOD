@@ -1,0 +1,42 @@
+{
+  "arguments": {
+    "basis_run": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/basis_spatial_r9_dense_v1_20261023",
+    "content_calibration": null,
+    "content_calibration_sha256": null,
+    "content_threshold": null,
+    "device": "cuda",
+    "gpu": 1,
+    "max_age": 0.25,
+    "memory_run": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_gru_r32_train_v1_20261022",
+    "mode": "gru",
+    "output": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/basis_regions_t050_v1_20261023",
+    "periodic_last": 0,
+    "readout_run": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/compact_readout_r96_v2_20261021",
+    "repair_run": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/split_repair_r96_w32_v1_20261021",
+    "root": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "stage": "pilot",
+    "threshold": 0.5,
+    "worker": true
+  },
+  "checkpoint": {
+    "bev_ap70": 0.758736104616861,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+    "epoch": 17,
+    "sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8"
+  },
+  "contract": {
+    "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+    "fm_only_epochs": 1,
+    "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+    "lr": 0.0001,
+    "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+    "min_delta": 0.001,
+    "min_epochs": 20,
+    "mode": "gru",
+    "patience": 10,
+    "seed": 303,
+    "state_policy": "whole-segment/tbptt/v1",
+    "tbptt_steps": 4
+  },
+  "split": "val"
+}

@@ -1,0 +1,7 @@
+{
+  "ap70": 0.7435535190108806,
+  "cached_ap70": 0.7414184699250826,
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/basis_spatial_r6_dense_v1_20261023/epoch_000/stage.pth",
+  "epoch": 0,
+  "sha256": "9bbf80e98f6bf29feea3130a1101d6683c75a308c7c425563a482351619f01a2"
+}

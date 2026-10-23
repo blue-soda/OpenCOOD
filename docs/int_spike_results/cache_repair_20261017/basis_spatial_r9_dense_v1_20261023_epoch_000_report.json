@@ -1,0 +1,40 @@
+{
+  "labels": 1738,
+  "results": {
+    "base_cached": {
+      "ap50": 0.8321027698682837,
+      "ap70": 0.7555532616222492,
+      "conv_gflops": 134.31042158812565,
+      "mean_ms": 17.286732939339565,
+      "p95_ms": 28.13767968909815,
+      "partial_frames": 3789
+    },
+    "base_full": {
+      "ap50": 0.8311640141378542,
+      "ap70": 0.7567024378706645,
+      "conv_gflops": 221.1729408,
+      "mean_ms": 27.654883793598998,
+      "p95_ms": 28.970361582469195,
+      "partial_frames": 0
+    },
+    "cached": {
+      "ap50": 0.8321027791931475,
+      "ap70": 0.7555532696967787,
+      "conv_gflops": 136.40061038812564,
+      "mean_ms": 19.627458587891706,
+      "p95_ms": 30.564577947370708,
+      "partial_frames": 3789
+    },
+    "full": {
+      "ap50": 0.8311640054441592,
+      "ap70": 0.7567024302451391,
+      "conv_gflops": 223.2631296,
+      "mean_ms": 29.908712845890463,
+      "p95_ms": 31.322820333298296,
+      "partial_frames": 0
+    }
+  },
+  "scans": 5794,
+  "scope": "Dense mature spatial-basis architecture, rank9, no training or new spatial reuse. Four-mode original deep-cache/full validation. Conv MACsx2; model wall time includes basis/mixing, excludes IO/H2D/postprocessing.",
+  "status": "COMPLETED"
+}
