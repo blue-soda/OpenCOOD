@@ -107,6 +107,8 @@ def worker(a):
         projected_contract='If enabled: completed recovery run best-by-fullAP checkpoint, own dense baseline replay, dense 1x1 projection every frame and selected 3x3 output rows. All four history maps FP32, spatial/deep period3/.25s. No additional training or fused kernels. Compare selected to SAME compressed checkpoint dense and masked-dense recurrence; base is mature uncompressed spatial path.',
         profile_frames=a.profile_frames, run_kind='selection_divergence_diagnostic' if a.audit_selection else ('bounded_timing_profile' if a.profile_frames else 'full_validation'),
         selection_audit=a.audit_selection,
+        verify_recurrence=a.verify_recurrence,
+        recurrence_verification='Optional: compare actual own-state masks outside timing; log each divergence and require same-input replay mask equality and output/state closeness. Replays discarded. Capture-mask overhead included in model timing, replay excluded. No threshold rounding or trajectory injections. Maximum128 divergent frames, else fail for review.',
         prepared_execution=a.prepared,
         fast_warp_execution=a.fast_warp,
         cache_fp16=a.cache_fp16,
@@ -220,8 +222,9 @@ def worker(a):
         modes = {k:modes[k] for k in ('base', 'prepared', 'cache_fp16')}
     if a.long_history:
         modes = {k:modes[k] for k in ('base', 'cache_fp16', 'long_history')}
-    if a.audit_selection:
+    if a.audit_selection or a.verify_recurrence:
         from opencood.tools.int_selection_audit import capture_step, divergence_audit
+    if a.audit_selection:
         modes = {k:modes[k] for k in ('selected','masked_dense')}
     states = {k:None for k in modes}; control_state = None
     stats = {k:{t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.5, .7)} for k in modes}
@@ -229,16 +232,17 @@ def worker(a):
                      macs=0, refreshes=0, partials=0) for k in modes}
     dataset, stream = loader(val, cfg, 4, 303); fusion_mask_disagreements = prepared_mask_disagreements = warp_mask_disagreements = 0
     storage_mask_disagreements = 0
+    recurrence_audits = []
     with torch.no_grad():
         for index, sample in enumerate(stream):
             ego = to_device(sample['ego'], torch.device('cuda')); names = list(modes)
             offset = index % len(names); names = names[offset:]+names[:offset]; counts = {}
-            previous_states = dict(states) if a.audit_selection else None
+            previous_states = dict(states) if a.audit_selection or a.verify_recurrence else None
             audit_masks = {}
             for name in names:
                 torch.cuda.synchronize(); before = torch.cuda.memory_allocated(); torch.cuda.reset_peak_memory_stats()
                 tick = time.perf_counter()
-                if a.audit_selection:
+                if (a.audit_selection or a.verify_recurrence) and name in ('selected','masked_dense'):
                     pred, states[name], info, audit_masks[name] = capture_step(modes[name],ego,states[name],sample['meta'])
                 else:
                     pred, states[name], info = modes[name].step(ego, states[name], sample['meta'])
@@ -273,14 +277,23 @@ def worker(a):
                     data = dict(ego=ego); boxes, scores = dataset.post.post_process(data, dict(ego=pred)); gt = dataset.post.generate_gt_bbx(data)
                     for threshold in stats[name]: eval_utils.caluclate_tp_fp(boxes, scores, gt, stats[name], threshold)
             if 'selected' in counts:
-                if a.audit_selection and not torch.equal(audit_masks['selected'],audit_masks['masked_dense']):
+                if (a.audit_selection or a.verify_recurrence) and not torch.equal(audit_masks['selected'],audit_masks['masked_dense']):
                     audit = divergence_audit(modes['selected'],modes['masked_dense'],ego,previous_states,sample['meta'],audit_masks)
-                    write_json(out/'selection_audit.json',dict(audit,scans=index+1,segment=sample['meta']['segment'],timestamp_us=int(sample['meta']['timestamp_us']),
-                        scope='Diagnostic only. Independent own-state trajectories, first actual mask difference, then discarded same-input replay. No full AP or latency result.'))
+                    audit.update(scans=index+1,segment=sample['meta']['segment'],timestamp_us=int(sample['meta']['timestamp_us']))
+                    if a.audit_selection:
+                        write_json(out/'selection_audit.json',dict(audit,
+                            scope='Diagnostic only. Independent own-state trajectories, first actual mask difference, then discarded same-input replay. No full AP or latency result.'))
+                    else:
+                        recurrence_audits.append(audit)
+                        write_json(out/'recurrence_audits.json',dict(audits=recurrence_audits,
+                            scope='Independent own-state masks may differ at floating-point thresholds. Every divergent frame gets discarded SAME-input backend validation; model/thresholds/trajectories unchanged.'))
                     assert audit['same_input_masks_equal'] and audit['same_input_numerically_close'], 'Same-input backend fidelity failed'
-                    write_json(out/'status.json',dict(status='COMPLETED_DIAGNOSTIC',scans=index+1,found_divergence=True))
-                    return
-                assert counts['selected'] == counts['masked_dense'], 'Selection changed with execution backend'
+                    if a.audit_selection:
+                        write_json(out/'status.json',dict(status='COMPLETED_DIAGNOSTIC',scans=index+1,found_divergence=True))
+                        return
+                    assert len(recurrence_audits) <= 128, 'Frequent trajectory divergence requires review'
+                if not a.verify_recurrence:
+                    assert counts['selected'] == counts['masked_dense'], 'Selection changed with execution backend'
             if 'fused' in counts: fusion_mask_disagreements += int(counts['fused'] != counts['selected'])
             if 'prepared' in counts and 'fused' in counts: prepared_mask_disagreements += int(counts['prepared'] != counts['fused'])
             if a.fast_warp: warp_mask_disagreements += int(counts['prepared'] != counts['fast_warp'])
@@ -310,6 +323,11 @@ def worker(a):
     assert abs(results['base']['ap70']-.7555532616222492) < 1e-8
     if 'dense' in results: assert abs(results['dense']['ap70']-sb['cached_ap70']) < 1e-8
     write_json(out/'report.json', dict(status='COMPLETED', scans=len(val), labels=sum(r['supervised'] for r in val), results=results,
+        recurrence_verified=a.verify_recurrence,
+        own_mask_disagreement_frames=len(recurrence_audits) if a.verify_recurrence else None,
+        own_mask_xor_cells_total=sum(v['own_mask_xor_cells'] for v in recurrence_audits) if a.verify_recurrence else None,
+        same_input_replay_passed_all=all(v['same_input_masks_equal'] and v['same_input_numerically_close'] for v in recurrence_audits) if a.verify_recurrence else None,
+        recurrence_timing_note='Mask capture overhead included in selected/control timing; comparisons and discarded shared-input replays excluded. No pure-backend latency equivalence claimed.' if a.verify_recurrence else None,
         fused_mask_count_disagreement_frames=fusion_mask_disagreements if 'fused' in modes else None,
         prepared_mask_count_disagreement_frames=prepared_mask_disagreements if 'fused' in modes and 'prepared' in modes else None,
         fast_warp_mask_count_disagreement_frames=warp_mask_disagreements if a.fast_warp else None,
@@ -333,10 +351,13 @@ def main():
     p.add_argument('--long-history', action='store_true', help='Compare spatial period5/.45s to period3/.25s with identical FP16 storage')
     p.add_argument('--profile-frames', type=int, default=0, help='Bounded timing diagnosis instead of AP validation (64..512 frames)')
     p.add_argument('--audit-selection', action='store_true', help='Projected only: stop at first mask divergence, save same-input replay; no full AP result')
+    p.add_argument('--verify-recurrence', action='store_true', help='Projected only: full AP with logged mask divergences and same-input verification on each')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
     if a.audit_selection and not a.projected_run:
         p.error('Selection diagnosis requires --projected-run')
+    if a.verify_recurrence and (not a.projected_run or a.audit_selection):
+        p.error('Verified recurrence requires projected full validation, without diagnostic early stop')
     if a.projected_run and (a.fused or a.prepared or a.fast_warp or a.cache_fp16 or a.long_history or a.profile_frames or a.confidence_guard is None):
         p.error('Projected comparison requires confidence guard and plain FP32 four-mode validation')
     if a.profile_frames and (not a.fused or not 64 <= a.profile_frames <= 512):

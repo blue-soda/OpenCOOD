@@ -48,6 +48,15 @@ class SelectionAuditTests(unittest.TestCase):
             self.assertTrue(all(torch.equal(a,b) for a,b in zip(snapshots,state['spatial']['maps'])))
             with self.assertRaises(ValueError):capture_step(selected,x,state,dict(meta,timestamp_us=0))
             self.assertEqual(stage.selected_from_stem,original)
+            original_step = dense.step
+            def broken_step(*args):
+                pred,new,info = original_step(*args)
+                return dict(psm=pred['psm']+1.),new,info
+            dense.step = broken_step
+            rejected = divergence_audit(selected,dense,x,dict(selected=state,masked_dense=other),meta,
+                dict(selected=left,masked_dense=right))
+            self.assertTrue(rejected['same_input_masks_equal'])
+            self.assertFalse(rejected['same_input_numerically_close'])
 
 
 if __name__ == '__main__':unittest.main()
