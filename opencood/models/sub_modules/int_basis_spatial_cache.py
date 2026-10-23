@@ -101,6 +101,9 @@ class SpatialBasisCache:
             spatial_state_bytes=size, spatial_uncovered_fraction=uncovered,
             spatial_priority_fraction=priority_fraction, spatial_guard_added_fraction=added_fraction,
             spatial_full_age=(stamp-full_stamp)/1e6)
+        if getattr(self.stage, 'spatial_input_projected', False):
+            info['spatial_basis_executed_fraction'] = 0.
+            info['spatial_projection_executed_fraction'] = 1.
         return output, new_state, info
 
 

@@ -13,6 +13,7 @@ import torch
 from opencood.models.sub_modules.int_compact_readout import compact_shrink
 from opencood.models.sub_modules.int_projected_gru import projected_gru
 from opencood.models.sub_modules.int_basis_spatial_state import SpatialBasisStage
+from opencood.models.sub_modules.int_projected_spatial import ProjectedSpatialStage
 from opencood.models.sub_modules.int_basis_spatial_cache import SpatialBasisCacheDetector
 from opencood.models.sub_modules.int_fused_basis import fuse_spatial_basis
 from opencood.models.sub_modules.int_cached_metric_warp import CachedMetricWarp
@@ -33,23 +34,34 @@ def worker(a):
     base, cfg, val, source = setup(a)
     rb, readout = completed_best(a.readout_run)
     artifacts = []
+    spatial_run = a.projected_run or a.basis_run
     for root, sha in ((a.memory_run, '1a267575ef735f203526fa3b8196334d32d9ff8a9080449c3b6206247913e5ef'),
                       (a.repair_run, '9f0997e23752683aa3a8fa6f5b9c9e65ddd91c7a1f2dca89e1beb7500a755fbd'),
-                      (a.basis_run, 'c2e173eeed6dd4019319d1f421f81b2582fcf9687184a98a3091c36b16f3c928')):
+                      (spatial_run, None if a.projected_run else 'c2e173eeed6dd4019319d1f421f81b2582fcf9687184a98a3091c36b16f3c928')):
         root = Path(root)
         assert json.loads((root/'status.json').read_text())['status'] == 'COMPLETED'
         best = json.loads((root/'best.json').read_text())
-        assert digest(best['checkpoint']) == best['sha256'] == sha
+        assert digest(best['checkpoint']) == best['sha256']
+        if sha is not None: assert best['sha256'] == sha
         artifacts.append((best, torch.load(best['checkpoint'], map_location='cpu')))
     (mb, memory), (pb, repaired), (sb, spatial) = artifacts
     assert memory['contract']['data'] == repaired['contract']['data'] == spatial['contract']['data'] == source['contract']
     assert memory['contract']['source']['sha256'] == readout['contract']['source_sha256'] == source['checkpoint']['sha256']
     assert repaired['contract']['readout'] == spatial['contract']['readout'] == rb
-    assert spatial['contract']['memory'] == mb and spatial['contract']['repair'] == pb and spatial['contract']['rank'] == 9
-    dense_report = json.loads((Path(a.basis_run)/'report.json').read_text())
+    assert spatial['contract']['memory'] == mb and spatial['contract']['repair'] == pb
+    if a.projected_run:
+        assert spatial['contract']['rank'] in (64,96)
+        assert spatial['contract']['phase'] == 'Dense precision recovery for projected four-map spatial update; no new spatial cache during training/validation'
+        dense_report = json.loads((Path(sb['checkpoint']).parent/'report.json').read_text())
+        assert spatial['epoch'] == sb['epoch']
+    else:
+        assert spatial['contract']['rank'] == 9
+        dense_report = json.loads((Path(a.basis_run)/'report.json').read_text())
     assert dense_report['status'] == 'COMPLETED'
     for name in ('full', 'cached'):
-        assert abs(dense_report['results'][name]['ap70']-dense_report['results']['base_'+name]['ap70']) < 1e-5
+        if not a.projected_run:
+            assert abs(dense_report['results'][name]['ap70']-dense_report['results']['base_'+name]['ap70']) < 1e-5
+    assert abs(dense_report['results']['cached']['ap70']-sb['cached_ap70']) < 1e-8
     base.shrink_conv = compact_shrink(base.shrink_conv, 96)[0].cuda()
     base.shrink_conv.load_state_dict(readout['readout'], strict=True)
     base.feature_memory = projected_gru(base.feature_memory, 32)[0].cuda()
@@ -57,7 +69,8 @@ def worker(a):
     split = SplitCompactReadout(base.shrink_conv, base.backbone.deblocks[0][0].out_channels).cuda().eval()
     repair = LightRepair(96, width=32).cuda().eval(); repair.load_state_dict(repaired['repair'], strict=True)
     student = copy.deepcopy(base)
-    stage = SpatialBasisStage(base.backbone.resnet.layer0, 9).cuda().eval()
+    stage = (ProjectedSpatialStage(base.backbone.resnet.layer0, spatial['contract']['rank']) if a.projected_run
+             else SpatialBasisStage(base.backbone.resnet.layer0, 9)).cuda().eval()
     stage.load_state_dict(spatial['stage'], strict=True); student.backbone.resnet.layer0 = stage
     for m in (base, student, split, repair):
         for p in m.parameters(): p.requires_grad_(False)
@@ -90,6 +103,8 @@ def worker(a):
     control = SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, period=1, confidence_threshold=a.confidence_guard)
     write_json(out/'contract.json', dict(source=source['checkpoint'], data=source['contract'], memory=mb, readout=rb,
         repair=pb, basis=sb, threshold=a.threshold, confidence_guard=a.confidence_guard, fused_execution=a.fused,
+        projected_spatial=bool(a.projected_run),
+        projected_contract='If enabled: completed recovery run best-by-fullAP checkpoint, own dense baseline replay, dense 1x1 projection every frame and selected 3x3 output rows. All four history maps FP32, spatial/deep period3/.25s. No additional training or fused kernels. Compare selected to SAME compressed checkpoint dense and masked-dense recurrence; base is mature uncompressed spatial path.',
         profile_frames=a.profile_frames, run_kind='bounded_timing_profile' if a.profile_frames else 'full_validation',
         prepared_execution=a.prepared,
         fast_warp_execution=a.fast_warp,
@@ -134,10 +149,10 @@ def worker(a):
                 else:
                     cells = info['spatial_cells']
                     mixing = sum(cells*c.mix.weight.numel() for b in stage.blocks for c in (b.conv1, b.conv2))
-                    basis_cost = sum(cells*c.basis.weight.numel() for b in stage.blocks for c in (b.conv1, b.conv2))
+                    basis_cost = sum(cells*(c.project if a.projected_run else c.basis).weight.numel() for b in stage.blocks for c in (b.conv1, b.conv2))
                     skipped = basis_cost if name in ('fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history', 'long_masked') else 0
                     if name in ('selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']: skipped += mixing
-                    if name == 'selected' and not info['spatial_refresh'] and info['spatial_selected_cells'] == 0:
+                    if name == 'selected' and not a.projected_run and not info['spatial_refresh'] and info['spatial_selected_cells'] == 0:
                         skipped += basis_cost
                     assert counter.total == costs[('dense', flag)]-skipped, (name, counter.total, skipped)
             for key in predictions['selected']:
@@ -231,7 +246,7 @@ def worker(a):
                 if name in ('fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history'): macs -= basis_cost
                 if name in ('selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']:
                     macs -= mixing
-                    if name == 'selected' and info['spatial_selected_cells'] == 0: macs -= basis_cost
+                    if name == 'selected' and not a.projected_run and info['spatial_selected_cells'] == 0: macs -= basis_cost
                     macs += info['spatial_extra_linear_macs']
                 item['macs'] += macs
                 item['write'].append(info.get('spatial_write_fraction', 1.))
@@ -267,6 +282,10 @@ def worker(a):
             max_spatial_full_age_s=max(item['full_age']), spatial_refresh_frames=item['refreshes'], deep_partial_frames=item['partials'])
         results[name]['extra_packed_weight_bytes'] = sum(b.numel()*b.element_size() for n,b in roots[name].named_buffers() if n.endswith('packed_weight'))
         results[name]['static_geometry_bytes'] = modes[name].warp.geometry_bytes if name == 'fast_warp' else 0
+        if a.projected_run:
+            results[name]['mean_executed_projection_area'] = 1. if name != 'base' else None
+            # This architecture has input projections, not depthwise spatial bases.
+            results[name]['mean_executed_basis_area'] = None
     assert abs(results['base']['ap70']-.7555532616222492) < 1e-8
     if 'dense' in results: assert abs(results['dense']['ap70']-sb['cached_ap70']) < 1e-8
     write_json(out/'report.json', dict(status='COMPLETED', scans=len(val), labels=sum(r['supervised'] for r in val), results=results,
@@ -274,13 +293,16 @@ def worker(a):
         prepared_mask_count_disagreement_frames=prepared_mask_disagreements if 'fused' in modes and 'prepared' in modes else None,
         fast_warp_mask_count_disagreement_frames=warp_mask_disagreements if a.fast_warp else None,
         cache_fp16_mask_count_disagreement_frames=storage_mask_disagreements if a.cache_fp16 and not a.long_history else None,
-        scope='Actual own-recursive four-map spatial cache, whole aligned activation reuse, selected output-column mixing. Fixed heuristic threshold, no training. Dense bases (unless fused), stem/current FM and existing readout/deep cache included. Fused execution composes full-rank kernels and eliminates explicit spatial bases, with same cache/mask semantics. Areas include refresh and dilated requests, no duplicated halo outputs. Conv plus functional-linear MACsx2 excludes nonconv arithmetic. Same GPU rotating wall time includes warp/selection/gather/scatter; excludes IO/H2D/postprocess. State tensor bytes are per-mode; incremental CUDA peaks measure transient allocation above live multi-mode allocations, not standalone process VRAM.'))
+        scope=('Projected-input spatial kernels; dense cheap 1x1 projection plus selected expensive 3x3 output rows, four own aligned FP32 activation caches. Same compressed checkpoint dense and masked-dense controls; mature uncompressed base separately. Period3/.25s and own previous confidence guard; no training/teacher injection. ' if a.projected_run else '')+'Actual own-recursive four-map spatial cache, whole aligned activation reuse, selected output-column mixing. Fixed heuristic threshold, no training. Dense bases (unless fused or replaced by projected-input kernels), stem/current FM and existing readout/deep cache included. Fused execution composes full-rank kernels and eliminates explicit spatial bases, with same cache/mask semantics. Areas include refresh and dilated requests, no duplicated halo outputs. Conv plus functional-linear MACsx2 excludes nonconv arithmetic. Same GPU rotating wall time includes warp/selection/gather/scatter; excludes IO/H2D/postprocess. State tensor bytes are per-mode; incremental CUDA peaks measure transient allocation above live multi-mode allocations, not standalone process VRAM.'))
     write_json(out/'status.json', dict(status='COMPLETED'))
 
 
 def main():
     p = argparse.ArgumentParser()
-    for key in ('root', 'readout-run', 'repair-run', 'memory-run', 'basis-run', 'output'): p.add_argument('--'+key, required=True)
+    for key in ('root', 'readout-run', 'repair-run', 'memory-run', 'output'): p.add_argument('--'+key, required=True)
+    spatial = p.add_mutually_exclusive_group(required=True)
+    spatial.add_argument('--basis-run')
+    spatial.add_argument('--projected-run', help='Completed input-channel projection recovery run, fixed best-by-fullAP')
     p.add_argument('--threshold', type=float, choices=(.25, .5, .75), required=True)
     p.add_argument('--confidence-guard', type=float, choices=(.1, .3), default=None)
     p.add_argument('--fused', action='store_true', help='Include equivalent composed-kernel selected execution')
@@ -291,6 +313,8 @@ def main():
     p.add_argument('--profile-frames', type=int, default=0, help='Bounded timing diagnosis instead of AP validation (64..512 frames)')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.projected_run and (a.fused or a.prepared or a.fast_warp or a.cache_fp16 or a.long_history or a.profile_frames or a.confidence_guard is None):
+        p.error('Projected comparison requires confidence guard and plain FP32 four-mode validation')
     if a.profile_frames and (not a.fused or not 64 <= a.profile_frames <= 512):
         p.error('Profiling requires --fused and 64..512 frames')
     if a.prepared and (not a.fused or a.profile_frames):

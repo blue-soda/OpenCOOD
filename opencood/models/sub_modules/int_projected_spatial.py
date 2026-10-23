@@ -51,6 +51,7 @@ class ProjectedSpatialStage(SpatialBasisStage):
         self.stem = copy.deepcopy(source[0])
         self.blocks = nn.ModuleList(copy.deepcopy(list(source)[1:]))
         self.rank = rank; self.retained_weight_energy = []
+        self.spatial_input_projected = True
         for block in self.blocks:
             if block.downsample is not None:
                 raise ValueError('Only identity residuals supported')
