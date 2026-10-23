@@ -1,0 +1,48 @@
+[
+  {
+    "epoch": 1,
+    "loss": 0.1789260648941425,
+    "lr": 9.375e-06,
+    "stale": 1,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8321027698682837,
+          "ap70": 0.7555532616222492,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.704377609218458,
+          "p95_ms": 28.668482427019622,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.8311640141378542,
+          "ap70": 0.7567024378706645,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 28.058988723640148,
+          "p95_ms": 29.37744822120294,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8241792766786015,
+          "ap70": 0.7500623575144247,
+          "conv_gflops": 134.91683438812564,
+          "mean_ms": 20.18629835493783,
+          "p95_ms": 31.24566461192444,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8240150405888088,
+          "ap70": 0.7505854144755442,
+          "conv_gflops": 221.7793536,
+          "mean_ms": 30.436632114942064,
+          "p95_ms": 31.798505317419767,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense pointwise spatial baseline with frozen e11 GRU. New spatial history input is zero; no regional reuse. Own FM states/deep anchors, paired full and cached validation. Standard conv MACsx2, model latency excludes IO/H2D/postprocess.",
+      "status": "COMPLETED"
+    }
+  }
+]
