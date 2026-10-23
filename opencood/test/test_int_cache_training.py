@@ -12,12 +12,12 @@ from opencood.tools.int_cache_training import detach_state
 class CacheTrainingTests(unittest.TestCase):
     def setUp(self):
         torch.manual_seed(303)
-        parent=ProjectedSpatialStage(nn.Sequential(*[BasicBlock(8,8) for _ in range(3)]).double().eval(),4)
+        parent=ProjectedSpatialStage(nn.Sequential(*[BasicBlock(16,16) for _ in range(3)]).double().eval(),8)
         self.stage=CompactProjectedSpatialStage(parent)
         for block in self.stage.blocks:
             for layer in (block.conv1,block.conv2):
                 for p in layer.parameters():p.requires_grad_(True)
-        self.x=torch.rand(1,8,12,16,dtype=torch.double)
+        self.x=torch.rand(1,16,12,16,dtype=torch.double)
 
     def test_explicit_opt_in_and_masked_gradients(self):
         s=self.stage
