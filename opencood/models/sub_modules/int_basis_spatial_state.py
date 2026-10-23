@@ -8,6 +8,7 @@ import copy
 import torch
 from torch import nn
 from torch.nn import functional as F
+from opencood.models.sub_modules.int_selected_conv import prepare_selected_neighborhoods
 
 
 class SpatialBasisConv(nn.Module):
@@ -129,15 +130,17 @@ class SpatialBasisStage(nn.Module):
         if any(old.shape != current.shape or old.device != current.device or old.dtype != current.dtype for old in aligned_maps):
             raise ValueError('Aligned maps must match current stem')
         states = []; macs = 0
+        prepared = getattr(self, 'spatial_prepared_indices', False) and execution == 'selected'
+        options = dict(plan=prepare_selected_neighborhoods(mask)) if prepared else {}
         for index, block in enumerate(self.blocks):
             old_first, old_out = aligned_maps[2*index:2*index+2]
             if execution == 'masked_dense':
                 first = torch.where(mask, F.relu(block.bn1(block.conv1(current))), old_first)
                 current = torch.where(mask, F.relu(block.bn2(block.conv2(first))+current), old_out)
             else:
-                rows, ids, count = block.conv1.selected(current, mask); macs += count
+                rows, ids, count = block.conv1.selected(current, mask, **options); macs += count
                 first = _write_rows(old_first, ids, F.relu(_selected_bn(rows, block.bn1))) if ids.numel() else old_first.clone()
-                rows, ids, count = block.conv2.selected(first, mask); macs += count
+                rows, ids, count = block.conv2.selected(first, mask, **options); macs += count
                 if ids.numel():
                     skip = current.reshape(current.shape[1], -1)[:, ids].t()
                     current = _write_rows(old_out, ids, F.relu(_selected_bn(rows, block.bn2)+skip))

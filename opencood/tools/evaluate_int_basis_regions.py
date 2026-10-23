@@ -69,10 +69,16 @@ def worker(a):
         fused = copy.deepcopy(student); fused.backbone.resnet.layer0 = fuse_spatial_basis(stage)
         roots['fused'] = fused
         modes['fused'] = SpatialBasisCacheDetector(fused, cfg, split, repair, a.threshold, confidence_threshold=a.confidence_guard)
+    if a.prepared:
+        prepared = copy.deepcopy(student); prepared.backbone.resnet.layer0 = fuse_spatial_basis(stage, prepared=True)
+        roots['prepared'] = prepared
+        modes['prepared'] = SpatialBasisCacheDetector(prepared, cfg, split, repair, a.threshold, confidence_threshold=a.confidence_guard)
     control = SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, period=1, confidence_threshold=a.confidence_guard)
     write_json(out/'contract.json', dict(source=source['checkpoint'], data=source['contract'], memory=mb, readout=rb,
         repair=pb, basis=sb, threshold=a.threshold, confidence_guard=a.confidence_guard, fused_execution=a.fused,
         profile_frames=a.profile_frames, run_kind='bounded_timing_profile' if a.profile_frames else 'full_validation',
+        prepared_execution=a.prepared,
+        prepared_contract='Optional shared per-frame mask/nonzero/neighborhood indices for four layers; prepacked immutable weights stored as nonpersistent buffers; linear chunks16384 vs original4096. Identical masks/caches/weights/MACs. Extra packed weight bytes reported separately from recurrent state. No persistent index plan or activation patches.',
         execution_fusion='Optional inference-only composition of full-rank basis+mix into native3x3. Refresh uses native conv; partial gathers selected neighborhoods and computes selected output rows. Replaces basis/mix weights; unchanged four activation caches, reference/guard and mask. No extra dense spatial basis. Count gathered standard convolution MACs, not basis-factor arithmetic.',
         spatial_period=3, max_full_age_s=.25, deep_period=3,
         selector='Current mature stem16-channel mean descriptor at native grid; 4x4-tile RMS relative change to aligned retained reference; radius4 dilation; all uncovered cells mandatory. No labels or current costly features used.',
@@ -108,8 +114,8 @@ def worker(a):
                     cells = info['spatial_cells']
                     mixing = sum(cells*c.mix.weight.numel() for b in stage.blocks for c in (b.conv1, b.conv2))
                     basis_cost = sum(cells*c.basis.weight.numel() for b in stage.blocks for c in (b.conv1, b.conv2))
-                    skipped = basis_cost if name == 'fused' else 0
-                    if name in ('selected', 'fused') and not info['spatial_refresh']: skipped += mixing
+                    skipped = basis_cost if name in ('fused', 'prepared') else 0
+                    if name in ('selected', 'fused', 'prepared') and not info['spatial_refresh']: skipped += mixing
                     if name == 'selected' and not info['spatial_refresh'] and info['spatial_selected_cells'] == 0:
                         skipped += basis_cost
                     assert counter.total == costs[('dense', flag)]-skipped, (name, counter.total, skipped)
@@ -123,6 +129,10 @@ def worker(a):
                     fusion_error = max(fusion_error, float((predictions['fused'][key]-predictions['selected'][key]).abs().max()))
                     assert torch.allclose(predictions['fused'][key], predictions['selected'][key], atol=1e-3, rtol=1e-3)
                 assert details['fused']['spatial_selected_cells'] == details['selected']['spatial_selected_cells']
+            if a.prepared:
+                for key in predictions['prepared']:
+                    assert torch.allclose(predictions['prepared'][key], predictions['fused'][key], atol=1e-3, rtol=1e-3)
+                assert details['prepared']['spatial_selected_cells'] == details['fused']['spatial_selected_cells']
             writes.append(details['selected']['spatial_write_fraction'])
             pred, control_state, _ = control.step(ego, control_state, sample['meta'])
             for key in pred:
@@ -132,6 +142,7 @@ def worker(a):
         fused_vs_factorized_max_error=fusion_error if a.fused else None,
         factorized_stage_parameters=sum(p.numel() for p in stage.parameters()),
         fused_stage_parameters=sum(p.numel() for p in roots['fused'].backbone.resnet.layer0.parameters()) if a.fused else None,
+        prepared_packed_weight_bytes=sum(b.numel()*b.element_size() for n,b in roots['prepared'].named_buffers() if n.endswith('packed_weight')) if a.prepared else 0,
         period1_vs_dense_max_error=control_error, mean_write_fraction=float(np.mean(writes)),
         constant_hook_macs={str(k):v for k,v in costs.items()}, dense_mix_macs=mixing, dense_basis_macs=basis_cost,
         costs_verified_against_actual_conv_hooks=True, own_immutable_deep_anchors=True))
@@ -143,7 +154,7 @@ def worker(a):
     stats = {k:{t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.5, .7)} for k in modes}
     metrics = {k:dict(time=[], write=[], mix=[], basis=[], state=[], peak=[], full_age=[], uncovered=[], priority=[], guard_added=[],
                      macs=0, refreshes=0, partials=0) for k in modes}
-    dataset, stream = loader(val, cfg, 4, 303); fusion_mask_disagreements = 0
+    dataset, stream = loader(val, cfg, 4, 303); fusion_mask_disagreements = prepared_mask_disagreements = 0
     with torch.no_grad():
         for index, sample in enumerate(stream):
             ego = to_device(sample['ego'], torch.device('cuda')); names = list(modes)
@@ -159,8 +170,8 @@ def worker(a):
                 assert all(torch.isfinite(v).all() for v in pred.values())
                 flag = bool(info['local_partial']); item['partials'] += flag
                 macs = costs[('base' if name == 'base' else 'dense', flag)]
-                if name == 'fused': macs -= basis_cost
-                if name in ('selected', 'fused') and not info['spatial_refresh']:
+                if name in ('fused', 'prepared'): macs -= basis_cost
+                if name in ('selected', 'fused', 'prepared') and not info['spatial_refresh']:
                     macs -= mixing
                     if name == 'selected' and info['spatial_selected_cells'] == 0: macs -= basis_cost
                     macs += info['spatial_extra_linear_macs']
@@ -174,12 +185,13 @@ def worker(a):
                 item['uncovered'].append(info.get('spatial_uncovered_fraction', 0.))
                 item['priority'].append(info.get('spatial_priority_fraction', 0.))
                 item['guard_added'].append(info.get('spatial_guard_added_fraction', 0.))
-                if name in ('selected', 'masked_dense', 'fused'): counts[name] = info['spatial_selected_cells']
+                if name in ('selected', 'masked_dense', 'fused', 'prepared'): counts[name] = info['spatial_selected_cells']
                 if sample['meta']['supervised']:
                     data = dict(ego=ego); boxes, scores = dataset.post.post_process(data, dict(ego=pred)); gt = dataset.post.generate_gt_bbx(data)
                     for threshold in stats[name]: eval_utils.caluclate_tp_fp(boxes, scores, gt, stats[name], threshold)
             assert counts['selected'] == counts['masked_dense'], 'Selection changed with execution backend'
             if a.fused: fusion_mask_disagreements += int(counts['fused'] != counts['selected'])
+            if a.prepared: prepared_mask_disagreements += int(counts['prepared'] != counts['fused'])
             if (index+1) % 200 == 0: write_json(out/'status.json', dict(status='RUNNING', phase='validation', scans=index+1))
     assert index+1 == len(val)
     results = {}
@@ -192,10 +204,12 @@ def worker(a):
             max_incremental_cuda_peak_bytes=max(item['peak']), mean_uncovered_fraction=float(np.mean(item['uncovered'])),
             mean_priority_fraction=float(np.mean(item['priority'])), mean_guard_added_fraction=float(np.mean(item['guard_added'])),
             max_spatial_full_age_s=max(item['full_age']), spatial_refresh_frames=item['refreshes'], deep_partial_frames=item['partials'])
+        results[name]['extra_packed_weight_bytes'] = sum(b.numel()*b.element_size() for n,b in roots[name].named_buffers() if n.endswith('packed_weight'))
     assert abs(results['base']['ap70']-.7555532616222492) < 1e-8
     assert abs(results['dense']['ap70']-sb['cached_ap70']) < 1e-8
     write_json(out/'report.json', dict(status='COMPLETED', scans=len(val), labels=sum(r['supervised'] for r in val), results=results,
         fused_mask_count_disagreement_frames=fusion_mask_disagreements,
+        prepared_mask_count_disagreement_frames=prepared_mask_disagreements,
         scope='Actual own-recursive four-map spatial cache, whole aligned activation reuse, selected output-column mixing. Fixed heuristic threshold, no training. Dense bases (unless fused), stem/current FM and existing readout/deep cache included. Fused execution composes full-rank kernels and eliminates explicit spatial bases, with same cache/mask semantics. Areas include refresh and dilated requests, no duplicated halo outputs. Conv plus functional-linear MACsx2 excludes nonconv arithmetic. Same GPU rotating wall time includes warp/selection/gather/scatter; excludes IO/H2D/postprocess. State tensor bytes are per-mode; incremental CUDA peaks measure transient allocation above live multi-mode allocations, not standalone process VRAM.'))
     write_json(out/'status.json', dict(status='COMPLETED'))
 
@@ -206,11 +220,14 @@ def main():
     p.add_argument('--threshold', type=float, choices=(.25, .5, .75), required=True)
     p.add_argument('--confidence-guard', type=float, choices=(.1, .3), default=None)
     p.add_argument('--fused', action='store_true', help='Include equivalent composed-kernel selected execution')
+    p.add_argument('--prepared', action='store_true', help='Also compare shared neighborhood indices and prepacked weights')
     p.add_argument('--profile-frames', type=int, default=0, help='Bounded timing diagnosis instead of AP validation (64..512 frames)')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
     if a.profile_frames and (not a.fused or not 64 <= a.profile_frames <= 512):
         p.error('Profiling requires --fused and 64..512 frames')
+    if a.prepared and (not a.fused or a.profile_frames):
+        p.error('Prepared comparison requires --fused and full validation')
     if a.worker:
         def expired(s, f): raise TimeoutError('Basis region evaluation exceeded4 hours')
         signal.signal(signal.SIGALRM, expired); signal.alarm(14400)
