@@ -14,6 +14,7 @@ from opencood.models.sub_modules.int_compact_readout import compact_shrink
 from opencood.models.sub_modules.int_projected_gru import projected_gru
 from opencood.models.sub_modules.int_basis_spatial_state import SpatialBasisStage
 from opencood.models.sub_modules.int_projected_spatial import ProjectedSpatialStage
+from opencood.models.sub_modules.int_compact_projected_state import CompactProjectedSpatialStage
 from opencood.models.sub_modules.int_basis_spatial_cache import SpatialBasisCacheDetector
 from opencood.models.sub_modules.int_fused_basis import fuse_spatial_basis
 from opencood.models.sub_modules.int_cached_metric_warp import CachedMetricWarp
@@ -71,7 +72,10 @@ def worker(a):
     student = copy.deepcopy(base)
     stage = (ProjectedSpatialStage(base.backbone.resnet.layer0, spatial['contract']['rank']) if a.projected_run
              else SpatialBasisStage(base.backbone.resnet.layer0, 9)).cuda().eval()
-    stage.load_state_dict(spatial['stage'], strict=True); student.backbone.resnet.layer0 = stage
+    stage.load_state_dict(spatial['stage'], strict=True)
+    parent_stage = stage
+    if a.compact_state: stage = CompactProjectedSpatialStage(stage).cuda().eval()
+    student.backbone.resnet.layer0 = stage
     for m in (base, student, split, repair):
         for p in m.parameters(): p.requires_grad_(False)
     modes = dict(base=SplitReadoutDetector(base, cfg, split, 3, repair),
@@ -79,6 +83,11 @@ def worker(a):
         selected=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, confidence_threshold=a.confidence_guard),
         masked_dense=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, execution='masked_dense', confidence_threshold=a.confidence_guard))
     roots = {name:base if name == 'base' else student for name in modes}
+    if a.compact_state:
+        parent_model = copy.deepcopy(student); parent_model.backbone.resnet.layer0 = parent_stage
+        for p in parent_model.parameters():p.requires_grad_(False)
+        roots['parent_selected'] = parent_model
+        modes['parent_selected'] = SpatialBasisCacheDetector(parent_model,cfg,split,repair,a.threshold,confidence_threshold=a.confidence_guard)
     if a.fused:
         fused = copy.deepcopy(student); fused.backbone.resnet.layer0 = fuse_spatial_basis(stage)
         roots['fused'] = fused
@@ -104,6 +113,8 @@ def worker(a):
     write_json(out/'contract.json', dict(source=source['checkpoint'], data=source['contract'], memory=mb, readout=rb,
         repair=pb, basis=sb, threshold=a.threshold, confidence_guard=a.confidence_guard, fused_execution=a.fused,
         projected_spatial=bool(a.projected_run),
+        compact_projected_state=a.compact_state,
+        compact_state_contract='Optional: cache conv2 input projection(r channels) instead of full conv1 post-ReLU(128), retain complete block outputs128. Same weights/nonlinearities/residuals/nearest geometry. On partial frames conv1 input projection dense, conv2 input projection only selected rows; selected3x3 unchanged. Same compact masked-dense control and original four128-map parent_selected paired. No quantization/training.',
         projected_contract='If enabled: completed recovery run best-by-fullAP checkpoint, own dense baseline replay, dense 1x1 projection every frame and selected 3x3 output rows. All four history maps FP32, spatial/deep period3/.25s. No additional training or fused kernels. Compare selected to SAME compressed checkpoint dense and masked-dense recurrence; base is mature uncompressed spatial path.',
         profile_frames=a.profile_frames, run_kind='selection_divergence_diagnostic' if a.audit_selection else ('bounded_timing_profile' if a.profile_frames else 'full_validation'),
         selection_audit=a.audit_selection,
@@ -132,7 +143,7 @@ def worker(a):
     arguments = json.loads((Path(a.root)/'full_gru'/'effective_runtime.json').read_text())['arguments']
     train = json.loads(Path(arguments['manifest']).read_text())['train']
     states = {k:None for k in modes}; control_state = None; costs = {}; mixing = basis_cost = None
-    maximum = control_error = fusion_error = warp_error = storage_error = long_error = 0.; writes = []
+    maximum = control_error = fusion_error = warp_error = storage_error = long_error = compact_error = 0.; writes = []
     _, stream = loader(train[:32], cfg, 0, 303)
     with torch.no_grad():
         for sample in stream:
@@ -154,7 +165,9 @@ def worker(a):
                     mixing = sum(cells*c.mix.weight.numel() for b in stage.blocks for c in (b.conv1, b.conv2))
                     basis_cost = sum(cells*(c.project if a.projected_run else c.basis).weight.numel() for b in stage.blocks for c in (b.conv1, b.conv2))
                     skipped = basis_cost if name in ('fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history', 'long_masked') else 0
-                    if name in ('selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']: skipped += mixing
+                    if name in ('selected', 'parent_selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']: skipped += mixing
+                    if a.compact_state and name=='selected' and not info['spatial_refresh']:
+                        skipped += basis_cost//2
                     if name == 'selected' and not a.projected_run and not info['spatial_refresh'] and info['spatial_selected_cells'] == 0:
                         skipped += basis_cost
                     assert counter.total == costs[('dense', flag)]-skipped, (name, counter.total, skipped)
@@ -163,6 +176,12 @@ def worker(a):
                 maximum = max(maximum, float((left-right).abs().max()))
                 assert torch.allclose(left, right, atol=1e-3, rtol=1e-3), maximum
             assert details['selected']['spatial_selected_cells'] == details['masked_dense']['spatial_selected_cells']
+            if a.compact_state:
+                for key in predictions['selected']:
+                    compact_error = max(compact_error,float((predictions['selected'][key]-predictions['parent_selected'][key]).abs().max()))
+                    assert torch.allclose(predictions['selected'][key],predictions['parent_selected'][key],atol=1e-3,rtol=1e-3)
+                saved_bytes = 2*(128-stage.rank)*details['selected']['spatial_cells']*4
+                assert details['parent_selected']['spatial_state_bytes']-details['selected']['spatial_state_bytes']==saved_bytes
             if a.fused:
                 for key in predictions['fused']:
                     fusion_error = max(fusion_error, float((predictions['fused'][key]-predictions['selected'][key]).abs().max()))
@@ -202,6 +221,7 @@ def worker(a):
                 control_error = max(control_error, float((pred[key]-predictions['dense'][key]).abs().max()))
                 assert torch.allclose(pred[key], predictions['dense'][key], atol=1e-5, rtol=1e-5)
     write_json(out/'engineering.json', dict(status='PASSED', frames=32, selected_vs_masked_dense_max_error=maximum,
+        compact_vs_original_state_max_error=compact_error if a.compact_state else None,
         fused_vs_factorized_max_error=fusion_error if a.fused else None,
         factorized_stage_parameters=sum(p.numel() for p in stage.parameters()),
         fused_stage_parameters=sum(p.numel() for p in roots['fused'].backbone.resnet.layer0.parameters()) if a.fused else None,
@@ -228,11 +248,12 @@ def worker(a):
         modes = {k:modes[k] for k in ('selected','masked_dense')}
     states = {k:None for k in modes}; control_state = None
     stats = {k:{t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.5, .7)} for k in modes}
-    metrics = {k:dict(time=[], write=[], mix=[], basis=[], state=[], peak=[], full_age=[], uncovered=[], priority=[], guard_added=[],
+    metrics = {k:dict(time=[], write=[], mix=[], basis=[], projection=[], state=[], peak=[], full_age=[], uncovered=[], priority=[], guard_added=[],
                      macs=0, refreshes=0, partials=0) for k in modes}
     dataset, stream = loader(val, cfg, 4, 303); fusion_mask_disagreements = prepared_mask_disagreements = warp_mask_disagreements = 0
     storage_mask_disagreements = 0
     recurrence_audits = []
+    parent_mask_count_disagreements = 0
     with torch.no_grad():
         for index, sample in enumerate(stream):
             ego = to_device(sample['ego'], torch.device('cuda')); names = list(modes)
@@ -258,21 +279,23 @@ def worker(a):
                 flag = bool(info['local_partial']); item['partials'] += flag
                 macs = costs[('base' if name == 'base' else 'dense', flag)]
                 if name in ('fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history'): macs -= basis_cost
-                if name in ('selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']:
+                if name in ('selected', 'parent_selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']:
                     macs -= mixing
+                    if a.compact_state and name=='selected': macs -= basis_cost//2
                     if name == 'selected' and not a.projected_run and info['spatial_selected_cells'] == 0: macs -= basis_cost
                     macs += info['spatial_extra_linear_macs']
                 item['macs'] += macs
                 item['write'].append(info.get('spatial_write_fraction', 1.))
                 item['mix'].append(info.get('spatial_mixer_executed_fraction', 1.))
                 item['basis'].append(info.get('spatial_basis_executed_fraction', 1.))
+                item['projection'].append(info.get('spatial_projection_executed_fraction',1.))
                 item['state'].append(info['state_bytes']+info['anchor_bytes']+info.get('spatial_state_bytes', 0))
                 item['refreshes'] += int(info.get('spatial_refresh', True))
                 item['full_age'].append(info.get('spatial_full_age', 0.))
                 item['uncovered'].append(info.get('spatial_uncovered_fraction', 0.))
                 item['priority'].append(info.get('spatial_priority_fraction', 0.))
                 item['guard_added'].append(info.get('spatial_guard_added_fraction', 0.))
-                if name in ('selected', 'masked_dense', 'fused', 'prepared', 'fast_warp', 'cache_fp16'): counts[name] = info['spatial_selected_cells']
+                if name in ('selected', 'parent_selected', 'masked_dense', 'fused', 'prepared', 'fast_warp', 'cache_fp16'): counts[name] = info['spatial_selected_cells']
                 if sample['meta']['supervised']:
                     data = dict(ego=ego); boxes, scores = dataset.post.post_process(data, dict(ego=pred)); gt = dataset.post.generate_gt_bbx(data)
                     for threshold in stats[name]: eval_utils.caluclate_tp_fp(boxes, scores, gt, stats[name], threshold)
@@ -295,6 +318,7 @@ def worker(a):
                 if not a.verify_recurrence:
                     assert counts['selected'] == counts['masked_dense'], 'Selection changed with execution backend'
             if 'fused' in counts: fusion_mask_disagreements += int(counts['fused'] != counts['selected'])
+            if a.compact_state: parent_mask_count_disagreements += int(counts['parent_selected'] != counts['selected'])
             if 'prepared' in counts and 'fused' in counts: prepared_mask_disagreements += int(counts['prepared'] != counts['fused'])
             if a.fast_warp: warp_mask_disagreements += int(counts['prepared'] != counts['fast_warp'])
             if a.cache_fp16 and not a.long_history: storage_mask_disagreements += int(counts['prepared'] != counts['cache_fp16'])
@@ -317,13 +341,15 @@ def worker(a):
         results[name]['extra_packed_weight_bytes'] = sum(b.numel()*b.element_size() for n,b in roots[name].named_buffers() if n.endswith('packed_weight'))
         results[name]['static_geometry_bytes'] = modes[name].warp.geometry_bytes if name == 'fast_warp' else 0
         if a.projected_run:
-            results[name]['mean_executed_projection_area'] = 1. if name != 'base' else None
+            results[name]['mean_executed_projection_area'] = float(np.mean(item['projection'])) if name != 'base' else None
             # This architecture has input projections, not depthwise spatial bases.
             results[name]['mean_executed_basis_area'] = None
     assert abs(results['base']['ap70']-.7555532616222492) < 1e-8
     if 'dense' in results: assert abs(results['dense']['ap70']-sb['cached_ap70']) < 1e-8
     write_json(out/'report.json', dict(status='COMPLETED', scans=len(val), labels=sum(r['supervised'] for r in val), results=results,
         recurrence_verified=a.verify_recurrence,
+        compact_state_parent_mask_count_disagreement_frames=parent_mask_count_disagreements if a.compact_state else None,
+        compact_state_note='Selected uses projected intermediate(r) and full block output(128) pairs; parent_selected caches four128 maps. Same compressed weights. Dense full function unchanged. Projection area averages two dense and two selected projections. Compare AP/state bytes/actual MACs independently; nearest warp and zero-bias projection commute in exact arithmetic, floating paths may differ.' if a.compact_state else None,
         own_mask_disagreement_frames=len(recurrence_audits) if a.verify_recurrence else None,
         own_mask_xor_cells_total=sum(v['own_mask_xor_cells'] for v in recurrence_audits) if a.verify_recurrence else None,
         same_input_replay_passed_all=all(v['same_input_masks_equal'] and v['same_input_numerically_close'] for v in recurrence_audits) if a.verify_recurrence else None,
@@ -352,8 +378,11 @@ def main():
     p.add_argument('--profile-frames', type=int, default=0, help='Bounded timing diagnosis instead of AP validation (64..512 frames)')
     p.add_argument('--audit-selection', action='store_true', help='Projected only: stop at first mask divergence, save same-input replay; no full AP result')
     p.add_argument('--verify-recurrence', action='store_true', help='Projected only: full AP with logged mask divergences and same-input verification on each')
+    p.add_argument('--compact-state', action='store_true', help='Cache projected intermediates, paired with original four-map state')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.compact_state and (not a.projected_run or not a.verify_recurrence or a.audit_selection):
+        p.error('Compact projected state requires projected run and verified full recurrence')
     if a.audit_selection and not a.projected_run:
         p.error('Selection diagnosis requires --projected-run')
     if a.verify_recurrence and (not a.projected_run or a.audit_selection):

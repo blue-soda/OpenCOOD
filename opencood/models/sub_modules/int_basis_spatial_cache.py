@@ -69,9 +69,10 @@ class SpatialBasisCache:
             # back to the compute dtype before alignment/convolution. No AMP.
             packed = torch.cat(values, 1).to(current.dtype)
             aligned, valid = self.warp(packed, state['pose'], meta['pose'], self.bounds)
-            channels = current.shape[1]
-            old = list(aligned[:, :4*channels].split(channels, 1))
-            reference = aligned[:, 4*channels:4*channels+descriptor.shape[1]]
+            channels = getattr(self.stage,'cache_channels',[current.shape[1]]*4)
+            state_channels = sum(channels)
+            old = list(aligned[:, :state_channels].split(channels, 1))
+            reference = aligned[:, state_channels:state_channels+descriptor.shape[1]]
             mask = local_change_mask(descriptor, reference, valid, self.threshold)
             if self.dilation:
                 mask = F.max_pool2d(mask.float(), 2*self.dilation+1, 1, self.dilation) > 0
@@ -104,6 +105,8 @@ class SpatialBasisCache:
         if getattr(self.stage, 'spatial_input_projected', False):
             info['spatial_basis_executed_fraction'] = 0.
             info['spatial_projection_executed_fraction'] = 1.
+            if getattr(self.stage,'compact_projected_state',False) and selected_execution:
+                info['spatial_projection_executed_fraction'] = (1.+count/float(cells))/2.
         return output, new_state, info
 
 
