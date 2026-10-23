@@ -67,5 +67,18 @@ class SpatialResumeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'Latest weights'):
                 load_completed_spatial_resume(root,contract)
 
+    def test_six_epoch_continuation_does_not_accept_plateau_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);_,_,_,contract=self.fixture(root)
+            resume=load_completed_spatial_resume(root,contract,additional_epochs_max=6)
+            self.assertEqual(resume['provenance']['additional_epochs_max'],6)
+            for invalid in (0,-1,1.5,True):
+                with self.assertRaisesRegex(ValueError,'positive integer'):
+                    load_completed_spatial_resume(root,contract,additional_epochs_max=invalid)
+            report=json.loads((root/'report.json').read_text());report['stop_reason']='plateau'
+            (root/'report.json').write_text(json.dumps(report))
+            with self.assertRaisesRegex(ValueError,'budget-limited'):
+                load_completed_spatial_resume(root,contract,additional_epochs_max=6)
+
 
 if __name__=='__main__':unittest.main()

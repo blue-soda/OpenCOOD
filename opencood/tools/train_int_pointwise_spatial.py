@@ -60,7 +60,7 @@ def worker(a):
         selection='Full AP primary best; cached AP from same checkpoint. Epoch0 retained. Precision recovery, not a sparse-compute result.')
     warm_start=bool(a.warm_start)
     if warm_start:
-        assert not a.resume_run and a.warm_start_sha
+        assert a.warm_start_sha
         assert a.warm_start_lr>0 and a.stem_lr>0
         if a.adapt_stem and a.expand_context:
             raise ValueError('Compare stem adaptation and context expansion separately')
@@ -88,7 +88,8 @@ def worker(a):
         contract['schedule']='Paired warm-start diagnostic: AdamW stage_lr=%g stem_lr=%s wd1e-4 clip5; same plateau scheduler; max6epochs/8hours. Source optimizer deliberately not restored in either arm.'%(a.warm_start_lr,str(a.stem_lr) if a.adapt_stem else 'frozen')
     elif a.expand_context or a.warm_start_sha or a.adapt_stem:
         raise ValueError('Architecture diagnostics require an explicit fixed warm-start checkpoint and SHA')
-    resume=load_completed_spatial_resume(a.resume_run,contract) if a.resume_run else None
+    phase_epochs_max=6 if warm_start else 12
+    resume=load_completed_spatial_resume(a.resume_run,contract,phase_epochs_max) if a.resume_run else None
     if resume:
         stage.load_state_dict(resume['saved']['stage'],strict=True)
         contract['resume']=resume['provenance']
@@ -140,7 +141,7 @@ def worker(a):
                 assert abs(report['results'][name]['ap70']-warm_validation['results'][name]['ap70'])<1e-5,'Warm-start AP changed before training'
         save_best(report,path,0);history=[];start_epoch=0
     criterion=PointPillarDirLoss(cfg['loss']['args']).cuda();stop='budget_not_convergence'
-    for epoch in range(start_epoch+1,start_epoch+(7 if warm_start else 13)):
+    for epoch in range(start_epoch+1,start_epoch+phase_epochs_max+1):
         stage.train();ts=ss=None;losses=[];tc,th=capture_features(base);sc,sh=capture_features(student)
         _,stream=loader(train,cfg,4,303+epoch)
         try:

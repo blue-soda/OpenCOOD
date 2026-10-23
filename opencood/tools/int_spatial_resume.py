@@ -12,7 +12,9 @@ def sha256(path):
     return h.hexdigest()
 
 
-def load_completed_spatial_resume(directory,contract):
+def load_completed_spatial_resume(directory,contract,additional_epochs_max=12):
+    if not isinstance(additional_epochs_max,int) or isinstance(additional_epochs_max,bool) or additional_epochs_max<1:
+        raise ValueError('Additional epoch budget must be a positive integer')
     root=Path(directory)
     def read(name):return json.loads((root/name).read_text())
     status=read('status.json')
@@ -47,5 +49,5 @@ def load_completed_spatial_resume(directory,contract):
     for key in ('optimizer','scheduler','stage'):assert key in saved
     return dict(saved=saved,best=best,epoch=epoch,significant=significant,stale=history[-1]['stale'],
         provenance=dict(source_run=str(root),latest_sha256=sha256(root/'latest.pth'),
-            completed_epoch=epoch,additional_epochs_max=12,
+            completed_epoch=epoch,additional_epochs_max=additional_epochs_max,
             policy='Restore weights, AdamW moments, scheduler, significant best and global epoch. No learning-rate reset. New output; source unchanged.'))
