@@ -1,0 +1,16 @@
+{
+  "complete_artifact_round_trip": true,
+  "conv_macs": {
+    "base_cached_full": 110586470400,
+    "base_cached_partial": 44172979200,
+    "base_full_full": 110586470400,
+    "cached_full": 110889676800,
+    "cached_partial": 44476185600,
+    "full_full": 110889676800
+  },
+  "frames": 32,
+  "frozen_representation_gradients": true,
+  "head_gradients": true,
+  "status": "PASSED",
+  "train_deploy_max_error": 8.58306884765625e-06
+}

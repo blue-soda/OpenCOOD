@@ -1,0 +1,31 @@
+{
+  "code_commit": "35e711d2a9480ca053cce9383948473d33c5a8cf",
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-m",
+    "opencood.tools.train_int_pointwise_heads",
+    "--root",
+    "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016",
+    "--readout-run",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/compact_readout_r96_v2_20261021",
+    "--repair-run",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/split_repair_r96_w32_v1_20261021",
+    "--memory-run",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_gru_r32_train_v1_20261022",
+    "--spatial-run",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_stem_control_continue_v1_20261023",
+    "--spatial-sha",
+    "51ae0aca58ba48f007d8491d9b8db7dd5119b549ca2b35bd731eb55943720471",
+    "--views",
+    "full",
+    "--output",
+    "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_heads_full_v1_20261023",
+    "--gpu",
+    "0",
+    "--worker"
+  ],
+  "created_unix": 1792746986.3875768,
+  "gpu": 0,
+  "pid": 21358,
+  "timeout_seconds": 14400
+}

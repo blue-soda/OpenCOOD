@@ -1,6 +1,4 @@
 {
-  "epoch": 8,
-  "phase": "validation",
-  "scans": 4600,
-  "status": "RUNNING"
+  "epochs": 10,
+  "status": "COMPLETED"
 }
