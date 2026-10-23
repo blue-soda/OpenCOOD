@@ -82,6 +82,11 @@ def worker(a):
         roots['cache_fp16'] = prepared
         modes['cache_fp16'] = SpatialBasisCacheDetector(prepared, cfg, split, repair, a.threshold,
             confidence_threshold=a.confidence_guard, cache_dtype=torch.float16)
+    if a.long_history:
+        for name, execution in (('long_history','selected'),('long_masked','masked_dense')):
+            roots[name] = prepared
+            modes[name] = SpatialBasisCacheDetector(prepared,cfg,split,repair,a.threshold,period=5,
+                execution=execution,confidence_threshold=a.confidence_guard,cache_dtype=torch.float16,max_full_age_s=.45)
     control = SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, period=1, confidence_threshold=a.confidence_guard)
     write_json(out/'contract.json', dict(source=source['checkpoint'], data=source['contract'], memory=mb, readout=rb,
         repair=pb, basis=sb, threshold=a.threshold, confidence_guard=a.confidence_guard, fused_execution=a.fused,
@@ -89,11 +94,14 @@ def worker(a):
         prepared_execution=a.prepared,
         fast_warp_execution=a.fast_warp,
         cache_fp16=a.cache_fp16,
+        long_history=a.long_history,
+        long_history_contract='Only experimental spatial-cache policy uses period5 and max full age .45s; paired cache_fp16 remains period3/.25s. FM gap reset and deep anchor period3/.25s unchanged for all modes. Same weights, thresholds, FP16 activation storage and FP32 compute. No teacher state or fine tuning. Full validation base/cache_fp16/long_history; engineering also checks long-history masked-dense recurrence.',
         cache_fp16_contract='Only four post-activation history maps saved as FP16; reference, confidence, FM, deep anchor and all current compute/weights stay FP32. Promote history to FP32 during packing before alignment. No AMP, clipping or training. Rounded history may change future predictions and masks; measure complete AP and actual executed costs. Dtype-conversion time and memory included. Full validation base/prepared/cache_fp16.',
         fast_warp_contract='Static metric cell centers cached; same SE2 matrix/grid arithmetic and nearest sampling. Out-of-coverage coordinates set outside before sampling instead of a channelwise output multiply. FM alignment unchanged. Per-mode persistent static geometry bytes separate from recurrent state. Engineering all modes; full validation base/prepared/fast_warp only if enabled.',
         prepared_contract='Optional shared per-frame mask/nonzero/neighborhood indices for four layers; prepacked immutable weights stored as nonpersistent buffers; linear chunks16384 vs original4096. Identical masks/caches/weights/MACs. Extra packed weight bytes reported separately from recurrent state. No persistent index plan or activation patches.',
         execution_fusion='Optional inference-only composition of full-rank basis+mix into native3x3. Refresh uses native conv; partial gathers selected neighborhoods and computes selected output rows. Replaces basis/mix weights; unchanged four activation caches, reference/guard and mask. No extra dense spatial basis. Count gathered standard convolution MACs, not basis-factor arithmetic.',
         spatial_period=3, max_full_age_s=.25, deep_period=3,
+        spatial_policy_by_mode={k:dict(period=m.spatial.period,max_full_age_s=m.spatial.max_full_age_us/1e6) for k,m in modes.items() if hasattr(m,'spatial')},
         selector='Current mature stem16-channel mean descriptor at native grid; 4x4-tile RMS relative change to aligned retained reference; radius4 dilation; all uncovered cells mandatory. No labels or current costly features used.',
         confidence_protection='If enabled, union with previous OWN prediction max-anchor sigmoid >= guard threshold, aligned with the spatial state and expanded radius4. Uses pre-NMS confidence, no teacher/GT/current prediction; logs additional area. This may help via extra area alone, not yet a matched-area attribution.',
         recurrence='Four own post-activation maps plus matching retained descriptor warp together by metric SE2 nearest. Write only selected cells; unselected aligned complete activations persist. Save mixed state at current pose; full refresh period3/age/reset. Independent FM and deep anchor states for each mode; no teacher injections.',
@@ -106,7 +114,7 @@ def worker(a):
     arguments = json.loads((Path(a.root)/'full_gru'/'effective_runtime.json').read_text())['arguments']
     train = json.loads(Path(arguments['manifest']).read_text())['train']
     states = {k:None for k in modes}; control_state = None; costs = {}; mixing = basis_cost = None
-    maximum = control_error = fusion_error = warp_error = storage_error = 0.; writes = []
+    maximum = control_error = fusion_error = warp_error = storage_error = long_error = 0.; writes = []
     _, stream = loader(train[:32], cfg, 0, 303)
     with torch.no_grad():
         for sample in stream:
@@ -127,8 +135,8 @@ def worker(a):
                     cells = info['spatial_cells']
                     mixing = sum(cells*c.mix.weight.numel() for b in stage.blocks for c in (b.conv1, b.conv2))
                     basis_cost = sum(cells*c.basis.weight.numel() for b in stage.blocks for c in (b.conv1, b.conv2))
-                    skipped = basis_cost if name in ('fused', 'prepared', 'fast_warp', 'cache_fp16') else 0
-                    if name in ('selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16') and not info['spatial_refresh']: skipped += mixing
+                    skipped = basis_cost if name in ('fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history', 'long_masked') else 0
+                    if name in ('selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']: skipped += mixing
                     if name == 'selected' and not info['spatial_refresh'] and info['spatial_selected_cells'] == 0:
                         skipped += basis_cost
                     assert counter.total == costs[('dense', flag)]-skipped, (name, counter.total, skipped)
@@ -162,6 +170,14 @@ def worker(a):
                 for key in ('reference','confidence'):
                     assert states['cache_fp16']['spatial'][key].dtype == torch.float32
                 assert details['prepared']['spatial_state_bytes']-details['cache_fp16']['spatial_state_bytes'] == 25804800
+            if a.long_history:
+                for key in predictions['long_history']:
+                    left,right = predictions['long_history'][key],predictions['long_masked'][key]
+                    long_error = max(long_error,float((left-right).abs().max()))
+                    assert torch.allclose(left,right,atol=2e-3,rtol=2e-3),long_error
+                assert details['long_history']['spatial_selected_cells'] == details['long_masked']['spatial_selected_cells']
+                assert details['long_history']['spatial_full_age'] < .45
+                assert details['long_history']['spatial_state_bytes'] == details['cache_fp16']['spatial_state_bytes']
             writes.append(details['selected']['spatial_write_fraction'])
             pred, control_state, _ = control.step(ego, control_state, sample['meta'])
             for key in pred:
@@ -174,6 +190,7 @@ def worker(a):
         prepared_packed_weight_bytes=sum(b.numel()*b.element_size() for n,b in roots['prepared'].named_buffers() if n.endswith('packed_weight')) if a.prepared else 0,
         fast_warp_exact_replay_max_error=warp_error if a.fast_warp else None,
         cache_fp16_vs_fp32_prediction_max_error=storage_error if a.cache_fp16 else None,
+        long_history_vs_masked_dense_max_error=long_error if a.long_history else None,
         period1_vs_dense_max_error=control_error, mean_write_fraction=float(np.mean(writes)),
         constant_hook_macs={str(k):v for k,v in costs.items()}, dense_mix_macs=mixing, dense_basis_macs=basis_cost,
         costs_verified_against_actual_conv_hooks=True, own_immutable_deep_anchors=True))
@@ -183,8 +200,10 @@ def worker(a):
         return
     if a.fast_warp:
         modes = {k:modes[k] for k in ('base', 'prepared', 'fast_warp')}
-    if a.cache_fp16:
+    if a.cache_fp16 and not a.long_history:
         modes = {k:modes[k] for k in ('base', 'prepared', 'cache_fp16')}
+    if a.long_history:
+        modes = {k:modes[k] for k in ('base', 'cache_fp16', 'long_history')}
     states = {k:None for k in modes}; control_state = None
     stats = {k:{t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.5, .7)} for k in modes}
     metrics = {k:dict(time=[], write=[], mix=[], basis=[], state=[], peak=[], full_age=[], uncovered=[], priority=[], guard_added=[],
@@ -204,12 +223,13 @@ def worker(a):
                     item['time'].append(elapsed)
                     item['peak'].append(max(0, torch.cuda.max_memory_allocated()-before))
                 assert all(torch.isfinite(v).all() for v in pred.values())
-                if name == 'cache_fp16':
+                if name in ('cache_fp16','long_history'):
                     assert all(torch.isfinite(v).all() for v in states[name]['spatial']['maps']), 'Half cache overflow'
+                    assert info['spatial_full_age'] < (.45 if name == 'long_history' else .25)
                 flag = bool(info['local_partial']); item['partials'] += flag
                 macs = costs[('base' if name == 'base' else 'dense', flag)]
-                if name in ('fused', 'prepared', 'fast_warp', 'cache_fp16'): macs -= basis_cost
-                if name in ('selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16') and not info['spatial_refresh']:
+                if name in ('fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history'): macs -= basis_cost
+                if name in ('selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']:
                     macs -= mixing
                     if name == 'selected' and info['spatial_selected_cells'] == 0: macs -= basis_cost
                     macs += info['spatial_extra_linear_macs']
@@ -232,7 +252,7 @@ def worker(a):
             if 'fused' in counts: fusion_mask_disagreements += int(counts['fused'] != counts['selected'])
             if 'prepared' in counts and 'fused' in counts: prepared_mask_disagreements += int(counts['prepared'] != counts['fused'])
             if a.fast_warp: warp_mask_disagreements += int(counts['prepared'] != counts['fast_warp'])
-            if a.cache_fp16: storage_mask_disagreements += int(counts['prepared'] != counts['cache_fp16'])
+            if a.cache_fp16 and not a.long_history: storage_mask_disagreements += int(counts['prepared'] != counts['cache_fp16'])
             if (index+1) % 200 == 0: write_json(out/'status.json', dict(status='RUNNING', phase='validation', scans=index+1))
     assert index+1 == len(val)
     results = {}
@@ -253,7 +273,7 @@ def worker(a):
         fused_mask_count_disagreement_frames=fusion_mask_disagreements if 'fused' in modes else None,
         prepared_mask_count_disagreement_frames=prepared_mask_disagreements if 'fused' in modes and 'prepared' in modes else None,
         fast_warp_mask_count_disagreement_frames=warp_mask_disagreements if a.fast_warp else None,
-        cache_fp16_mask_count_disagreement_frames=storage_mask_disagreements if a.cache_fp16 else None,
+        cache_fp16_mask_count_disagreement_frames=storage_mask_disagreements if a.cache_fp16 and not a.long_history else None,
         scope='Actual own-recursive four-map spatial cache, whole aligned activation reuse, selected output-column mixing. Fixed heuristic threshold, no training. Dense bases (unless fused), stem/current FM and existing readout/deep cache included. Fused execution composes full-rank kernels and eliminates explicit spatial bases, with same cache/mask semantics. Areas include refresh and dilated requests, no duplicated halo outputs. Conv plus functional-linear MACsx2 excludes nonconv arithmetic. Same GPU rotating wall time includes warp/selection/gather/scatter; excludes IO/H2D/postprocess. State tensor bytes are per-mode; incremental CUDA peaks measure transient allocation above live multi-mode allocations, not standalone process VRAM.'))
     write_json(out/'status.json', dict(status='COMPLETED'))
 
@@ -267,6 +287,7 @@ def main():
     p.add_argument('--prepared', action='store_true', help='Also compare shared neighborhood indices and prepacked weights')
     p.add_argument('--fast-warp', action='store_true', help='Validate base/prepared/cached-geometry warp after full engineering controls')
     p.add_argument('--cache-fp16', action='store_true', help='Validate FP16 history storage with FP32 computation')
+    p.add_argument('--long-history', action='store_true', help='Compare spatial period5/.45s to period3/.25s with identical FP16 storage')
     p.add_argument('--profile-frames', type=int, default=0, help='Bounded timing diagnosis instead of AP validation (64..512 frames)')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
@@ -278,6 +299,8 @@ def main():
         p.error('Fast warp requires --prepared')
     if a.cache_fp16 and (not a.prepared or a.fast_warp or a.confidence_guard is None):
         p.error('FP16 storage requires --prepared and confidence guard, without --fast-warp')
+    if a.long_history and not a.cache_fp16:
+        p.error('Long spatial history requires --cache-fp16')
     if a.worker:
         def expired(s, f): raise TimeoutError('Basis region evaluation exceeded4 hours')
         signal.signal(signal.SIGALRM, expired); signal.alarm(14400)

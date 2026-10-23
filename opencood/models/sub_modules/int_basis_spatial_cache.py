@@ -15,11 +15,14 @@ from opencood.models.sub_modules.int_anchor_residual import refresh_reason, pred
 
 class SpatialBasisCache:
     def __init__(self, stage, bounds, threshold=.5, period=3, execution='selected', dilation=4,
-                 confidence_threshold=None, warp=None, cache_dtype=None):
+                 confidence_threshold=None, warp=None, cache_dtype=None, max_full_age_s=.25):
         if not isinstance(stage, SpatialBasisStage) or stage.training:
             raise ValueError('Frozen spatial-basis stage required')
-        if not math.isfinite(threshold) or threshold < 0 or period not in (1, 2, 3):
-            raise ValueError('Finite threshold and period1/2/3 required')
+        if not math.isfinite(threshold) or threshold < 0 or period not in (1, 2, 3, 4, 5):
+            raise ValueError('Finite threshold and period1..5 required')
+        if not math.isfinite(max_full_age_s) or not 0 < max_full_age_s <= .45:
+            raise ValueError('Full refresh age must be in (0,.45] seconds')
+        self.max_full_age_us = round(max_full_age_s*1e6)
         if execution not in ('selected', 'masked_dense') or dilation not in (0, 4):
             raise ValueError('Unsupported execution or change-mask dilation')
         if confidence_threshold is not None and not 0 < confidence_threshold < 1:
@@ -42,7 +45,7 @@ class SpatialBasisCache:
         if reason is None:
             if stamp <= state['stamp']:
                 raise ValueError('Noncausal spatial-cache stream')
-            if stamp-state['full_stamp'] >= 250000:
+            if stamp-state['full_stamp'] >= self.max_full_age_us:
                 reason = 'age'
             elif state['frames']+1 >= self.period:
                 reason = 'period'
@@ -104,14 +107,16 @@ class SpatialBasisCache:
 class SpatialBasisCacheDetector:
     """Same mature downstream/deep cache, replacing only first-stage execution."""
     def __init__(self, model, config, readout, repair, threshold=.5,
-                 period=3, execution='selected', deep_period=3, confidence_threshold=None, warp=None, cache_dtype=None):
+                 period=3, execution='selected', deep_period=3, confidence_threshold=None, warp=None, cache_dtype=None,
+                 max_full_age_s=.25):
         if model.training or readout.training or repair.training or deep_period not in (1, 3):
             raise ValueError('Frozen detector and deep period1/3 required')
         self.model, self.readout, self.repair = model, readout, repair
         self.bounds = config['model']['args']['lidar_range']; self.deep_period = deep_period
         self.warp = warp if warp is not None else warp_bev
         self.spatial = SpatialBasisCache(model.backbone.resnet.layer0, self.bounds, threshold, period, execution,
-                                        confidence_threshold=confidence_threshold, warp=warp, cache_dtype=cache_dtype)
+                                        confidence_threshold=confidence_threshold, warp=warp, cache_dtype=cache_dtype,
+                                        max_full_age_s=max_full_age_s)
 
     def step(self, data, state, meta):
         m = self.model; p = data['processed_lidar']

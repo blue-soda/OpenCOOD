@@ -100,6 +100,22 @@ class BasisCacheTests(unittest.TestCase):
                 self.assertTrue(torch.equal(old,saved))
                 self.assertTrue(torch.equal(old,retained))
 
+    def test_long_history_period_age_and_reset(self):
+        cache = SpatialBasisCache(self.stage,self.bounds,threshold=1e9,period=5,max_full_age_s=.45)
+        state = None; refresh = []
+        with torch.no_grad():
+            for frame in range(7):
+                _,state,info = cache.step(self.x,state,dict(self.meta,timestamp_us=100000*frame))
+                refresh.append(info['spatial_refresh'])
+                self.assertLess(info['spatial_full_age'],.45)
+            self.assertEqual(refresh,[True,False,False,False,False,True,False])
+            _,initial,_ = cache.step(self.x,None,self.meta)
+            _,_,info = cache.step(self.x,initial,dict(self.meta,timestamp_us=450000))
+            self.assertEqual(info['spatial_refresh_reason'],'age')
+            _,_,info = cache.step(self.x,initial,dict(self.meta,timestamp_us=100000),reset=True)
+            self.assertEqual(info['spatial_refresh_reason'],'reset')
+            with self.assertRaises(ValueError): cache.step(self.x,initial,self.meta)
+
     def test_half_storage_selected_matches_dense_mask_reference(self):
         selected = SpatialBasisCache(self.stage,self.bounds,.5,cache_dtype=torch.float16)
         dense = SpatialBasisCache(self.stage,self.bounds,.5,execution='masked_dense',cache_dtype=torch.float16)
