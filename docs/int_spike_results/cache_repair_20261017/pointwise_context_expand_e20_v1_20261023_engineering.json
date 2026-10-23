@@ -1,0 +1,12 @@
+{
+  "conv_macs": {
+    "base_cached_full": 110586470400,
+    "base_cached_partial": 44172979200,
+    "base_full_full": 110586470400,
+    "cached_full": 114250752000,
+    "cached_partial": 47837260800,
+    "full_full": 114250752000
+  },
+  "frames": 32,
+  "status": "PASSED"
+}
