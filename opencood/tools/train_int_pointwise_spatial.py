@@ -13,6 +13,7 @@ import torch
 from opencood.models.sub_modules.int_compact_readout import compact_shrink
 from opencood.models.sub_modules.int_projected_gru import projected_gru
 from opencood.models.sub_modules.int_pointwise_spatial_state import ContextualPointwiseStage,ExpandedContextPointwiseStage
+from opencood.models.sub_modules.int_projected_spatial import ProjectedSpatialStage
 from opencood.models.sub_modules.int_split_readout import SplitCompactReadout
 from opencood.models.sub_modules.int_light_repair import LightRepair,foreground_head_loss
 from opencood.models.sub_modules.int_local_state import feature_distillation
@@ -47,7 +48,9 @@ def worker(a):
     for m in (base,split,repair):
         for p in m.parameters():p.requires_grad_(False)
     torch.manual_seed(303);student=copy.deepcopy(base)
-    stage=ContextualPointwiseStage(base.backbone.resnet.layer0).cuda();student.backbone.resnet.layer0=stage
+    stage=(ProjectedSpatialStage(base.backbone.resnet.layer0,a.projected_rank) if a.projected_rank
+           else ContextualPointwiseStage(base.backbone.resnet.layer0)).cuda()
+    student.backbone.resnet.layer0=stage
     student.eval();parameters=[p for p in stage.parameters() if p.requires_grad]
     assert parameters and all(not p.requires_grad for p in stage.stem.parameters())
     arguments=json.loads((Path(a.root)/'full_gru'/'effective_runtime.json').read_text())['arguments']
@@ -58,6 +61,13 @@ def worker(a):
         objective='GT when supervised + .2 head KD +1.0 first-stage feature KD. Own e11 FM state, detached each frame. No cached-view loss in phase A; report its compatibility separately.',
         schedule='AdamW3e-4 wd1e-4 clip5; fullAP plateau factor.5 patience1 threshold.001; min6 then stale4 and lr<=1e-5; max12epochs/8hours.',
         selection='Full AP primary best; cached AP from same checkpoint. Epoch0 retained. Precision recovery, not a sparse-compute result.')
+    if a.projected_rank:
+        contract.update(architecture='Frozen mature stem and original BN/residual/ReLU. Four 3x3 kernels replaced by SVD-initialized 1x1 input-channel projection128to%d then 3x3 %dto128 without intermediate nonlinearity. Four original post-activation map shapes retained.'%(a.projected_rank,a.projected_rank),
+            rank=a.projected_rank,retained_weight_energy=stage.retained_weight_energy,
+            phase='Dense precision recovery for projected four-map spatial update; no new spatial cache during training/validation',
+            schedule='AdamW1e-4 wd1e-4 clip5; fullAP plateau factor.5 patience1 threshold.001; fixed first4epochs/8hours diagnostic budget, not convergence. Reassess curve before extension.',
+            trainable_scope='Only four new projection/spatial kernel pairs. Stem, all BN including affine/statistics, FM, downstream/readout/repair/heads frozen.',
+            objective='GT when supervised + .2 head KD +1.0 first-stage feature KD. Mature frozen teacher uses train split only for optimization. Own frozen e11 FM state detached each frame. Full and original deep-cache validation; no teacher state injection.')
     warm_start=bool(a.warm_start)
     if warm_start:
         assert a.warm_start_sha
@@ -88,7 +98,7 @@ def worker(a):
         contract['schedule']='Paired warm-start diagnostic: AdamW stage_lr=%g stem_lr=%s wd1e-4 clip5; same plateau scheduler; max6epochs/8hours. Source optimizer deliberately not restored in either arm.'%(a.warm_start_lr,str(a.stem_lr) if a.adapt_stem else 'frozen')
     elif a.expand_context or a.warm_start_sha or a.adapt_stem:
         raise ValueError('Architecture diagnostics require an explicit fixed warm-start checkpoint and SHA')
-    phase_epochs_max=6 if warm_start else 12
+    phase_epochs_max=4 if a.projected_rank else (6 if warm_start else 12)
     resume=load_completed_spatial_resume(a.resume_run,contract,phase_epochs_max) if a.resume_run else None
     if resume:
         stage.load_state_dict(resume['saved']['stage'],strict=True)
@@ -110,9 +120,33 @@ def worker(a):
                 key=name+('_partial' if info['local_partial'] else '_full')
                 if key in costs:assert costs[key]==counter.total
                 costs[key]=counter.total
-    write_json(out/'engineering.json',dict(status='PASSED',frames=32,conv_macs=costs))
+    gradient_check=None
+    if a.projected_rank:
+        initial={k:v.detach().clone() for k,v in stage.state_dict().items()}
+        tc,th=capture_features(base);sc,sh=capture_features(student)
+        temporary=torch.optim.SGD(parameters,lr=1e-4)
+        try:
+            stage.train()
+            with torch.no_grad(): target,_,_=base.step(ego,None,sample['meta'])
+            pred,_,_=student.step(ego,None,sample['meta'])
+            loss=feature_distillation(sc['first'],tc['first'],target)+.2*foreground_head_loss(pred,target)
+            assert torch.isfinite(loss);loss.backward()
+            norm=torch.nn.utils.clip_grad_norm_(parameters,5.)
+            assert torch.isfinite(norm) and float(norm)>0
+            temporary.step()
+            assert any(not torch.equal(initial[n],p) for n,p in stage.named_parameters() if p.requires_grad)
+            assert all(torch.equal(initial[n],p) for n,p in stage.named_parameters() if not p.requires_grad)
+            assert all(torch.equal(initial[n],b) for n,b in stage.named_buffers())
+            assert all(p.grad is None for p in student.parameters() if not p.requires_grad)
+            gradient_check=dict(loss=float(loss.detach()),gradient_norm=float(norm),only_factors_updated=True,restored_before_epoch0=True)
+        finally:
+            for hook in th+sh:hook.remove()
+            stage.load_state_dict(initial,strict=True);stage.zero_grad(set_to_none=True);stage.eval()
+    write_json(out/'engineering.json',dict(status='PASSED',frames=32,conv_macs=costs,gradient_check=gradient_check))
     expected=(.7567024378706645,.7555532616222492)
     scope='Dense pointwise spatial baseline with frozen e11 GRU. New spatial history input is zero; no regional reuse. Own FM states/deep anchors, paired full and cached validation. Standard conv MACsx2, model latency excludes IO/H2D/postprocess.'
+    if a.projected_rank:
+        scope='Dense projected spatial rank%d recovery; unchanged mature stem/BN/residuals and four-map state interface. No new spatial reuse enabled. Own FM and original deep anchors, full and cached validation. Conv MACsx2; no inference teacher. Model timing excludes IO/H2D/postprocess.'%a.projected_rank
     def assess(epoch):
         directory=out/('epoch_%03d'%epoch);directory.mkdir();stage.eval()
         path=directory/'stage.pth';torch.save(dict(stage=stage.state_dict(),contract=contract,epoch=epoch),str(path))
@@ -126,7 +160,7 @@ def worker(a):
                 dict(params=stem_parameters,lr=a.stem_lr)]
         optimizer=torch.optim.AdamW(groups,weight_decay=1e-4)
     else:
-        optimizer=torch.optim.AdamW(parameters,lr=a.warm_start_lr if warm_start else 3e-4,weight_decay=1e-4)
+        optimizer=torch.optim.AdamW(parameters,lr=a.warm_start_lr if warm_start else (1e-4 if a.projected_rank else 3e-4),weight_decay=1e-4)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=1,threshold=.001,threshold_mode='abs',min_lr=1e-6)
     if resume:
         optimizer.load_state_dict(resume['saved']['optimizer']);scheduler.load_state_dict(resume['saved']['scheduler'])
@@ -165,7 +199,9 @@ def worker(a):
         if warm_start and a.adapt_stem:history[-1]['stem_lr']=optimizer.param_groups[1]['lr']
         write_json(out/'history.json',history)
         torch.save(dict(stage=stage.state_dict(),optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),history=history,contract=contract,
-            significant=significant,stale=stale),str(out/'latest.pth'))
+            epoch=epoch,torch_rng=torch.get_rng_state(),cuda_rng=torch.cuda.get_rng_state_all(),numpy_rng=np.random.get_state(),
+            significant=significant,stale=stale),str(out/'latest.tmp'))
+        os.replace(str(out/'latest.tmp'),str(out/'latest.pth'))
         if epoch>=6 and stale>=4 and optimizer.param_groups[0]['lr']<=1e-5:stop='plateau';break
     write_json(out/'report.json',dict(status='COMPLETED',epochs=len(history),phase_epochs=len(history)-start_epoch,
         stop_reason=stop,best=json.loads((out/'best.json').read_text())))
@@ -182,7 +218,10 @@ def main():
     p.add_argument('--adapt-stem',action='store_true',help='Warm-start only: unfreeze mature stem weights but keep BN statistics fixed')
     p.add_argument('--warm-start-lr',type=float,default=1e-4)
     p.add_argument('--stem-lr',type=float,default=1e-5)
+    p.add_argument('--projected-rank',type=int,choices=(64,96),help='Separate four-epoch SVD input-channel compression recovery diagnostic')
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
+    if a.projected_rank and (a.resume_run or a.warm_start or a.expand_context or a.adapt_stem or a.warm_start_sha):
+        p.error('Projected spatial recovery starts from fixed mature kernels, not an old pointwise checkpoint')
     if a.worker:
         def expired(s,f):raise TimeoutError('Pointwise spatial recovery exceeded8 hours')
         signal.signal(signal.SIGALRM,expired);signal.alarm(28800)
