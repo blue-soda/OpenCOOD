@@ -18,6 +18,11 @@ class EventScopes:
 
     def wrap(self, owner, attribute, label):
         original = getattr(owner, attribute)
+        # Readout current/history are registered submodules, not methods.
+        # Instrument their forward without replacing the module/parameters.
+        if isinstance(original, torch.nn.Module):
+            owner, attribute = original, 'forward'
+            original = owner.forward
         @functools.wraps(original)
         def measured(*args, **kwargs):
             begin = torch.cuda.Event(enable_timing=True)
