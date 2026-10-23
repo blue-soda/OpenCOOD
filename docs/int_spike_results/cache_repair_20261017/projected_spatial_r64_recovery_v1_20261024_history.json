@@ -136,5 +136,51 @@
       "scope": "Dense projected spatial rank64 recovery; unchanged mature stem/BN/residuals and four-map state interface. No new spatial reuse enabled. Own FM and original deep anchors, full and cached validation. Conv MACsx2; no inference teacher. Model timing excludes IO/H2D/postprocess.",
       "status": "COMPLETED"
     }
+  },
+  {
+    "epoch": 4,
+    "loss": 0.13208448363567996,
+    "lr": 5e-05,
+    "stale": 4,
+    "validation": {
+      "labels": 1738,
+      "results": {
+        "base_cached": {
+          "ap50": 0.8321027698682837,
+          "ap70": 0.7555532616222492,
+          "conv_gflops": 134.31042158812565,
+          "mean_ms": 17.14684707544941,
+          "p95_ms": 27.979355107527226,
+          "partial_frames": 3789
+        },
+        "base_full": {
+          "ap50": 0.8311640141378542,
+          "ap70": 0.7567024378706645,
+          "conv_gflops": 221.1729408,
+          "mean_ms": 27.473673831966458,
+          "p95_ms": 28.84440285852179,
+          "partial_frames": 0
+        },
+        "cached": {
+          "ap50": 0.8285816573694437,
+          "ap70": 0.7527099384225598,
+          "conv_gflops": 121.09836398812564,
+          "mean_ms": 16.394580802199126,
+          "p95_ms": 27.17391123296693,
+          "partial_frames": 3789
+        },
+        "full": {
+          "ap50": 0.8285526932958824,
+          "ap70": 0.7548356700321046,
+          "conv_gflops": 207.9608832,
+          "mean_ms": 26.759679514008546,
+          "p95_ms": 28.079204342793673,
+          "partial_frames": 0
+        }
+      },
+      "scans": 5794,
+      "scope": "Dense projected spatial rank64 recovery; unchanged mature stem/BN/residuals and four-map state interface. No new spatial reuse enabled. Own FM and original deep anchors, full and cached validation. Conv MACsx2; no inference teacher. Model timing excludes IO/H2D/postprocess.",
+      "status": "COMPLETED"
+    }
   }
 ]
