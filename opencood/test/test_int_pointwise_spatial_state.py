@@ -2,7 +2,7 @@ import unittest
 import torch
 from torch.nn import functional as F
 from opencood.models.sub_modules.codyntrust_resblock import BasicBlock
-from opencood.models.sub_modules.int_pointwise_spatial_state import ContextualPointwiseStage
+from opencood.models.sub_modules.int_pointwise_spatial_state import ContextualPointwiseStage,ExpandedContextPointwiseStage
 
 
 class PointwiseSpatialStateTests(unittest.TestCase):
@@ -39,6 +39,43 @@ class PointwiseSpatialStateTests(unittest.TestCase):
                 for p in model.parameters():
                     if p.grad is not None:p.add_(p.grad,alpha=-.01)
         self.assertGreater(float(model.wide.weight.grad.abs().sum()),0.)
+
+    def test_context_expansion_preserves_warm_start_and_history(self):
+        model=self.make()
+        with torch.no_grad():
+            model.update[-1].weight.normal_(0,.02)
+            model.update[0].weight[:,384:].normal_(0,.02)
+            expanded=ExpandedContextPointwiseStage.from_stage(model)
+            temporal=torch.randn(1,64,15,21)
+            current,evidence=model.observe(temporal)
+            newer,more=expanded.observe(temporal)
+            old=torch.randn_like(current);valid=torch.rand_like(current[:,:1])>.1
+            expected=F.relu(current+model.update(model.pack(evidence,old,valid)))
+            actual=F.relu(newer+expanded.update(expanded.pack(more,old,valid)))
+            self.assertTrue(torch.allclose(actual,expected,atol=3e-6,rtol=1e-5))
+            self.assertTrue(torch.allclose(model(temporal),expanded(temporal),atol=3e-6,rtol=1e-5))
+            self.assertTrue(torch.equal(expanded.update[0].weight[:,640:],model.update[0].weight[:,384:]))
+            self.assertEqual(sum(p.numel() for p in expanded.parameters())-sum(p.numel() for p in model.parameters()),133376)
+            expanded.update[0].weight[:,384:640].normal_(0,.02)
+            dense=F.relu(newer+expanded.update(expanded.pack(more,old,valid)))
+            mask=torch.rand_like(valid.float())>.5
+            for execute in (expanded.selected_update,expanded.linear_selected_update):
+                actual=execute(newer,more,old,valid,mask)
+                self.assertTrue(torch.allclose(actual,torch.where(mask,dense,old),atol=3e-6,rtol=1e-5))
+                self.assertTrue(torch.equal(actual[~mask.expand_as(actual)],old[~mask.expand_as(old)]))
+
+    def test_expanded_context_learns_without_unfreezing_stem(self):
+        model=self.make()
+        with torch.no_grad():model.update[-1].weight.normal_(0,.02)
+        model=ExpandedContextPointwiseStage.from_stage(model);model.train()
+        optimizer=torch.optim.SGD([p for p in model.parameters() if p.requires_grad],lr=.01)
+        for step in range(2):
+            optimizer.zero_grad();output=model(torch.randn(1,64,8,12))
+            output.square().mean().backward()
+            self.assertTrue(all(p.grad is None for p in model.stem.parameters()))
+            self.assertGreater(float(model.update[0].weight.grad[:,384:640].abs().sum()),0.)
+            optimizer.step()
+        self.assertGreater(float(model.extra_context.weight.grad.abs().sum()),0.)
 
     def test_linear_layout_matches_nonzero_history_and_counts_executed_macs(self):
         model=self.make()

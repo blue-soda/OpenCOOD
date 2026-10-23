@@ -67,7 +67,7 @@ class ContextualPointwiseStage(nn.Module):
         packed=self.pack(evidence,aligned,valid)
         # Each spatial column is independent: no neighboring outputs or halo
         # activations are calculated by the expensive pointwise network.
-        columns=packed.reshape(1,513,-1)[:,:,selected].unsqueeze(2)
+        columns=packed.reshape(1,packed.shape[1],-1)[:,:,selected].unsqueeze(2)
         residual=self.update(columns).squeeze(2)
         value=F.relu(current.reshape(1,128,-1)[:,:,selected]+residual)
         output=aligned.reshape(1,128,-1).clone();output[:,:,selected]=value
@@ -88,7 +88,7 @@ class ContextualPointwiseStage(nn.Module):
         selected=mask.reshape(-1).nonzero(as_tuple=False).flatten()
         if not selected.numel():return aligned.clone()
         packed=self.pack(evidence,aligned,valid)
-        values=packed.reshape(513,-1)[:,selected].transpose(0,1).contiguous()
+        values=packed.reshape(packed.shape[1],-1)[:,selected].transpose(0,1).contiguous()
         for layer in self.update:
             if isinstance(layer,nn.Conv2d):
                 assert layer.kernel_size==(1,1) and layer.groups==1
@@ -99,3 +99,37 @@ class ContextualPointwiseStage(nn.Module):
         value=F.relu(current.reshape(128,-1)[:,selected]+values.transpose(0,1))
         output=aligned.reshape(128,-1).clone();output[:,selected]=value
         return output.reshape(1,128,h,w)
+
+
+class ExpandedContextPointwiseStage(ContextualPointwiseStage):
+    """Warm-start a wider spatial basis without adding an update halo.
+
+    Two extra depthwise 3x3 responses per channel preserve directional evidence
+    that a single local/wide response may discard. They execute densely, while
+    their expensive channel mixing remains inside the selected pointwise U.
+    Zero new input columns preserve the source function, including history.
+    """
+    @classmethod
+    def from_stage(cls, source):
+        if hasattr(source, 'extra_context'):
+            raise ValueError('Context has already been expanded')
+        result=copy.deepcopy(source)
+        result.__class__=cls
+        first=result.update[0]
+        extra=nn.Conv2d(128,256,3,padding=1,groups=128,bias=False).to(first.weight)
+        wider=nn.Conv2d(769,512,1,bias=False).to(first.weight)
+        with torch.no_grad():
+            horizontal=first.weight.new_tensor([[-1,0,1],[-2,0,2],[-1,0,1]])/8.
+            extra.weight[0::2,0].copy_(horizontal.expand(128,3,3))
+            extra.weight[1::2,0].copy_(horizontal.t().expand(128,3,3))
+            wider.weight.zero_()
+            wider.weight[:,:384].copy_(first.weight[:,:384])
+            wider.weight[:,640:].copy_(first.weight[:,384:])
+        result.extra_context=extra
+        result.update[0]=wider
+        result.train(source.training)
+        return result
+
+    def observe(self,temporal):
+        current,evidence=super().observe(temporal)
+        return current,torch.cat((evidence,self.extra_context(current)),1)

@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from opencood.models.sub_modules.int_compact_readout import compact_shrink
 from opencood.models.sub_modules.int_projected_gru import projected_gru
-from opencood.models.sub_modules.int_pointwise_spatial_state import ContextualPointwiseStage
+from opencood.models.sub_modules.int_pointwise_spatial_state import ContextualPointwiseStage,ExpandedContextPointwiseStage
 from opencood.models.sub_modules.int_split_readout import SplitCompactReadout
 from opencood.models.sub_modules.int_light_repair import LightRepair,foreground_head_loss
 from opencood.models.sub_modules.int_local_state import feature_distillation
@@ -58,6 +58,28 @@ def worker(a):
         objective='GT when supervised + .2 head KD +1.0 first-stage feature KD. Own e11 FM state, detached each frame. No cached-view loss in phase A; report its compatibility separately.',
         schedule='AdamW3e-4 wd1e-4 clip5; fullAP plateau factor.5 patience1 threshold.001; min6 then stale4 and lr<=1e-5; max12epochs/8hours.',
         selection='Full AP primary best; cached AP from same checkpoint. Epoch0 retained. Precision recovery, not a sparse-compute result.')
+    warm_start=bool(a.warm_start)
+    if warm_start:
+        assert not a.resume_run and a.warm_start_sha
+        assert digest(a.warm_start)==a.warm_start_sha
+        warm=torch.load(a.warm_start,map_location='cpu')
+        parent_contract=dict(warm['contract']);parent_contract.pop('resume',None)
+        assert parent_contract==contract,'Warm-start must share the unchanged dense recovery contract'
+        stage.load_state_dict(warm['stage'],strict=True)
+        warm_validation=json.loads((Path(a.warm_start).parent/'report.json').read_text())
+        assert warm_validation['status']=='COMPLETED'
+        if a.expand_context:
+            stage=ExpandedContextPointwiseStage.from_stage(stage)
+            student.backbone.resnet.layer0=stage
+        parameters=[p for p in stage.parameters() if p.requires_grad]
+        contract['warm_start']=dict(checkpoint=a.warm_start,sha256=a.warm_start_sha,parent_epoch=warm['epoch'],
+            expanded_context=a.expand_context,optimizer='New AdamW for both paired arms, not a continuation')
+        contract['trainable_parameters']=sum(p.numel() for p in parameters)
+        if a.expand_context:
+            contract['architecture']+=' Extra two directional-initialized depthwise3 responses per stem channel; U769to512to512to128. Zero new mixing columns preserve initial output.'
+        contract['schedule']='Paired warm-start diagnostic: AdamW1e-4 wd1e-4 clip5; same plateau scheduler; max6epochs/8hours. Source optimizer deliberately not restored in either arm.'
+    elif a.expand_context or a.warm_start_sha:
+        raise ValueError('Context expansion requires an explicit fixed warm-start checkpoint and SHA')
     resume=load_completed_spatial_resume(a.resume_run,contract) if a.resume_run else None
     if resume:
         stage.load_state_dict(resume['saved']['stage'],strict=True)
@@ -89,7 +111,7 @@ def worker(a):
         return report,path
     def save_best(report,path,epoch):
         write_json(out/'best.json',dict(epoch=epoch,ap70=report['results']['full']['ap70'],cached_ap70=report['results']['cached']['ap70'],checkpoint=str(path),sha256=digest(path)))
-    optimizer=torch.optim.AdamW(parameters,lr=3e-4,weight_decay=1e-4)
+    optimizer=torch.optim.AdamW(parameters,lr=1e-4 if warm_start else 3e-4,weight_decay=1e-4)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=1,threshold=.001,threshold_mode='abs',min_lr=1e-6)
     if resume:
         optimizer.load_state_dict(resume['saved']['optimizer']);scheduler.load_state_dict(resume['saved']['scheduler'])
@@ -99,9 +121,12 @@ def worker(a):
         write_json(out/'resume.json',resume['provenance'])
     else:
         report,path=assess(0);best=significant=report['results']['full']['ap70'];stale=0
+        if warm_start:
+            for name in ('full','cached'):
+                assert abs(report['results'][name]['ap70']-warm_validation['results'][name]['ap70'])<1e-5,'Warm-start AP changed before training'
         save_best(report,path,0);history=[];start_epoch=0
     criterion=PointPillarDirLoss(cfg['loss']['args']).cuda();stop='budget_not_convergence'
-    for epoch in range(start_epoch+1,start_epoch+13):
+    for epoch in range(start_epoch+1,start_epoch+(7 if warm_start else 13)):
         stage.train();ts=ss=None;losses=[];tc,th=capture_features(base);sc,sh=capture_features(student)
         _,stream=loader(train,cfg,4,303+epoch)
         try:
@@ -135,6 +160,9 @@ def main():
     p=argparse.ArgumentParser()
     for key in ('root','readout-run','repair-run','memory-run','output'):p.add_argument('--'+key,required=True)
     p.add_argument('--resume-run',help='Completed budget-limited spatial run; continue in a new output directory')
+    p.add_argument('--warm-start',help='Immutable stage checkpoint for a separate paired six-epoch capacity diagnostic')
+    p.add_argument('--warm-start-sha')
+    p.add_argument('--expand-context',action='store_true')
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.worker:
         def expired(s,f):raise TimeoutError('Pointwise spatial recovery exceeded8 hours')
