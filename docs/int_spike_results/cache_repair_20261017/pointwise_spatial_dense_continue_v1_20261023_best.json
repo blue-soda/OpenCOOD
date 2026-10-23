@@ -1,7 +1,7 @@
 {
-  "ap70": 0.7494762535244003,
-  "cached_ap70": 0.7494570912869375,
-  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_spatial_dense_continue_v1_20261023/epoch_020/stage.pth",
-  "epoch": 20,
-  "sha256": "240a5c0275b86fc09b94c6eb98985e207731b336cfd6e1109af28ac27ce49a99"
+  "ap70": 0.7498725250079693,
+  "cached_ap70": 0.7498335847259034,
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/pointwise_spatial_dense_continue_v1_20261023/epoch_021/stage.pth",
+  "epoch": 21,
+  "sha256": "4084d16d5babf9ce47637a7bf3c2d87a59b8c0b5b9ef50d401a84e8ce5e1b670"
 }
