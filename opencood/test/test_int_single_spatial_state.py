@@ -56,5 +56,28 @@ class SingleSpatialStateTests(unittest.TestCase):
                 self.assertEqual(details[0]['spatial_extra_linear_macs'],details[1]['spatial_extra_linear_macs'])
                 self.assertEqual(details[0]['spatial_mixer_executed_fraction'],details[1]['spatial_mixer_executed_fraction'])
 
+    def test_single_cell_age_has_current_dependency_and_bounded_age(self):
+        s=self.single;bounds=[-16,-12,-2,16,12,2]
+        modes=[SpatialBasisCache(s,bounds,threshold=1e9,dilation=0,cell_age_limit_s=.25,execution=e)
+            for e in ('selected','masked_dense')]
+        states=[None,None];refreshes=0
+        with torch.no_grad():
+            for frame in range(10):
+                pose=np.eye(4);pose[0,3]=frame*.8
+                meta=dict(pose=pose,segment='a',timestamp_us=frame*100000)
+                outputs=[];infos=[]
+                for i,mode in enumerate(modes):
+                    output,states[i],info=mode.step(self.x+frame*.02,states[i],meta)
+                    outputs.append(output);infos.append(info)
+                    self.assertEqual(len(states[i]['maps']),1)
+                    self.assertLess(info['spatial_max_cell_age_s'],.25)
+                    expected=sum(v.numel()*v.element_size() for v in states[i]['maps']+[states[i]['reference'],states[i]['ages']])
+                    self.assertEqual(info['spatial_state_bytes'],expected)
+                refreshes+=int(infos[0]['spatial_refresh'])
+                self.assertTrue(torch.allclose(outputs[0],outputs[1],atol=1e-10,rtol=1e-10))
+                if frame==3:self.assertGreater(infos[0]['spatial_age_added_fraction'],0.)
+            self.assertEqual(refreshes,1)
+            self.assertGreater(infos[0]['spatial_full_age'],.25)
+
 
 if __name__=='__main__':unittest.main()

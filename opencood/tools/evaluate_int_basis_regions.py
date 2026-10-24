@@ -100,7 +100,8 @@ def worker(a):
             modes['uniform_core']=SpatialBasisCacheDetector(parent_model,cfg,split,repair,a.threshold,confidence_threshold=a.confidence_guard,spatial_dilation=0,confidence_dilation=4 if a.dependency_guard else None)
     if a.cell_age:
         roots['periodic_selected']=student
-        modes['periodic_selected']=SpatialBasisCacheDetector(student,cfg,split,repair,a.threshold,confidence_threshold=a.confidence_guard)
+        modes['periodic_selected']=SpatialBasisCacheDetector(student,cfg,split,repair,a.threshold,confidence_threshold=a.confidence_guard,
+            spatial_dilation=0 if a.dependency_masks else 4,confidence_dilation=4 if a.dependency_guard else None)
     if a.fused:
         fused = copy.deepcopy(student); fused.backbone.resnet.layer0 = fuse_spatial_basis(stage)
         roots['fused'] = fused
@@ -131,7 +132,7 @@ def worker(a):
         dependency_masks=a.dependency_masks,
         dependency_guard=a.dependency_guard,
         single_spatial_state=a.single_state,
-        single_state_contract='If enabled overrides parent/state descriptions: selected/masked_dense persist ONLY final128-channel full H, with reference/confidence; intermediate96/128/96 activations are ZERO temporary canvases consumed only inside current dependency supports, never historical tensors. Parent_selected retains original FOUR maps with the SAME dependency3/2/1/0 policy and confidence radius4. Dense/current weights and layer supports unchanged; no uniform_core mode. Measure actual persistent bytes, temporary peak and timing. Four-layer update areas differ from one-map persistent-write area. No new parameters/training.',
+        single_state_contract='If enabled overrides parent/state descriptions: selected/masked_dense persist ONLY final128-channel full H, with reference/confidence; intermediate96/128/96 activations are ZERO temporary canvases consumed only inside current dependency supports, never historical tensors. Without cell_age, parent_selected retains FOUR maps with SAME dependency3/2/1/0 policy and confidence radius4. With cell_age, periodic_selected instead is SAME single-H period3/.25s control; selected/masked_dense add age>=.25s cells to final core BEFORE complete upstream supports. No old intermediate values contribute to recomputed cells, but time since direct computation does not guarantee accurate stale features under motion. Dense/current weights unchanged; no uniform_core mode. Four-layer update areas differ from one-map persistent-write area. No new parameters/training.',
         dependency_contract='If enabled, overrides generic dilation/compact-parent descriptions: FINAL core unions undilated current content tiles, previous own confidence support, and uncovered cells. Confidence radius is4 if dependency_guard, otherwise0; unchanged threshold.1. Four layer supports are core dilated3/2/1/0, guaranteeing complete CURRENT stem dependencies at updated final cells (fixed BN). Each intermediate writes its own support; descriptor updates only final core. Parent_selected is compact original shared content/confidence radius4; uniform_core uses the same core policy as selected but no upstream dependency halo, an attribution control. All weights/checkpoints/refresh fixed; no training. Layer areas include supports and full refresh. Selected core exactness does not guarantee unchanged cached cells are accurate.',
         cell_age_contract='If enabled: selected/masked_dense store and nearest-warp a FP32 cell-age map; add inter-frame dt and force cells aged>=.25s into mask, reset selected ages0. Same content/own-confidence dilation; expiry union has no extra dilation. Scene/FM reset still full. No periodic/global-full-age refresh; period3/.25s is retained only in periodic_selected control and unchanged deep cache. Per-cell direct age<.25s is NOT a bound on accumulated multi-layer dependency error. No motion prediction, quantization, training or threshold change.',
         compact_state_contract='Optional: cache conv2 input projection(r channels) instead of full conv1 post-ReLU(128), retain complete block outputs128. Same weights/nonlinearities/residuals/nearest geometry. On partial frames conv1 input projection dense, conv2 input projection only selected rows; selected3x3 unchanged. Same compact masked-dense control and original four128-map parent_selected paired. No quantization/training.',
@@ -202,7 +203,7 @@ def worker(a):
                     assert torch.allclose(predictions['selected'][key],predictions['parent_selected'][key],atol=1e-3,rtol=1e-3)
                 saved_bytes = 2*(128-stage.rank)*details['selected']['spatial_cells']*4
                 assert details['parent_selected']['spatial_state_bytes']-details['selected']['spatial_state_bytes']==saved_bytes
-            if a.single_state:
+            if a.single_state and not a.cell_age:
                 for key in predictions['selected']:
                     compact_error=max(compact_error,float((predictions['selected'][key]-predictions['parent_selected'][key]).abs().max()))
                     assert torch.allclose(predictions['selected'][key],predictions['parent_selected'][key],atol=1e-3,rtol=1e-3)
@@ -266,8 +267,8 @@ def worker(a):
             assert extra==sum(n*k.mix.weight.numel() for n,k in zip(ns,ks))+sum(ns[i]*ks[i+1].project.weight.numel() for i in (0,2))
     write_json(out/'engineering.json', dict(status='PASSED', frames=32, selected_vs_masked_dense_max_error=maximum,
         dependency_exact_current_core_error=exact_core_error,
-        single_vs_four_map_max_error=compact_error if a.single_state else None,
-        single_saved_state_bytes=32256000 if a.single_state else None,
+        single_vs_four_map_max_error=compact_error if a.single_state and not a.cell_age else None,
+        single_saved_state_bytes=32256000 if a.single_state and not a.cell_age else None,
         compact_vs_original_state_max_error=compact_error if a.compact_state and not a.cell_age and not a.dependency_masks else None,
         cell_age_bound_and_bytes_verified=a.cell_age,
         fused_vs_factorized_max_error=fusion_error if a.fused else None,
@@ -397,7 +398,7 @@ def worker(a):
         results[name]['extra_packed_weight_bytes'] = sum(b.numel()*b.element_size() for n,b in roots[name].named_buffers() if n.endswith('packed_weight'))
         if a.dependency_masks:
             results[name]['mean_layer_update_fractions']=np.mean(item['layers'],axis=0).tolist()
-            results[name]['mean_layer_state_write_fractions']=([float(np.mean(item['write']))] if a.single_state and name in ('selected','masked_dense')
+            results[name]['mean_layer_state_write_fractions']=([float(np.mean(item['write']))] if a.single_state and name in ('selected','masked_dense','periodic_selected')
                 else np.mean(item['layers'],axis=0).tolist())
         results[name]['static_geometry_bytes'] = modes[name].warp.geometry_bytes if name == 'fast_warp' else 0
         if a.projected_run:
@@ -406,16 +407,19 @@ def worker(a):
             results[name]['mean_executed_basis_area'] = None
     assert abs(results['base']['ap70']-.7555532616222492) < 1e-8
     if 'dense' in results: assert abs(results['dense']['ap70']-sb['cached_ap70']) < 1e-8
-    if a.dependency_masks:
+    if a.dependency_masks and not a.cell_age:
         expected=({.5:.7553159775482435,.75:.7541971676152598} if a.single_state else {.5:.7557311115176569,.75:.7546151539838869})[a.threshold]
         assert abs(results['parent_selected']['ap70']-expected)<1e-7
+    if a.single_state and a.cell_age:
+        expected={.5:.7553159775482435,.75:.7541971676152598}[a.threshold]
+        assert abs(results['periodic_selected']['ap70']-expected)<1e-7
     write_json(out/'report.json', dict(status='COMPLETED', scans=len(val), labels=sum(r['supervised'] for r in val), results=results,
         recurrence_verified=a.verify_recurrence,
         single_spatial_state=a.single_state,
-        single_state_note='Overrides generic parent/state wording: selected and masked_dense retain only final128 H; prior intermediate maps replaced by zero temporary canvases. Parent_selected is FOUR-map dependency model with SAME weights/core policy/refresh; no uniform_core mode. Report four layer update fractions and one persistent map write fraction separately. Allocate temporary canvases inside measured model time; no unmeasured cached intermediates.' if a.single_state else None,
+        single_state_note='Overrides generic parent/state wording: selected and masked_dense retain only final128 H; prior intermediate maps replaced by zero temporary canvases. Without cell_age, parent_selected is FOUR-map dependency model with SAME weights/core policy/refresh. With cell_age, periodic_selected is SAME single-H period3 control, age expiry enters final core before upstream3/2/1/0 supports. No uniform_core mode. Four layer update fractions and one persistent map write fraction separate; temporary allocations inside model time.' if a.single_state else None,
         dependency_guard=a.dependency_guard,
         dependency_note='Overrides generic shared-mask/parent-state scope: final core is undilated content/uncovered union plus own-confidence support(radius4 if dependency_guard, else0); four supports dilate3/2/1/0. Recomputed final core has complete current-stem dependencies; cached outside final core remains approximate. Parent_selected is compact original shared radius4 baseline; uniform_core shares final-core selection policy but no upstream support halo. Same checkpoint and refresh; per-layer state-write and actual weighted execution areas separate.' if a.dependency_masks else None,
-        cell_age_note='Selected/masked_dense use local .25s direct-age expiry, no global periodic refresh. Periodic_selected retains compact period3 baseline; deep cache unchanged. Direct cache-age bound does not bound accumulated feature-dependency error.' if a.cell_age else None,
+        cell_age_note=('Single-H selected/masked_dense use .25s direct-age expiry, no global periodic refresh; expired cells receive full CURRENT-stem dependencies via3/2/1/0 supports. Periodic_selected is same single-H period3 control. No old intermediate feature dependencies, but nearest-motion warp/stale unselected regions and downstream spatial mixing remain approximate. Deep cache unchanged.' if a.single_state else 'Selected/masked_dense use local .25s direct-age expiry, no global periodic refresh. Periodic_selected retains compact period3 baseline; deep cache unchanged. Direct cache-age bound does not bound accumulated feature-dependency error.') if a.cell_age else None,
         compact_state_parent_mask_count_disagreement_frames=parent_mask_count_disagreements if a.compact_state and not a.cell_age else None,
         compact_state_note='Selected uses projected intermediate(r) and full block output(128) pairs; parent_selected caches four128 maps. Same compressed weights. Dense full function unchanged. Projection area averages two dense and two selected projections. Compare AP/state bytes/actual MACs independently; nearest warp and zero-bias projection commute in exact arithmetic, floating paths may differ.' if a.compact_state else None,
         own_mask_disagreement_frames=len(recurrence_audits) if a.verify_recurrence else None,
@@ -457,8 +461,8 @@ def main():
         p.error('Single-state comparison requires --dependency-guard')
     if a.dependency_guard and not a.dependency_masks:
         p.error('Independent confidence support requires --dependency-masks')
-    if a.dependency_masks and (not a.compact_state or a.cell_age or a.threshold not in (.5,.75)):
-        p.error('Dependency supports require compact verified state, threshold.5/.75, no cell-age policy')
+    if a.dependency_masks and (not a.compact_state or (a.cell_age and not a.single_state) or a.threshold not in (.5,.75)):
+        p.error('Dependency supports require compact verified state, threshold.5/.75; cell age only for single-state')
     if a.cell_age and not a.compact_state:
         p.error('Cell-age comparison requires compact projected state')
     if a.compact_state and (not a.projected_run or not a.verify_recurrence or a.audit_selection):

@@ -46,8 +46,9 @@ class SpatialBasisCache:
         if allow_cache_grad and (execution != 'masked_dense' or not getattr(stage,'allow_cache_grad',False)):
             raise ValueError('Cache training requires explicitly enabled compact masked-dense stage')
         self.allow_cache_grad = allow_cache_grad
-        if getattr(stage,'nested_dependency_masks',False) and (dilation!=0 or cell_age_limit_s is not None):
-            raise ValueError('Dependency supports require an undilated core and periodic refresh')
+        if getattr(stage,'nested_dependency_masks',False) and (dilation!=0 or
+                (cell_age_limit_s is not None and not getattr(stage,'single_spatial_state',False))):
+            raise ValueError('Dependency supports require undilated core; cell age requires one final H')
 
     def step(self, temporal, state, meta, reset=False):
         if (torch.is_grad_enabled() and not self.allow_cache_grad) or self.stage.training:
