@@ -1,0 +1,7 @@
+{
+  "additional_epochs_max": 4,
+  "completed_epoch": 4,
+  "latest_sha256": "a734d3fb36d59b534ddd1f6f314c5aad05c8d56b50daa31188af2e4328dd58cc",
+  "policy": "Restore weights, AdamW moments, scheduler, significant best and global epoch. No learning-rate reset. New output; source unchanged.",
+  "source_run": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/short_spatial_plain_v1_20261024"
+}

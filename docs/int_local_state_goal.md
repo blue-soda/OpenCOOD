@@ -1923,3 +1923,6 @@ e4 plain完整/原深层缓存为206.309376/119.44685679G、26.50924/16.20028ms�
 续训采用已有load_completed_spatial_resume核验：源状态必须COMPLETED且budget_not_convergence，latest权重必须与已完成epoch4一致，合同/数据/历史/最佳权重SHA匹配。开放--short-spatial与--resume-run组合，在新目录short_spatial_plain_resume_v1_20261024、short_spatial_context_resume_v1_20261024继续epoch5–8；恢复AdamW一二阶矩、学习率、plateau调度器、显著最优/stale和全局epoch，工程探针后恢复保存的CPU/CUDA/NumPy随机状态。原目录和权重保持不变，不重置优化器或把e5改叫e1；模型、目标、数据、冻结范围均不变。
 
 再观察最多4epoch/8小时，原有收敛判据保留（至少6轮、stale>=4且LR<=1e-5），届时根据曲线决定是否延长或调整容量。继续先整图精度，暂不实施空间选区复用；不新增阈值扫描或重复架构。两张训练卡当前空闲，待本地提交push、服务器pull及测试后恢复；一小时时序感知心跳保持。
+续训启动补记：93fd68d已本地main push→181 pull，191项服务器CPU测试通过（6.830秒）。short_spatial_plain_resume_v1_20261024在181 GPU0/PID64553，short_spatial_context_resume_v1_20261024在GPU1/PID64708；源任务已完成且启动器核验空闲，无其他进程被终止。两条均通过完整续训来源校验；源latest SHA为a734d3fb36d59b534ddd1f6f314c5aad05c8d56b50daa31188af2e4328dd58cc及54eeea2c16424604ec9b1d4303de88f67452e18d0a9ed5191e547cf5d8ea7563，resume记录明确completed_epoch=4、additional_epochs_max=4。
+
+两条再次通过191测试与32扫描CUDA工程，卷积MAC与首轮一致；恢复权重上的梯度探针loss=0.085589/0.076925、norm=0.160390/0.185865，训练范围/冻结BN检查通过，探针更新已恢复后才恢复原优化器继续训练。engineering通用字段restored_before_epoch0表示探针后恢复权重，本轮实际恢复的是e4再进入e5，并未重跑e0。两条已进入epoch5训练200/8593，损失有限；新一阶段精度待完整epoch报告。来源/契约/启动/工程/测试/resume/status已归档，一小时心跳保持。

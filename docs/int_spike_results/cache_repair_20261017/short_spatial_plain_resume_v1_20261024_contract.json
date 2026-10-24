@@ -1,0 +1,56 @@
+{
+  "architecture": "Frozen mature stem -> optional DW5+PW1 zero-residual current-context -> ONE mature128-channel residual block with TWO3x3 layers -> unchanged mature downstream/readout/heads. Deletes original last residual block; both arms initialized to same first-block function. Expensive local updater receptive field5; context arm total nominal9 including cheap context.",
+  "data": {
+    "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+    "fm_only_epochs": 1,
+    "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+    "lr": 0.0001,
+    "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+    "min_delta": 0.001,
+    "min_epochs": 20,
+    "mode": "gru",
+    "patience": 10,
+    "seed": 303,
+    "state_policy": "whole-segment/tbptt/v1",
+    "tbptt_steps": 4
+  },
+  "memory": {
+    "ap70": 0.7567024378706645,
+    "cached_ap70": 0.7555532616222492,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_gru_r32_train_v1_20261022/epoch_011/memory.pth",
+    "epoch": 11,
+    "sha256": "1a267575ef735f203526fa3b8196334d32d9ff8a9080449c3b6206247913e5ef"
+  },
+  "objective": "GT when supervised +.2 head KD +1.0 normalized foreground/global H feature KD from frozen mature model on train split only. Teacher/student own FM state detached each frame; no teacher state injection. Full validation and original deep-period3 compatibility reported independently.",
+  "phase": "Dense precision gate for two-layer single-H local updater; NO new spatial reuse during training/validation",
+  "readout": {
+    "ap70": 0.753534819214323,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/compact_readout_r96_v2_20261021/epoch_005/readout.pth",
+    "epoch": 5,
+    "sha256": "8bbf94e975997b2803c4a4c443fee2258589276e427dbc0a2550de6b562d7a0d"
+  },
+  "repair": {
+    "ap70": 0.7553967658970537,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/split_repair_r96_w32_v1_20261021/epoch_008/repair.pth",
+    "epoch": 8,
+    "sha256": "9f0997e23752683aa3a8fa6f5b9c9e65ddd91c7a1f2dca89e1beb7500a755fbd"
+  },
+  "resume": {
+    "additional_epochs_max": 4,
+    "completed_epoch": 4,
+    "latest_sha256": "a734d3fb36d59b534ddd1f6f314c5aad05c8d56b50daa31188af2e4328dd58cc",
+    "policy": "Restore weights, AdamW moments, scheduler, significant best and global epoch. No learning-rate reset. New output; source unchanged.",
+    "source_run": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/short_spatial_plain_v1_20261024"
+  },
+  "schedule": "AdamW1e-4 wd1e-4 clip5; fullAP plateau factor.5 patience1 threshold.001; first4epochs/8hours diagnostic budget, not convergence. Review learning curves before extension or local caching.",
+  "selection": "Full AP primary best; cached AP from same checkpoint. Epoch0 retained. Precision recovery, not a sparse-compute result.",
+  "short_spatial": "plain",
+  "source": {
+    "bev_ap70": 0.758736104616861,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+    "epoch": 17,
+    "sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8"
+  },
+  "trainable_parameters": 294912,
+  "trainable_scope": "Only retained block two3x3 weights plus optional context DW5/PW1 weights. Stem, all BN including affine/statistics, FM, downstream/readout/repair/heads frozen. Context PW starts zero, DW identity. No architecture selection based on sparse AP yet."
+}
