@@ -14,6 +14,7 @@ from opencood.models.sub_modules.int_compact_readout import compact_shrink
 from opencood.models.sub_modules.int_projected_gru import projected_gru
 from opencood.models.sub_modules.int_pointwise_spatial_state import ContextualPointwiseStage,ExpandedContextPointwiseStage
 from opencood.models.sub_modules.int_projected_spatial import ProjectedSpatialStage
+from opencood.models.sub_modules.int_short_spatial_state import ShortSpatialStage
 from opencood.models.sub_modules.int_split_readout import SplitCompactReadout
 from opencood.models.sub_modules.int_light_repair import LightRepair,foreground_head_loss
 from opencood.models.sub_modules.int_local_state import feature_distillation
@@ -48,7 +49,8 @@ def worker(a):
     for m in (base,split,repair):
         for p in m.parameters():p.requires_grad_(False)
     torch.manual_seed(303);student=copy.deepcopy(base)
-    stage=(ProjectedSpatialStage(base.backbone.resnet.layer0,a.projected_rank) if a.projected_rank
+    stage=(ShortSpatialStage(base.backbone.resnet.layer0,context=a.short_spatial=='context') if a.short_spatial else
+           ProjectedSpatialStage(base.backbone.resnet.layer0,a.projected_rank) if a.projected_rank
            else ContextualPointwiseStage(base.backbone.resnet.layer0)).cuda()
     student.backbone.resnet.layer0=stage
     student.eval();parameters=[p for p in stage.parameters() if p.requires_grad]
@@ -69,6 +71,13 @@ def worker(a):
             trainable_scope='Only four new projection/spatial kernel pairs. Stem, all BN including affine/statistics, FM, downstream/readout/repair/heads frozen.',
             objective='GT when supervised + .2 head KD +1.0 first-stage feature KD. Mature frozen teacher uses train split only for optimization. Own frozen e11 FM state detached each frame. Full and original deep-cache validation; no teacher state injection.')
     warm_start=bool(a.warm_start)
+    if a.short_spatial:
+        contract.update(architecture='Frozen mature stem -> optional DW5+PW1 zero-residual current-context -> ONE mature128-channel residual block with TWO3x3 layers -> unchanged mature downstream/readout/heads. Deletes original last residual block; both arms initialized to same first-block function. Expensive local updater receptive field5; context arm total nominal9 including cheap context.',
+            short_spatial=a.short_spatial,
+            phase='Dense precision gate for two-layer single-H local updater; NO new spatial reuse during training/validation',
+            objective='GT when supervised +.2 head KD +1.0 normalized foreground/global H feature KD from frozen mature model on train split only. Teacher/student own FM state detached each frame; no teacher state injection. Full validation and original deep-period3 compatibility reported independently.',
+            schedule='AdamW1e-4 wd1e-4 clip5; fullAP plateau factor.5 patience1 threshold.001; first4epochs/8hours diagnostic budget, not convergence. Review learning curves before extension or local caching.',
+            trainable_scope='Only retained block two3x3 weights plus optional context DW5/PW1 weights. Stem, all BN including affine/statistics, FM, downstream/readout/repair/heads frozen. Context PW starts zero, DW identity. No architecture selection based on sparse AP yet.')
     if warm_start:
         assert a.warm_start_sha
         assert a.warm_start_lr>0 and a.stem_lr>0
@@ -98,7 +107,7 @@ def worker(a):
         contract['schedule']='Paired warm-start diagnostic: AdamW stage_lr=%g stem_lr=%s wd1e-4 clip5; same plateau scheduler; max6epochs/8hours. Source optimizer deliberately not restored in either arm.'%(a.warm_start_lr,str(a.stem_lr) if a.adapt_stem else 'frozen')
     elif a.expand_context or a.warm_start_sha or a.adapt_stem:
         raise ValueError('Architecture diagnostics require an explicit fixed warm-start checkpoint and SHA')
-    phase_epochs_max=4 if a.projected_rank else (6 if warm_start else 12)
+    phase_epochs_max=4 if (a.projected_rank or a.short_spatial) else (6 if warm_start else 12)
     resume=load_completed_spatial_resume(a.resume_run,contract,phase_epochs_max) if a.resume_run else None
     if resume:
         stage.load_state_dict(resume['saved']['stage'],strict=True)
@@ -121,7 +130,7 @@ def worker(a):
                 if key in costs:assert costs[key]==counter.total
                 costs[key]=counter.total
     gradient_check=None
-    if a.projected_rank:
+    if a.projected_rank or a.short_spatial:
         initial={k:v.detach().clone() for k,v in stage.state_dict().items()}
         tc,th=capture_features(base);sc,sh=capture_features(student)
         temporary=torch.optim.SGD(parameters,lr=1e-4)
@@ -147,6 +156,8 @@ def worker(a):
     scope='Dense pointwise spatial baseline with frozen e11 GRU. New spatial history input is zero; no regional reuse. Own FM states/deep anchors, paired full and cached validation. Standard conv MACsx2, model latency excludes IO/H2D/postprocess.'
     if a.projected_rank:
         scope='Dense projected spatial rank%d recovery; unchanged mature stem/BN/residuals and four-map state interface. No new spatial reuse enabled. Own FM and original deep anchors, full and cached validation. Conv MACsx2; no inference teacher. Model timing excludes IO/H2D/postprocess.'%a.projected_rank
+    if a.short_spatial:
+        scope='Dense short spatial updater arm '+a.short_spatial+': frozen mature stem, one retained two-convolution block with optional cheap current DW5/PW1 context. Own FM states; full and original deep-period3 compatibility. No spatial reuse or inference teacher. Conv MACsx2; model timing excludes IO/H2D/postprocess. Precision gate before local reuse, not convergence proof.'
     def assess(epoch):
         directory=out/('epoch_%03d'%epoch);directory.mkdir();stage.eval()
         path=directory/'stage.pth';torch.save(dict(stage=stage.state_dict(),contract=contract,epoch=epoch),str(path))
@@ -160,7 +171,7 @@ def worker(a):
                 dict(params=stem_parameters,lr=a.stem_lr)]
         optimizer=torch.optim.AdamW(groups,weight_decay=1e-4)
     else:
-        optimizer=torch.optim.AdamW(parameters,lr=a.warm_start_lr if warm_start else (1e-4 if a.projected_rank else 3e-4),weight_decay=1e-4)
+        optimizer=torch.optim.AdamW(parameters,lr=a.warm_start_lr if warm_start else (1e-4 if (a.projected_rank or a.short_spatial) else 3e-4),weight_decay=1e-4)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=1,threshold=.001,threshold_mode='abs',min_lr=1e-6)
     if resume:
         optimizer.load_state_dict(resume['saved']['optimizer']);scheduler.load_state_dict(resume['saved']['scheduler'])
@@ -219,7 +230,10 @@ def main():
     p.add_argument('--warm-start-lr',type=float,default=1e-4)
     p.add_argument('--stem-lr',type=float,default=1e-5)
     p.add_argument('--projected-rank',type=int,choices=(64,96),help='Separate four-epoch SVD input-channel compression recovery diagnostic')
+    p.add_argument('--short-spatial',choices=('plain','context'),help='Four-epoch dense precision gate for two-layer spatial update')
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
+    if a.short_spatial and (a.projected_rank or a.resume_run or a.warm_start or a.expand_context or a.adapt_stem or a.warm_start_sha):
+        p.error('Short spatial gate starts from fixed mature model, without other architecture/warm-start options')
     if a.projected_rank and (a.resume_run or a.warm_start or a.expand_context or a.adapt_stem or a.warm_start_sha):
         p.error('Projected spatial recovery starts from fixed mature kernels, not an old pointwise checkpoint')
     if a.worker:
