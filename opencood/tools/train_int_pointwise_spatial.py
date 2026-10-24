@@ -179,6 +179,11 @@ def worker(a):
         best=resume['best']['ap70'];significant=resume['significant'];stale=resume['stale']
         write_json(out/'best.json',resume['best']);write_json(out/'history.json',history)
         write_json(out/'resume.json',resume['provenance'])
+        # Engineering probes run before this point. Restore RNGs afterwards so
+        # those probes cannot perturb epoch-boundary continuation.
+        torch.set_rng_state(resume['saved']['torch_rng'])
+        torch.cuda.set_rng_state_all(resume['saved']['cuda_rng'])
+        np.random.set_state(resume['saved']['numpy_rng'])
     else:
         report,path=assess(0);best=significant=report['results']['full']['ap70'];stale=0
         if warm_start:
@@ -232,7 +237,7 @@ def main():
     p.add_argument('--projected-rank',type=int,choices=(64,96),help='Separate four-epoch SVD input-channel compression recovery diagnostic')
     p.add_argument('--short-spatial',choices=('plain','context'),help='Four-epoch dense precision gate for two-layer spatial update')
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
-    if a.short_spatial and (a.projected_rank or a.resume_run or a.warm_start or a.expand_context or a.adapt_stem or a.warm_start_sha):
+    if a.short_spatial and (a.projected_rank or a.warm_start or a.expand_context or a.adapt_stem or a.warm_start_sha):
         p.error('Short spatial gate starts from fixed mature model, without other architecture/warm-start options')
     if a.projected_rank and (a.resume_run or a.warm_start or a.expand_context or a.adapt_stem or a.warm_start_sha):
         p.error('Projected spatial recovery starts from fixed mature kernels, not an old pointwise checkpoint')
