@@ -82,8 +82,8 @@ def worker(a):
         for p in m.parameters(): p.requires_grad_(False)
     modes = dict(base=SplitReadoutDetector(base, cfg, split, 3, repair),
         dense=SplitReadoutDetector(student, cfg, split, 3, repair),
-        selected=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, confidence_threshold=a.confidence_guard,cell_age_limit_s=.25 if a.cell_age else None,spatial_dilation=0 if a.dependency_masks else 4),
-        masked_dense=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, execution='masked_dense', confidence_threshold=a.confidence_guard,cell_age_limit_s=.25 if a.cell_age else None,spatial_dilation=0 if a.dependency_masks else 4))
+        selected=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, confidence_threshold=a.confidence_guard,cell_age_limit_s=.25 if a.cell_age else None,spatial_dilation=0 if a.dependency_masks else 4,confidence_dilation=4 if a.dependency_guard else None),
+        masked_dense=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, execution='masked_dense', confidence_threshold=a.confidence_guard,cell_age_limit_s=.25 if a.cell_age else None,spatial_dilation=0 if a.dependency_masks else 4,confidence_dilation=4 if a.dependency_guard else None))
     roots = {name:base if name == 'base' else student for name in modes}
     if a.compact_state and not a.cell_age:
         if a.dependency_masks:parent_stage=CompactProjectedSpatialStage(parent_stage).cuda().eval()
@@ -93,7 +93,7 @@ def worker(a):
         modes['parent_selected'] = SpatialBasisCacheDetector(parent_model,cfg,split,repair,a.threshold,confidence_threshold=a.confidence_guard)
         if a.dependency_masks:
             roots['uniform_core']=parent_model
-            modes['uniform_core']=SpatialBasisCacheDetector(parent_model,cfg,split,repair,a.threshold,confidence_threshold=a.confidence_guard,spatial_dilation=0)
+            modes['uniform_core']=SpatialBasisCacheDetector(parent_model,cfg,split,repair,a.threshold,confidence_threshold=a.confidence_guard,spatial_dilation=0,confidence_dilation=4 if a.dependency_guard else None)
     if a.cell_age:
         roots['periodic_selected']=student
         modes['periodic_selected']=SpatialBasisCacheDetector(student,cfg,split,repair,a.threshold,confidence_threshold=a.confidence_guard)
@@ -125,7 +125,8 @@ def worker(a):
         compact_projected_state=a.compact_state,
         cell_age_policy=a.cell_age,
         dependency_masks=a.dependency_masks,
-        dependency_contract='If enabled, overrides generic dilation/compact-parent descriptions: selected/masked_dense use undilated union of current content tiles, own previous confidence, and uncovered cells as FINAL core. Four layer supports are core dilated3/2/1/0, guaranteeing complete CURRENT stem dependencies at updated final cells (fixed BN). Each intermediate writes its own support; descriptor updates only final core. Parent_selected is compact original shared radius4; uniform_core is compact shared radius0, an attribution control. All weights/checkpoints/refresh remain fixed; no training. Layer areas include actual supports and full refresh. Selected core exactness does not guarantee unchanged cached cells are accurate.',
+        dependency_guard=a.dependency_guard,
+        dependency_contract='If enabled, overrides generic dilation/compact-parent descriptions: FINAL core unions undilated current content tiles, previous own confidence support, and uncovered cells. Confidence radius is4 if dependency_guard, otherwise0; unchanged threshold.1. Four layer supports are core dilated3/2/1/0, guaranteeing complete CURRENT stem dependencies at updated final cells (fixed BN). Each intermediate writes its own support; descriptor updates only final core. Parent_selected is compact original shared content/confidence radius4; uniform_core uses the same core policy as selected but no upstream dependency halo, an attribution control. All weights/checkpoints/refresh fixed; no training. Layer areas include supports and full refresh. Selected core exactness does not guarantee unchanged cached cells are accurate.',
         cell_age_contract='If enabled: selected/masked_dense store and nearest-warp a FP32 cell-age map; add inter-frame dt and force cells aged>=.25s into mask, reset selected ages0. Same content/own-confidence dilation; expiry union has no extra dilation. Scene/FM reset still full. No periodic/global-full-age refresh; period3/.25s is retained only in periodic_selected control and unchanged deep cache. Per-cell direct age<.25s is NOT a bound on accumulated multi-layer dependency error. No motion prediction, quantization, training or threshold change.',
         compact_state_contract='Optional: cache conv2 input projection(r channels) instead of full conv1 post-ReLU(128), retain complete block outputs128. Same weights/nonlinearities/residuals/nearest geometry. On partial frames conv1 input projection dense, conv2 input projection only selected rows; selected3x3 unchanged. Same compact masked-dense control and original four128-map parent_selected paired. No quantization/training.',
         projected_contract='If enabled: completed recovery run best-by-fullAP checkpoint, own dense baseline replay, dense 1x1 projection every frame and selected 3x3 output rows. All four history maps FP32, spatial/deep period3/.25s. No additional training or fused kernels. Compare selected to SAME compressed checkpoint dense and masked-dense recurrence; base is mature uncompressed spatial path.',
@@ -143,7 +144,7 @@ def worker(a):
         prepared_contract='Optional shared per-frame mask/nonzero/neighborhood indices for four layers; prepacked immutable weights stored as nonpersistent buffers; linear chunks16384 vs original4096. Identical masks/caches/weights/MACs. Extra packed weight bytes reported separately from recurrent state. No persistent index plan or activation patches.',
         execution_fusion='Optional inference-only composition of full-rank basis+mix into native3x3. Refresh uses native conv; partial gathers selected neighborhoods and computes selected output rows. Replaces basis/mix weights; unchanged four activation caches, reference/guard and mask. No extra dense spatial basis. Count gathered standard convolution MACs, not basis-factor arithmetic.',
         spatial_period=3, max_full_age_s=.25, deep_period=3,
-        spatial_policy_by_mode={k:dict(period=m.spatial.period,max_full_age_s=m.spatial.max_full_age_us/1e6,cell_age_limit_s=m.spatial.cell_age_limit_s,global_refresh_enabled=m.spatial.cell_age_limit_s is None) for k,m in modes.items() if hasattr(m,'spatial')},
+        spatial_policy_by_mode={k:dict(period=m.spatial.period,max_full_age_s=m.spatial.max_full_age_us/1e6,cell_age_limit_s=m.spatial.cell_age_limit_s,global_refresh_enabled=m.spatial.cell_age_limit_s is None,content_dilation=m.spatial.dilation,confidence_dilation=m.spatial.confidence_dilation) for k,m in modes.items() if hasattr(m,'spatial')},
         selector='Current mature stem16-channel mean descriptor at native grid; 4x4-tile RMS relative change to aligned retained reference; radius4 dilation; all uncovered cells mandatory. No labels or current costly features used.',
         confidence_protection='If enabled, union with previous OWN prediction max-anchor sigmoid >= guard threshold, aligned with the spatial state and expanded radius4. Uses pre-NMS confidence, no teacher/GT/current prediction; logs additional area. This may help via extra area alone, not yet a matched-area attribution.',
         recurrence='Four own post-activation maps plus matching retained descriptor warp together by metric SE2 nearest. Write only selected cells; unselected aligned complete activations persist. Save mixed state at current pose; full refresh period3/age/reset. Independent FM and deep anchor states for each mode; no teacher injections.',
@@ -394,7 +395,8 @@ def worker(a):
         assert abs(results['parent_selected']['ap70']-expected)<1e-7
     write_json(out/'report.json', dict(status='COMPLETED', scans=len(val), labels=sum(r['supervised'] for r in val), results=results,
         recurrence_verified=a.verify_recurrence,
-        dependency_note='Overrides generic shared-mask/parent-state scope: selected/masked_dense final core is undilated content/own-confidence/uncovered union; four supports dilate3/2/1/0. Recomputed final core has complete current-stem dependencies; cached outside final core remains approximate. Parent_selected is compact shared radius4 baseline; uniform_core is compact shared radius0 attribution control. Same checkpoint and refresh; per-layer state-write and actual weighted execution areas are separate.' if a.dependency_masks else None,
+        dependency_guard=a.dependency_guard,
+        dependency_note='Overrides generic shared-mask/parent-state scope: final core is undilated content/uncovered union plus own-confidence support(radius4 if dependency_guard, else0); four supports dilate3/2/1/0. Recomputed final core has complete current-stem dependencies; cached outside final core remains approximate. Parent_selected is compact original shared radius4 baseline; uniform_core shares final-core selection policy but no upstream support halo. Same checkpoint and refresh; per-layer state-write and actual weighted execution areas separate.' if a.dependency_masks else None,
         cell_age_note='Selected/masked_dense use local .25s direct-age expiry, no global periodic refresh. Periodic_selected retains compact period3 baseline; deep cache unchanged. Direct cache-age bound does not bound accumulated feature-dependency error.' if a.cell_age else None,
         compact_state_parent_mask_count_disagreement_frames=parent_mask_count_disagreements if a.compact_state and not a.cell_age else None,
         compact_state_note='Selected uses projected intermediate(r) and full block output(128) pairs; parent_selected caches four128 maps. Same compressed weights. Dense full function unchanged. Projection area averages two dense and two selected projections. Compare AP/state bytes/actual MACs independently; nearest warp and zero-bias projection commute in exact arithmetic, floating paths may differ.' if a.compact_state else None,
@@ -429,8 +431,11 @@ def main():
     p.add_argument('--compact-state', action='store_true', help='Cache projected intermediates, paired with original four-map state')
     p.add_argument('--cell-age', action='store_true', help='Compact state: compare .25s per-cell expiry against periodic full refresh')
     p.add_argument('--dependency-masks',action='store_true',help='Compact state: nested3/2/1/0 supports, paired original radius4 and uniform radius0')
+    p.add_argument('--dependency-guard',action='store_true',help='Dependency core: restore original confidence radius4, keep content undilated')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.dependency_guard and not a.dependency_masks:
+        p.error('Independent confidence support requires --dependency-masks')
     if a.dependency_masks and (not a.compact_state or a.cell_age or a.threshold not in (.5,.75)):
         p.error('Dependency supports require compact verified state, threshold.5/.75, no cell-age policy')
     if a.cell_age and not a.compact_state:

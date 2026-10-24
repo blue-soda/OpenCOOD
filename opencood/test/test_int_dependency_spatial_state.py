@@ -58,5 +58,22 @@ class DependencyStateTests(unittest.TestCase):
                 self.assertEqual(infos[1]['spatial_mixer_executed_fraction'],1.)
                 self.assertEqual(infos[0]['spatial_state_bytes'],infos[1]['spatial_state_bytes'])
 
+    def test_confidence_support_is_independent_of_content_support(self):
+        s=self.stage;bounds=[-16,-12,-2,16,12,2]
+        for radius,expected in ((None,1),(4,81)):
+            mode=SpatialBasisCache(s,bounds,threshold=1e9,dilation=0,
+                confidence_threshold=.1,confidence_dilation=radius)
+            with torch.no_grad():
+                meta=dict(pose=np.eye(4),segment='a',timestamp_us=0)
+                _,state,_=mode.step(self.x,None,meta)
+                state['confidence']=torch.zeros(1,1,24,32,dtype=torch.double)
+                state['confidence'][:,:,12,16]=.2
+                _,_,info=mode.step(self.x,state,dict(meta,timestamp_us=100000))
+                self.assertEqual(info['spatial_selected_cells'],expected)
+                self.assertAlmostEqual(info['spatial_priority_fraction'],expected/(24*32),places=7)
+                self.assertEqual(mode.dilation,0)
+                self.assertEqual(s.last_layer_cells[-1],expected)
+        with self.assertRaises(ValueError):SpatialBasisCache(s,bounds,dilation=0,confidence_dilation=2)
+
 
 if __name__=='__main__':unittest.main()

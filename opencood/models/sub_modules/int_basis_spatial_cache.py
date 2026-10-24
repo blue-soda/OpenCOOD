@@ -16,7 +16,7 @@ from opencood.models.sub_modules.int_anchor_residual import refresh_reason, pred
 class SpatialBasisCache:
     def __init__(self, stage, bounds, threshold=.5, period=3, execution='selected', dilation=4,
                  confidence_threshold=None, warp=None, cache_dtype=None, max_full_age_s=.25, cell_age_limit_s=None,
-                 allow_cache_grad=False):
+                 allow_cache_grad=False, confidence_dilation=None):
         if not isinstance(stage, SpatialBasisStage) or stage.training:
             raise ValueError('Frozen spatial-basis stage required')
         if not math.isfinite(threshold) or threshold < 0 or period not in (1, 2, 3, 4, 5):
@@ -31,6 +31,9 @@ class SpatialBasisCache:
         self.stage, self.bounds, self.threshold = stage, bounds, threshold
         self.period, self.execution, self.dilation = period, execution, dilation
         self.confidence_threshold = confidence_threshold
+        if confidence_dilation not in (None,0,4):
+            raise ValueError('Confidence support radius must be0 or4, or follow content dilation')
+        self.confidence_dilation = dilation if confidence_dilation is None else confidence_dilation
         self.warp = warp if warp is not None else warp_bev
         if cache_dtype not in (None, torch.float16):
             raise ValueError('Only original or float16 activation cache storage supported')
@@ -96,8 +99,8 @@ class SpatialBasisCache:
                 mask = F.max_pool2d(mask.float(), 2*self.dilation+1, 1, self.dilation) > 0
             if self.confidence_threshold is not None:
                 priority = aligned[:, -1:] >= self.confidence_threshold
-                if self.dilation:
-                    priority = F.max_pool2d(priority.float(), 2*self.dilation+1, 1, self.dilation) > 0
+                if self.confidence_dilation:
+                    priority = F.max_pool2d(priority.float(), 2*self.confidence_dilation+1, 1, self.confidence_dilation) > 0
                 priority_fraction = float(priority.float().mean())
                 added_fraction = float((priority & ~mask).float().mean())
                 mask = mask | priority
@@ -154,7 +157,7 @@ class SpatialBasisCacheDetector:
     """Same mature downstream/deep cache, replacing only first-stage execution."""
     def __init__(self, model, config, readout, repair, threshold=.5,
                  period=3, execution='selected', deep_period=3, confidence_threshold=None, warp=None, cache_dtype=None,
-                 max_full_age_s=.25, cell_age_limit_s=None, spatial_dilation=4):
+                 max_full_age_s=.25, cell_age_limit_s=None, spatial_dilation=4, confidence_dilation=None):
         if model.training or readout.training or repair.training or deep_period not in (1, 3):
             raise ValueError('Frozen detector and deep period1/3 required')
         self.model, self.readout, self.repair = model, readout, repair
@@ -162,7 +165,8 @@ class SpatialBasisCacheDetector:
         self.warp = warp if warp is not None else warp_bev
         self.spatial = SpatialBasisCache(model.backbone.resnet.layer0, self.bounds, threshold, period, execution,
                                         confidence_threshold=confidence_threshold, warp=warp, cache_dtype=cache_dtype,
-                                        max_full_age_s=max_full_age_s,cell_age_limit_s=cell_age_limit_s,dilation=spatial_dilation)
+                                        max_full_age_s=max_full_age_s,cell_age_limit_s=cell_age_limit_s,dilation=spatial_dilation,
+                                        confidence_dilation=confidence_dilation)
 
     def step(self, data, state, meta):
         m = self.model; p = data['processed_lidar']
