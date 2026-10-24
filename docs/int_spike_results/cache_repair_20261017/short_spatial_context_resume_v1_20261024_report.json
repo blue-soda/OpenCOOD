@@ -1,0 +1,13 @@
+{
+  "best": {
+    "ap70": 0.7518883256200007,
+    "cached_ap70": 0.7513961482132839,
+    "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/short_spatial_context_resume_v1_20261024/epoch_008/stage.pth",
+    "epoch": 8,
+    "sha256": "1f54226dfd57db94227fee6d3ecf07a23b747213708dce21394ba2463b32dfe9"
+  },
+  "epochs": 8,
+  "phase_epochs": 4,
+  "status": "COMPLETED",
+  "stop_reason": "budget_not_convergence"
+}
