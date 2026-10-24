@@ -94,10 +94,13 @@ def worker(a):
             stage=ExpandedContextPointwiseStage.from_stage(stage)
             student.backbone.resnet.layer0=stage
         if a.adapt_stem:stage.enable_stem_adaptation()
+        if a.adapt_update_bn:stage.enable_update_bn_affine()
         parameters=[p for p in stage.parameters() if p.requires_grad]
         contract['warm_start']=dict(checkpoint=a.warm_start,sha256=a.warm_start_sha,parent_epoch=warm['epoch'],
             expanded_context=a.expand_context,adapt_stem=a.adapt_stem,
             optimizer='New AdamW for both paired arms, not a continuation')
+        if a.short_spatial:
+            contract['warm_start']['adapt_update_bn']=a.adapt_update_bn
         contract['trainable_parameters']=sum(p.numel() for p in parameters)
         if a.expand_context:
             contract['architecture']+=' Extra two directional-initialized depthwise3 responses per stem channel; U769to512to512to128. Zero new mixing columns preserve initial output.'
@@ -105,7 +108,11 @@ def worker(a):
             contract['architecture']=contract['architecture'].replace('Frozen mature first block','Adaptable mature first block with fixed BN statistics')
             contract['architecture']+=' Mature first-block weights and BN affine adapt at a lower learning rate; BN running statistics remain fixed. No extra parameters or inference operators.'
         contract['schedule']='Paired warm-start diagnostic: AdamW stage_lr=%g stem_lr=%s wd1e-4 clip5; same plateau scheduler; max6epochs/8hours. Source optimizer deliberately not restored in either arm.'%(a.warm_start_lr,str(a.stem_lr) if a.adapt_stem else 'frozen')
-    elif a.expand_context or a.warm_start_sha or a.adapt_stem:
+        if a.short_spatial:
+            contract['schedule']=contract['schedule'].replace('max6epochs','max4epochs')
+            if a.adapt_update_bn:
+                contract['trainable_scope']='Retained two3x3 update weights, optional context weights AND retained block BN affine. Stem, BN running statistics, FM and all downstream/readout/repair/heads frozen. No inference operators added.'
+    elif a.expand_context or a.warm_start_sha or a.adapt_stem or a.adapt_update_bn:
         raise ValueError('Architecture diagnostics require an explicit fixed warm-start checkpoint and SHA')
     phase_epochs_max=4 if (a.projected_rank or a.short_spatial) else (6 if warm_start else 12)
     resume=load_completed_spatial_resume(a.resume_run,contract,phase_epochs_max) if a.resume_run else None
@@ -158,6 +165,8 @@ def worker(a):
         scope='Dense projected spatial rank%d recovery; unchanged mature stem/BN/residuals and four-map state interface. No new spatial reuse enabled. Own FM and original deep anchors, full and cached validation. Conv MACsx2; no inference teacher. Model timing excludes IO/H2D/postprocess.'%a.projected_rank
     if a.short_spatial:
         scope='Dense short spatial updater arm '+a.short_spatial+': frozen mature stem, one retained two-convolution block with optional cheap current DW5/PW1 context. Own FM states; full and original deep-period3 compatibility. No spatial reuse or inference teacher. Conv MACsx2; model timing excludes IO/H2D/postprocess. Precision gate before local reuse, not convergence proof.'
+        if warm_start:
+            scope+=' Paired fixed-checkpoint diagnostic with new matched optimizer; update BN affine adaptation='+str(a.adapt_update_bn)+', running statistics fixed.'
     def assess(epoch):
         directory=out/('epoch_%03d'%epoch);directory.mkdir();stage.eval()
         path=directory/'stage.pth';torch.save(dict(stage=stage.state_dict(),contract=contract,epoch=epoch),str(path))
@@ -232,13 +241,18 @@ def main():
     p.add_argument('--warm-start-sha')
     p.add_argument('--expand-context',action='store_true')
     p.add_argument('--adapt-stem',action='store_true',help='Warm-start only: unfreeze mature stem weights but keep BN statistics fixed')
+    p.add_argument('--adapt-update-bn',action='store_true',help='Short-spatial warm-start only: adapt retained block BN affine, never running statistics')
     p.add_argument('--warm-start-lr',type=float,default=1e-4)
     p.add_argument('--stem-lr',type=float,default=1e-5)
     p.add_argument('--projected-rank',type=int,choices=(64,96),help='Separate four-epoch SVD input-channel compression recovery diagnostic')
     p.add_argument('--short-spatial',choices=('plain','context'),help='Four-epoch dense precision gate for two-layer spatial update')
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
-    if a.short_spatial and (a.projected_rank or a.warm_start or a.expand_context or a.adapt_stem or a.warm_start_sha):
-        p.error('Short spatial gate starts from fixed mature model, without other architecture/warm-start options')
+    if a.resume_run and (a.warm_start or a.adapt_update_bn):
+        p.error('Exact continuation and paired warm-start diagnostics are mutually exclusive')
+    if a.adapt_update_bn and not (a.short_spatial and a.warm_start):
+        p.error('Update BN affine diagnostic requires short-spatial and an explicit warm-start')
+    if a.short_spatial and (a.projected_rank or a.expand_context or a.adapt_stem):
+        p.error('Short spatial gate cannot use other architecture options')
     if a.projected_rank and (a.resume_run or a.warm_start or a.expand_context or a.adapt_stem or a.warm_start_sha):
         p.error('Projected spatial recovery starts from fixed mature kernels, not an old pointwise checkpoint')
     if a.worker:

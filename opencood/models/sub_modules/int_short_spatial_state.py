@@ -41,6 +41,18 @@ class ShortSpatialStage(nn.Module):
     def forward(self,x):
         return self.block(self.observe(x))
 
+    def enable_update_bn_affine(self):
+        """Adapt only the retained update block's affine BN; keep stats fixed.
+
+        This preserves the initial function and inference operators. Frozen
+        running statistics also preserve per-location evaluation for future
+        selected-region execution, unlike training with batch statistics.
+        """
+        for module in self.block.modules():
+            if isinstance(module,nn.BatchNorm2d):
+                for p in module.parameters():p.requires_grad_(True)
+                module.eval()
+
     def train(self,mode=True):
         super().train(mode)
         self.stem.eval()
