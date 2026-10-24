@@ -1,0 +1,18 @@
+{
+  "conv_macs": {
+    "base_cached_full": 110586470400,
+    "base_cached_partial": 44172979200,
+    "base_full_full": 110586470400,
+    "cached_full": 103648204800,
+    "cached_partial": 37234713600,
+    "full_full": 103648204800
+  },
+  "frames": 32,
+  "gradient_check": {
+    "gradient_norm": 0.18805508315563202,
+    "loss": 0.06577795743942261,
+    "only_factors_updated": true,
+    "restored_before_epoch0": true
+  },
+  "status": "PASSED"
+}
