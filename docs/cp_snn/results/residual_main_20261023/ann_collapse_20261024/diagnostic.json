@@ -1,0 +1,258 @@
+{
+  "checkpoint_epoch": 8,
+  "checkpoint_sha256": "f4159f38785845e0c15d50c54ee7ec314a58e655bcd31e16f79b15918f20ab88",
+  "best_epoch": 4,
+  "best_sha256": "d750b5a3e6a3b4bbacda3d15fe4895f15b2a204acb0a1b0b3c1ead98e156e2e1",
+  "frames": [
+    {
+      "label": "best",
+      "index": 0,
+      "budget": 0,
+      "bytes": [
+        0
+      ],
+      "loss": 0.43640127489541314,
+      "cls_absmax": 7.543737411499023,
+      "reg_absmax": 1.4284093379974365,
+      "finite": true
+    },
+    {
+      "label": "best",
+      "index": 0,
+      "budget": 4096,
+      "bytes": [
+        4094
+      ],
+      "loss": 0.4342017105825268,
+      "cls_absmax": 7.543737411499023,
+      "reg_absmax": 1.4284093379974365,
+      "finite": true
+    },
+    {
+      "label": "best",
+      "index": 1,
+      "budget": 0,
+      "bytes": [
+        0
+      ],
+      "loss": 0.5183841889024661,
+      "cls_absmax": 7.612122058868408,
+      "reg_absmax": 1.2889063358306885,
+      "finite": true
+    },
+    {
+      "label": "best",
+      "index": 1,
+      "budget": 4096,
+      "bytes": [
+        4094
+      ],
+      "loss": 0.4639324622247343,
+      "cls_absmax": 7.612122058868408,
+      "reg_absmax": 1.2889063358306885,
+      "finite": true
+    },
+    {
+      "label": "epoch8",
+      "index": 0,
+      "budget": 0,
+      "bytes": [
+        0
+      ],
+      "loss": 1.699306149589794,
+      "cls_absmax": 7.272193908691406,
+      "reg_absmax": 1.3207675218582153,
+      "finite": true
+    },
+    {
+      "label": "epoch8",
+      "index": 0,
+      "budget": 4096,
+      "bytes": [
+        4096
+      ],
+      "loss": 1.699306149589794,
+      "cls_absmax": 7.272193908691406,
+      "reg_absmax": 1.3207675218582153,
+      "finite": true
+    },
+    {
+      "label": "epoch8",
+      "index": 1,
+      "budget": 0,
+      "bytes": [
+        0
+      ],
+      "loss": 1.663208318586334,
+      "cls_absmax": 7.388245105743408,
+      "reg_absmax": 1.4402971267700195,
+      "finite": true
+    },
+    {
+      "label": "epoch8",
+      "index": 1,
+      "budget": 4096,
+      "bytes": [
+        4096
+      ],
+      "loss": 1.663205351014271,
+      "cls_absmax": 7.388245105743408,
+      "reg_absmax": 1.4402971267700195,
+      "finite": true
+    }
+  ],
+  "parameters": {
+    "best": {
+      "backbone_3d.conv4.": {
+        "max_abs": 5.013526439666748,
+        "all_finite": true
+      },
+      "backbone_3d.conv_out.": {
+        "max_abs": 2.243441581726074,
+        "all_finite": true
+      },
+      "backbone_2d.": {
+        "max_abs": 50.86095428466797,
+        "all_finite": true
+      },
+      "cls_head.": {
+        "max_abs": 3.430542469024658,
+        "all_finite": true
+      },
+      "reg_head.": {
+        "max_abs": 0.45870065689086914,
+        "all_finite": true
+      },
+      "sender.": {
+        "max_abs": 0.3172319233417511,
+        "all_finite": true
+      },
+      "receiver.": {
+        "max_abs": 0.12888337671756744,
+        "all_finite": true
+      }
+    },
+    "epoch8": {
+      "backbone_3d.conv4.": {
+        "max_abs": 5.013526439666748,
+        "all_finite": true
+      },
+      "backbone_3d.conv_out.": {
+        "max_abs": 2.243441581726074,
+        "all_finite": true
+      },
+      "backbone_2d.": {
+        "max_abs": 50.86095428466797,
+        "all_finite": true
+      },
+      "cls_head.": {
+        "max_abs": 3.427403688430786,
+        "all_finite": true
+      },
+      "reg_head.": {
+        "max_abs": 0.4581303596496582,
+        "all_finite": true
+      },
+      "sender.": {
+        "max_abs": 0.30804771184921265,
+        "all_finite": true
+      },
+      "receiver.": {
+        "max_abs": 0.1202230229973793,
+        "all_finite": true
+      }
+    }
+  },
+  "epoch8_full_ego": {
+    "b0": {
+      "evaluation": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 10263,
+        "gt_boxes": 28622,
+        "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.10379799744005405,
+          "0.5": 0.04207418216638571,
+          "0.7": 0.002680904288248088
+        },
+        "ap_3d": {
+          "0.3": 0.08700697647037263,
+          "0.5": 0.017707651504082985,
+          "0.7": 0.00021361337512405536
+        },
+        "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+        "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+        "predictions": {
+          "directory": "predictions",
+          "frames": 1738,
+          "index_sha256": "ed866204e86ce251110eb923f9dc26683b56f3a9d2d15a1affc547929414625e"
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 0.0,
+          "median_bytes": 0.0,
+          "min_bytes": 0,
+          "max_bytes": 0,
+          "p95_bytes": 0.0,
+          "total_bytes": 0,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "profile": {
+          "batch_size": 1,
+          "warmup_frames_excluded": 20,
+          "timed_frames": 1718,
+          "milliseconds": {
+            "batch_wait_ms": {
+              "mean": 12.783390004187822,
+              "median": 8.17979546263814,
+              "p95": 32.57803620072081
+            },
+            "h2d_ms": {
+              "mean": 8.871736784619566,
+              "median": 8.960840059444308,
+              "p95": 11.457527417223897
+            },
+            "forward_ms": {
+              "mean": 17.502149129942346,
+              "median": 17.227059928700328,
+              "p95": 20.732640963979065
+            },
+            "postprocess_ms": {
+              "mean": 6.3970338721782385,
+              "median": 5.503706983290613,
+              "p95": 12.299708707723745
+            },
+            "ready_batch_inference_ms": {
+              "mean": 32.77091978674015,
+              "median": 32.257444923743606,
+              "p95": 39.13696851814165
+            }
+          },
+          "peak_allocated_bytes": 173818368,
+          "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+        }
+      },
+      "replay": {
+        "passed": true,
+        "samples": 1738,
+        "predicted_boxes": 10263,
+        "gt_boxes": 28622,
+        "ap": {
+          "0.3": 0.10379799744005405,
+          "0.5": 0.04207418216638571,
+          "0.7": 0.002680904288248088
+        },
+        "exact_match": true,
+        "all_file_hashes_verified": true,
+        "ap_3d": {
+          "0.3": 0.08700697647037263,
+          "0.5": 0.017707651504082985,
+          "0.7": 0.00021361337512405536
+        }
+      }
+    }
+  },
+  "code_commit": "442ddf56383cb3742ec53217566884db1fac1125"
+}

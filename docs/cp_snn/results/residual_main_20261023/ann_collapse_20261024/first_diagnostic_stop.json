@@ -1,0 +1,21 @@
+{
+  "reason": "failed spawn-worker diagnostic; training processes untouched",
+  "processes": [
+    {
+      "pid": 455234,
+      "command": [
+        "/data1/zhh/gzc/miniconda3/envs/opencood/bin/python",
+        "-c",
+        "from multiprocessing.semaphore_tracker import main;main(35)"
+      ]
+    },
+    {
+      "pid": 455162,
+      "command": [
+        "/data1/zhh/gzc/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "/data1/zhh/gzc/diagnostics/e3dsnn_residual_main_20261023/ann_collapse_20261024_1405/diagnose.py"
+      ]
+    }
+  ]
+}

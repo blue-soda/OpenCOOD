@@ -1,0 +1,27 @@
+/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/multiprocessing/spawn.py", line 105, in spawn_main
+    exitcode = _main(fd)
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/multiprocessing/spawn.py", line 114, in _main
+    prepare(preparation_data)
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/multiprocessing/spawn.py", line 225, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/multiprocessing/spawn.py", line 277, in _fixup_main_from_path
+    run_name="__mp_main__")
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 263, in run_path
+    pkg_name=pkg_name, script_name=fname)
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 96, in _run_module_code
+    mod_name, mod_spec, pkg_name, script_name)
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/data1/zhh/gzc/diagnostics/e3dsnn_residual_main_20261023/ann_collapse_20261024_1405/diagnose.py", line 27, in <module>
+    model.load_state_dict(saved['model'],strict=True);model.contract_identity=report['checkpoint_sha256']
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/pathlib.py", line 1273, in mkdir
+    self._accessor.mkdir(self, mode)
+FileExistsError: [Errno 17] File exists: '/data1/zhh/gzc/diagnostics/e3dsnn_residual_main_20261023/ann_collapse_20261024_1405/ego_validation'
+/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/multiprocessing/semaphore_tracker.py:144: UserWarning: semaphore_tracker: There appear to be 11 leaked semaphores to clean up at shutdown
+  len(cache))

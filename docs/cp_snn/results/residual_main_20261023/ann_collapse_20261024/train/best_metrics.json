@@ -1,0 +1,75 @@
+{
+  "epoch": 4,
+  "mean_ap70": 0.5967347923337704,
+  "evaluations": {
+    "b2048": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 28955,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7618892205939461,
+        "0.5": 0.7120303154139762,
+        "0.7": 0.5954695006231123
+      },
+      "feature_packets": {
+        "count": 1738,
+        "mean_bytes": 2046.7232451093212,
+        "median_bytes": 2047.0,
+        "min_bytes": 2036,
+        "max_bytes": 2048,
+        "p95_bytes": 2048.0,
+        "total_bytes": 3557205,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      }
+    },
+    "b4096": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 29580,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7701648938687458,
+        "0.5": 0.7204010199392875,
+        "0.7": 0.5967363448879158
+      },
+      "feature_packets": {
+        "count": 1738,
+        "mean_bytes": 4094.6110471806674,
+        "median_bytes": 4095.0,
+        "min_bytes": 4083,
+        "max_bytes": 4096,
+        "p95_bytes": 4096.0,
+        "total_bytes": 7116434,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      }
+    },
+    "b8192": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 30020,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7758512918413177,
+        "0.5": 0.7242648682175297,
+        "0.7": 0.597998531490283
+      },
+      "feature_packets": {
+        "count": 1738,
+        "mean_bytes": 6983.560989643268,
+        "median_bytes": 7003.0,
+        "min_bytes": 6374,
+        "max_bytes": 7394,
+        "p95_bytes": 7262.15,
+        "total_bytes": 12137429,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      }
+    }
+  }
+}

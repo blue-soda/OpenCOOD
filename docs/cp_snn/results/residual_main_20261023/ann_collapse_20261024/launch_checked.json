@@ -1,0 +1,1 @@
+{"pid": 455643, "started": 1792823907.7483122, "gpu": 3, "reason": "Added main guard for spawn workers; previous diagnostic failed before evaluating samples; no optimizer steps in either attempt"}

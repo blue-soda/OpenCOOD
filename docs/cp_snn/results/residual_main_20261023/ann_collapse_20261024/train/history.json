@@ -1,0 +1,377 @@
+[
+  {
+    "epoch": 0,
+    "mean_ap70": 0.5831963870972837,
+    "evaluations": {
+      "b2048": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 27476,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7220772471967132,
+          "0.5": 0.6810261375154334,
+          "0.7": 0.5831957700837755
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2046.6697353279633,
+          "median_bytes": 2047.0,
+          "min_bytes": 2040,
+          "max_bytes": 2048,
+          "p95_bytes": 2048.0,
+          "total_bytes": 3557112,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "b4096": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 27473,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7221532504624657,
+          "0.5": 0.6810771896438587,
+          "0.7": 0.5831765178291957
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 4094.3642117376294,
+          "median_bytes": 4094.5,
+          "min_bytes": 4087,
+          "max_bytes": 4096,
+          "p95_bytes": 4096.0,
+          "total_bytes": 7116005,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "b8192": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 27479,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7222155021960109,
+          "0.5": 0.681038607955702,
+          "0.7": 0.5832168733788802
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 8182.954545454545,
+          "median_bytes": 8190.0,
+          "min_bytes": 7914,
+          "max_bytes": 8192,
+          "p95_bytes": 8192.0,
+          "total_bytes": 14221975,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      }
+    }
+  },
+  {
+    "epoch": 2,
+    "mean_ap70": 0.5879523325365419,
+    "evaluations": {
+      "b2048": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 28384,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7378244255639923,
+          "0.5": 0.6921333744571178,
+          "0.7": 0.58707472144636
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2046.8037974683543,
+          "median_bytes": 2047.0,
+          "min_bytes": 2041,
+          "max_bytes": 2048,
+          "p95_bytes": 2048.0,
+          "total_bytes": 3557345,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "b4096": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 29001,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7453130698989616,
+          "0.5": 0.6969373508736172,
+          "0.7": 0.5882739529274364
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 4094.5724971231302,
+          "median_bytes": 4095.0,
+          "min_bytes": 4087,
+          "max_bytes": 4096,
+          "p95_bytes": 4096.0,
+          "total_bytes": 7116367,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "b8192": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 29729,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7500355648269623,
+          "0.5": 0.7003684786562292,
+          "0.7": 0.5885083232358292
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 7684.517836593786,
+          "median_bytes": 7690.5,
+          "min_bytes": 7309,
+          "max_bytes": 8022,
+          "p95_bytes": 7881.15,
+          "total_bytes": 13355692,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      }
+    }
+  },
+  {
+    "epoch": 4,
+    "mean_ap70": 0.5967347923337704,
+    "evaluations": {
+      "b2048": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 28955,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7618892205939461,
+          "0.5": 0.7120303154139762,
+          "0.7": 0.5954695006231123
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2046.7232451093212,
+          "median_bytes": 2047.0,
+          "min_bytes": 2036,
+          "max_bytes": 2048,
+          "p95_bytes": 2048.0,
+          "total_bytes": 3557205,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "b4096": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 29580,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7701648938687458,
+          "0.5": 0.7204010199392875,
+          "0.7": 0.5967363448879158
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 4094.6110471806674,
+          "median_bytes": 4095.0,
+          "min_bytes": 4083,
+          "max_bytes": 4096,
+          "p95_bytes": 4096.0,
+          "total_bytes": 7116434,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "b8192": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 30020,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7758512918413177,
+          "0.5": 0.7242648682175297,
+          "0.7": 0.597998531490283
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 6983.560989643268,
+          "median_bytes": 7003.0,
+          "min_bytes": 6374,
+          "max_bytes": 7394,
+          "p95_bytes": 7262.15,
+          "total_bytes": 12137429,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      }
+    }
+  },
+  {
+    "epoch": 6,
+    "mean_ap70": 0.5937995634958981,
+    "evaluations": {
+      "b2048": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 29524,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.76159105268514,
+          "0.5": 0.7111054014712567,
+          "0.7": 0.5911566114311774
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2047.277905638665,
+          "median_bytes": 2047.0,
+          "min_bytes": 2038,
+          "max_bytes": 2048,
+          "p95_bytes": 2048.0,
+          "total_bytes": 3558169,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "b4096": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 30036,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7700209267683258,
+          "0.5": 0.7198796028372485,
+          "0.7": 0.5941981302897192
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 4094.9275028768698,
+          "median_bytes": 4095.0,
+          "min_bytes": 4083,
+          "max_bytes": 4096,
+          "p95_bytes": 4096.0,
+          "total_bytes": 7116984,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "b8192": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 30402,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7744750221508016,
+          "0.5": 0.7237996563178118,
+          "0.7": 0.5960439487667978
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 5880.722094361335,
+          "median_bytes": 5895.0,
+          "min_bytes": 5309,
+          "max_bytes": 6473,
+          "p95_bytes": 6184.0,
+          "total_bytes": 10220695,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      }
+    }
+  },
+  {
+    "epoch": 8,
+    "mean_ap70": 0.0026834465360630506,
+    "evaluations": {
+      "b2048": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 10290,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.10393310417764885,
+          "0.5": 0.04208453543112698,
+          "0.7": 0.002684471828306178
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2047.5207134637515,
+          "median_bytes": 2048.0,
+          "min_bytes": 2040,
+          "max_bytes": 2048,
+          "p95_bytes": 2048.0,
+          "total_bytes": 3558591,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "b4096": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 10298,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.10400151578508428,
+          "0.5": 0.04208624007648108,
+          "0.7": 0.0026813186455276116
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 4095.3279631760643,
+          "median_bytes": 4095.0,
+          "min_bytes": 4085,
+          "max_bytes": 4096,
+          "p95_bytes": 4096.0,
+          "total_bytes": 7117680,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      },
+      "b8192": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 10298,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.10400318910680527,
+          "0.5": 0.0420965313475432,
+          "0.7": 0.0026845491343553615
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 4883.191024165708,
+          "median_bytes": 4880.0,
+          "min_bytes": 4812,
+          "max_bytes": 4996,
+          "p95_bytes": 4923.0,
+          "total_bytes": 8486986,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        }
+      }
+    }
+  }
+]
