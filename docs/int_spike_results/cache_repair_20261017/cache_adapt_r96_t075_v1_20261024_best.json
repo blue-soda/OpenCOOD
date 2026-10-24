@@ -1,0 +1,18 @@
+{
+  "ap70": 0.7546151539838869,
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/cache_adapt_r96_t075_v1_20261024/epoch_000/stage.pth",
+  "epoch": 0,
+  "metrics": {
+    "ap50": 0.8319080240465155,
+    "ap70": 0.7546151539838869,
+    "conv_linear_gflops": 116.77628098549395,
+    "max_incremental_cuda_peak_bytes": 292809216,
+    "mean_executed_mix_area": 0.4654699168817222,
+    "mean_executed_projection_area": 0.7327349584408612,
+    "mean_ms": 19.40532729195825,
+    "mean_state_bytes": 82756800.0,
+    "p95_ms": 28.3724247245118,
+    "spatial_refresh_frames": 2005
+  },
+  "sha256": "57cd83d12cb0c96777f0db77c205cc43fbdec4afb007ee22ff2a368f532da8d8"
+}
