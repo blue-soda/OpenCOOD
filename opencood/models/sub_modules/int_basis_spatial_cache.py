@@ -145,7 +145,9 @@ class SpatialBasisCache:
                 info['spatial_projection_executed_fraction'] = (1.+count/float(cells))/2.
         if getattr(self.stage,'nested_dependency_masks',False):
             layer_cells=[cells]*4 if reason else self.stage.last_layer_cells
-            info['spatial_layer_write_fractions']=[n/float(cells) for n in layer_cells]
+            info['spatial_layer_update_fractions']=[n/float(cells) for n in layer_cells]
+            info['spatial_layer_write_fractions']=([count/float(cells)] if getattr(self.stage,'single_spatial_state',False)
+                else info['spatial_layer_update_fractions'])
             if selected_execution:
                 kernels=[c for b in self.stage.blocks for c in (b.conv1,b.conv2)]
                 info['spatial_mixer_executed_fraction']=sum(n*c.mix.weight.numel() for n,c in zip(layer_cells,kernels))/float(cells*sum(c.mix.weight.numel() for c in kernels))

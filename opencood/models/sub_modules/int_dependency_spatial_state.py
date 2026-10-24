@@ -24,6 +24,7 @@ class DependencyProjectedSpatialStage(CompactProjectedSpatialStage):
         super().__init__(source)
         self.nested_dependency_masks=True
         self.last_layer_cells=None
+        self.dependency_cache_channels=list(self.cache_channels)
 
     def selected_from_stem(self,current,aligned_maps,mask,execution='selected'):
         if self.training or torch.is_grad_enabled():raise ValueError('Frozen dependency inference required')
@@ -31,7 +32,7 @@ class DependencyProjectedSpatialStage(CompactProjectedSpatialStage):
             raise ValueError('Four compatible maps required')
         if current.shape[0]!=1 or mask.shape!=(1,1,*current.shape[-2:]):
             raise ValueError('Matching single-frame core required')
-        for old,channels in zip(aligned_maps,self.cache_channels):
+        for old,channels in zip(aligned_maps,self.dependency_cache_channels):
             if old.shape!=(1,channels,*current.shape[-2:]) or old.dtype!=current.dtype or old.device!=current.device:
                 raise ValueError('Incompatible projected cache')
         masks=dependency_masks(mask);self.last_layer_cells=[int(m.sum()) for m in masks]
