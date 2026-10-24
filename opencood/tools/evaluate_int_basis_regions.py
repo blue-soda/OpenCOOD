@@ -292,7 +292,8 @@ def worker(a):
         costs_verified_against_actual_conv_hooks=True, own_immutable_deep_anchors=True))
     if a.profile_frames:
         from opencood.tools.profile_int_basis_regions import profile_stream
-        profile_stream(a, cfg, val, modes['fused'], modes['base'], out)
+        profile_stream(a, cfg, val, modes['selected'] if a.row_state else modes['fused'], modes['base'], out,
+            modes['parent_selected'] if a.row_state else None)
         return
     if a.fast_warp:
         modes = {k:modes[k] for k in ('base', 'prepared', 'fast_warp')}
@@ -486,10 +487,10 @@ def main():
         p.error('Selection diagnosis requires --projected-run')
     if a.verify_recurrence and (not a.projected_run or a.audit_selection):
         p.error('Verified recurrence requires projected full validation, without diagnostic early stop')
-    if a.projected_run and (a.fused or a.prepared or a.fast_warp or a.cache_fp16 or a.long_history or a.profile_frames or a.confidence_guard is None):
+    if a.projected_run and (a.fused or a.prepared or a.fast_warp or a.cache_fp16 or a.long_history or (a.profile_frames and not a.row_state) or a.confidence_guard is None):
         p.error('Projected comparison requires confidence guard and plain FP32 four-mode validation')
-    if a.profile_frames and (not a.fused or not 64 <= a.profile_frames <= 512):
-        p.error('Profiling requires --fused and 64..512 frames')
+    if a.profile_frames and (not (a.fused or a.row_state) or not 64 <= a.profile_frames <= 512):
+        p.error('Profiling requires --fused or --row-state and 64..512 frames')
     if a.prepared and (not a.fused or a.profile_frames):
         p.error('Prepared comparison requires --fused and full validation')
     if a.fast_warp and not a.prepared:

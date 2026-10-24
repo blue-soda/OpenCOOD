@@ -18,6 +18,10 @@ def row_lookup(ids, cells):
     return table
 
 
+def row_project(rows, conv):
+    return F.linear(rows,conv.weight[:,:,0,0])
+
+
 def row_conv(conv, rows, ids, output_mask, chunk_size=4096):
     target,neighbors,shape=prepare_selected_neighborhoods(output_mask)
     cells=shape[-2]*shape[-1]
@@ -61,11 +65,11 @@ class RowSpatialStateStage(SingleSpatialStateStage):
         rows=current[0].reshape(current.shape[1],-1)[:,ids].t()
         cells=mask.numel();macs=0
         for index,block in enumerate(self.blocks):
-            projected=F.linear(rows,block.conv1.project.weight[:,:,0,0])
+            projected=row_project(rows,block.conv1.project)
             macs+=ids.numel()*block.conv1.project.weight.numel()
             middle,middle_ids,count=row_conv(block.conv1.mix,projected,ids,supports[2*index]);macs+=count
             middle=F.relu(_selected_bn(middle,block.bn1))
-            projected=F.linear(middle,block.conv2.project.weight[:,:,0,0])
+            projected=row_project(middle,block.conv2.project)
             macs+=middle_ids.numel()*block.conv2.project.weight.numel()
             output,out_ids,count=row_conv(block.conv2.mix,projected,middle_ids,supports[2*index+1]);macs+=count
             skip_indices=row_lookup(ids,cells)[out_ids]
