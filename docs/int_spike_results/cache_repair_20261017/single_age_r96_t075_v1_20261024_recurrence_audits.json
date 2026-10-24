@@ -1,0 +1,36 @@
+{
+  "audits": [
+    {
+      "confidence_min_threshold_margin": 0.0,
+      "crossing_confidence_pairs": [
+        [
+          0.09999990463256836,
+          0.10000000149011612
+        ]
+      ],
+      "own_dense_cells": 5276,
+      "own_mask_xor_cells": 1,
+      "own_selected_cells": 5275,
+      "prior_confidence_max_difference": 5.066394805908203e-07,
+      "prior_confidence_threshold_crossings": 1,
+      "prior_map_max_differences": [
+        3.4332275390625e-05
+      ],
+      "prior_reference_max_difference": 0.0,
+      "same_input_map_max_errors": [
+        3.719329833984375e-05
+      ],
+      "same_input_masks_equal": true,
+      "same_input_numerically_close": true,
+      "same_input_prediction_max_errors": {
+        "dm": 6.67572021484375e-06,
+        "psm": 6.67572021484375e-06,
+        "rm": 1.0132789611816406e-06
+      },
+      "scans": 1721,
+      "segment": "45:0004",
+      "timestamp_us": 1626155902883915
+    }
+  ],
+  "scope": "Independent own-state masks may differ at floating-point thresholds. Every divergent frame gets discarded SAME-input backend validation; model/thresholds/trajectories unchanged."
+}

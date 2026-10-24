@@ -153,6 +153,9 @@ class SpatialBasisCache:
                 kernels=[c for b in self.stage.blocks for c in (b.conv1,b.conv2)]
                 info['spatial_mixer_executed_fraction']=sum(n*c.mix.weight.numel() for n,c in zip(layer_cells,kernels))/float(cells*sum(c.mix.weight.numel() for c in kernels))
                 info['spatial_projection_executed_fraction']=(2.+(layer_cells[0]+layer_cells[2])/float(cells))/4.
+                if getattr(self.stage,'row_spatial_execution',False):
+                    projection_cells=self.stage.last_projection_cells
+                    info['spatial_projection_executed_fraction']=sum(n*c.project.weight.numel() for n,c in zip(projection_cells,kernels))/float(cells*sum(c.project.weight.numel() for c in kernels))
         return output, new_state, info
 
 
