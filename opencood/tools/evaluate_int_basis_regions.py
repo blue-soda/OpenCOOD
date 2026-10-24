@@ -18,6 +18,7 @@ from opencood.models.sub_modules.int_compact_projected_state import CompactProje
 from opencood.models.sub_modules.int_dependency_spatial_state import DependencyProjectedSpatialStage
 from opencood.models.sub_modules.int_single_spatial_state import SingleSpatialStateStage
 from opencood.models.sub_modules.int_row_spatial_state import RowSpatialStateStage
+from opencood.models.sub_modules.int_planned_row_state import PlannedRowSpatialStage
 from opencood.models.sub_modules.int_basis_spatial_cache import SpatialBasisCacheDetector
 from opencood.models.sub_modules.int_fused_basis import fuse_spatial_basis
 from opencood.models.sub_modules.int_cached_metric_warp import CachedMetricWarp
@@ -81,6 +82,7 @@ def worker(a):
     if a.dependency_masks: stage = DependencyProjectedSpatialStage(stage).cuda().eval()
     if a.single_state:stage=SingleSpatialStateStage(stage).cuda().eval()
     if a.row_state:stage=RowSpatialStateStage(stage).cuda().eval()
+    if a.row_plan:stage=PlannedRowSpatialStage(stage).cuda().eval()
     student.backbone.resnet.layer0 = stage
     for m in (base, student, split, repair):
         for p in m.parameters(): p.requires_grad_(False)
@@ -93,6 +95,7 @@ def worker(a):
         if a.dependency_masks:parent_stage=CompactProjectedSpatialStage(parent_stage).cuda().eval()
         if a.single_state:parent_stage=DependencyProjectedSpatialStage(parent_stage).cuda().eval()
         if a.row_state:parent_stage=SingleSpatialStateStage(parent_stage).cuda().eval()
+        if a.row_plan:parent_stage=RowSpatialStateStage(parent_stage).cuda().eval()
         parent_model = copy.deepcopy(student); parent_model.backbone.resnet.layer0 = parent_stage
         for p in parent_model.parameters():p.requires_grad_(False)
         roots['parent_selected'] = parent_model
@@ -136,6 +139,8 @@ def worker(a):
         dependency_guard=a.dependency_guard,
         single_spatial_state=a.single_state,
         row_spatial_execution=a.row_state,
+        planned_row_execution=a.row_plan,
+        row_plan_contract='When enabled overrides parent: parent_selected is original active-row single-H implementation. Selected prepares all four neighbor/residual index maps once per frame and pre-packs fixed3x3 weights once. Same masks, row arithmetic, MACs and history. Packed weight buffers counted separately from temporal state; no persistent geometry or activation caches.',
         row_contract='If enabled, parent_selected is SAME single-H periodic policy with temporary full canvases. Selected instead carries temporary active rows; four projections execute supports4/3/2/1 and four3x3 execute3/2/1/0. All projection MACs explicit, no dense projection hooks in partial selected path. Same weights, final core, confidence4, period3 and one persistent H; same dense/masked controls. Index lookup, gather, validation and final H clone remain timed. No new training or age policy.',
         single_state_contract='If enabled overrides parent/state descriptions: selected/masked_dense persist ONLY final128-channel full H, with reference/confidence; intermediate96/128/96 activations are ZERO temporary canvases consumed only inside current dependency supports, never historical tensors. Without cell_age, parent_selected retains FOUR maps with SAME dependency3/2/1/0 policy and confidence radius4. With cell_age, periodic_selected instead is SAME single-H period3/.25s control; selected/masked_dense add age>=.25s cells to final core BEFORE complete upstream supports. No old intermediate values contribute to recomputed cells, but time since direct computation does not guarantee accurate stale features under motion. Dense/current weights unchanged; no uniform_core mode. Four-layer update areas differ from one-map persistent-write area. No new parameters/training.',
         dependency_contract='If enabled, overrides generic dilation/compact-parent descriptions: FINAL core unions undilated current content tiles, previous own confidence support, and uncovered cells. Confidence radius is4 if dependency_guard, otherwise0; unchanged threshold.1. Four layer supports are core dilated3/2/1/0, guaranteeing complete CURRENT stem dependencies at updated final cells (fixed BN). Each intermediate writes its own support; descriptor updates only final core. Parent_selected is compact original shared content/confidence radius4; uniform_core uses the same core policy as selected but no upstream dependency halo, an attribution control. All weights/checkpoints/refresh fixed; no training. Layer areas include supports and full refresh. Selected core exactness does not guarantee unchanged cached cells are accurate.',
@@ -194,7 +199,7 @@ def worker(a):
                     if name in ('selected', 'periodic_selected', 'parent_selected', 'uniform_core', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']: skipped += mixing
                     if a.compact_state and (name in ('selected','periodic_selected') or (a.dependency_masks and name in ('parent_selected','uniform_core'))) and not info['spatial_refresh']:
                         skipped += basis_cost//2
-                    if a.row_state and name=='selected' and not info['spatial_refresh']:skipped+=basis_cost//2
+                    if a.row_state and (name=='selected' or (a.row_plan and name=='parent_selected')) and not info['spatial_refresh']:skipped+=basis_cost//2
                     if name == 'selected' and not a.projected_run and not info['spatial_refresh'] and info['spatial_selected_cells'] == 0:
                         skipped += basis_cost
                     assert counter.total == costs[('dense', flag)]-skipped, (name, counter.total, skipped)
@@ -275,7 +280,8 @@ def worker(a):
             assert extra==sum(n*k.mix.weight.numel() for n,k in zip(ns,ks))+projection_macs
     write_json(out/'engineering.json', dict(status='PASSED', frames=32, selected_vs_masked_dense_max_error=maximum,
         dependency_exact_current_core_error=exact_core_error,
-        row_vs_canvas_max_error=compact_error if a.row_state else None,
+        planned_vs_original_rows_max_error=compact_error if a.row_plan else None,
+        row_vs_canvas_max_error=compact_error if a.row_state and not a.row_plan else None,
         single_vs_four_map_max_error=compact_error if a.single_state and not a.cell_age and not a.row_state else None,
         single_saved_state_bytes=32256000 if a.single_state and not a.cell_age and not a.row_state else None,
         compact_vs_original_state_max_error=compact_error if a.compact_state and not a.cell_age and not a.dependency_masks else None,
@@ -341,7 +347,7 @@ def worker(a):
                 if name in ('selected', 'periodic_selected', 'parent_selected', 'uniform_core', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']:
                     macs -= mixing
                     if a.compact_state and (name in ('selected','periodic_selected') or (a.dependency_masks and name in ('parent_selected','uniform_core'))): macs -= basis_cost//2
-                    if a.row_state and name=='selected':macs-=basis_cost//2
+                    if a.row_state and (name=='selected' or (a.row_plan and name=='parent_selected')):macs-=basis_cost//2
                     if name == 'selected' and not a.projected_run and info['spatial_selected_cells'] == 0: macs -= basis_cost
                     macs += info['spatial_extra_linear_macs']
                 item['macs'] += macs
@@ -428,6 +434,8 @@ def worker(a):
         recurrence_verified=a.verify_recurrence,
         single_spatial_state=a.single_state,
         row_spatial_execution=a.row_state,
+        planned_row_execution=a.row_plan,
+        row_plan_note='Overrides parent wording: parent_selected is original active-row execution. Selected shares one per-frame geometry plan and pre-packs fixed kernels; same masks/weights/arithmetic/MACs/state. Extra packed weight bytes are reported separately; index arrays and temporary activations remain timed and included in peak.' if a.row_plan else None,
         row_note='Overrides other parent descriptions: parent_selected is SAME single-H policy with full temporary canvases and two dense projections. Selected uses active rows with four local projections4/3/2/1 plus3x3 supports3/2/1/0. Same persistent H, weights, refresh and core. Gather/index work is timed; only conv/linear MACs counted as FLOPs. No new training.' if a.row_state else None,
         single_state_note='Overrides generic parent/state wording: selected and masked_dense retain only final128 H; prior intermediate maps replaced by zero temporary canvases. Without cell_age, parent_selected is FOUR-map dependency model with SAME weights/core policy/refresh. With cell_age, periodic_selected is SAME single-H period3 control, age expiry enters final core before upstream3/2/1/0 supports. No uniform_core mode. Four layer update fractions and one persistent map write fraction separate; temporary allocations inside model time.' if a.single_state else None,
         dependency_guard=a.dependency_guard,
@@ -469,8 +477,11 @@ def main():
     p.add_argument('--dependency-guard',action='store_true',help='Dependency core: restore original confidence radius4, keep content undilated')
     p.add_argument('--single-state',action='store_true',help='Guarded dependency update: retain only final H, paired four-map parent')
     p.add_argument('--row-state',action='store_true',help='Single-H temporary active rows, paired same single-H canvas parent')
+    p.add_argument('--row-plan',action='store_true',help='Prepared row geometry and fixed kernels, paired original row execution')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.row_plan and (not a.row_state or a.profile_frames):
+        p.error('Planned rows require row-state full paired validation')
     if a.row_state and (not a.single_state or a.cell_age):
         p.error('Row execution requires single-state periodic comparison without cell age')
     if a.single_state and not a.dependency_guard:
