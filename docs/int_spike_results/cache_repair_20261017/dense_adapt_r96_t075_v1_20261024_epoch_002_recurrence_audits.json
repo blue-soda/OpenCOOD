@@ -1,0 +1,40 @@
+{
+  "audits": [
+    {
+      "confidence_min_threshold_margin": 3.725290298461914e-08,
+      "crossing_confidence_pairs": [
+        [
+          0.09999988228082657,
+          0.1000000387430191
+        ]
+      ],
+      "own_dense_cells": 4925,
+      "own_mask_xor_cells": 2,
+      "own_selected_cells": 4923,
+      "prior_confidence_max_difference": 2.8312206268310547e-07,
+      "prior_confidence_threshold_crossings": 1,
+      "prior_map_max_differences": [
+        1.33514404296875e-05,
+        1.9073486328125e-05,
+        7.62939453125e-06,
+        2.47955322265625e-05
+      ],
+      "prior_reference_max_difference": 0.0,
+      "same_input_map_max_errors": [
+        1.1920928955078125e-05,
+        1.9073486328125e-05,
+        1.71661376953125e-05,
+        2.47955322265625e-05
+      ],
+      "same_input_masks_equal": true,
+      "same_input_numerically_close": true,
+      "same_input_prediction_max_errors": {
+        "dm": 5.7220458984375e-06,
+        "psm": 5.7220458984375e-06,
+        "rm": 1.1920928955078125e-06
+      },
+      "scans": 2165,
+      "segment": "6:0001"
+    }
+  ]
+}

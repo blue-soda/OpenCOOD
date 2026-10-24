@@ -43,6 +43,8 @@ class SpatialBasisCache:
         if allow_cache_grad and (execution != 'masked_dense' or not getattr(stage,'allow_cache_grad',False)):
             raise ValueError('Cache training requires explicitly enabled compact masked-dense stage')
         self.allow_cache_grad = allow_cache_grad
+        if getattr(stage,'nested_dependency_masks',False) and (dilation!=0 or cell_age_limit_s is not None):
+            raise ValueError('Dependency supports require an undilated core and periodic refresh')
 
     def step(self, temporal, state, meta, reset=False):
         if (torch.is_grad_enabled() and not self.allow_cache_grad) or self.stage.training:
@@ -138,6 +140,13 @@ class SpatialBasisCache:
             info['spatial_projection_executed_fraction'] = 1.
             if getattr(self.stage,'compact_projected_state',False) and selected_execution:
                 info['spatial_projection_executed_fraction'] = (1.+count/float(cells))/2.
+        if getattr(self.stage,'nested_dependency_masks',False):
+            layer_cells=[cells]*4 if reason else self.stage.last_layer_cells
+            info['spatial_layer_write_fractions']=[n/float(cells) for n in layer_cells]
+            if selected_execution:
+                kernels=[c for b in self.stage.blocks for c in (b.conv1,b.conv2)]
+                info['spatial_mixer_executed_fraction']=sum(n*c.mix.weight.numel() for n,c in zip(layer_cells,kernels))/float(cells*sum(c.mix.weight.numel() for c in kernels))
+                info['spatial_projection_executed_fraction']=(2.+(layer_cells[0]+layer_cells[2])/float(cells))/4.
         return output, new_state, info
 
 
@@ -145,7 +154,7 @@ class SpatialBasisCacheDetector:
     """Same mature downstream/deep cache, replacing only first-stage execution."""
     def __init__(self, model, config, readout, repair, threshold=.5,
                  period=3, execution='selected', deep_period=3, confidence_threshold=None, warp=None, cache_dtype=None,
-                 max_full_age_s=.25, cell_age_limit_s=None):
+                 max_full_age_s=.25, cell_age_limit_s=None, spatial_dilation=4):
         if model.training or readout.training or repair.training or deep_period not in (1, 3):
             raise ValueError('Frozen detector and deep period1/3 required')
         self.model, self.readout, self.repair = model, readout, repair
@@ -153,7 +162,7 @@ class SpatialBasisCacheDetector:
         self.warp = warp if warp is not None else warp_bev
         self.spatial = SpatialBasisCache(model.backbone.resnet.layer0, self.bounds, threshold, period, execution,
                                         confidence_threshold=confidence_threshold, warp=warp, cache_dtype=cache_dtype,
-                                        max_full_age_s=max_full_age_s,cell_age_limit_s=cell_age_limit_s)
+                                        max_full_age_s=max_full_age_s,cell_age_limit_s=cell_age_limit_s,dilation=spatial_dilation)
 
     def step(self, data, state, meta):
         m = self.model; p = data['processed_lidar']

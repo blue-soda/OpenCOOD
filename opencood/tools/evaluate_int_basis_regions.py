@@ -15,6 +15,7 @@ from opencood.models.sub_modules.int_projected_gru import projected_gru
 from opencood.models.sub_modules.int_basis_spatial_state import SpatialBasisStage
 from opencood.models.sub_modules.int_projected_spatial import ProjectedSpatialStage
 from opencood.models.sub_modules.int_compact_projected_state import CompactProjectedSpatialStage
+from opencood.models.sub_modules.int_dependency_spatial_state import DependencyProjectedSpatialStage
 from opencood.models.sub_modules.int_basis_spatial_cache import SpatialBasisCacheDetector
 from opencood.models.sub_modules.int_fused_basis import fuse_spatial_basis
 from opencood.models.sub_modules.int_cached_metric_warp import CachedMetricWarp
@@ -75,19 +76,24 @@ def worker(a):
     stage.load_state_dict(spatial['stage'], strict=True)
     parent_stage = stage
     if a.compact_state: stage = CompactProjectedSpatialStage(stage).cuda().eval()
+    if a.dependency_masks: stage = DependencyProjectedSpatialStage(stage).cuda().eval()
     student.backbone.resnet.layer0 = stage
     for m in (base, student, split, repair):
         for p in m.parameters(): p.requires_grad_(False)
     modes = dict(base=SplitReadoutDetector(base, cfg, split, 3, repair),
         dense=SplitReadoutDetector(student, cfg, split, 3, repair),
-        selected=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, confidence_threshold=a.confidence_guard,cell_age_limit_s=.25 if a.cell_age else None),
-        masked_dense=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, execution='masked_dense', confidence_threshold=a.confidence_guard,cell_age_limit_s=.25 if a.cell_age else None))
+        selected=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, confidence_threshold=a.confidence_guard,cell_age_limit_s=.25 if a.cell_age else None,spatial_dilation=0 if a.dependency_masks else 4),
+        masked_dense=SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, execution='masked_dense', confidence_threshold=a.confidence_guard,cell_age_limit_s=.25 if a.cell_age else None,spatial_dilation=0 if a.dependency_masks else 4))
     roots = {name:base if name == 'base' else student for name in modes}
     if a.compact_state and not a.cell_age:
+        if a.dependency_masks:parent_stage=CompactProjectedSpatialStage(parent_stage).cuda().eval()
         parent_model = copy.deepcopy(student); parent_model.backbone.resnet.layer0 = parent_stage
         for p in parent_model.parameters():p.requires_grad_(False)
         roots['parent_selected'] = parent_model
         modes['parent_selected'] = SpatialBasisCacheDetector(parent_model,cfg,split,repair,a.threshold,confidence_threshold=a.confidence_guard)
+        if a.dependency_masks:
+            roots['uniform_core']=parent_model
+            modes['uniform_core']=SpatialBasisCacheDetector(parent_model,cfg,split,repair,a.threshold,confidence_threshold=a.confidence_guard,spatial_dilation=0)
     if a.cell_age:
         roots['periodic_selected']=student
         modes['periodic_selected']=SpatialBasisCacheDetector(student,cfg,split,repair,a.threshold,confidence_threshold=a.confidence_guard)
@@ -112,12 +118,14 @@ def worker(a):
             roots[name] = prepared
             modes[name] = SpatialBasisCacheDetector(prepared,cfg,split,repair,a.threshold,period=5,
                 execution=execution,confidence_threshold=a.confidence_guard,cache_dtype=torch.float16,max_full_age_s=.45)
-    control = SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, period=1, confidence_threshold=a.confidence_guard)
+    control = SpatialBasisCacheDetector(student, cfg, split, repair, a.threshold, period=1, confidence_threshold=a.confidence_guard,spatial_dilation=0 if a.dependency_masks else 4)
     write_json(out/'contract.json', dict(source=source['checkpoint'], data=source['contract'], memory=mb, readout=rb,
         repair=pb, basis=sb, threshold=a.threshold, confidence_guard=a.confidence_guard, fused_execution=a.fused,
         projected_spatial=bool(a.projected_run),
         compact_projected_state=a.compact_state,
         cell_age_policy=a.cell_age,
+        dependency_masks=a.dependency_masks,
+        dependency_contract='If enabled, overrides generic dilation/compact-parent descriptions: selected/masked_dense use undilated union of current content tiles, own previous confidence, and uncovered cells as FINAL core. Four layer supports are core dilated3/2/1/0, guaranteeing complete CURRENT stem dependencies at updated final cells (fixed BN). Each intermediate writes its own support; descriptor updates only final core. Parent_selected is compact original shared radius4; uniform_core is compact shared radius0, an attribution control. All weights/checkpoints/refresh remain fixed; no training. Layer areas include actual supports and full refresh. Selected core exactness does not guarantee unchanged cached cells are accurate.',
         cell_age_contract='If enabled: selected/masked_dense store and nearest-warp a FP32 cell-age map; add inter-frame dt and force cells aged>=.25s into mask, reset selected ages0. Same content/own-confidence dilation; expiry union has no extra dilation. Scene/FM reset still full. No periodic/global-full-age refresh; period3/.25s is retained only in periodic_selected control and unchanged deep cache. Per-cell direct age<.25s is NOT a bound on accumulated multi-layer dependency error. No motion prediction, quantization, training or threshold change.',
         compact_state_contract='Optional: cache conv2 input projection(r channels) instead of full conv1 post-ReLU(128), retain complete block outputs128. Same weights/nonlinearities/residuals/nearest geometry. On partial frames conv1 input projection dense, conv2 input projection only selected rows; selected3x3 unchanged. Same compact masked-dense control and original four128-map parent_selected paired. No quantization/training.',
         projected_contract='If enabled: completed recovery run best-by-fullAP checkpoint, own dense baseline replay, dense 1x1 projection every frame and selected 3x3 output rows. All four history maps FP32, spatial/deep period3/.25s. No additional training or fused kernels. Compare selected to SAME compressed checkpoint dense and masked-dense recurrence; base is mature uncompressed spatial path.',
@@ -170,8 +178,8 @@ def worker(a):
                     mixing = sum(cells*c.mix.weight.numel() for b in stage.blocks for c in (b.conv1, b.conv2))
                     basis_cost = sum(cells*(c.project if a.projected_run else c.basis).weight.numel() for b in stage.blocks for c in (b.conv1, b.conv2))
                     skipped = basis_cost if name in ('fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history', 'long_masked') else 0
-                    if name in ('selected', 'periodic_selected', 'parent_selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']: skipped += mixing
-                    if a.compact_state and name in ('selected','periodic_selected') and not info['spatial_refresh']:
+                    if name in ('selected', 'periodic_selected', 'parent_selected', 'uniform_core', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']: skipped += mixing
+                    if a.compact_state and (name in ('selected','periodic_selected') or (a.dependency_masks and name in ('parent_selected','uniform_core'))) and not info['spatial_refresh']:
                         skipped += basis_cost//2
                     if name == 'selected' and not a.projected_run and not info['spatial_refresh'] and info['spatial_selected_cells'] == 0:
                         skipped += basis_cost
@@ -181,7 +189,7 @@ def worker(a):
                 maximum = max(maximum, float((left-right).abs().max()))
                 assert torch.allclose(left, right, atol=1e-3, rtol=1e-3), maximum
             assert details['selected']['spatial_selected_cells'] == details['masked_dense']['spatial_selected_cells']
-            if a.compact_state and not a.cell_age:
+            if a.compact_state and not a.cell_age and not a.dependency_masks:
                 for key in predictions['selected']:
                     compact_error = max(compact_error,float((predictions['selected'][key]-predictions['parent_selected'][key]).abs().max()))
                     assert torch.allclose(predictions['selected'][key],predictions['parent_selected'][key],atol=1e-3,rtol=1e-3)
@@ -230,8 +238,22 @@ def worker(a):
             for key in pred:
                 control_error = max(control_error, float((pred[key]-predictions['dense'][key]).abs().max()))
                 assert torch.allclose(pred[key], predictions['dense'][key], atol=1e-5, rtol=1e-5)
+    exact_core_error=None
+    if a.dependency_masks:
+        with torch.no_grad():
+            current=stage.observe(torch.randn(1,64,200,504,device='cuda'))
+            target,maps=stage.dense_from_stem(current)
+            old=[torch.randn_like(v)*3 for v in maps]
+            core=torch.zeros_like(current[:,:1],dtype=torch.bool);core[:,:,20:30,40:50]=True;core[:,:,:2,:2]=True
+            result,_,extra=stage.selected_from_stem(current,old,core)
+            exact_core_error=float((result-target).masked_select(core).abs().max())
+            assert torch.allclose(result.masked_select(core),target.masked_select(core),atol=1e-3,rtol=1e-3)
+            assert torch.equal(result.masked_select(~core),old[-1].masked_select(~core))
+            ks=[c for b in stage.blocks for c in (b.conv1,b.conv2)];ns=stage.last_layer_cells
+            assert extra==sum(n*k.mix.weight.numel() for n,k in zip(ns,ks))+sum(ns[i]*ks[i+1].project.weight.numel() for i in (0,2))
     write_json(out/'engineering.json', dict(status='PASSED', frames=32, selected_vs_masked_dense_max_error=maximum,
-        compact_vs_original_state_max_error=compact_error if a.compact_state and not a.cell_age else None,
+        dependency_exact_current_core_error=exact_core_error,
+        compact_vs_original_state_max_error=compact_error if a.compact_state and not a.cell_age and not a.dependency_masks else None,
         cell_age_bound_and_bytes_verified=a.cell_age,
         fused_vs_factorized_max_error=fusion_error if a.fused else None,
         factorized_stage_parameters=sum(p.numel() for p in stage.parameters()),
@@ -259,7 +281,7 @@ def worker(a):
         modes = {k:modes[k] for k in ('selected','masked_dense')}
     states = {k:None for k in modes}; control_state = None
     stats = {k:{t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.5, .7)} for k in modes}
-    metrics = {k:dict(time=[], write=[], mix=[], basis=[], projection=[], state=[], peak=[], full_age=[], cell_age=[], age_added=[], uncovered=[], priority=[], guard_added=[],
+    metrics = {k:dict(time=[], write=[], mix=[], layers=[], basis=[], projection=[], state=[], peak=[], full_age=[], cell_age=[], age_added=[], uncovered=[], priority=[], guard_added=[],
                      macs=0, refreshes=0, partials=0) for k in modes}
     dataset, stream = loader(val, cfg, 4, 303); fusion_mask_disagreements = prepared_mask_disagreements = warp_mask_disagreements = 0
     storage_mask_disagreements = 0
@@ -290,14 +312,15 @@ def worker(a):
                 flag = bool(info['local_partial']); item['partials'] += flag
                 macs = costs[('base' if name == 'base' else 'dense', flag)]
                 if name in ('fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history'): macs -= basis_cost
-                if name in ('selected', 'periodic_selected', 'parent_selected', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']:
+                if name in ('selected', 'periodic_selected', 'parent_selected', 'uniform_core', 'fused', 'prepared', 'fast_warp', 'cache_fp16', 'long_history') and not info['spatial_refresh']:
                     macs -= mixing
-                    if a.compact_state and name in ('selected','periodic_selected'): macs -= basis_cost//2
+                    if a.compact_state and (name in ('selected','periodic_selected') or (a.dependency_masks and name in ('parent_selected','uniform_core'))): macs -= basis_cost//2
                     if name == 'selected' and not a.projected_run and info['spatial_selected_cells'] == 0: macs -= basis_cost
                     macs += info['spatial_extra_linear_macs']
                 item['macs'] += macs
                 item['write'].append(info.get('spatial_write_fraction', 1.))
                 item['mix'].append(info.get('spatial_mixer_executed_fraction', 1.))
+                item['layers'].append(info.get('spatial_layer_write_fractions',[info.get('spatial_write_fraction',1.)]*4))
                 item['basis'].append(info.get('spatial_basis_executed_fraction', 1.))
                 item['projection'].append(info.get('spatial_projection_executed_fraction',1.))
                 item['state'].append(info['state_bytes']+info['anchor_bytes']+info.get('spatial_state_bytes', 0))
@@ -357,6 +380,8 @@ def worker(a):
             max_spatial_cell_age_s=max(item['cell_age']) if a.cell_age and name in ('selected','masked_dense') else None,
             mean_age_forced_additional_area=float(np.mean(item['age_added'])) if a.cell_age and name in ('selected','masked_dense') else None)
         results[name]['extra_packed_weight_bytes'] = sum(b.numel()*b.element_size() for n,b in roots[name].named_buffers() if n.endswith('packed_weight'))
+        if a.dependency_masks:
+            results[name]['mean_layer_state_write_fractions']=np.mean(item['layers'],axis=0).tolist()
         results[name]['static_geometry_bytes'] = modes[name].warp.geometry_bytes if name == 'fast_warp' else 0
         if a.projected_run:
             results[name]['mean_executed_projection_area'] = float(np.mean(item['projection'])) if name != 'base' else None
@@ -364,8 +389,12 @@ def worker(a):
             results[name]['mean_executed_basis_area'] = None
     assert abs(results['base']['ap70']-.7555532616222492) < 1e-8
     if 'dense' in results: assert abs(results['dense']['ap70']-sb['cached_ap70']) < 1e-8
+    if a.dependency_masks:
+        expected={.5:.7557311115176569,.75:.7546151539838869}[a.threshold]
+        assert abs(results['parent_selected']['ap70']-expected)<1e-7
     write_json(out/'report.json', dict(status='COMPLETED', scans=len(val), labels=sum(r['supervised'] for r in val), results=results,
         recurrence_verified=a.verify_recurrence,
+        dependency_note='Overrides generic shared-mask/parent-state scope: selected/masked_dense final core is undilated content/own-confidence/uncovered union; four supports dilate3/2/1/0. Recomputed final core has complete current-stem dependencies; cached outside final core remains approximate. Parent_selected is compact shared radius4 baseline; uniform_core is compact shared radius0 attribution control. Same checkpoint and refresh; per-layer state-write and actual weighted execution areas are separate.' if a.dependency_masks else None,
         cell_age_note='Selected/masked_dense use local .25s direct-age expiry, no global periodic refresh. Periodic_selected retains compact period3 baseline; deep cache unchanged. Direct cache-age bound does not bound accumulated feature-dependency error.' if a.cell_age else None,
         compact_state_parent_mask_count_disagreement_frames=parent_mask_count_disagreements if a.compact_state and not a.cell_age else None,
         compact_state_note='Selected uses projected intermediate(r) and full block output(128) pairs; parent_selected caches four128 maps. Same compressed weights. Dense full function unchanged. Projection area averages two dense and two selected projections. Compare AP/state bytes/actual MACs independently; nearest warp and zero-bias projection commute in exact arithmetic, floating paths may differ.' if a.compact_state else None,
@@ -399,8 +428,11 @@ def main():
     p.add_argument('--verify-recurrence', action='store_true', help='Projected only: full AP with logged mask divergences and same-input verification on each')
     p.add_argument('--compact-state', action='store_true', help='Cache projected intermediates, paired with original four-map state')
     p.add_argument('--cell-age', action='store_true', help='Compact state: compare .25s per-cell expiry against periodic full refresh')
+    p.add_argument('--dependency-masks',action='store_true',help='Compact state: nested3/2/1/0 supports, paired original radius4 and uniform radius0')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.dependency_masks and (not a.compact_state or a.cell_age or a.threshold not in (.5,.75)):
+        p.error('Dependency supports require compact verified state, threshold.5/.75, no cell-age policy')
     if a.cell_age and not a.compact_state:
         p.error('Cell-age comparison requires compact projected state')
     if a.compact_state and (not a.projected_run or not a.verify_recurrence or a.audit_selection):

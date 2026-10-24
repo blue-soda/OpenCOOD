@@ -172,5 +172,92 @@
       "scope": "Own independent recurrent modes. Fixed r96 e0 reference is NOT original INT. Selected is true skipped execution; masked_dense executes full convolutions with identical cache semantics. Period3/.25s, threshold.75, own confidence.1, FP32. Actual conv+functional-linear MACsx2 excludes nonconv operations. Same-GPU rotating model time excludes IO/H2D/postprocess; mask capture included, comparison/replay excluded. Peak is incremental above live six-mode allocations, not standalone VRAM.",
       "status": "COMPLETED"
     }
+  },
+  {
+    "epoch": 2,
+    "loss": 0.13792755348541777,
+    "train_write": 1.0,
+    "validation": {
+      "labels": 1738,
+      "own_mask_disagreement_frames": 1,
+      "results": {
+        "dense": {
+          "ap50": 0.8304726098099344,
+          "ap70": 0.7544354897797075,
+          "conv_linear_gflops": 129.35589998812563,
+          "max_incremental_cuda_peak_bytes": 268638208,
+          "mean_executed_mix_area": 1.0,
+          "mean_executed_projection_area": 1.0,
+          "mean_ms": 17.125799216017356,
+          "mean_state_bytes": 35884800.0,
+          "p95_ms": 28.28532484127208,
+          "spatial_refresh_frames": 5794
+        },
+        "fixed": {
+          "ap50": 0.8337104107025878,
+          "ap70": 0.7559544809175783,
+          "conv_linear_gflops": 129.35589998812563,
+          "max_incremental_cuda_peak_bytes": 268757504,
+          "mean_executed_mix_area": 1.0,
+          "mean_executed_projection_area": 1.0,
+          "mean_ms": 17.055837004012357,
+          "mean_state_bytes": 35884800.0,
+          "p95_ms": 28.098710894118994,
+          "spatial_refresh_frames": 5794
+        },
+        "fixed_selected": {
+          "ap50": 0.8319080240465155,
+          "ap70": 0.7546151539838869,
+          "conv_linear_gflops": 116.77628098549395,
+          "max_incremental_cuda_peak_bytes": 291795456,
+          "mean_executed_mix_area": 0.4654699168817222,
+          "mean_executed_projection_area": 0.7327349584408612,
+          "mean_ms": 19.511828609380903,
+          "mean_state_bytes": 82756800.0,
+          "p95_ms": 28.756705648265775,
+          "spatial_refresh_frames": 2005
+        },
+        "full": {
+          "ap50": 0.8309507914558236,
+          "ap70": 0.7564337375811426,
+          "conv_linear_gflops": 216.2184192,
+          "max_incremental_cuda_peak_bytes": 268335616,
+          "mean_executed_mix_area": 1.0,
+          "mean_executed_projection_area": 1.0,
+          "mean_ms": 27.32405518086622,
+          "mean_state_bytes": 35884800.0,
+          "p95_ms": 28.743134497199208,
+          "spatial_refresh_frames": 5794
+        },
+        "masked_dense": {
+          "ap50": 0.8286545864480976,
+          "ap70": 0.7532200558308119,
+          "conv_linear_gflops": 129.35589998812563,
+          "max_incremental_cuda_peak_bytes": 273637376,
+          "mean_executed_mix_area": 1.0,
+          "mean_executed_projection_area": 1.0,
+          "mean_ms": 18.7672342677819,
+          "mean_state_bytes": 82756800.0,
+          "p95_ms": 28.766471124254167,
+          "spatial_refresh_frames": 2005
+        },
+        "selected": {
+          "ap50": 0.828654585380728,
+          "ap70": 0.753220063817173,
+          "conv_linear_gflops": 116.76883147987022,
+          "max_incremental_cuda_peak_bytes": 292005888,
+          "mean_executed_mix_area": 0.46515337431716436,
+          "mean_executed_projection_area": 0.7325766871585822,
+          "mean_ms": 19.578250154919207,
+          "mean_state_bytes": 82756800.0,
+          "p95_ms": 28.754084499087185,
+          "spatial_refresh_frames": 2005
+        }
+      },
+      "same_input_replay_passed_all": true,
+      "scans": 5794,
+      "scope": "Own independent recurrent modes. Fixed r96 e0 reference is NOT original INT. Selected is true skipped execution; masked_dense executes full convolutions with identical cache semantics. Period3/.25s, threshold.75, own confidence.1, FP32. Actual conv+functional-linear MACsx2 excludes nonconv operations. Same-GPU rotating model time excludes IO/H2D/postprocess; mask capture included, comparison/replay excluded. Peak is incremental above live six-mode allocations, not standalone VRAM.",
+      "status": "COMPLETED"
+    }
   }
 ]
