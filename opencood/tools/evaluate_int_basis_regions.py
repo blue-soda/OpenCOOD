@@ -503,7 +503,13 @@ def main():
                    help='Train-only fixed threshold fit to aggregate80 percent partial readout MACs')
     p.add_argument('--readout-calibration',default=None,
                    help='Completed train calibration.json; freeze its scalar before full validation')
+    p.add_argument('--stem-audit-frames',type=int,choices=(0,512),default=0,
+                   help='Train-only pre-stem descriptor and six-layer dependency-cost feasibility')
     a = p.parse_args(); out = Path(a.output)
+    if a.stem_audit_frames and (a.readout_period!=3 or a.readout_threshold!=.5 or
+            a.readout_calibrate_frames or a.readout_calibration or a.readout_budget_scale is not None or
+            a.readout_selector_frames or a.readout_backend_frames or a.readout_audit_frames or a.readout_ranking_audit):
+        p.error('Stem audit requires original period3/threshold.5 without other diagnostics')
     if a.readout_calibrate_frames or a.readout_calibration:
         if (a.readout_calibrate_frames and a.readout_calibration or a.readout_period!=3 or
                 a.readout_threshold!=.5 or a.readout_budget_scale is not None or a.readout_ranking_audit or

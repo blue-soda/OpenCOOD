@@ -108,6 +108,10 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
         actual_hook_plus_linear_macs_verified=True,readout_dense_macs=readout_macs,
         spatial_dense_macs=spatial_macs))
     del modes['period1']
+    if a.stem_audit_frames:
+        from opencood.tools.audit_int_stem_reuse import audit_stem
+        audit_stem(a,cfg,train,modes['baseline'],out)
+        return
     if a.readout_calibrate_frames:
         from opencood.tools.calibrate_int_readout import calibrate_readout
         calibrate_readout(a,cfg,train,modes['selected'],out)
@@ -170,7 +174,7 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
                 predictions[name]=pred;masks[name]=(hmask,rmask)
                 if sample['meta']['supervised']:
                     data=dict(ego=ego);boxes,scores=dataset.post.post_process(data,dict(ego=pred));gt=dataset.post.generate_gt_bbx(data)
-                    for threshold in stats[name]:eval_utils.caluclate_tp_fp(boxes,scores,gt,stats[name],threshold)
+                    for iou_threshold in stats[name]:eval_utils.caluclate_tp_fp(boxes,scores,gt,stats[name],iou_threshold)
             same_masks=all(torch.equal(x,y) for x,y in zip(masks['selected'],masks['masked_dense']))
             close=all(torch.allclose(predictions['selected'][k],predictions['masked_dense'][k],atol=1e-3,rtol=1e-3) for k in predictions['selected'])
             if not same_masks or not close:
@@ -200,7 +204,7 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
     write_json(out/'report.json',dict(status='COMPLETED',scans=len(val),labels=sum(r['supervised'] for r in val),results=results,
         readout_period=a.readout_period,readout_max_full_age_s=feature_cache.max_full_age_us/1e6,
         readout_budget_scale=a.readout_budget_scale,readout_ranking=a.readout_ranking if a.readout_budget_scale is not None else None,
-        deployed_readout_threshold=threshold,readout_calibration=a.readout_calibration,
+        deployed_readout_threshold=feature_cache.threshold,readout_calibration=a.readout_calibration,
         gpu_exclusivity_sample_count=len(isolation),
         own_trajectory_audited_frames=len(audits),all_same_input_replays_passed=True,
         note='Weights fixed; spatial t.5 four-layer baseline held. Readout output cache changes own predictions and future H masks. No new training; no SNN attribution; FLOPs count conv/linear only.'))

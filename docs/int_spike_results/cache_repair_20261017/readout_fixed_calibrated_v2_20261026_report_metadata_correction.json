@@ -1,0 +1,8 @@
+{
+  "scope": "Report metadata only; original report retained unchanged. No AP, costs, timing or actual model threshold altered.",
+  "field": "deployed_readout_threshold",
+  "reported": 0.7,
+  "actual": 0.5651477366679742,
+  "source": "Frozen calibration contract and LocalReadoutCache construction before validation. IoU statistics loop shadowed the report local variable after model construction.",
+  "original_report_sha256": "22e38a0a2fb909a7f13191340525e9c807ffcf419235e5ddb0bfe45afb0a9bf1"
+}
