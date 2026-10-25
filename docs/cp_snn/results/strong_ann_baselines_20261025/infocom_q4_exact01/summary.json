@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "samples": 1738,
+  "all_decoder_inputs_bitwise_equal": true,
+  "all_envelopes_identical": true,
+  "source_index_sha256": "b8b70e63d97abb8d451e6c78f9d54f2224fc5be6ab347817899fe8b6e13f486e",
+  "source_wire_audit_sha256": "2ff3412658e11bb9ca158e6cf01485d274bbdf3f1b7b6411af0a53e02e3360f8",
+  "script_sha256": "0c5b781b3f19ebb8136d3296e069bffb861dfdc688a5830b082b42ac10784f39",
+  "codec_sha256": "c212e0921aca7cde3b7db8c2997f45bfa8f0ac6d07f17e537079dfb9f47999d1",
+  "mean_bytes": 8754.928078250863,
+  "p95_bytes": 9275.0,
+  "max_bytes": 9476,
+  "original_mean_bytes": 8754.928078250863,
+  "total_bytes": 15216065,
+  "reduction_fraction": 0.0,
+  "layouts": {
+    "ICW1": 1738,
+    "ICQ1": 0
+  },
+  "canonical_max_abs_error": 5.960464477539063e-08,
+  "source_common_gt_ap": {
+    "0.3": 0.832750012808664,
+    "0.5": 0.7894174589745029,
+    "0.7": 0.6457136214761451
+  },
+  "status": "CPU lossless recoding verified; AP inherited via identical inputs, no new GPU AP or latency run",
+  "seconds": 25.43464693101123,
+  "index_sha256": "53c378163440b64cda14b0977641ec2d480ddbd9afc75889fb01af4e07326733"
+}

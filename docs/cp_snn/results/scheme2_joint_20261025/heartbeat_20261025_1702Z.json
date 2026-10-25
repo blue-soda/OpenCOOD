@@ -1,0 +1,116 @@
+{
+  "trigger_utc": "2026-10-25T17:02:56.364Z",
+  "server_unix": 1792950161.9506009,
+  "runs": {
+    "fixed2k": {
+      "status.json": {
+        "state": "running",
+        "stage": "train",
+        "unix": 1792941303.181843
+      },
+      "train/progress.json": {
+        "state": "training",
+        "epoch": 3,
+        "epochs": 10,
+        "batch": 1201,
+        "batches": 2339,
+        "loss": 1.0058446750702126,
+        "gradient_norm": 5.39298152923584,
+        "elapsed_seconds": 1373.6309000118636,
+        "stream_means": {
+          "stream_budgets": 2048.0,
+          "packet_bytes": 2046.6328059950042,
+          "stream_events": 2788.1681931723565
+        }
+      },
+      "train/best_ap70_metrics.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 28812,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7599783916944439,
+          "0.5": 0.7107358902698931,
+          "0.7": 0.5816387077160713
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2046.8084004602993,
+          "median_bytes": 2047.0,
+          "min_bytes": 2038,
+          "max_bytes": 2048,
+          "p95_bytes": 2048.0,
+          "total_bytes": 3557353,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 2,
+        "train_loss": 0.9814991485758185,
+        "train_samples": 4678,
+        "seconds": 3787.0093531189486,
+        "train_loss_components": {
+          "fused_detection_loss": 0.6355911208239237,
+          "ego_detection_loss": 0.6918160555037901
+        },
+        "train_stream_means": {
+          "stream_budgets": 2048.0,
+          "packet_bytes": 2046.5243693886275,
+          "stream_events": 2820.7490380504487
+        }
+      },
+      "train/fixed_state.json": {
+        "initial_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+        "current_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+        "verified_through_epoch": 2,
+        "passed": true
+      },
+      "train/fixed_bn.json": {
+        "initial_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "current_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "verified_through_epoch": 2,
+        "passed": true
+      }
+    },
+    "multi248k": {
+      "status.json": {
+        "state": "running",
+        "stage": "train",
+        "unix": 1792941352.8564699
+      },
+      "train/progress.json": {
+        "state": "training",
+        "epoch": 1,
+        "epochs": 10,
+        "batch": 751,
+        "batches": 2339,
+        "loss": 0.9679857217732799,
+        "gradient_norm": 5.374388217926025,
+        "elapsed_seconds": 8741.833529490978,
+        "stream_means": {
+          "stream_budgets": 4682.311584553928,
+          "packet_bytes": 4660.057256990679,
+          "stream_events": 10081.282956058589
+        }
+      },
+      "supervision_status.json": {
+        "state": "watching_existing_trainer",
+        "trainer_pid": 508752,
+        "elapsed_seconds": 3543.131051502889,
+        "unix": 1792950124.385831
+      }
+    }
+  },
+  "old_snn": {
+    "state": "training",
+    "epoch": 20,
+    "batch": 501,
+    "total_batches": 2339,
+    "loss": 0.7281125801405008,
+    "communication_means": {
+      "bytes": 4401.34131736527,
+      "events": 1231.4191616766468,
+      "steps": 1.0
+    }
+  }
+}
