@@ -1,0 +1,27 @@
+{
+  "labels": 1738,
+  "note": "Independent histories. Dense short D update; no local D skipping. Timing excludes IO/H2D/postprocess; sampled GPU isolation does not reserve shared CPU/IO. Conv/functional-linear MACsx2.",
+  "results": {
+    "baseline": {
+      "ap50": 0.8327608934021072,
+      "ap70": 0.7553159775482435,
+      "conv_linear_gflops": 119.43160285006559,
+      "deep_full_frames": 2005,
+      "mean_ms": 19.897587479143382,
+      "mean_state_bytes": 50500800.0,
+      "p95_ms": 29.116497014183548
+    },
+    "recurrent": {
+      "ap50": 0.8331708260826356,
+      "ap70": 0.756440285232639,
+      "conv_linear_gflops": 119.42664924635416,
+      "deep_full_frames": 2005,
+      "mean_ms": 19.93533675878484,
+      "mean_state_bytes": 50500800.0,
+      "p95_ms": 29.195825650822368
+    }
+  },
+  "scans": 5794,
+  "status": "COMPLETED",
+  "timing_valid": true
+}

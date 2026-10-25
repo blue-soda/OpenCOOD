@@ -1,0 +1,61 @@
+{
+  "evidence": [
+    {
+      "checked_unix": 1792954019.2407026,
+      "processes": [
+        {
+          "Name": "gaussian_cull_r",
+          "PPid": "29914",
+          "Uid": "1003\t1003\t1003\t1003",
+          "pid": 29917
+        }
+      ]
+    },
+    {
+      "checked_unix": 1792954020.9195247,
+      "processes": [
+        {
+          "Name": "gaussian_cull_r",
+          "PPid": "29914",
+          "Uid": "1003\t1003\t1003\t1003",
+          "pid": 29917
+        }
+      ]
+    }
+  ],
+  "result": {
+    "checked_unix": 1792954036.466742,
+    "gpu": 3,
+    "pids": [
+      26471
+    ],
+    "timing_valid": false,
+    "training_contention": [
+      {
+        "checked_unix": 1792954019.2407026,
+        "processes": [
+          {
+            "Name": "gaussian_cull_r",
+            "PPid": "29914",
+            "Uid": "1003\t1003\t1003\t1003",
+            "pid": 29917
+          }
+        ]
+      },
+      {
+        "checked_unix": 1792954020.9195247,
+        "processes": [
+          {
+            "Name": "gaussian_cull_r",
+            "PPid": "29914",
+            "Uid": "1003\t1003\t1003\t1003",
+            "pid": 29917
+          }
+        ]
+      }
+    ],
+    "training_wait_seconds": 17.86282871104777,
+    "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+  },
+  "status": "RESUMED"
+}
