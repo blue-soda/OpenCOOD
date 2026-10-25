@@ -1,0 +1,178 @@
+{
+  "trigger_utc": "2026-10-25T16:04:55.459Z",
+  "server_unix": 1792946623.2646008,
+  "runs": {
+    "fixed2k": {
+      "pipeline": {
+        "state": "running",
+        "stage": "train",
+        "unix": 1792941303.181843
+      },
+      "progress": {
+        "state": "training",
+        "epoch": 2,
+        "epochs": 10,
+        "batch": 1401,
+        "batches": 2339,
+        "loss": 0.647102541259766,
+        "gradient_norm": 3.4388134479522705,
+        "elapsed_seconds": 1605.558744105976,
+        "stream_means": {
+          "stream_budgets": 2048.0,
+          "packet_bytes": 2046.4964311206281,
+          "stream_events": 2817.869379014989
+        }
+      },
+      "train/best_ap70_metrics.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 27450,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7524193567478435,
+          "0.5": 0.7043518413959181,
+          "0.7": 0.580678015587198
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2046.5978135788262,
+          "median_bytes": 2047.0,
+          "min_bytes": 2037,
+          "max_bytes": 2048,
+          "p95_bytes": 2048.0,
+          "total_bytes": 3556987,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 1,
+        "train_loss": 0.9834222186943004,
+        "train_samples": 4678,
+        "seconds": 3676.177933515981,
+        "train_loss_components": {
+          "fused_detection_loss": 0.6380520413779388,
+          "ego_detection_loss": 0.6907403546327175
+        },
+        "train_stream_means": {
+          "stream_budgets": 2048.0,
+          "packet_bytes": 2046.2855921333903,
+          "stream_events": 2777.1088071825566
+        }
+      },
+      "train/fixed_state.json": {
+        "initial_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+        "current_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+        "verified_through_epoch": 1,
+        "passed": true
+      },
+      "train/fixed_bn.json": {
+        "initial_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "current_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+        "verified_through_epoch": 1,
+        "passed": true
+      },
+      "best_ap70_sha256": "10dca61fa8b676bd5c4aa83c114388ba233991524e1a840f57898fdadfe6c18c"
+    },
+    "multi248k": {
+      "pipeline": {
+        "state": "running",
+        "stage": "train",
+        "unix": 1792941352.8564699
+      },
+      "progress": {
+        "state": "training",
+        "epoch": 1,
+        "epochs": 10,
+        "batch": 401,
+        "batches": 2339,
+        "loss": 1.0984948091822462,
+        "gradient_norm": 3.04545259475708,
+        "elapsed_seconds": 4924.549851341173,
+        "stream_means": {
+          "stream_budgets": 4734.403990024937,
+          "packet_bytes": 4713.004987531172,
+          "stream_events": 10425.07855361596
+        }
+      },
+      "supervision_handoff.json": {
+        "parent": {
+          "pid": 508218,
+          "start_ticks": 151089419,
+          "parent": 1,
+          "command": [
+            "/data1/zhh/gzc/miniconda3/envs/opencood/bin/python",
+            "-u",
+            "-m",
+            "opencood.tools.run_e3dsnn_snapshot_joint",
+            "--root",
+            "/data1/zhh/gzc/diagnostics/scheme2_joint_20261025",
+            "--arm",
+            "multi248k",
+            "--mode",
+            "coordinate"
+          ]
+        },
+        "trainer": {
+          "pid": 508752,
+          "start_ticks": 151101542,
+          "parent": 508218,
+          "command": [
+            "/data1/zhh/gzc/miniconda3/envs/opencood/bin/python",
+            "-u",
+            "-m",
+            "opencood.tools.train_e3dsnn_single",
+            "--workers",
+            "2",
+            "--seed",
+            "20260929",
+            "--mode",
+            "train",
+            "--config",
+            "/data1/zhh/gzc/diagnostics/scheme2_joint_20261025/multi248k/train.yaml",
+            "--checkpoint",
+            "/data1/zhh/gzc/diagnostics/scheme2_joint_20261025/source.pth",
+            "--output",
+            "/data1/zhh/gzc/diagnostics/scheme2_joint_20261025/multi248k/train",
+            "--epochs",
+            "10",
+            "--selection-iou",
+            "0.7"
+          ]
+        },
+        "root": "/data1/zhh/gzc/diagnostics/scheme2_joint_20261025",
+        "arm": "multi248k",
+        "reason": "Observed multi-budget throughput projects beyond original 48h supervisor timeout",
+        "training_unchanged": true,
+        "attention_after_hours": 120,
+        "created_unix": 1792946581.023021
+      },
+      "supervision_accepted.json": {
+        "passed": true,
+        "watcher_pid": 512161,
+        "trainer_pid": 508752,
+        "old_supervisor_pid": 508218,
+        "trainer_start_ticks": 151101542,
+        "optimizer_and_rng_untouched": true,
+        "unix": 1792946581.2250144
+      },
+      "supervision_status.json": {
+        "state": "watching_existing_trainer",
+        "trainer_pid": 508752,
+        "elapsed_seconds": 0.00013324501924216747,
+        "unix": 1792946581.2549126
+      }
+    }
+  },
+  "old_snn": {
+    "state": "training",
+    "epoch": 19,
+    "batch": 1801,
+    "total_batches": 2339,
+    "loss": 0.7386590724990547,
+    "communication_means": {
+      "bytes": 4343.753747917824,
+      "events": 1210.7276513048307,
+      "steps": 1.0
+    }
+  }
+}
