@@ -393,6 +393,7 @@ def execute(args, output_dir):
     fixed_bn_digest = None
     frozen_encoder_digest = None
     frozen_decoder = model.frozen_decoder_digest() if hasattr(model, 'frozen_decoder_digest') else None
+    fixed_state = model.fixed_state_digest() if hasattr(model, 'fixed_state_digest') else None
     if getattr(model, 'freeze_encoder', False):
         if args.warmup_epochs:
             raise ValueError('Encoder freezing cannot be combined with parameter-resetting fusion warmup')
@@ -485,6 +486,12 @@ def execute(args, output_dir):
             if current != frozen_decoder:
                 raise RuntimeError('Frozen BEV or continuous head parameters/buffers changed')
             write_json(output_dir / 'frozen_decoder.json', dict(initial_sha256=frozen_decoder,
+                current_sha256=current, verified_through_epoch=epoch + 1, passed=True))
+        if fixed_state is not None:
+            current = model.fixed_state_digest()
+            if current != fixed_state:
+                raise RuntimeError('Frozen joint-adaptation parameters or buffers changed')
+            write_json(output_dir / 'fixed_state.json', dict(initial_sha256=fixed_state,
                 current_sha256=current, verified_through_epoch=epoch + 1, passed=True))
         if fixed_bn_digest is not None:
             current_bn_digest = bn_digest(model)
