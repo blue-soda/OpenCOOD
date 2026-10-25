@@ -85,7 +85,8 @@ class RecurrentDeepDetector:
         confidence=pred['psm'].detach().sigmoid().amax(1,keepdim=True)
         if readout_state is not None:
             assert confidence.shape[-2:]==features.shape[-2:]
-            readout_state['confidence']=confidence
+            if hasattr(self.readout_cache,'set_confidence'):self.readout_cache.set_confidence(readout_state,confidence)
+            else:readout_state['confidence']=confidence
             detail['readout_state_bytes']+=confidence.numel()*confidence.element_size()
         if confidence.shape[-2:]!=h.shape[-2:]:
             confidence=torch.nn.functional.interpolate(confidence,size=h.shape[-2:],mode='nearest')

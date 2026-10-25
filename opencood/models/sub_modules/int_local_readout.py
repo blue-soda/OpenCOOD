@@ -58,6 +58,13 @@ class LocalReadoutCache:
         if (current.shape[0]!=1 or mask.shape!=(1,1,*current.shape[-2:]) or
                 mask.dtype!=torch.bool or old.shape!=(1,self.second.out_channels,*current.shape[-2:])):
             raise ValueError('Matching single-frame input, output cache and boolean mask required')
+        output,target,macs,support=self.selected_rows(current,mask)
+        return _write_rows(old,target,output),macs,support
+
+    def selected_rows(self,current,mask):
+        if torch.is_grad_enabled() or self.readout.training:raise ValueError('Frozen inference required')
+        if current.shape[0]!=1 or mask.shape!=(1,1,*current.shape[-2:]) or mask.dtype!=torch.bool:
+            raise ValueError('Matching single-frame input and boolean mask required')
         support=F.max_pool2d(mask.float(),3,1,1)>0
         plan=prepare_selected_neighborhoods(support)
         middle,ids,macs=prepared_conv3x3_rows(self.first,self.weights[0],current,plan,self.row_chunk_size)
@@ -68,7 +75,7 @@ class LocalReadoutCache:
         assert bool(((neighbors==mask.numel())|(indices<ids.numel())).all())
         output=F.relu(_selected_bn(planned_conv(self.second,self.weights[1],projected,indices,self.row_chunk_size),self.bn2))
         macs+=ids.numel()*self.project.weight.numel()+target.numel()*self.second.weight.numel()
-        return _write_rows(old,target,output),macs,ids.numel()
+        return output,target,macs,ids.numel()
 
     def select_mask(self,current,reference,valid,confidence):
         changed=local_change_mask(current,reference,valid,self.threshold)

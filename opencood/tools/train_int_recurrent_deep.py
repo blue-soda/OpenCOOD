@@ -110,6 +110,7 @@ def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variant
         mean_readout_executed_fraction=float(np.mean(metrics[k]['readout_ratio'])) if metrics[k]['readout_ratio'] else None,
         readout_full_frames=metrics[k]['readout_full'] if metrics[k]['readout_write'] else None,
         readout_packed_weight_bytes=modes[k].readout_cache.packed_weight_bytes if getattr(modes[k],'readout_cache',None) else 0,
+        readout_geometry_bytes=getattr(getattr(modes[k],'readout_cache',None),'geometry_bytes',0),
         mean_deep_write_fraction=float(np.mean(metrics[k]['deep_write'])) if metrics[k]['deep_write'] else None,
         mean_short_update_macs_ratio=float(np.mean(metrics[k]['short_ratio'])) if metrics[k]['short_ratio'] else None) for k in modes}
     assert abs(results['baseline']['ap70']-.7553159775482435)<1e-7

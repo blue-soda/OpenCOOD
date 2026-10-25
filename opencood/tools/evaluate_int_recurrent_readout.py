@@ -28,6 +28,15 @@ def compare_composition(a,cfg,train,val,baseline,out,costs,spatial_macs,repair,c
     for name in ('local_readout','joint_selected','joint_masked_dense'):
         execution='masked_dense' if name=='joint_masked_dense' else 'selected'
         modes[name].readout_cache=LocalReadoutCache(baseline.readout,baseline.bounds,threshold,execution,3)
+    if a.recurrent_readout_layout:
+        from opencood.models.sub_modules.int_packed_readout import PackedReadoutCache
+        modes={k:modes[k] for k in ('dense_recurrent','local_readout')}
+        for name,cls,execution in (('readout_wide',LocalReadoutCache,'selected'),
+                ('readout_packed',PackedReadoutCache,'selected'),('packed_masked_dense',PackedReadoutCache,'masked_dense')):
+            mode=RecurrentDeepDetector(baseline,repair,period)
+            mode.readout_cache=cls(baseline.readout,baseline.bounds,threshold,execution,3,row_chunk_size=32768)
+            modes[name]=mode
+        packed_control=LocalReadoutCache(baseline.readout,baseline.bounds,threshold,row_chunk_size=32768)
     contract=dict(checkpoint=checkpoint,reference_sha256=digest(reference),deep_period=period,readout_period=3,
         calibration=dict(path=str(calibration_path),sha256=digest(calibration_path),threshold=threshold,evidence=calibration),
         scope='Frozen composition, no training or threshold refit. All modes own FM/H/D/readout/confidence trajectories.',
@@ -36,8 +45,15 @@ def compare_composition(a,cfg,train,val,baseline,out,costs,spatial_macs,repair,c
         controls='Original baseline; dense D; local D only; local readout only; joint selected; joint dense-compute masked policy. Separate compression/longer D refresh benefits from local reuse.',
         accounting='Actual convolution and functional H/D/readout MACs x2; include persistent output/reference/confidence and packed weights separately. Timing includes selection, warp, gather and scatter; discarded replays excluded.',
         limits='Readout reuse adds persistent cache and previously reduced FLOPs but increased GPU time. Composition may accumulate errors; no assumed additive speedup or AP preservation.')
-    write_json(out/'recurrent_readout_contract.json',contract)
     selected_names=('local_d','local_readout','joint_selected')
+    if a.recurrent_readout_layout:
+        selected_names=('local_readout','readout_wide','readout_packed')
+        contract.update(scope='Frozen full readout execution/layout comparison; D remains dense short recurrence at period4. No local D in this comparison.',
+            controls='Original baseline; dense D+readout; original row4096 readout; row32768; packed row32768; packed dense-compute masked control. Independent histories.',
+            layout='Packed value/reference/confidence are disjoint views of one state allocation. Ordinary step warps it to fresh owned storage, updates only selected output/reference rows, and fills own prediction confidence. No old-state mutation; no per-frame input packing or full output clone/reference where. Cached static geometry replaces per-frame grid construction and invalid feature multiplication.',
+            accounting=contract['accounting']+' Static warp geometry reported separately; packed tensor and its alias views counted only once.',
+            validation='Same-input selected/masked replay plus packed/original-layout replay. Baseline/dense recurrence/original local-readout AP must reproduce; no assumed AP for widened GEMM or packed trajectory.')
+    write_json(out/'recurrent_readout_contract.json',contract)
     def replay(name,ego,previous,meta,pred,state,info):
         mode=modes[name];deep_execution=getattr(mode.deep,'execution',None)
         cache=mode.readout_cache;cache_execution=cache.execution if cache else None
@@ -59,6 +75,14 @@ def compare_composition(a,cfg,train,val,baseline,out,costs,spatial_macs,repair,c
             left_readout,right_readout=state['readout']['value'],other_state['readout']['value']
             assert torch.allclose(left_readout,right_readout,atol=1e-3,rtol=1e-3)
             readout_error=float((left_readout-right_readout).abs().max())
+        if a.recurrent_readout_layout and name=='readout_packed':
+            mode.readout_cache=packed_control
+            try:plain,plain_state,_=mode.step(ego,previous,meta)
+            finally:mode.readout_cache=cache
+            assert torch.equal(rmask,packed_control.last_mask)
+            assert torch.equal(state['readout']['reference'],plain_state['readout']['reference'])
+            for k in pred:assert torch.allclose(pred[k],plain[k],atol=1e-3,rtol=1e-3)
+            assert torch.allclose(state['readout']['value'],plain_state['readout']['value'],atol=1e-3,rtol=1e-3)
         return dict(mode=name,prediction_max_error=max(errors),deep_max_error=float((left-right).abs().max()),readout_max_error=readout_error)
     states={k:None for k in modes};records=[];d_partial=0;r_partial=0;period1_max=0.
     _,stream=loader(train[:32],cfg,0,303)
@@ -72,7 +96,7 @@ def compare_composition(a,cfg,train,val,baseline,out,costs,spatial_macs,repair,c
                 actual=counter.total+sum(info.get(k,0) for k in ('spatial_extra_linear_macs','deep_extra_linear_macs','readout_extra_linear_macs'))
                 assert actual==cost_of(costs,spatial_macs,info,True),(name,actual,cost_of(costs,spatial_macs,info,True))
                 if name in selected_names:records.append(replay(name,ego,previous,meta,pred,states[name],info))
-                if name=='joint_selected':
+                if name==('readout_packed' if a.recurrent_readout_layout else 'joint_selected'):
                     d_partial+=int(info.get('deep_macs_saved',0)>0);r_partial+=int(info.get('readout_macs_saved',0)>0)
                 if name=='dense_recurrent':
                     mode.readout_cache=LocalReadoutCache(baseline.readout,baseline.bounds,threshold,period=1)
@@ -81,7 +105,7 @@ def compare_composition(a,cfg,train,val,baseline,out,costs,spatial_macs,repair,c
                     for k in pred:
                         period1_max=max(period1_max,float((pred[k]-other[k]).abs().max()))
                         assert torch.equal(pred[k],other[k]),'Period1 readout changed dense recurrence'
-    assert d_partial>0 and r_partial>0
+    assert r_partial>0 and (a.recurrent_readout_layout or d_partial>0)
     write_json(out/'recurrent_readout_engineering.json',dict(status='PASSED',frames=32,actual_macs_verified=True,
         d_sparse_frames=d_partial,readout_sparse_frames=r_partial,period1_max_error=period1_max,
         max_prediction_error=max(r['prediction_max_error'] for r in records),
@@ -95,8 +119,12 @@ def compare_composition(a,cfg,train,val,baseline,out,costs,spatial_macs,repair,c
             result=replay(name,ego,previous,meta,pred,state,info);result['scan']=index+1;audits.append(result)
             write_json(out/'recurrent_readout_replays.json',audits)
     directory=out/'full';directory.mkdir()
-    result=evaluate(a,baseline,None,cfg,val,directory,costs,spatial_macs,'composition',variants=modes,
-        expected_ap={'dense_recurrent':expected},audit=audit,
+    expected_ap={'dense_recurrent':expected}
+    if a.recurrent_readout_layout:
+        assert period==4,'Original local readout reproduction is period4 only'
+        expected_ap['local_readout']=.7553869844807343
+    result=evaluate(a,baseline,None,cfg,val,directory,costs,spatial_macs,'layout' if a.recurrent_readout_layout else 'composition',variants=modes,
+        expected_ap=expected_ap,audit=audit,
         note='Frozen D/readout composition. Six independent histories rotate/reverse on one GPU. Same-input audits outside model timer. Conv/functional-linear MACsx2; no assumed latency benefit. Readout threshold transferred unchanged from train-only fit.')
     result['recurrent_readout_contract']=contract;result['same_input_replays']=len(audits)
     write_json(out/'report.json',result);write_json(out/'status.json',dict(status='COMPLETED',scans=len(val)))
