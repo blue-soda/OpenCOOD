@@ -1,0 +1,23 @@
+{
+  "state": "paused_by_user",
+  "reason": "User retains scheme two and pauses scheme three unless matched evidence establishes a mechanism-capacity limitation.",
+  "unix": 1792920524.7991061,
+  "pid": 444689,
+  "command": "/data1/zhh/gzc/miniconda3/envs/opencood/bin/python -u -m opencood.tools.run_e3dsnn_residual_main --root /data1/zhh/gzc/diagnostics/e3dsnn_residual_main_20261023 --mode resume --family residual_ann --resume-checkpoint /data1/zhh/gzc/diagnostics/e3dsnn_residual_main_20261023/ann_failure_20261024_0635/residual_ann/train/last.pt ",
+  "hashes": {
+    "status.json": "b0c8c4cb1ecd570605047b2f9f266e2d919b6eab62b0c8dae9f919d2134e439d",
+    "resume_launch.json": "1fb27f0e512610cd40288cc2733c0059abbaa5d390f5bcfa60d0a7803e709374",
+    "resume_state.json": "ac61f8a1842d4ab3c3724c4e8763aa3638dc92870c8ed295f826f959eaf9be26",
+    "train/history.json": "b38c89089a7edd71048024c7995d42d5e821330908833bcceb412c2cb61d92f0",
+    "train/best_metrics.json": "165445268b9c761e436fabc9063be7ed7afad6c6265e305c848baa4d3b4a929e",
+    "train/last.pt": "61bf9e6ee0049ff68a5cf470660dd4a20a834e36fa86e6a9466891ab1f73aa38",
+    "train/best.pth": "d750b5a3e6a3b4bbacda3d15fe4895f15b2a204acb0a1b0b3c1ead98e156e2e1"
+  },
+  "original_status": {
+    "state": "validating",
+    "epoch": 14
+  },
+  "scope": "residual_ann stopped; residual_snn already complete; old_snn continues existing protocol",
+  "resume_caveat": "Saved last is epoch14 before validation completion. Existing odd-epoch resume command cannot directly resume this snapshot; explicit validation/RNG recovery is required. No automatic resume.",
+  "leader_exists_after_term": false
+}
