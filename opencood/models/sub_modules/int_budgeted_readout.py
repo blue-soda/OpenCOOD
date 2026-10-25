@@ -39,10 +39,12 @@ def budgeted_ranking(scores,mandatory,budget,w1,w2):
 
 
 class BudgetedReadoutCache(LocalReadoutCache):
-    def __init__(self,readout,bounds,threshold,execution='selected',period=3,budget_scale=1.):
+    def __init__(self,readout,bounds,threshold,execution='selected',period=3,budget_scale=1.,ranking='absolute'):
         super().__init__(readout,bounds,threshold,execution,period)
         if budget_scale not in (.8,1.) or period not in (1,3) or threshold!=.5:
             raise ValueError('Bounded absolute ranking requires threshold.5 and budget.8/1, period1/3')
+        if ranking not in ('absolute','relative'):raise ValueError('Unknown input-error ranking')
+        self.ranking=ranking
         self.budget_scale=budget_scale;self.last_selector_stats=None
 
     def select_mask(self,current,reference,valid,confidence):
@@ -53,7 +55,12 @@ class BudgetedReadoutCache(LocalReadoutCache):
         mandatory_macs=executed_macs(mandatory,w1,w2)
         requested=int(reference_macs*self.budget_scale);budget=max(requested,mandatory_macs)
         absolute=F.avg_pool2d((current-reference).square().mean(1,keepdim=True),4,4,ceil_mode=True,count_include_pad=False)
-        mask,stats=budgeted_ranking(absolute,mandatory,budget,w1,w2)
+        scores=absolute
+        if self.ranking=='relative':
+            pool=lambda x:F.avg_pool2d(x,4,4,ceil_mode=True,count_include_pad=False)
+            energy=torch.maximum(pool(current.square().mean(1,keepdim=True)),pool(reference.square().mean(1,keepdim=True)))
+            scores=absolute/energy.clamp_min(1e-6)
+        mask,stats=budgeted_ranking(scores,mandatory,budget,w1,w2)
         self.last_selector_stats=dict(readout_relative_reference_macs=reference_macs,
             readout_selector_macs=stats['macs'],readout_selector_budget=budget,
             readout_budget_protection_override=mandatory_macs>requested)

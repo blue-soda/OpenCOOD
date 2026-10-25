@@ -497,7 +497,11 @@ def main():
     p.add_argument('--readout-budget-scale',type=float,choices=(.8,1.),default=None,
                    help='Absolute input-error selection under own-relative mask executed cost budget')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
+    p.add_argument('--readout-ranking',choices=('absolute','relative'),default='absolute',
+                   help='Input-error ranking under the same actual row-MAC budget')
     a = p.parse_args(); out = Path(a.output)
+    if a.readout_ranking!='absolute' and a.readout_budget_scale is None:
+        p.error('Relative ranking control requires explicit readout budget')
     if a.readout_budget_scale is not None and (a.readout_period!=3 or a.readout_threshold!=.5 or
             a.readout_selector_frames or a.readout_backend_frames or a.readout_audit_frames):
         p.error('Budgeted readout requires period3/threshold.5 full validation without diagnostic modes')

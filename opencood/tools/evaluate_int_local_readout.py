@@ -17,7 +17,7 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
     for name,execution in (('selected','selected'),('masked_dense','masked_dense'),('period1','selected')):
         mode=copy.copy(baseline)
         cls=BudgetedReadoutCache if a.readout_budget_scale is not None else LocalReadoutCache
-        options=dict(budget_scale=a.readout_budget_scale) if a.readout_budget_scale is not None else {}
+        options=dict(budget_scale=a.readout_budget_scale,ranking=a.readout_ranking) if a.readout_budget_scale is not None else {}
         mode.readout_cache=cls(baseline.readout,baseline.bounds,a.readout_threshold,
             execution=execution,period=1 if name=='period1' else a.readout_period,**options)
         modes[name]=mode
@@ -42,8 +42,9 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
             accounting='MACsx2 conv+functional linear only; extra256+96+1 state channels and fixed packed weights separate; model includes geometry/gather/scatter/copy; no hooks or replay in timing'))
     write_json(out/'contract.json',contract)
     if a.readout_budget_scale is not None:
-        contract.update(readout_budget_scale=a.readout_budget_scale,
+        contract.update(readout_budget_scale=a.readout_budget_scale,readout_ranking=a.readout_ranking,
             budgeted_selector='Overrides relative selector for selected/masked_dense: absolute pooled input error ranked into largest tile prefix under scale*(own-state relative-mask row MACs). Same content radius2/coverage/confidence4. Mandatory protected cost is a floor, reported when above target. No oracle/current dense output/GT used in selection. Sorting, iterative geometry and host synchronizations are included in model time; no speed claim from arithmetic alone. period3 mode is original relative selector with independent history. Weights unchanged.')
+        contract['budgeted_selector']=contract['budgeted_selector'].replace('absolute pooled input error',a.readout_ranking+' pooled input error')
         write_json(out/'contract.json',contract)
 
     def expected(name,info):
@@ -157,14 +158,14 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
             mean_state_bytes=float(np.mean(item['state'])),max_incremental_cuda_peak_bytes=max(item['peak']),readout_full_frames=item['full'],
             extra_readout_packed_weight_bytes=0 if name=='baseline' else modes[name].readout_cache.packed_weight_bytes)
         if a.readout_budget_scale is not None:
-            results[name].update(selector_partial_cost_ratio=item['budget_used']/max(item['budget_reference'],1),
+            results[name].update(selector_partial_cost_ratio=item['budget_used']/item['budget_reference'] if item['budget_reference'] else None,
                 selector_protection_override_frames=item['budget_override'])
     assert abs(results['baseline']['ap70']-.7553159775482435)<1e-7,'Fixed four-layer reference drift'
     if 'period3' in results:
         assert abs(results['period3']['ap70']-.7552887126261554)<1e-7,'Period3 readout reference drift'
     write_json(out/'report.json',dict(status='COMPLETED',scans=len(val),labels=sum(r['supervised'] for r in val),results=results,
         readout_period=a.readout_period,readout_max_full_age_s=feature_cache.max_full_age_us/1e6,
-        readout_budget_scale=a.readout_budget_scale,
+        readout_budget_scale=a.readout_budget_scale,readout_ranking=a.readout_ranking if a.readout_budget_scale is not None else None,
         own_trajectory_audited_frames=len(audits),all_same_input_replays_passed=True,
         note='Weights fixed; spatial t.5 four-layer baseline held. Readout output cache changes own predictions and future H masks. No new training; no SNN attribution; FLOPs count conv/linear only.'))
     write_json(out/'status.json',dict(status='COMPLETED',scans=len(val)))

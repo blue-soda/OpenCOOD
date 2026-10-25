@@ -1,4 +1,5 @@
 import unittest
+from itertools import product
 import numpy as np
 import torch
 from torch import nn
@@ -25,11 +26,11 @@ class TestLocalReadout(unittest.TestCase):
         self.cache=LocalReadoutCache(self.model,self.bounds,.25)
 
     @torch.no_grad()
-    def test_absolute_budget_selection_and_dense_fidelity(self):
+    def test_budget_selection_and_dense_fidelity(self):
         x=torch.randn(1,16,10,12);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
-        for scale in (.8,1.):
-            local=BudgetedReadoutCache(self.model,self.bounds,.5,budget_scale=scale)
-            dense=BudgetedReadoutCache(self.model,self.bounds,.5,execution='masked_dense',budget_scale=scale)
+        for scale,ranking in product((.8,1.),('absolute','relative')):
+            local=BudgetedReadoutCache(self.model,self.bounds,.5,budget_scale=scale,ranking=ranking)
+            dense=BudgetedReadoutCache(self.model,self.bounds,.5,execution='masked_dense',budget_scale=scale,ranking=ranking)
             _,state,_=local.step(x,None,meta);state['confidence']=torch.zeros(1,1,10,12)
             y=x.clone();y[:,:,1:4,2:5]+=1
             output,new,info=local.step(y,state,dict(meta,timestamp_us=150000))
@@ -42,6 +43,20 @@ class TestLocalReadout(unittest.TestCase):
             _,_,info=local.step(y,state,dict(meta,timestamp_us=150000))
             self.assertTrue(bool(local.last_mask.all()))
             self.assertEqual(info['readout_budget_protection_override'],scale<1.)
+
+    @torch.no_grad()
+    def test_relative_full_budget_reproduces_threshold_mask(self):
+        cache=BudgetedReadoutCache(self.model,self.bounds,.5,ranking='relative')
+        original=LocalReadoutCache(self.model,self.bounds,.5)
+        for seed in range(4):
+            torch.manual_seed(seed)
+            reference=torch.randn(1,16,24,32)
+            amplitude=torch.nn.functional.interpolate(torch.rand(1,1,6,8),scale_factor=4,mode='nearest')
+            current=reference+torch.randn_like(reference)*amplitude
+            valid=torch.ones(1,1,24,32,dtype=torch.bool);valid[:,:,:1]=False
+            confidence=torch.zeros_like(valid,dtype=torch.float);confidence[:,:,12,16]=.9
+            self.assertTrue(torch.equal(cache.select_mask(current,reference,valid,confidence),
+                                        original.select_mask(current,reference,valid,confidence)))
 
     @torch.no_grad()
     def test_selected_complete_dependencies_and_cost(self):
