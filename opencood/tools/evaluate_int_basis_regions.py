@@ -499,7 +499,16 @@ def main():
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     p.add_argument('--readout-ranking',choices=('absolute','relative'),default='absolute',
                    help='Input-error ranking under the same actual row-MAC budget')
+    p.add_argument('--readout-calibrate-frames',type=int,choices=(0,512),default=0,
+                   help='Train-only fixed threshold fit to aggregate80 percent partial readout MACs')
+    p.add_argument('--readout-calibration',default=None,
+                   help='Completed train calibration.json; freeze its scalar before full validation')
     a = p.parse_args(); out = Path(a.output)
+    if a.readout_calibrate_frames or a.readout_calibration:
+        if (a.readout_calibrate_frames and a.readout_calibration or a.readout_period!=3 or
+                a.readout_threshold!=.5 or a.readout_budget_scale is not None or a.readout_ranking_audit or
+                a.readout_selector_frames or a.readout_backend_frames or a.readout_audit_frames):
+            p.error('Fixed calibration requires period3/threshold.5 and no other selector diagnostics/budget')
     if a.readout_ranking!='absolute' and a.readout_budget_scale is None:
         p.error('Relative ranking control requires explicit readout budget')
     if a.readout_budget_scale is not None and (a.readout_period!=3 or a.readout_threshold!=.5 or

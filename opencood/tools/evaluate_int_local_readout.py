@@ -2,6 +2,7 @@
 import copy
 import json
 import time
+from pathlib import Path
 import numpy as np
 import torch
 from opencood.models.sub_modules.int_local_readout import LocalReadoutCache
@@ -13,15 +14,30 @@ from opencood.utils import eval_utils
 
 
 def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
+    calibration=None;threshold=a.readout_threshold
+    if a.readout_calibration:
+        from opencood.tools.launch_int_memory import digest
+        calibration=json.loads(Path(a.readout_calibration).read_text())
+        contract=json.loads((out/'contract.json').read_text())
+        assert calibration['status']=='COMPLETED' and calibration['split']=='train'
+        assert calibration['scans']==512 and calibration['fit']['status']=='FITTED'
+        assert calibration['base_threshold']==.5 and calibration['target_ratio']==.8
+        assert calibration['exact_replay_max_error']==0
+        assert calibration['identity']=={k:contract[k] for k in calibration['identity']}
+        threshold=calibration['fit']['threshold']
+        contract.update(readout_fixed_calibration=dict(path=a.readout_calibration,sha256=digest(a.readout_calibration),
+            threshold=threshold,training_evidence=calibration,
+            scope='Fixed scalar replaces selected/masked threshold only. period3 uses original.5. No runtime ranking/search/per-frame budget guarantee. Independent histories and unchanged weights.'))
+        write_json(out/'contract.json',contract)
     modes=dict(baseline=baseline)
     for name,execution in (('selected','selected'),('masked_dense','masked_dense'),('period1','selected')):
         mode=copy.copy(baseline)
         cls=BudgetedReadoutCache if a.readout_budget_scale is not None else LocalReadoutCache
         options=dict(budget_scale=a.readout_budget_scale,ranking=a.readout_ranking) if a.readout_budget_scale is not None else {}
-        mode.readout_cache=cls(baseline.readout,baseline.bounds,a.readout_threshold,
+        mode.readout_cache=cls(baseline.readout,baseline.bounds,threshold,
             execution=execution,period=1 if name=='period1' else a.readout_period,**options)
         modes[name]=mode
-    if a.readout_period==5 or a.readout_budget_scale is not None:
+    if a.readout_period==5 or a.readout_budget_scale is not None or calibration is not None:
         mode=copy.copy(baseline)
         mode.readout_cache=LocalReadoutCache(baseline.readout,baseline.bounds,a.readout_threshold,period=3)
         modes['period3']=mode
@@ -91,6 +107,10 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
         actual_hook_plus_linear_macs_verified=True,readout_dense_macs=readout_macs,
         spatial_dense_macs=spatial_macs))
     del modes['period1']
+    if a.readout_calibrate_frames:
+        from opencood.tools.calibrate_int_readout import calibrate_readout
+        calibrate_readout(a,cfg,train,modes['selected'],out)
+        return
     if a.readout_selector_frames:
         if a.readout_ranking_audit:
             from opencood.tools.audit_int_readout_ranking import audit_ranking
@@ -166,6 +186,7 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
     write_json(out/'report.json',dict(status='COMPLETED',scans=len(val),labels=sum(r['supervised'] for r in val),results=results,
         readout_period=a.readout_period,readout_max_full_age_s=feature_cache.max_full_age_us/1e6,
         readout_budget_scale=a.readout_budget_scale,readout_ranking=a.readout_ranking if a.readout_budget_scale is not None else None,
+        deployed_readout_threshold=threshold,readout_calibration=a.readout_calibration,
         own_trajectory_audited_frames=len(audits),all_same_input_replays_passed=True,
         note='Weights fixed; spatial t.5 four-layer baseline held. Readout output cache changes own predictions and future H masks. No new training; no SNN attribution; FLOPs count conv/linear only.'))
     write_json(out/'status.json',dict(status='COMPLETED',scans=len(val)))
