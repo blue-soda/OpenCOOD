@@ -58,6 +58,20 @@ def restore_rng(torch,np,state):
 def execute(a):
     root=Path(a.output)
     if not a.smoke:require_space(root,6*GIB)
+    snapshot=root/'snapshot'
+    files=('train_infocom_lowrate.py','audit_infocom_lowrate_training.py','evaluate_infocom.py',
+           'replay_common_gt.py','infocom_wire.py','run_infocom_ratio_curve.py')
+    if not a.resume:
+        snapshot.mkdir()
+        for name in files:shutil.copyfile(str(Path(__file__).resolve().parent/name),str(snapshot/name))
+    snapshot_hashes={name:readiness.sha(snapshot/name) for name in files}
+    admission=[]
+    for unused in range(5):
+        free,util=map(int,subprocess.check_output(['nvidia-smi','-i',a.gpu,
+            '--query-gpu=memory.free,utilization.gpu','--format=csv,noheader,nounits']).decode().split(','))
+        if free<18000 or util>20:raise RuntimeError('GPU admission failed')
+        admission.append([free,util]);time.sleep(1)
+    write_json(root/('admission_%d.json'%time.time_ns()),admission)
     model,dataset,hypes,buffers,identity,ids,checkpoint,split,raw_split,manifest=readiness.prepare(a)
     import numpy as np
     import torch
@@ -76,7 +90,7 @@ def execute(a):
         common_train_sha256=readiness.sha(split),manifest_sha256=readiness.sha(manifest),
         common_val_sha256=readiness.sha(Path(a.evidence_root)/'common_val.json'),
         script_sha256=readiness.sha(Path(__file__)),readiness_sha256=readiness.sha(Path(readiness.__file__)),
-        model_bytes=estimated_model,trainable_bytes=trainable_bytes)
+        model_bytes=estimated_model,trainable_bytes=trainable_bytes,snapshot_sha256=snapshot_hashes)
     best=None;best_weights=None;history=[];start=1
     if a.resume:
         state=torch.load(str(root/'last.pt'),map_location='cpu')
@@ -88,24 +102,28 @@ def execute(a):
     loader=DataLoader(Subset(dataset,[0,1,2,3]) if a.smoke else dataset,
         batch_size=2,shuffle=True,num_workers=0,drop_last=False,collate_fn=dataset.collate_batch_train)
     rows=[]
-    def validate(epoch):
+    def validate(epoch,ratio=.01,use_best=False):
         # A separate interpreter keeps official inference and our CPU evaluator
         # import namespaces isolated. Parent training RNG is untouched.
-        candidate=root/'candidate';candidate.mkdir(exist_ok=True)
-        shutil.copyfile(str(Path(a.model_dir)/'config.yaml'),str(candidate/'config.yaml'))
-        save_atomic(torch,model.state_dict(),candidate/'net_epoch0.pth',estimated_model)
-        out=root/('val_epoch%02d_attempt%d'%(epoch,time.time_ns()))
-        source=Path(__file__).resolve().parent
+        candidate=root/('best' if use_best else 'candidate');candidate.mkdir(exist_ok=True)
+        if not use_best:
+            shutil.copyfile(str(Path(a.model_dir)/'config.yaml'),str(candidate/'config.yaml'))
+            save_atomic(torch,model.state_dict(),candidate/'net_epoch0.pth',estimated_model)
+        prefix='final_ratio%s'%ratio if use_best else 'val_epoch%02d'%epoch
+        out=root/(prefix+'_attempt%d'%time.time_ns())
+        source=snapshot
+        assert all(readiness.sha(source/n)==h for n,h in snapshot_hashes.items())
         env=dict(os.environ,OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',PYTHONPATH=a.our_repo)
         commands=[
             [sys.executable,str(source/'evaluate_infocom.py'),'--repo',a.repo,'--model-dir',str(candidate),
              '--data-root',a.data_root,'--split',str(Path(a.evidence_root)/'common_val.json'),
-             '--output',str(out),'--limit','0','--gpu',a.gpu,'--comm-range','1000000','--mask-ratio','.01','--wire-codec',
+             '--output',str(out),'--limit','0','--gpu',a.gpu,'--comm-range','1000000','--mask-ratio',str(ratio),'--wire-codec',
              '--adaptation-protocol',str(root/'protocol.json')],
             [sys.executable,str(source/'replay_common_gt.py'),'--run',str(out),'--root',a.evidence_root]]
         for i,cmd in enumerate(commands):
             with (root/(out.name+'_%d.log'%i)).open('x') as log:
                 subprocess.run(cmd,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=14400 if i==0 else 3600)
+        sys.path.insert(0,str(snapshot))
         import run_infocom_ratio_curve as audit
         import infocom_wire as codec
         audit.ROOT=Path(a.evidence_root);audit.verify_wire(out,codec,1738)
@@ -159,6 +177,13 @@ def execute(a):
     save_atomic(torch,best_weights,dest/'net_epoch0.pth',estimated_model)
     write_json(dest/'selection.json',best)
     write_json(root/'status.json',dict(state='trained',epochs=10,best=best,final_four_ratio_evaluation_required=True))
+    final=[]
+    for ratio in CONTRACT['final_ratios']:
+        ap,out=validate(10,ratio,use_best=True)
+        final.append(dict(ratio=ratio,ap70=ap,output=str(out),
+            wire=json.loads((out/'summary.json').read_text())['wire_statistics']))
+        write_json(root/'final_results_so_far.json',final)
+    write_json(root/'status.json',dict(state='complete',epochs=10,best=best,final_results=final))
 
 
 if __name__=='__main__':
