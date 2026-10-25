@@ -399,3 +399,10 @@ readout_fixed_calibrated_v2_20261026完成5794扫描/1738标注；30次GPU2抽�
 本轮经187跳转181两次、直连187一次、直连181一次均在SSH banner exchange阶段超时，未取得新的服务器状态。不能据此判断训练停止、完成或出现新的GPU/磁盘错误；本轮没有向任何训练进程发送信号，也没有重复启动实验。最近一次已验证状态仍是恢复后的三帧/六帧epoch1训练（GPU5/6、PID65132/65298），输出在181的/data2；这些只是上次观察，不是本轮在线状态。
 
 保留20分钟路线级检查。连接恢复后优先读取两组status、训练日志、pending_validation/latest、完整epoch报告及data2余量；若进程仍健康则继续，不因通信失败重启。若确认失败，再按检查点的next_action选择重做验证或恢复训练。此次没有新增AP、GFLOPs或有效延迟结论。
+### 2026-10-26 02:07：VPN恢复处理与备用机改为146（用户确认）
+
+用户明确：SSH超时时先执行本会话提供的rasdial连接命令再重试；181不可用时使用146，替代此前187训练备用顺序。连接凭据不写入仓库、实验报告或共享文档。此次rasdial返回mindspore已经连接，随后经187跳转181的SSH成功；只能确认连通已恢复，不能据此认定本次命令重新建立了VPN。
+
+181两条恢复任务均正常运行：epoch1训练完成，完整验证到4400/5794扫描；GPU5/6仍只有各自PID65132/65298。pending_validation.pth已实际落盘（185/197KiB），证明验证前保存机制已在真实训练中执行。尚无本轮完整训练后AP。data2剩余约5.9GiB，需要继续关注下降趋势；不因短时SSH异常重复训练或迁移健康任务。
+
+已按server_backup_deployment_20261016.md只读核验146：账号zhh，仓库/data1/zhh/gzc/OpenCOOD在main@068fd07（存在其他任务未跟踪文件，保持原样）；环境/data1/zhh/gzc/miniconda3/envs/opencood，torch1.10.0+cu113，CUDA可用；DAIR/data1/zhh/gzc/dataset/dair-v2x-c无悬空链接。data1余1.8TiB，data2余2.0TiB；GPU0/4/5/6/7当前无查询到的计算进程，GPU1/2/3已有任务，不干预。此为环境与资源可用性检查，不代表本路线权重/最新优化器状态已迁移；真正切换时须同步所需checkpoint/manifest、核验SHA和数据路径，保持本地main push→目标机pull，并先验证原基线AP口径。
