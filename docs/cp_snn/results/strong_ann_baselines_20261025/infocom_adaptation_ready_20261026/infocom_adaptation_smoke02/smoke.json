@@ -1,0 +1,70 @@
+{
+  "passed": true,
+  "optimizer_steps": 2,
+  "weights_discarded": true,
+  "bn_buffers_unchanged": true,
+  "rows": [
+    {
+      "epoch": 1,
+      "step": 1,
+      "samples": 2,
+      "loss": 1.4971104860305786,
+      "task_loss": 1.4408364295959473,
+      "kl": 562.7410888671875,
+      "gradient_norm": 23.84416389465332,
+      "lr": 5e-05
+    },
+    {
+      "epoch": 1,
+      "step": 2,
+      "samples": 4,
+      "loss": 1.4383445978164673,
+      "task_loss": 1.389672875404358,
+      "kl": 486.71697998046875,
+      "gradient_norm": 20.36106300354004,
+      "lr": 5e-05
+    }
+  ],
+  "peak_cuda_allocated_bytes": 5601183232,
+  "contract": {
+    "epochs": 10,
+    "batch_size": 2,
+    "seed": 20260929,
+    "lr": 5e-05,
+    "weight_decay": 0.0001,
+    "milestones": [
+      7,
+      9
+    ],
+    "lr_gamma": 0.3,
+    "mask_ratio": 0.01,
+    "kl_beta": 0.0001,
+    "kl_start_adaptation_epoch": 1,
+    "train_scope": "all published weights; compatibility identity scales frozen",
+    "bn": "all running buffers frozen",
+    "latent": "official train stochastic; eval mean",
+    "selection": "highest common-GT AP70 at 1pct, epochs 1..10; earliest tie",
+    "final_ratios": [
+      0.01,
+      0.025,
+      0.05,
+      0.1
+    ],
+    "checkpoint_sha256": "7375da04507b4f543666e15aa02897e41e3c32e08bcb3f74b27ad49fb28c803c",
+    "common_train_sha256": "dae42ad7dfbc6e917c6630279fd2f54f64efac8b62825f3686dc75e4a5da4788",
+    "manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+    "common_val_sha256": "eff0ec36dd5a465b0750cc58cfc4d85eee78bd46bd60b6304e4d1a9beaa46026",
+    "script_sha256": "859fce7d3ae0189b41ffaad66806a7c0af51c37e32a9f68537e6a253242a8659",
+    "readiness_sha256": "d6e7ecc25e9c92cfd99c9cf50bd45a4a97a12d92c09263c0398d09af42cd0123",
+    "model_bytes": 479474844,
+    "trainable_bytes": 479411708,
+    "snapshot_sha256": {
+      "train_infocom_lowrate.py": "859fce7d3ae0189b41ffaad66806a7c0af51c37e32a9f68537e6a253242a8659",
+      "audit_infocom_lowrate_training.py": "d6e7ecc25e9c92cfd99c9cf50bd45a4a97a12d92c09263c0398d09af42cd0123",
+      "evaluate_infocom.py": "40149b7cffbb4981db0915c90a381d42c36ade2789963cc101b764ecc651a4f5",
+      "replay_common_gt.py": "66eae5af6f73acf22afcee1aae85a2549b73da827842e09793dd40adc5bbcfdf",
+      "infocom_wire.py": "cb3802491222672210c785149f9f9e8afc97b361667a0eb8e35470c9a09c81ea",
+      "run_infocom_ratio_curve.py": "0c6f4b351b15e588f436e0d9a5646de9b10c1a2d9c7ed2184261c77d2c506886"
+    }
+  }
+}

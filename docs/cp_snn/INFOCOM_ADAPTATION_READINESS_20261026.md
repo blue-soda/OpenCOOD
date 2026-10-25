@@ -26,3 +26,6 @@
 4. 现有SNN状态约几十MB，继续按原10轮训练并监测剩余空间；最终真实wire/AP复核之后，再对接统一计算与选择机制消融。不追加冻结ANN比例扫描或恢复方案三。
 
 证据：[成功审计](results/strong_ann_baselines_20261025/infocom_gradient_20261026/infocom_lowrate_gradient02/audit.json)、[首次数据假设失败](results/strong_ann_baselines_20261025/infocom_gradient_20261026/infocom_lowrate_gradient01/failure.json)、[成功启动](results/strong_ann_baselines_20261025/infocom_gradient_20261026/infocom_lowrate_gradient02.launch.json)、[下载SHA](results/strong_ann_baselines_20261025/infocom_gradient_20261026/download_sha256.json)。
+
+
+更新：训练器与两步Adam检查已完成，正式训练仍受存储准入阻塞；以上“训练器尚未完成”为历史状态。以[正式适配协议和准备结果](INFOCOM_LOW_RATE_ADAPTATION_20261026.md)为准。

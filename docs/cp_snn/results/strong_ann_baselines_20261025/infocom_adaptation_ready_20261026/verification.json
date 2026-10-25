@@ -1,0 +1,12 @@
+{
+  "archive_sha256": "a1cefdebc921186e7425236b2cf282ff8426136a303a7d73091e54aa3925ed61",
+  "local_recovery_unit_tests": 3,
+  "linux_recovery_unit_tests": 3,
+  "passed": true,
+  "tests": [
+    "Adam and RNG restore repeat the next update",
+    "disk guard preserves previous checkpoint",
+    "interrupted temp write preserves previous checkpoint"
+  ],
+  "formal_training_started": false
+}

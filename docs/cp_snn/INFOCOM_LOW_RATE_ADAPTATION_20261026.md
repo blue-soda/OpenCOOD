@@ -23,3 +23,16 @@
 ## 退出与解释
 
 只跑这一组10轮，不看中途AP追加学习率/比例/epoch搜索。最终按真实字节对比Scheme2固定/多预算和原ANN；若低预算适配ANN反超，记录反超，不隐藏强对照。SNN是否有优势仍需统一计算测量和匹配训练的内部ANN对照，不能只靠外部模型低比例曲线归因SNN机制。后续计算/机制消融优先，停止重复冻结比例探索。
+
+
+## 2026-10-26 05:59触发：训练器准备完成，存储准入未满足
+
+实现cf79ce0、22162c6已完成固定1%适配训练器、严格来源加载、源代码快照、每轮真实wire/共同GT复算、原子可恢复检查点、最佳权重选择及末尾四比例复核。末尾只有全部复核通过才标complete；trained是中间状态。启动前检查6GiB磁盘及五次GPU准入，172800秒外层上限的具体启动计划已保存，当前prepared_not_launched。没有新增正式训练AP。
+
+181 GPU4完成两次有界真实Adam烟雾检查（第二次验证最终快照/GPU准入改动）：每次两步/四个训练样本，保留随机latent，Ldet+1e-4 KL；两次loss逐值一致1.4971104860、1.4383445978。第2步KL=486.71698；BN统计逐值不变，权重全部丢弃，未作为正式训练warm start。峰值allocated=5,601,183,232 B，约5.60GB/5.22GiB，较之前纯梯度检查增加Adam状态。不能将两步loss变化解释为验证AP收益。
+
+三项恢复测试在本机和181均通过：Adam和四类RNG恢复后下一步参数逐值相同；磁盘不足不改已有last；模拟临时写入中断仍保留原last。真实大模型完整epoch保存/恢复及四比例收尾尚未实际运行，不能把小模型事务测试称为完成了正式训练复核。
+
+当前资源：181 /data2剩2,085,552,128 B，低于6,442,450,944 B准入；146以正常枚举的GPU4 UUID新建进程仍CUDA unavailable；187虽有54GB磁盘，每卡仅1674MiB空闲，低于真实批次所需。正式训练仍未启动，需让181可用空间达到至少6GiB，或提供可用于此训练的同等级存储/算力位置。未删除他人文件，未reset GPU。现有方案二固定组第8轮601/2339、多预算第1轮901/2339继续，最佳仍58.85365%，没有新最终AP。
+
+[最终两步检查](results/strong_ann_baselines_20261025/infocom_adaptation_ready_20261026/infocom_adaptation_smoke02/smoke.json)、[具体启动计划](results/strong_ann_baselines_20261025/infocom_adaptation_ready_20261026/infocom_lowrate_launch_plan.json)、[测试与归档SHA](results/strong_ann_baselines_20261025/infocom_adaptation_ready_20261026/verification.json)。后续先检查现有输出目录和PID避免重复；空间恢复后重新GPU准入，再按计划启动同一个10轮实验，不重新选择超参数。
