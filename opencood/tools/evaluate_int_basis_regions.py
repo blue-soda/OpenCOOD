@@ -296,6 +296,10 @@ def worker(a):
         period1_vs_dense_max_error=control_error, mean_write_fraction=float(np.mean(writes)),
         constant_hook_macs={str(k):v for k,v in costs.items()}, dense_mix_macs=mixing, dense_basis_macs=basis_cost,
         costs_verified_against_actual_conv_hooks=True, own_immutable_deep_anchors=True))
+    if a.readout_threshold is not None:
+        from opencood.tools.evaluate_int_local_readout import evaluate_readout
+        evaluate_readout(a,cfg,train,val,modes['selected'],out,costs,mixing+basis_cost)
+        return
     if a.profile_frames:
         from opencood.tools.profile_int_basis_regions import profile_stream
         profile_stream(a, cfg, val, modes['selected'] if a.row_state else modes['fused'], modes['base'], out,
@@ -478,8 +482,13 @@ def main():
     p.add_argument('--single-state',action='store_true',help='Guarded dependency update: retain only final H, paired four-map parent')
     p.add_argument('--row-state',action='store_true',help='Single-H temporary active rows, paired same single-H canvas parent')
     p.add_argument('--row-plan',action='store_true',help='Prepared row geometry and fixed kernels, paired original row execution')
+    p.add_argument('--readout-threshold',type=float,choices=(.25,.5),default=None,
+                   help='Fixed four-layer threshold.5 baseline plus local complete readout feature reuse')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.readout_threshold is not None and (not a.row_plan or a.threshold!=.5 or
+            a.confidence_guard!=.1 or a.profile_frames or a.cell_age):
+        p.error('Local readout requires fixed planned-row threshold.5/guard.1 period3 baseline')
     if a.row_plan and not a.row_state:
         p.error('Planned rows require row-state')
     if a.row_state and (not a.single_state or a.cell_age):

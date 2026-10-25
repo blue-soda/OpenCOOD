@@ -163,10 +163,12 @@ class SpatialBasisCacheDetector:
     """Same mature downstream/deep cache, replacing only first-stage execution."""
     def __init__(self, model, config, readout, repair, threshold=.5,
                  period=3, execution='selected', deep_period=3, confidence_threshold=None, warp=None, cache_dtype=None,
-                 max_full_age_s=.25, cell_age_limit_s=None, spatial_dilation=4, confidence_dilation=None):
+                 max_full_age_s=.25, cell_age_limit_s=None, spatial_dilation=4, confidence_dilation=None,
+                 readout_cache=None):
         if model.training or readout.training or repair.training or deep_period not in (1, 3):
             raise ValueError('Frozen detector and deep period1/3 required')
         self.model, self.readout, self.repair = model, readout, repair
+        self.readout_cache = readout_cache
         self.bounds = config['model']['args']['lidar_range']; self.deep_period = deep_period
         self.warp = warp if warp is not None else warp_bev
         self.spatial = SpatialBasisCache(model.backbone.resnet.layer0, self.bounds, threshold, period, execution,
@@ -200,7 +202,19 @@ class SpatialBasisCacheDetector:
             uncovered = float((~valid).float().mean())
             projected = self.repair(torch.cat([first, projected, valid.to(projected.dtype)], 1))
             cache = dict(cache, frames=cache['frames']+1)
-        prediction = predict(m, self.readout.fuse(current, projected))
+        readout_state = None
+        if self.readout_cache is None:
+            features = self.readout.fuse(current, projected)
+        else:
+            features, readout_state, readout_info = self.readout_cache.step(current+projected,
+                None if state is None else state['readout'], meta, bool(info['reset']))
+            detail.update(readout_info)
+        prediction = predict(m, features)
+        if readout_state is not None:
+            confidence = prediction['psm'].sigmoid().amax(1, keepdim=True).detach()
+            assert confidence.shape[-2:] == features.shape[-2:]
+            readout_state['confidence'] = confidence
+            detail['readout_state_bytes'] += confidence.numel()*confidence.element_size()
         if self.spatial.confidence_threshold is not None:
             # Only this mode's previous-frame prediction drives the NEXT mask.
             # No current expensive features, teacher detections, GT or boxes.
@@ -212,4 +226,6 @@ class SpatialBasisCacheDetector:
         info.update(detail)
         info.update(local_partial=reason is None, anchor_stamp=cache['stamp'], anchor_depth=cache['frames'],
             uncovered_fraction=uncovered, anchor_bytes=cache['value'].numel()*cache['value'].element_size())
-        return prediction, dict(fm=fm, cache=cache, spatial=spatial_state), info
+        new = dict(fm=fm, cache=cache, spatial=spatial_state)
+        if readout_state is not None: new['readout'] = readout_state
+        return prediction, new, info
