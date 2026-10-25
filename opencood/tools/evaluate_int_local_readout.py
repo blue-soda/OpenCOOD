@@ -84,8 +84,12 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
         spatial_dense_macs=spatial_macs))
     del modes['period1']
     if a.readout_selector_frames:
-        from opencood.tools.audit_int_readout_selector import audit_selector
-        audit_selector(a,cfg,train,modes['selected'],out)
+        if a.readout_ranking_audit:
+            from opencood.tools.audit_int_readout_ranking import audit_ranking
+            audit_ranking(a,cfg,train,modes['selected'],out)
+        else:
+            from opencood.tools.audit_int_readout_selector import audit_selector
+            audit_selector(a,cfg,train,modes['selected'],out)
         return
     if a.readout_backend_frames:
         from opencood.tools.profile_int_readout_backend import profile_readout_backend
