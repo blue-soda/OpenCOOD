@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "samples": 2,
+  "prediction_and_message_bitwise_equal": true,
+  "reference_host": "146",
+  "current_host": "181"
+}

@@ -1,0 +1,56 @@
+{
+  "snapshot_sha256": {
+    "evaluate_infocom.py": "43de1ced4010617bdc7a032c69784f519fc6f547efce041d7832b02ed6ca6215",
+    "infocom_wire.py": "cb3802491222672210c785149f9f9e8afc97b361667a0eb8e35470c9a09c81ea",
+    "run_infocom_ratio_curve.py": "0c6f4b351b15e588f436e0d9a5646de9b10c1a2d9c7ed2184261c77d2c506886",
+    "replay_common_gt.py": "66eae5af6f73acf22afcee1aae85a2549b73da827842e09793dd40adc5bbcfdf",
+    "recover_infocom_5pct_181.py": "b9725cb33ff888877ea735d6ab2e8f6d8f8bb61a6d4d730cde625645e7f8f4f2"
+  },
+  "checkpoint_sha256": "7375da04507b4f543666e15aa02897e41e3c32e08bcb3f74b27ad49fb28c803c",
+  "original_failed_run": "/data1/zhh/gzc/diagnostics/ann_baselines_20261025/infocom_ratio_curve_20261026_r1/r005",
+  "reason": "146 CUDA unavailable; only uncompleted 5pct operating point moved",
+  "mask_ratio": 0.05,
+  "gpu": 4,
+  "admission": [
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ]
+  ],
+  "source_split_sha256": "eff0ec36dd5a465b0750cc58cfc4d85eee78bd46bd60b6304e4d1a9beaa46026",
+  "data_root": "/data2/tzm/cp_snn_recovery_20261026/data_view",
+  "data_overlay": {
+    "source_host": "146",
+    "base_data": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+    "view": "/data2/tzm/cp_snn_recovery_20261026/data_view",
+    "archive_sha256": "68f2f3587ac6e0ac2b55453cd3dc3b795b5e066ae262d2688545f0b1702e8295",
+    "overlaid_directories": [
+      "cooperative/label_world_backup",
+      "vehicle-side/label/lidar_backup"
+    ],
+    "files": {
+      "cooperative/label_world_backup": 6601,
+      "vehicle-side/label/lidar_backup": 15285
+    },
+    "base_dataset_modified": false
+  },
+  "previous_recovery": "infocom_5pct_recovery01: missing original backup labels; preserved",
+  "completed_1pct_2p5pct_preserved": true,
+  "model_or_budget_changes": false
+}
