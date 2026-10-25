@@ -1,0 +1,40 @@
+{
+  "labels": 1738,
+  "results": {
+    "base_cached": {
+      "ap50": 0.8321027698682837,
+      "ap70": 0.7555532616222492,
+      "conv_gflops": 134.31042158812565,
+      "mean_ms": 17.3573260736007,
+      "p95_ms": 28.14611077774316,
+      "partial_frames": 3789
+    },
+    "base_full": {
+      "ap50": 0.8311640141378542,
+      "ap70": 0.7567024378706645,
+      "conv_gflops": 221.1729408,
+      "mean_ms": 27.62798083928236,
+      "p95_ms": 29.040256782900542,
+      "partial_frames": 0
+    },
+    "cached": {
+      "ap50": 0.8262998217243063,
+      "ap70": 0.752021360445601,
+      "conv_gflops": 120.43389038812565,
+      "mean_ms": 16.520277540130866,
+      "p95_ms": 27.31851789867505,
+      "partial_frames": 3789
+    },
+    "full": {
+      "ap50": 0.8252922822447135,
+      "ap70": 0.7539590231460706,
+      "conv_gflops": 207.2964096,
+      "mean_ms": 26.828899560061465,
+      "p95_ms": 28.19169918075204,
+      "partial_frames": 0
+    }
+  },
+  "scans": 5794,
+  "scope": "Dense short spatial updater arm context: frozen mature stem, one retained two-convolution block with optional cheap current DW5/PW1 context. Own FM states; full and original deep-period3 compatibility. No spatial reuse or inference teacher. Conv MACsx2; model timing excludes IO/H2D/postprocess. Precision gate before local reuse, not convergence proof. Paired fixed-checkpoint diagnostic with new matched optimizer; update BN affine adaptation=False, running statistics fixed.",
+  "status": "COMPLETED"
+}
