@@ -16,7 +16,8 @@ import traceback
 import numpy as np
 
 BASE=Path('/data2/tzm/cp_snn_recovery_20261026')
-ROOT=BASE/'infocom_5pct_recovery01'
+ROOT=BASE/'infocom_5pct_recovery02'
+DATA_ROOT=BASE/'data_view'
 SOURCE=Path(__file__).resolve().parent
 EVIDENCE=BASE/'ann_evidence'
 PY=str(BASE/'ann_runtime/bin/python')
@@ -43,7 +44,7 @@ def coordinate():
             gate=helpers.admission();write(ROOT/'status.json',dict(state='running',stage=name,admission=gate))
             output=ROOT/name
             command=[PY,str(snapshot/'evaluate_infocom.py'),'--repo',str(BASE/'InfoCom'),
-                '--model-dir',str(BASE),'--data-root','/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure',
+                '--model-dir',str(BASE),'--data-root',str(DATA_ROOT),
                 '--split',str(EVIDENCE/'common_val.json'),'--output',str(output),'--gpu','4',
                 '--limit',str(limit),'--comm-range','1000000','--checkpoint-compat','--wire-codec',
                 '--mask-ratio',str(ratio)]
@@ -92,6 +93,8 @@ def launch():
         original_failed_run='/data1/zhh/gzc/diagnostics/ann_baselines_20261025/infocom_ratio_curve_20261026_r1/r005',
         reason='146 CUDA unavailable; only uncompleted 5pct operating point moved',
         mask_ratio=.05,gpu=4,admission=gate,source_split_sha256=sha(EVIDENCE/'common_val.json'),
+        data_root=str(DATA_ROOT),data_overlay=read(BASE/'data_overlay_provenance.json'),
+        previous_recovery='infocom_5pct_recovery01: missing original backup labels; preserved',
         completed_1pct_2p5pct_preserved=True,model_or_budget_changes=False))
     with (ROOT/'pipeline.log').open('x') as log:
         child=subprocess.Popen([PY,str(snapshot/'recover_infocom_5pct_181.py'),'--coordinate'],
