@@ -480,8 +480,8 @@ def main():
     p.add_argument('--row-plan',action='store_true',help='Prepared row geometry and fixed kernels, paired original row execution')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
-    if a.row_plan and (not a.row_state or a.profile_frames):
-        p.error('Planned rows require row-state full paired validation')
+    if a.row_plan and not a.row_state:
+        p.error('Planned rows require row-state')
     if a.row_state and (not a.single_state or a.cell_age):
         p.error('Row execution requires single-state periodic comparison without cell age')
     if a.single_state and not a.dependency_guard:

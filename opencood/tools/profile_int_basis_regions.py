@@ -8,7 +8,31 @@ from opencood.models.sub_modules import int_basis_spatial_cache as cache_module
 from opencood.models.sub_modules import int_basis_spatial_state as stage_module
 from opencood.models.sub_modules import int_fused_basis as fused_module
 from opencood.models.sub_modules import int_row_spatial_state as row_module
+from opencood.models.sub_modules import int_planned_row_state as planned_module
 from opencood.tools.run_int_ego import loader, to_device, write_json
+
+
+class ModuleMacCounter:
+    """Executed conv MACs by unique leaf module; excludes nonconv arithmetic."""
+    def __init__(self, roots):
+        self.hooks=[];self.macs=defaultdict(int);seen=set()
+        for prefix,root in roots.items():
+            for name,module in root.named_modules():
+                if id(module) in seen or not isinstance(module,(torch.nn.Conv2d,torch.nn.ConvTranspose2d)):
+                    continue
+                seen.add(id(module));label=prefix+'.'+name
+                def count(layer,inputs,output,label=label):
+                    kh,kw=layer.kernel_size
+                    if isinstance(layer,torch.nn.ConvTranspose2d):
+                        n,c,h,w=inputs[0].shape
+                        value=n*h*w*c*(layer.out_channels//layer.groups)*kh*kw
+                    else:value=output.numel()*(layer.in_channels//layer.groups)*kh*kw
+                    self.macs[label]+=int(value)
+                self.hooks.append(module.register_forward_hook(count))
+
+    def close(self):
+        for hook in self.hooks:hook.remove()
+        self.hooks=[]
 
 
 class EventScopes:
@@ -58,11 +82,12 @@ def profile_stream(a, cfg, val, mode, base, out, parent=None):
     """
     row_mode=getattr(a,'row_state',False)
     assert (a.fused or row_mode) and a.profile_frames >= 64
-    candidate='row' if row_mode else 'fused'
+    planned=getattr(a,'row_plan',False)
+    candidate='planned_row' if planned else ('row' if row_mode else 'fused')
     runners={'base':base,candidate:mode}
     if row_mode:
         assert parent is not None
-        runners['canvas']=parent
+        runners['original_row' if planned else 'canvas']=parent
     frames = min(a.profile_frames, len(val))
     _, stream = loader(val[:frames], cfg, 2, 303)
     states={name:None for name in runners}
@@ -83,6 +108,7 @@ def profile_stream(a, cfg, val, mode, base, out, parent=None):
             if index < 16:
                 continue
             scopes = EventScopes(); stage = mode.spatial.stage
+            counter=ModuleMacCounter(dict(model=mode.model,readout=mode.readout,repair=mode.repair))
             try:
                 for owner, attr, label in (
                         (mode.model.pillar_vfe,'forward','pillar_vfe'),
@@ -101,6 +127,9 @@ def profile_stream(a, cfg, val, mode, base, out, parent=None):
                         (stage_module, '_selected_bn', 'selected_bn'),
                         (mode.repair, 'forward', 'deep_repair'),
                         (mode.readout, 'current', 'readout_current'),
+                        (mode.readout, 'history', 'readout_history'),
+                        (mode.readout, 'spatial', 'readout_first_spatial'),
+                        (mode.readout, 'tail', 'readout_tail'),
                         (mode.readout, 'fuse', 'readout_fuse')):
                     scopes.wrap(owner, attr, label)
                 if row_mode:
@@ -118,20 +147,27 @@ def profile_stream(a, cfg, val, mode, base, out, parent=None):
                             (mode.model.cls_head,'forward','classification_head'),
                             (mode.model.reg_head,'forward','regression_head')):
                         scopes.wrap(owner,attr,label)
+                if planned:
+                    for attr,label in (('dependency_plan','shared_dependency_plan'),('planned_conv','planned_gather_conv'),
+                                       ('row_project','planned_projection'),('_write_rows','planned_final_H_scatter')):
+                        scopes.wrap(planned_module,attr,label)
                 torch.cuda.synchronize(); tick = time.perf_counter()
                 replay, replay_state, replay_info = mode.step(ego, previous, sample['meta'])
                 torch.cuda.synchronize(); instrumented_ms = 1000*(time.perf_counter()-tick)
                 spans = scopes.values()
             finally:
                 scopes.close()
+                counter.close()
             assert info['spatial_selected_cells'] == replay_info['spatial_selected_cells']
             for key in pred:
                 maximum = max(maximum, float((pred[key]-replay[key]).abs().max()))
                 assert torch.equal(pred[key], replay[key]), 'Instrumentation changed prediction'
             for left, right in zip(state['spatial']['maps'], replay_state['spatial']['maps']):
                 assert torch.equal(left, right), 'Instrumentation changed cached state'
-            records.append(dict(index=index, refresh=info['spatial_refresh'], area=info['spatial_write_fraction'],
-                                ordinary_ms=times, instrumented_ms=instrumented_ms, scopes=spans))
+            macs=dict(counter.macs)
+            macs['spatial_update_functional']=int(replay_info['spatial_extra_linear_macs'])
+            records.append(dict(index=index, refresh=info['spatial_refresh'], deep_refresh=not info['local_partial'],area=info['spatial_write_fraction'],
+                                ordinary_ms=times, instrumented_ms=instrumented_ms, scopes=spans,conv_linear_macs=macs))
             if (index+1) % 64 == 0:
                 write_json(out/'status.json', dict(status='RUNNING', phase='profile', scans=index+1))
     groups = {}
@@ -145,8 +181,12 @@ def profile_stream(a, cfg, val, mode, base, out, parent=None):
             scopes={k:dict(cuda_span_ms_per_frame=float(np.mean([r['scopes'].get(k, [0,0,0])[0] for r in group])),
                            host_ms_per_frame=float(np.mean([r['scopes'].get(k, [0,0,0])[1] for r in group])),
                            calls_per_frame=float(np.mean([r['scopes'].get(k, [0,0,0])[2] for r in group]))) for k in labels})
+        mac_labels=sorted(set(k for row in group for k in row['conv_linear_macs']))
+        groups[name]['conv_linear_gflops_by_module']={k:2.*sum(r['conv_linear_macs'].get(k,0) for r in group)/len(group)/1e9 for k in mac_labels}
+        groups[name]['conv_linear_gflops']=sum(groups[name]['conv_linear_gflops_by_module'].values())
+        groups[name]['deep_refresh_frames']=sum(r['deep_refresh'] for r in group)
     write_json(out/'profile.json', dict(status='COMPLETED', scans=frames, warmup=16, groups=groups,
-        modes=list(runners),row_execution=row_mode,
+        modes=list(runners),row_execution=row_mode,planned_row_execution=planned,
         exact_replay_max_error=maximum, frames=records,
-        scope='Diagnostic first-N real validation scans, not AP or whole-dataset timing. Independent causal states for each named mode; instrumented candidate replay uses identical incoming state and leaves authoritative normal recurrence intact. CUDA events and host spans are nested; do not sum them. CUDA spans can include host-launch gaps. No internal synchronizations added; event setup itself has overhead. Ordinary same-GPU rotating timings exclude hooks/IO/H2D/postprocess.'))
+        scope='Diagnostic first-N real validation scans, not AP or whole-dataset timing. Independent causal states for each named mode; instrumented candidate replay uses identical incoming state and leaves authoritative normal recurrence intact. CUDA events and host spans are nested; do not sum them. CUDA spans can include host-launch gaps and MAC-hook overhead. Conv attribution counts unique Conv/ConvTranspose leaves plus explicit selected spatial linear MACs; excludes other arithmetic, Pillar linear and memory movement. Module costs add without overlap; timing spans do not. No internal synchronizations added; event setup itself has overhead. Ordinary same-GPU rotating timings exclude hooks/IO/H2D/postprocess.'))
     write_json(out/'status.json', dict(status='COMPLETED', phase='profile'))
