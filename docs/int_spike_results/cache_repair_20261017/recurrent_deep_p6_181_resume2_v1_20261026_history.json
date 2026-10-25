@@ -155,5 +155,87 @@
       "status": "COMPLETED",
       "timing_valid": true
     }
+  },
+  {
+    "depths": {
+      "1": 1502,
+      "2": 1450,
+      "3": 1406,
+      "4": 1353,
+      "5": 1317
+    },
+    "epoch": 4,
+    "loss": 0.23195244597668277,
+    "lr": 0.0001,
+    "stale": 1,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Independent histories. Dense short D update; no local D skipping. Timing excludes IO/H2D/postprocess; sampled GPU isolation does not reserve shared CPU/IO. Conv/functional-linear MACsx2.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_ms": 19.82624736669432,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 29.281076614279296
+        },
+        "recurrent": {
+          "ap50": 0.8309624846375094,
+          "ap70": 0.7537124122917852,
+          "conv_linear_gflops": 97.79270115651778,
+          "deep_full_frames": 1061,
+          "mean_ms": 17.43473690714852,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 28.21294593159109
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
+  },
+  {
+    "depths": {
+      "1": 1502,
+      "2": 1450,
+      "3": 1406,
+      "4": 1353,
+      "5": 1317
+    },
+    "epoch": 5,
+    "loss": 0.23132846782393612,
+    "lr": 5e-05,
+    "stale": 2,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Independent histories. Dense short D update; no local D skipping. Timing excludes IO/H2D/postprocess; sampled GPU isolation does not reserve shared CPU/IO. Conv/functional-linear MACsx2.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_ms": 19.797776101672646,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 29.386873811017722
+        },
+        "recurrent": {
+          "ap50": 0.8309097320771687,
+          "ap70": 0.7540614234380489,
+          "conv_linear_gflops": 97.7930974180076,
+          "deep_full_frames": 1061,
+          "mean_ms": 17.37453354577976,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 28.231057664379478
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
   }
 ]

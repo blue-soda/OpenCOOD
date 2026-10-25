@@ -1,0 +1,52 @@
+{
+  "archive": "/dev/shm/tzm_int_checkpoint_backup_20261026_0344.tar.gz",
+  "bytes": 673374,
+  "sha256": "53d0f624f9653514933f3c2450ce7fcc858a3ec0eaf105156273c2d479fdc206",
+  "checkpoints": [
+    {
+      "source": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/latest.pth",
+      "bytes": 140591,
+      "sha256": "47315900e2ac849a7a903a8d4295024a8cd77a10a1c80bc2e83c2e4508698fab",
+      "next_action": "train",
+      "epoch": 4
+    },
+    {
+      "source": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/pending_validation.pth",
+      "bytes": 191279,
+      "sha256": "3e0fe51c87ea9c9d62731c1780cd8ae6dbd643cc6eb590d6c43d1e0c3badc8a8",
+      "next_action": "evaluate",
+      "epoch": 5
+    },
+    {
+      "source": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/epoch_002/repair.pth",
+      "bytes": 47639,
+      "sha256": "d46bc3f2a148294d9d1640201bcb4f9841cb696f58bb0c9b6799a8426a3b21da",
+      "next_action": null,
+      "epoch": 2
+    },
+    {
+      "source": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/latest.pth",
+      "bytes": 140975,
+      "sha256": "5d4ea8c70bc82851c078f10af7b9b437f0d5246afd75f325c9d157de769d61cb",
+      "next_action": "train",
+      "epoch": 5
+    },
+    {
+      "source": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/pending_validation.pth",
+      "bytes": 204015,
+      "sha256": "6b9f72514cdf261b730a187614ddc765fcb3e61be82cba2e882d87e50828e487",
+      "next_action": "evaluate",
+      "epoch": 5
+    },
+    {
+      "source": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/epoch_005/repair.pth",
+      "bytes": 47639,
+      "sha256": "d1f7d3f07c50891eb6f3808b488cde418254523d13acf23f9423138106bbe2ec",
+      "next_action": null,
+      "epoch": 5
+    }
+  ],
+  "destination_host": "mindspore-146",
+  "destination_archive": "/data1/zhh/gzc/int181_snapshot/live_backups/checkpoints_20261026_0344.tar.gz",
+  "destination_sha256_verified": true
+}
