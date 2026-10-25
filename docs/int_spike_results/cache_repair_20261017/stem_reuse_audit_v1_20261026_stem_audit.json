@@ -1,0 +1,62 @@
+{
+  "exact_replay_max_error": 0.0,
+  "full_frames": 179,
+  "limitation": "Potential arithmetic, not executed savings. Canonical selected-stem mask needs dense E and is an oracle cost reference. Cheap descriptor calibrated on frozen canonical histories; its own recurrent H/reference/guard may differ. No AP, validation tuning, or latency claim.",
+  "matched_u_cost_ratio": 0.9999931626332015,
+  "partial_frames": 333,
+  "results": {
+    "canonical_dense_stem": {
+      "partial_mask_xor": 0.0,
+      "partial_write_fraction": 0.24822715572715573,
+      "retained_error": 1663464.5759277344,
+      "retained_error_vs_canonical": 1.0,
+      "retained_relative_rmse": 0.4532377815922781,
+      "stem_plus_u_gflops": 26.855419296
+    },
+    "canonical_selected_stem_oracle": {
+      "partial_mask_xor": 0.0,
+      "partial_write_fraction": 0.24822715572715573,
+      "retained_error": 1663464.5759277344,
+      "retained_error_vs_canonical": 1.0,
+      "retained_relative_rmse": 0.4532377815922781,
+      "stem_plus_u_gflops": 24.165174688
+    },
+    "cheap_gru_descriptor": {
+      "partial_mask_xor": 0.14054161304161303,
+      "partial_write_fraction": 0.24144763811430478,
+      "retained_error": 2126285.328125,
+      "retained_error_vs_canonical": 1.2782269961710155,
+      "retained_relative_rmse": 0.4907390199333748,
+      "stem_plus_u_gflops": 24.21516488
+    }
+  },
+  "scans": 512,
+  "split": "train",
+  "status": "COMPLETED",
+  "threshold": 0.6193192733788635,
+  "weights": {
+    "stem": [
+      73728,
+      147456,
+      8192
+    ],
+    "u": [
+      [
+        12288,
+        110592
+      ],
+      [
+        12288,
+        110592
+      ],
+      [
+        12288,
+        110592
+      ],
+      [
+        12288,
+        110592
+      ]
+    ]
+  }
+}
