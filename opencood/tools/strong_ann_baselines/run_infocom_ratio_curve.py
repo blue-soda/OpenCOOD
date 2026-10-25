@@ -28,6 +28,10 @@ def write(path,obj):path.write_text(json.dumps(obj,indent=2))
 
 
 def admission():
+    # A just-finished own smoke can leave the utilization sampling window high
+    # after its CUDA context has gone. Let that window expire, then require all
+    # five fresh readings to pass; do not relax occupancy or auto-retry gates.
+    time.sleep(3)
     readings=[]
     for _ in range(5):
         line=subprocess.check_output(['nvidia-smi','-i',GPU,'--query-gpu=memory.free,utilization.gpu',
