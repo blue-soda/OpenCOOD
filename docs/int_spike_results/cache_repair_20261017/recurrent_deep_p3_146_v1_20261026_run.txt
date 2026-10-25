@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 611, in <module>
+    if __name__ == '__main__': main()
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 594, in main
+    try: worker(a)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 306, in worker
+    evaluate_readout(a,cfg,train,val,modes['selected'],out,costs,mixing+basis_cost)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/evaluate_int_local_readout.py", line 113, in evaluate_readout
+    train_recurrent(a,cfg,train,val,baseline,out,costs,spatial_macs)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/train_int_recurrent_deep.py", line 155, in train_recurrent
+    assert torch.isfinite(torch.nn.utils.clip_grad_norm_(repair.parameters(),5.))
+RuntimeError: CUDA error: unspecified launch failure
+CUDA kernel errors might be asynchronously reported at some other API call,so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.

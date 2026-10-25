@@ -1,0 +1,29 @@
+{
+  "observed_unix": 1792956021.1297255,
+  "gpu_query": "Unable to determine the device handle for GPU0: 0000:3D:00.0: Unknown Error\n1, GPU-7cbfb990-f529-8115-fb7c-824f3cd10af2, 20888 MiB\n2, GPU-6d47f8f4-b966-0563-1a54-c9a708ce68d1, 20942 MiB\n3, GPU-d31c5911-b089-3b28-82d1-17bc1216e954, 24134 MiB\n4, GPU-20f31523-e954-7be0-b7fa-83dbc411f5f2, 24134 MiB\n5, GPU-5f747879-14b4-7d12-8906-a7b006c0682b, 24134 MiB\n6, GPU-37c7491f-8197-d03b-e844-b85ca749bc2e, 24134 MiB\n7, GPU-8e77ad89-0172-35f7-4d1f-8eefa8c1fbe0, 24134 MiB\n",
+  "driver_events": [
+    "[Thu Oct  8 11:32:27 2026] NVRM: loading NVIDIA UNIX x86_64 Kernel Module  570.211.01  Tue Nov 25 16:36:36 UTC 2025",
+    "[Mon Oct 26 03:03:06 2026] NVRM: GPU at PCI:0000:3d:00: GPU-a9b3f0a0-6852-fe73-0efd-b9abfab865de",
+    "[Mon Oct 26 03:03:06 2026] NVRM: Xid (PCI:0000:3d:00): 79, GPU has fallen off the bus.",
+    "[Mon Oct 26 03:03:06 2026] NVRM: GPU 0000:3d:00.0: GPU has fallen off the bus.",
+    "[Mon Oct 26 03:03:06 2026] NVRM: A GPU crash dump has been created. If possible, please run",
+    "                           NVRM: nvidia-bug-report.sh as root to collect this data before",
+    "                           NVRM: the NVIDIA kernel module is unloaded.",
+    "[Mon Oct 26 03:03:06 2026] NVRM: Xid (PCI:0000:3d:00): 154, GPU recovery action changed from 0x0 (None) to 0x2 (Node Reboot Required)",
+    "[Mon Oct 26 03:03:06 2026] NVRM: GPU at PCI:0000:3e:00: GPU-7cbfb990-f529-8115-fb7c-824f3cd10af2",
+    "[Mon Oct 26 03:03:06 2026] NVRM: Xid (PCI:0000:3e:00): 154, GPU recovery action changed from 0x0 (None) to 0x2 (Node Reboot Required)",
+    "[Mon Oct 26 03:03:06 2026] NVRM: GPU at PCI:0000:40:00: GPU-6d47f8f4-b966-0563-1a54-c9a708ce68d1",
+    "[Mon Oct 26 03:03:06 2026] NVRM: Xid (PCI:0000:40:00): 154, GPU recovery action changed from 0x0 (None) to 0x2 (Node Reboot Required)",
+    "[Mon Oct 26 03:03:06 2026] NVRM: GPU at PCI:0000:41:00: GPU-d31c5911-b089-3b28-82d1-17bc1216e954",
+    "[Mon Oct 26 03:03:06 2026] NVRM: Xid (PCI:0000:41:00): 154, GPU recovery action changed from 0x0 (None) to 0x2 (Node Reboot Required)",
+    "[Mon Oct 26 03:03:06 2026] NVRM: GPU at PCI:0000:b1:00: GPU-20f31523-e954-7be0-b7fa-83dbc411f5f2",
+    "[Mon Oct 26 03:03:06 2026] NVRM: Xid (PCI:0000:b1:00): 154, GPU recovery action changed from 0x0 (None) to 0x2 (Node Reboot Required)",
+    "[Mon Oct 26 03:03:06 2026] NVRM: GPU at PCI:0000:b2:00: GPU-5f747879-14b4-7d12-8906-a7b006c0682b",
+    "[Mon Oct 26 03:03:06 2026] NVRM: Xid (PCI:0000:b2:00): 154, GPU recovery action changed from 0x0 (None) to 0x2 (Node Reboot Required)",
+    "[Mon Oct 26 03:03:06 2026] NVRM: GPU at PCI:0000:b4:00: GPU-37c7491f-8197-d03b-e844-b85ca749bc2e",
+    "[Mon Oct 26 03:03:06 2026] NVRM: Xid (PCI:0000:b4:00): 154, GPU recovery action changed from 0x0 (None) to 0x2 (Node Reboot Required)",
+    "[Mon Oct 26 03:03:06 2026] NVRM: GPU at PCI:0000:b5:00: GPU-8e77ad89-0172-35f7-4d1f-8eefa8c1fbe0",
+    "[Mon Oct 26 03:03:06 2026] NVRM: Xid (PCI:0000:b5:00): 154, GPU recovery action changed from 0x0 (None) to 0x2 (Node Reboot Required)"
+  ],
+  "owned_processes": "    PID STAT COMMAND\n"
+}

@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 611, in <module>
+    if __name__ == '__main__': main()
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 594, in main
+    try: worker(a)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 306, in worker
+    evaluate_readout(a,cfg,train,val,modes['selected'],out,costs,mixing+basis_cost)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/evaluate_int_local_readout.py", line 113, in evaluate_readout
+    train_recurrent(a,cfg,train,val,baseline,out,costs,spatial_macs)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/train_int_recurrent_deep.py", line 160, in train_recurrent
+    evidence=check_gpu_exclusive(a.gpu)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/int_gpu_exclusivity.py", line 47, in check_gpu_exclusive
+    result=snapshot();result['timing_valid']=True
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/int_gpu_exclusivity.py", line 45, in snapshot
+    query('--query-compute-apps=gpu_uuid,pid'),index,os.getpid())
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/int_gpu_exclusivity.py", line 27, in verify_gpu_processes
+    for row in gpu_rows.splitlines() if row.strip()}
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/int_gpu_exclusivity.py", line 27, in <dictcomp>
+    for row in gpu_rows.splitlines() if row.strip()}
+IndexError: list index out of range

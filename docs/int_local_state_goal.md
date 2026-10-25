@@ -2335,3 +2335,21 @@ readout_fixed_calibrated_v2_20261026完成5794扫描/1738标注；30次GPU2抽�
 
 新输出根/data1/zhh/gzc/diagnostics/int_cache_repair_20261017；只读来源在int181_snapshot/data1/tzm和data2/tzm，数据映射到/data1/zhh/gzc/dataset，环境/data1/zhh/gzc/miniconda3/envs/opencood。146的GPU1/2/3/4已有任务，保持原状。此次启动时GPU0/5空闲；两组当前进行启动工程检查，待验证resume合同通过与实际训练扫描增长后才能确认恢复完成。每轮完整验证继续核验原四层baseline AP，146时间必须用同卡配对，不能跨机直接比较181时间。20分钟轮询暂保留以覆盖首次迁移后的工程/验证事件；关注主路线精度、真实算量和时间，避免额外阈值分支。
 迁移后确认：两组启动工程与原训练合同均通过，实际已进入epoch2并各推进到600/8593扫描，损失有限（三帧0.20675、六帧0.22775）。两个resume.json的来源SHA与migration_gate完全一致，可确认已恢复训练，而不是仅创建了启动进程。
+
+### 2026-10-26 02:48：146掉总线/节点恢复故障，181健康卡恢复并加入训练争用等待
+
+146的p3/GPU0任务发生CUDA unspecified launch failure（异步错误最终在梯度裁剪处报告，不能据栈认定梯度裁剪是原因）；p6/GPU5在epoch2第1000扫描的守卫发生IndexError。调查确认nvidia-smi全卡CSV混入GPU0句柄错误文本，而旧解析器直接索引第二列。更关键的是内核日志明确GPU0 PCI3d:00出现Xid79“GPU has fallen off the bus”，随后八卡均出现Xid154“Node Reboot Required”。尝试在看似空闲的GPU6创建CUDA卷积失败（CUDA unknown error），故不能因其他卡nvidia-smi仍显示空闲而宣布146可继续训练。
+
+两条146任务自行FAILED，没有新完成epoch2、没有新AP，也未生成新的latest或pending_validation。原epoch1模型/optimizer/scheduler仍保存在181及146只读迁移快照。故障日志、状态和driver事件已归档；146服务器日志时钟与客户端不同，表头时间统一采用客户端Asia/Shanghai，不直接用内核墙钟排列跨机事件。不重置GPU、不卸载驱动、不重启共享节点、不终止已有他人任务；146需要管理员协调节点恢复，此前无法证明故障由本实验模型代码引起。暂不继续向146派发GPU任务。
+
+本地main新增261f731并push→181/data2仓库pull：两次nvidia-smi查询都加-i限定本任务物理GPU，其他故障卡的文本不再混入目标卡CSV；若目标卡仍返回异常/不完整内容，则明确RuntimeError并失败退出，不能忽略后当作独占。训练每200扫描同步完成已有CUDA工作后检查，持续争用时保留模型/状态显存但不再发起计算，每15秒只读复查，最多等待600秒；释放后恢复同一训练状态，超时仅退出自身。训练等待事件和PID证据落盘。仍会占用模型显存，不宣称让出了整张卡；不会终止竞争进程。验证的严格检查保持原策略：短暂争用使整轮延迟无效，持续争用退出并可用验证前checkpoint重做验证。
+
+新增测试覆盖查询仅目标卡、异常CSV不能当空闲、训练争用等待后恢复、超时及硬件异常失败退出；181全部220项INT测试通过（8.082秒）。181首次GPU0空闲探测发现短时PID25458便退出，没有运行CUDA；随后空闲GPU2执行12轮卷积+反传+AdamW+同步全部通过，证据已归档。181八卡查询正常，data2余约6.3GiB。
+
+| 新181恢复任务 | GPU/PID | 恢复边界 |
+| --- | --- | --- |
+| recurrent_deep_p3_181_resume2_v1_20261026 | 2 / 26306 | p3_resume epoch1完整latest，重跑未完成epoch2 |
+| recurrent_deep_p6_181_resume2_v1_20261026 | 3 / 26471 | p6_resume epoch1完整latest，重跑未完成epoch2 |
+
+代码/data2/tzm/workspace/OpenCOOD；输出/data2/tzm/workspace/diagnostics/int_cache_repair_20261017；源数据/成熟权重仍读/data1，回181不使用146路径映射。保留此前全部失败与迁移记录，不复写旧run，不启动新结构分支。参数、损失、序列训练与平台规则均保持，当前最新完整研究结果仍是epoch1的75.6130%/75.2931%。本轮重点恢复稳定训练；20分钟轮询继续覆盖首次恢复事件，同时关注磁盘与WAITING_GPU证据，避免将静默等待误判为卡死。
+恢复确认：三帧epoch2已到1200/8593扫描（均值loss0.22230），六帧到1000/8593（0.25575）；两组工程/合同/optimizer恢复均通过，来源SHA与已归档epoch1 latest一致，GPU2/3只见26306/26471。此为训练中状态，不是新的完整AP或收敛结论。

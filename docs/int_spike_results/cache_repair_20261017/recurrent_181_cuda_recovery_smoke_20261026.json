@@ -1,0 +1,1 @@
+{"gpu": 2, "pid": 25969, "torch": "1.10.0+cu113", "prior_pids": "", "status": "PASSED", "loss": 0.1810029298067093, "device": "NVIDIA GeForce RTX 3090"}
