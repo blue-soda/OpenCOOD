@@ -1,5 +1,4 @@
 {
-  "phase": "readout_validation",
-  "scans": 600,
-  "status": "RUNNING"
+  "scans": 5794,
+  "status": "COMPLETED"
 }

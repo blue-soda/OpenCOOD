@@ -81,6 +81,22 @@ class TestLocalReadout(unittest.TestCase):
         self.assertTrue(self.cache.last_mask[0,0,5,6])
 
     @torch.no_grad()
+    def test_bounded_period5_changes_only_readout_refresh(self):
+        cache=LocalReadoutCache(self.model,self.bounds,.5,period=5)
+        x=torch.randn(1,16,10,12);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
+        _,initial,_=cache.step(x,None,meta)
+        initial['confidence']=torch.zeros(1,1,10,12);state=initial
+        for index in range(1,6):
+            _,new,info=cache.step(x,state,dict(meta,timestamp_us=100000+index*50000))
+            self.assertEqual(info['readout_refresh'],index==5)
+            self.assertLess(info['readout_full_age_s'],.45)
+            new['confidence']=state['confidence'];state=new
+        _,_,info=cache.step(x,initial,dict(meta,timestamp_us=550000))
+        self.assertEqual(info['readout_refresh_reason'],'age')
+        self.assertEqual(self.cache.max_full_age_us,250000)
+        self.assertEqual(cache.max_full_age_us,450000)
+
+    @torch.no_grad()
     def test_same_input_masked_dense_and_retained_reference(self):
         masked=LocalReadoutCache(self.model,self.bounds,.25,execution='masked_dense')
         x=torch.randn(1,16,10,12);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))

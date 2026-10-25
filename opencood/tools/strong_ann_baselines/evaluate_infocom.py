@@ -86,6 +86,10 @@ def run(args, output):
     hypes = yaml_utils.load_yaml(str(config_path))
     hypes.update(data_dir=str(data_root), root_dir=str(split_path),
                  validate_dir=str(split_path), test_dir=str(split_path))
+    if args.comm_range is not None:
+        if not np.isfinite(args.comm_range) or args.comm_range <= 0:
+            raise ValueError('comm-range must be finite and positive')
+        hypes['comm_range'] = args.comm_range
     if hypes['fusion']['core_method'] != 'intermediate':
         raise ValueError('Expected official intermediate fusion config')
     if hypes['fusion']['dataset'].lower() != 'dairv2x':
@@ -177,6 +181,8 @@ def run(args, output):
             'overrides': {'data_dir': str(data_root), 'root_dir': str(split_path),
                           'validate_dir': str(split_path), 'test_dir': str(split_path)}}
     write_json(output / 'metadata.json', meta)
+    meta['participant_range_metres'] = hypes['comm_range']
+    meta['comm_range_override'] = args.comm_range
     meta['checkpoint_compatibility'] = compatibility
     write_json(output / 'metadata.json', meta)
     # Hooks time only the unchanged official model forward. The public official
@@ -272,6 +278,7 @@ def main():
         parser.add_argument('--' + name, required=True)
     parser.add_argument('--limit', type=int, default=2)
     parser.add_argument('--gpu', default='0')
+    parser.add_argument('--comm-range', type=float, default=None)
     parser.add_argument('--checkpoint-compat', action='store_true', help='Explicit legacy sigma/identity-scale inference mapping; exact mismatch only')
     args = parser.parse_args()
     if args.limit < 0 or ',' in args.gpu:

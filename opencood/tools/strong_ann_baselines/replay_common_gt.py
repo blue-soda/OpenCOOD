@@ -14,9 +14,19 @@ if not a.allow_partial:
 stat={t:{'tp':[],'fp':[],'gt':0,'score':[]} for t in (.3,.5,.7)}
 original={t:{'tp':[],'fp':[],'gt':0,'score':[]} for t in stat}
 rows=[]
+manifest=run/'frames.jsonl'
+index=[json.loads(s) for s in manifest.read_text().splitlines()] if manifest.exists() else json.loads((run/'predictions_index.json').read_text())
+indexed={x['file']:x for x in index}
+assert len(indexed)==len(paths), 'Prediction manifest count mismatch'
+gt_index={x['frame_id']:x for x in json.loads((root/'common_gt_manifest.json').read_text())['frames']}
 for i,path in enumerate(paths):
+    entry=indexed[str(path.relative_to(run))]
+    assert hashlib.sha256(path.read_bytes()).hexdigest()==entry['sha256'], 'Prediction SHA mismatch'
     z=np.load(str(path));fid=str(z['frame_id'].item());assert fid==ids[i]
-    gt=np.load(str(root/'common_gt'/(fid+'.npy')));official=z['gt']
+    assert fid==entry['frame_id']
+    gt_path=root/'common_gt'/(fid+'.npy')
+    assert hashlib.sha256(gt_path.read_bytes()).hexdigest()==gt_index[fid]['sha256'], 'GT SHA mismatch'
+    gt=np.load(str(gt_path));official=z['gt']
     # Match unordered boxes by BEV corner coordinates; z differences are also recorded.
     matched=False;xymax=None;xyzmax=None
     if len(gt)==len(official):
@@ -30,4 +40,6 @@ for i,path in enumerate(paths):
         eval_utils.caluclate_tp_fp(pred,score,torch.from_numpy(official),original,t)
     rows.append({'frame_id':fid,'our_gt':len(gt),'official_gt':len(official),'bev_gt_match':matched,'max_xy_error':xymax,'max_xyz_error':xyzmax})
 report={'samples':len(paths),'full_split':len(paths)==len(ids),'not_a_main_result':len(paths)!=len(ids),'bev_gt_mismatch_frames':sum(not x['bev_gt_match'] for x in rows),'our_gt_boxes':stat[.7]['gt'],'official_gt_boxes':original[.7]['gt'],'common_gt_bev_ap':{str(t):float(eval_utils.calculate_ap(stat,t)[0]) for t in stat},'original_gt_our_evaluator_bev_ap':{str(t):float(eval_utils.calculate_ap(original,t)[0]) for t in stat},'frames':rows,'script_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+report['prediction_sha_verified']=len(paths)
+report['gt_sha_verified']=len(paths)
 target=run/('common_gt_replay_partial.json' if a.allow_partial else 'common_gt_replay.json');target.write_text(json.dumps(report,indent=2));print(json.dumps({k:v for k,v in report.items() if k!='frames'},indent=2))

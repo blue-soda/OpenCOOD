@@ -16,19 +16,24 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
     for name,execution in (('selected','selected'),('masked_dense','masked_dense'),('period1','selected')):
         mode=copy.copy(baseline)
         mode.readout_cache=LocalReadoutCache(baseline.readout,baseline.bounds,a.readout_threshold,
-            execution=execution,period=1 if name=='period1' else 3)
+            execution=execution,period=1 if name=='period1' else a.readout_period)
         modes[name]=mode
+    if a.readout_period==5:
+        mode=copy.copy(baseline)
+        mode.readout_cache=LocalReadoutCache(baseline.readout,baseline.bounds,a.readout_threshold,period=3)
+        modes['period3']=mode
     feature_cache=modes['selected'].readout_cache
     cells=100*252
     readout_macs=cells*sum(c.weight.numel() for c in (feature_cache.first,feature_cache.project,feature_cache.second))
     assert 2*readout_macs==23533977600
     contract=json.loads((out/'contract.json').read_text())
     contract.update(run_kind='local_complete_readout_full_validation',readout_threshold=a.readout_threshold,
-        comparison='Overrides prior generic mode descriptions: baseline is fixed four-layer planned-row single-H t.5/guard.1; selected adds local complete readout-output reuse; masked_dense shares this policy but calculates full readout before merging. All three independently recurrent; no training/weight changes.',
+        comparison='Overrides prior generic mode descriptions: baseline is fixed four-layer planned-row single-H t.5/guard.1; selected adds local complete readout-output reuse; masked_dense shares this policy but calculates full readout before merging. For period5, period3 is the verified local readout control. All independently recurrent; no training/weight changes.',
         readout_cache=dict(input='actual current96 projection + corrected deep96 projection',reference='all96 input channels; retained outside output write mask',
             output='complete256-channel feature before unchanged dense heads',selector='4x4 tile relative RMS over all input channels; dilate changed outputs radius2, union previous OWN confidence>=.1 radius4 and uncovered',
             execution='first3x3+second1x1 on core+radius1; second3x3 only final core; complete current dependencies, zero padding; unselected aligned complete output reused',
-            geometry='nearest metric SE2; output/reference/own confidence packed together',period=3,max_full_age_s=.25,
+            geometry='nearest metric SE2; output/reference/own confidence packed together',period=a.readout_period,max_full_age_s=feature_cache.max_full_age_us/1e6,
+            period_scope='Only readout changes to period5/.45s when requested. Spatial H and deep D remain period3/.25s; FM gap reset unchanged; paired period3 readout included.',
             recurrence='independent FM,H,deep,readout per mode; next H and readout masks use own predictions, not fixed baseline masks',
             control='period1 matches baseline; independent masked_dense plus discarded same-input replay on any own-trajectory mask/output divergence',
             accounting='MACsx2 conv+functional linear only; extra256+96+1 state channels and fixed packed weights separate; model includes geometry/gather/scatter/copy; no hooks or replay in timing'))
@@ -97,7 +102,7 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
                 if index>=10:
                     item['time'].append(elapsed);item['peak'].append(max(0,torch.cuda.max_memory_allocated()-before))
                 assert all(torch.isfinite(v).all() for v in pred.values())
-                assert info.get('readout_full_age_s',0)<.25
+                assert info.get('readout_full_age_s',0)<(mode.readout_cache.max_full_age_us/1e6 if mode.readout_cache else .25)
                 item['macs']+=expected(name,info)
                 item['write'].append(info.get('readout_write_fraction',1.))
                 item['area'].append(info.get('readout_executed_fraction',1.))
@@ -126,7 +131,10 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
             mean_state_bytes=float(np.mean(item['state'])),max_incremental_cuda_peak_bytes=max(item['peak']),readout_full_frames=item['full'],
             extra_readout_packed_weight_bytes=0 if name=='baseline' else modes[name].readout_cache.packed_weight_bytes)
     assert abs(results['baseline']['ap70']-.7553159775482435)<1e-7,'Fixed four-layer reference drift'
+    if 'period3' in results:
+        assert abs(results['period3']['ap70']-.7552887126261554)<1e-7,'Period3 readout reference drift'
     write_json(out/'report.json',dict(status='COMPLETED',scans=len(val),labels=sum(r['supervised'] for r in val),results=results,
+        readout_period=a.readout_period,readout_max_full_age_s=feature_cache.max_full_age_us/1e6,
         own_trajectory_audited_frames=len(audits),all_same_input_replays_passed=True,
         note='Weights fixed; spatial t.5 four-layer baseline held. Readout output cache changes own predictions and future H masks. No new training; no SNN attribution; FLOPs count conv/linear only.'))
     write_json(out/'status.json',dict(status='COMPLETED',scans=len(val)))

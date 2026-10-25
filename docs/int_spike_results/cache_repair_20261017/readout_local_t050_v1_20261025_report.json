@@ -1,0 +1,52 @@
+{
+  "all_same_input_replays_passed": true,
+  "labels": 1738,
+  "note": "Weights fixed; spatial t.5 four-layer baseline held. Readout output cache changes own predictions and future H masks. No new training; no SNN attribution; FLOPs count conv/linear only.",
+  "own_trajectory_audited_frames": 0,
+  "results": {
+    "baseline": {
+      "ap50": 0.8327608934021072,
+      "ap70": 0.7553159775482435,
+      "conv_linear_gflops": 119.43160285006559,
+      "extra_readout_packed_weight_bytes": 0,
+      "max_incremental_cuda_peak_bytes": 268234752,
+      "mean_ms": 19.764416364429295,
+      "mean_readout_executed_fraction": 1.0,
+      "mean_readout_write_fraction": 1.0,
+      "mean_spatial_write_fraction": 0.4996233994115423,
+      "mean_state_bytes": 50500800.0,
+      "p95_ms": 29.017173824831843,
+      "readout_full_frames": 5794
+    },
+    "masked_dense": {
+      "ap50": 0.8327337801612762,
+      "ap70": 0.7552886919275542,
+      "conv_linear_gflops": 119.42591739139799,
+      "extra_readout_packed_weight_bytes": 1769472,
+      "max_incremental_cuda_peak_bytes": 286945280,
+      "mean_ms": 21.071473468883404,
+      "mean_readout_executed_fraction": 1.0,
+      "mean_readout_write_fraction": 0.6554772383582359,
+      "mean_spatial_write_fraction": 0.49941722690687135,
+      "mean_state_bytes": 86083200.0,
+      "p95_ms": 29.363098670728505,
+      "readout_full_frames": 2005
+    },
+    "selected": {
+      "ap50": 0.8327337843004576,
+      "ap70": 0.7552887126261554,
+      "conv_linear_gflops": 111.89855203899207,
+      "extra_readout_packed_weight_bytes": 1769472,
+      "max_incremental_cuda_peak_bytes": 299685376,
+      "mean_ms": 21.22961347055606,
+      "mean_readout_executed_fraction": 0.6801490389620352,
+      "mean_readout_write_fraction": 0.6554772383582359,
+      "mean_spatial_write_fraction": 0.49941722690687135,
+      "mean_state_bytes": 86083200.0,
+      "p95_ms": 29.29297563387081,
+      "readout_full_frames": 2005
+    }
+  },
+  "scans": 5794,
+  "status": "COMPLETED"
+}

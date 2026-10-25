@@ -57,6 +57,7 @@ def main():
     parser.add_argument('--output', required=True, help='A new output directory; existing paths rejected')
     parser.add_argument('--limit', type=int, default=2)
     parser.add_argument('--gpu', default='0', help='Single physical CUDA device index or UUID')
+    parser.add_argument('--comm-range', type=float, default=None, help='Explicit participant range override in metres; omitted preserves official config')
     args = parser.parse_args()
     if args.limit < 0 or ',' in args.gpu:
         parser.error('limit must be >=0 and gpu must name one device')
@@ -104,6 +105,10 @@ def main():
         # Only dataset locations and the explicitly requested official inference mode.
         overrides = {'data_dir': str(data_root), 'root_dir': str(data_root / 'train.json'),
                      'validate_dir': str(split), 'test_dir': str(split)}
+        if args.comm_range is not None:
+            if not np.isfinite(args.comm_range) or args.comm_range <= 0:
+                raise ValueError('comm-range must be finite and positive')
+            overrides['comm_range'] = args.comm_range
         cfg.update(overrides)
         original_fusion = cfg['fusion']['core_method']
         cfg['fusion']['core_method'] = 'intermediatelate'
@@ -229,6 +234,7 @@ def main():
                        'sha256': digest(frame_path), 'inference_seconds': inference_seconds,
                        'data_loading_seconds': load_seconds, 'h2d_seconds': h2d_seconds,
                        'model_forwards': len(raw_outputs),
+                       'record_len': batch['ego']['record_len'].detach().cpu().tolist(),
                        'gt_array_sha256': hashlib.sha256(gt.tobytes(order='C')).hexdigest()}
                 rows.append(row)
                 with (output / 'frames.jsonl').open('a', encoding='utf-8') as f:

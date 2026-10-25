@@ -17,8 +17,8 @@ from opencood.models.sub_modules.int_basis_spatial_state import _write_rows, _se
 
 class LocalReadoutCache:
     def __init__(self, readout, bounds, threshold, execution='selected', period=3):
-        if readout.training or execution not in ('selected', 'masked_dense') or period not in (1,3):
-            raise ValueError('Frozen readout, selected/masked_dense and period1/3 required')
+        if readout.training or execution not in ('selected', 'masked_dense') or period not in (1,3,5):
+            raise ValueError('Frozen readout, selected/masked_dense and period1/3/5 required')
         if not math.isfinite(threshold) or threshold < 0:
             raise ValueError('Finite nonnegative threshold required')
         # CoDynTrust-derived checkpoint: BN/ReLU -> (1x1,3x3) -> BN/ReLU.
@@ -38,6 +38,7 @@ class LocalReadoutCache:
                 self.project.stride!=(1,1) or self.project.padding!=(0,0) or self.project.groups!=1):
             raise ValueError('Expected unit-stride 1x1 projection')
         self.readout,self.bounds,self.threshold,self.execution,self.period=readout,bounds,threshold,execution,period
+        self.max_full_age_us=450000 if period==5 else 250000
         self.weights=[c.weight.detach().permute(0,2,3,1).reshape(c.out_channels,-1).contiguous()
                       for c in (self.first,self.second)]
         self.last_mask=None
@@ -74,7 +75,7 @@ class LocalReadoutCache:
         reason='reset' if reset or state is None or state['scene']!=meta['segment'] else None
         if reason is None:
             if stamp<=state['stamp']: raise ValueError('Noncausal readout stream')
-            if stamp-state['full_stamp']>=250000: reason='age'
+            if stamp-state['full_stamp']>=self.max_full_age_us: reason='age'
             elif state['frames']+1>=self.period: reason='period'
         extra=0; uncovered=0.
         if reason:

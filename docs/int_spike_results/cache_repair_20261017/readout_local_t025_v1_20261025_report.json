@@ -1,0 +1,52 @@
+{
+  "all_same_input_replays_passed": true,
+  "labels": 1738,
+  "note": "Weights fixed; spatial t.5 four-layer baseline held. Readout output cache changes own predictions and future H masks. No new training; no SNN attribution; FLOPs count conv/linear only.",
+  "own_trajectory_audited_frames": 0,
+  "results": {
+    "baseline": {
+      "ap50": 0.8327608934021072,
+      "ap70": 0.7553159775482435,
+      "conv_linear_gflops": 119.43160285006559,
+      "extra_readout_packed_weight_bytes": 0,
+      "max_incremental_cuda_peak_bytes": 268638208,
+      "mean_ms": 19.27984890517235,
+      "mean_readout_executed_fraction": 1.0,
+      "mean_readout_write_fraction": 1.0,
+      "mean_spatial_write_fraction": 0.4996233994115423,
+      "mean_state_bytes": 50500800.0,
+      "p95_ms": 28.551579418126487,
+      "readout_full_frames": 5794
+    },
+    "masked_dense": {
+      "ap50": 0.8327608934021072,
+      "ap70": 0.7553159775482435,
+      "conv_linear_gflops": 119.43137889204004,
+      "extra_readout_packed_weight_bytes": 1769472,
+      "max_incremental_cuda_peak_bytes": 287425536,
+      "mean_ms": 20.529905908140787,
+      "mean_readout_executed_fraction": 1.0,
+      "mean_readout_write_fraction": 0.8993554977508206,
+      "mean_spatial_write_fraction": 0.4996156053607727,
+      "mean_state_bytes": 86083200.0,
+      "p95_ms": 28.861932072322816,
+      "readout_full_frames": 2005
+    },
+    "selected": {
+      "ap50": 0.8327609094142497,
+      "ap70": 0.7553160260869826,
+      "conv_linear_gflops": 117.27662200073456,
+      "extra_readout_packed_weight_bytes": 1769472,
+      "max_incremental_cuda_peak_bytes": 305764864,
+      "mean_ms": 21.19528710799302,
+      "mean_readout_executed_fraction": 0.9084405990381544,
+      "mean_readout_write_fraction": 0.8993554977508206,
+      "mean_spatial_write_fraction": 0.4996156053607727,
+      "mean_state_bytes": 86083200.0,
+      "p95_ms": 28.92649550922215,
+      "readout_full_frames": 2005
+    }
+  },
+  "scans": 5794,
+  "status": "COMPLETED"
+}

@@ -484,8 +484,12 @@ def main():
     p.add_argument('--row-plan',action='store_true',help='Prepared row geometry and fixed kernels, paired original row execution')
     p.add_argument('--readout-threshold',type=float,choices=(.25,.5),default=None,
                    help='Fixed four-layer threshold.5 baseline plus local complete readout feature reuse')
+    p.add_argument('--readout-period',type=int,choices=(3,5),default=3,
+                   help='Readout only; period5/.45s is paired with unchanged period3/.25s')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.readout_period==5 and a.readout_threshold!=.5:
+        p.error('Long readout history requires the verified threshold.5 readout candidate')
     if a.readout_threshold is not None and (not a.row_plan or a.threshold!=.5 or
             a.confidence_guard!=.1 or a.profile_frames or a.cell_age):
         p.error('Local readout requires fixed planned-row threshold.5/guard.1 period3 baseline')
