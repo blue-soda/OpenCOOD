@@ -20,7 +20,7 @@ def cost_of(costs,spatial_macs,info,recurrent):
     partial=info['deep_partial'] if recurrent else info['local_partial']
     value=costs[('dense',partial)]
     if not info['spatial_refresh']:value=value-spatial_macs+info['spatial_extra_linear_macs']
-    return value-info.get('deep_macs_saved',0)
+    return value-info.get('deep_macs_saved',0)-info.get('readout_macs_saved',0)
 
 
 def engineering(baseline,mode,cfg,train,costs,spatial_macs):
@@ -61,7 +61,7 @@ def engineering(baseline,mode,cfg,train,costs,spatial_macs):
 def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variants=None,expected_ap=None,note=None,audit=None):
     modes=dict(baseline=baseline);modes.update(variants if variants is not None else dict(recurrent=mode));states={k:None for k in modes}
     stats={k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}
-    metrics={k:dict(time=[],macs=0,full=0,state=[],deep_write=[],short_ratio=[]) for k in modes};isolation=[]
+    metrics={k:dict(time=[],macs=0,full=0,state=[],deep_write=[],short_ratio=[],readout_write=[],readout_ratio=[],readout_full=0) for k in modes};isolation=[]
     dataset,stream=loader(rows,cfg,4,303)
     def guard(scan):
         try:
@@ -86,7 +86,11 @@ def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variant
                 if index>=10:metrics[name]['time'].append(ms)
                 recurrent=name!='baseline';metrics[name]['macs']+=cost_of(costs,spatial_macs,info,recurrent)
                 metrics[name]['full']+=int(not info['deep_partial'] if recurrent else not info['local_partial'])
-                metrics[name]['state'].append(info['state_bytes']+info['spatial_state_bytes']+info['anchor_bytes'])
+                metrics[name]['state'].append(info['state_bytes']+info['spatial_state_bytes']+info['anchor_bytes']+info.get('readout_state_bytes',0))
+                if 'readout_write_fraction' in info:
+                    metrics[name]['readout_write'].append(info['readout_write_fraction'])
+                    metrics[name]['readout_ratio'].append(info['readout_executed_fraction'])
+                    metrics[name]['readout_full']+=int(info['readout_refresh'])
                 if 'deep_write_fraction' in info:metrics[name]['deep_write'].append(info['deep_write_fraction'])
                 if 'deep_short_macs_ratio' in info:metrics[name]['short_ratio'].append(info['deep_short_macs_ratio'])
                 if audit is not None:audit(name,ego,previous,sample['meta'],pred,states[name],info,index)
@@ -102,6 +106,10 @@ def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variant
         conv_linear_gflops=2*metrics[k]['macs']/len(rows)/1e9,mean_ms=float(np.mean(metrics[k]['time'])) if timing_valid else None,
         p95_ms=float(np.percentile(metrics[k]['time'],95)) if timing_valid else None,deep_full_frames=metrics[k]['full'],
         mean_state_bytes=float(np.mean(metrics[k]['state'])),
+        mean_readout_write_fraction=float(np.mean(metrics[k]['readout_write'])) if metrics[k]['readout_write'] else None,
+        mean_readout_executed_fraction=float(np.mean(metrics[k]['readout_ratio'])) if metrics[k]['readout_ratio'] else None,
+        readout_full_frames=metrics[k]['readout_full'] if metrics[k]['readout_write'] else None,
+        readout_packed_weight_bytes=modes[k].readout_cache.packed_weight_bytes if getattr(modes[k],'readout_cache',None) else 0,
         mean_deep_write_fraction=float(np.mean(metrics[k]['deep_write'])) if metrics[k]['deep_write'] else None,
         mean_short_update_macs_ratio=float(np.mean(metrics[k]['short_ratio'])) if metrics[k]['short_ratio'] else None) for k in modes}
     assert abs(results['baseline']['ap70']-.7553159775482435)<1e-7

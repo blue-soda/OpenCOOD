@@ -46,6 +46,7 @@ class RecurrentDeepDetector:
         self.model,self.readout,self.spatial=baseline.model,baseline.readout,baseline.spatial
         self.repair=repair;self.bounds=baseline.bounds
         self.deep=RecurrentDeepState(repair,self.bounds,period)
+        self.readout_cache=None
 
     @torch.no_grad()
     def full_deep(self,h):
@@ -53,6 +54,7 @@ class RecurrentDeepDetector:
         return self.readout.history(torch.cat((m.backbone.deblocks[1](second),m.backbone.deblocks[2](third)),1))
 
     def step(self,data,state,meta,supervise=False):
+        if supervise and self.readout_cache is not None:raise ValueError('Readout reuse is frozen inference only')
         m=self.model;p=data['processed_lidar']
         with torch.no_grad():
             if p['voxel_features'].shape[0]:
@@ -68,12 +70,29 @@ class RecurrentDeepDetector:
         value,deep,deep_info=self.deep.step(h,None if state is None else state['deep'],meta,
             lambda:target if target is not None else self.full_deep(h),bool(info['reset']),detach=not supervise,
             update_mask=detail.get('spatial_update_mask'))
-        pred=predict(m,self.readout.fuse(current,value))
+        readout_state=None
+        if self.readout_cache is None:
+            features=self.readout.fuse(current,value)
+        else:
+            features,readout_state,readout_info=self.readout_cache.step(current+value,
+                None if state is None else state['readout'],meta,bool(info['reset']))
+            if not readout_info['readout_refresh'] and self.readout_cache.execution=='selected':
+                cache=self.readout_cache
+                full=current.shape[-2]*current.shape[-1]*sum(c.weight.numel() for c in (cache.first,cache.project,cache.second))
+                readout_info['readout_macs_saved']=full-readout_info['readout_extra_linear_macs']
+            detail.update(readout_info)
+        pred=predict(m,features)
         confidence=pred['psm'].detach().sigmoid().amax(1,keepdim=True)
+        if readout_state is not None:
+            assert confidence.shape[-2:]==features.shape[-2:]
+            readout_state['confidence']=confidence
+            detail['readout_state_bytes']+=confidence.numel()*confidence.element_size()
         if confidence.shape[-2:]!=h.shape[-2:]:
             confidence=torch.nn.functional.interpolate(confidence,size=h.shape[-2:],mode='nearest')
         spatial_state['confidence']=confidence
         detail['spatial_state_bytes']+=confidence.numel()*confidence.element_size()
         info.update(detail);info.update(deep_info)
         if supervise:info.update(target_deep=target,target_predictions=target_pred,student_deep=value)
-        return pred,dict(fm=fm,spatial=spatial_state,deep=deep),info
+        new=dict(fm=fm,spatial=spatial_state,deep=deep)
+        if readout_state is not None:new['readout']=readout_state
+        return pred,new,info

@@ -23,6 +23,9 @@ def compare_local(a,cfg,train,val,baseline,out,costs,spatial_macs):
     for p in repair.parameters():p.requires_grad_(False)
     period=a.recurrent_local_period
     expected=report['results']['trained6_period%d'%period]['ap70']
+    if a.recurrent_readout_calibration:
+        from opencood.tools.evaluate_int_recurrent_readout import compare_composition
+        return compare_composition(a,cfg,train,val,baseline,out,costs,spatial_macs,repair,checkpoint,reference,source,expected)
     modes=dict(dense_recurrent=RecurrentDeepDetector(baseline,repair,period),
         local_selected=LocalRecurrentDeepDetector(baseline,repair,period),
         local_masked_dense=LocalRecurrentDeepDetector(baseline,repair,period,'masked_dense'))
