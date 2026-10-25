@@ -21,14 +21,16 @@ BUDGETS = (0, 2048, 4096, 8192)
 SEED = 20260929
 
 
-def prepare(root):
+def prepare(root,data_root=None,data_manifest=None,training_timeout_seconds=172800):
     assert sha(root/'source.pth') == SOURCE_SHA
     source = yaml.safe_load((root/'source.yaml').read_text())
-    data = '/data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure'
+    data = data_root or '/data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure'
     for key in ('root_dir', 'validate_dir', 'test_dir'):
         source[key] = data + '/' + Path(source[key]).name
     source['data_dir'] = data
-    source['data_manifest'] = '/data1/zhh/gzc/diagnostics/e3dsnn_event_utility_source_20261022/pair_manifest.json'
+    source['data_manifest'] = data_manifest or '/data1/zhh/gzc/diagnostics/e3dsnn_event_utility_source_20261022/pair_manifest.json'
+    if not 172800 <= training_timeout_seconds <= 432000:
+        raise ValueError('Training supervision window must be between 48h and 120h')
     hashes = {}
     for arm, budgets in ARMS.items():
         folder = root/arm
@@ -50,6 +52,7 @@ def prepare(root):
             path.write_text(yaml.safe_dump(val));hashes[str(path.relative_to(root))] = sha(path)
     write_json(root/'protocol.json', dict(source_sha256=SOURCE_SHA, seed=SEED,
         config_hashes=hashes, arms=ARMS, epochs=10, batch_size=2,
+        training_timeout_seconds=training_timeout_seconds,
         criterion='Ldet(sampled budget) + 0.5 Ldet(local); no KD, no rate proxy',
         trainable='3D conv4/conv_out, project, expand, local gate/current_scale, ANN BEV and continuous heads',
         frozen='early 3D, all BN buffers, unused legacy fusion/order parameters',
@@ -144,7 +147,7 @@ def coordinate(root,arm,finish_only=False):
             assert read(folder/'audit.json')['passed']
             run('train',base+['--mode','train','--config',str(folder/'train.yaml'),
                 '--checkpoint',str(root/'source.pth'),'--output',str(folder/'train'),
-                '--epochs','10','--selection-iou','0.7'])
+                '--epochs','10','--selection-iou','0.7'],protocol.get('training_timeout_seconds',172800))
         else:
             # Supervision can be handed over without restarting the trainer.
             # Finalization never starts training or repeats the admission audit.
@@ -199,10 +202,12 @@ def launch(root,arm,gpu):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',required=True)
+    p.add_argument('--data-root');p.add_argument('--data-manifest')
+    p.add_argument('--training-timeout-seconds',type=int,default=172800)
     p.add_argument('--arm',choices=tuple(ARMS));p.add_argument('--gpu',type=int)
     p.add_argument('--mode',choices=('prepare','launch','audit','coordinate','finish'),required=True)
     a=p.parse_args();root=Path(a.root)
-    if a.mode=='prepare':prepare(root)
+    if a.mode=='prepare':prepare(root,a.data_root,a.data_manifest,a.training_timeout_seconds)
     elif a.mode=='launch':launch(root,a.arm,a.gpu)
     elif a.mode=='audit':audit(root,a.arm)
     else:coordinate(root,a.arm,finish_only=a.mode=='finish')
