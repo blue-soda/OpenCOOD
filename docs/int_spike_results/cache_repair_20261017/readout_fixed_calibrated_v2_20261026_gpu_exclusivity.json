@@ -1,0 +1,24 @@
+{
+  "limitation": "Before validation, every200 scans and after validation; not continuous GPU reservation or shared CPU/IO isolation. Query outside timing.",
+  "samples": [
+    {
+      "checked_unix": 1792944359.9854536,
+      "gpu": 2,
+      "pids": [
+        24386
+      ],
+      "scan": 0,
+      "uuid": "GPU-b2981727-f739-13ea-1e14-704b1794fa22"
+    },
+    {
+      "checked_unix": 1792944381.055228,
+      "gpu": 2,
+      "pids": [
+        24386
+      ],
+      "scan": 200,
+      "uuid": "GPU-b2981727-f739-13ea-1e14-704b1794fa22"
+    }
+  ],
+  "status": "SAMPLED_CLEAR"
+}
