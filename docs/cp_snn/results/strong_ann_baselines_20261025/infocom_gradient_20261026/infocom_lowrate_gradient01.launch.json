@@ -1,0 +1,42 @@
+{
+  "pid": 36512,
+  "command": [
+    "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+    "/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/strong_ann_baselines/audit_infocom_lowrate_training.py",
+    "--repo",
+    "/data2/tzm/cp_snn_recovery_20261026/InfoCom",
+    "--model-dir",
+    "/data2/tzm/cp_snn_recovery_20261026",
+    "--data-root",
+    "/data2/tzm/cp_snn_recovery_20261026/data_view",
+    "--train-split",
+    "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure/train.json",
+    "--output",
+    "/data2/tzm/cp_snn_recovery_20261026/infocom_lowrate_gradient01",
+    "--gpu",
+    "4"
+  ],
+  "admission": [
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ]
+  ],
+  "unix": 1792961805.2141948
+}

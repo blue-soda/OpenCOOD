@@ -1,0 +1,8 @@
+{
+  "last.pt": "223ea182bbd7a6bd1ffe2eb44247f47c1cc1b519f532b12e3ee44bb9dfd0bbd4",
+  "best_ap70.pth": "0add747f31daf1c34315621990ef1b9424e2606f2cb60fa23cc3f396bf9e6f9e",
+  "best_ap70_metrics.json": "617ed95ba51fafbcb930fe1c9cc73756a8fbbe3fb1d18c1f8265871bd1be89f0",
+  "fixed_state.json": "cc906fb95b09cccc7160ac701420b881471ca9bc8cc7f28a5b6b9872e4c58273",
+  "progress.json": "8822de9ddb10bf66d6e94445b5c0b6f97e8d7c6d4bbd7c9fb5e8ddd1656c1ab0",
+  "metrics.jsonl": "b7e6b81f9620b97ef660004c741e6df9467e687e97c115af35f3de6f74f2e2df"
+}

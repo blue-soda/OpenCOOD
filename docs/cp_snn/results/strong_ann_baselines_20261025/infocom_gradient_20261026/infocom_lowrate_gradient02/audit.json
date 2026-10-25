@@ -1,0 +1,172 @@
+{
+  "passed": true,
+  "seed": 20260929,
+  "train_ids": [
+    "000010",
+    "000011"
+  ],
+  "split_samples": 4678,
+  "batch_size": 2,
+  "record_len": [
+    2,
+    2
+  ],
+  "probes": [
+    {
+      "ratio": 0.01,
+      "det_loss": 1.4416325092315674,
+      "kl_value": 562.765380859375,
+      "kl_in_audit_loss": false,
+      "mask_calls": [
+        {
+          "input_shape": [
+            4,
+            1,
+            200,
+            504
+          ],
+          "selected_ratio": 0.01,
+          "nonzero": 4032
+        }
+      ],
+      "gradient_groups": {
+        "ib_communication.encoder": {
+          "norm": 0.006554617563443439,
+          "with_grad": 47,
+          "parameters": 47
+        },
+        "ib_communication.decoder": {
+          "norm": 7.039175582357057,
+          "with_grad": 22,
+          "parameters": 22
+        },
+        "ib_communication.mu_net": {
+          "norm": 0.0002600103712853393,
+          "with_grad": 2,
+          "parameters": 2
+        },
+        "ib_communication.std_net": {
+          "norm": 0.00011420567671818841,
+          "with_grad": 2,
+          "parameters": 2
+        },
+        "ib_communication.adapt_layer_in": {
+          "norm": 2.516915529119743,
+          "with_grad": 18,
+          "parameters": 18
+        },
+        "ib_communication.adapt_layer_out": {
+          "norm": 1.7989640913129792,
+          "with_grad": 2,
+          "parameters": 2
+        },
+        "backbone": {
+          "norm": 18.721107653909687,
+          "with_grad": 114,
+          "parameters": 114
+        },
+        "cls_head": {
+          "norm": 0.8655752843648704,
+          "with_grad": 2,
+          "parameters": 2
+        },
+        "reg_head": {
+          "norm": 2.081594999233816,
+          "with_grad": 2,
+          "parameters": 2
+        },
+        "dir_head": {
+          "norm": 0.13055868911622884,
+          "with_grad": 2,
+          "parameters": 2
+        }
+      }
+    },
+    {
+      "ratio": 0.1,
+      "det_loss": 0.453700453042984,
+      "kl_value": 562.765380859375,
+      "kl_in_audit_loss": false,
+      "mask_calls": [
+        {
+          "input_shape": [
+            4,
+            1,
+            200,
+            504
+          ],
+          "selected_ratio": 0.1,
+          "nonzero": 40320
+        }
+      ],
+      "gradient_groups": {
+        "ib_communication.encoder": {
+          "norm": 0.000261993463023306,
+          "with_grad": 47,
+          "parameters": 47
+        },
+        "ib_communication.decoder": {
+          "norm": 0.19634798600745804,
+          "with_grad": 22,
+          "parameters": 22
+        },
+        "ib_communication.mu_net": {
+          "norm": 2.6971656993644204e-05,
+          "with_grad": 2,
+          "parameters": 2
+        },
+        "ib_communication.std_net": {
+          "norm": 2.03407582095077e-05,
+          "with_grad": 2,
+          "parameters": 2
+        },
+        "ib_communication.adapt_layer_in": {
+          "norm": 0.06219456184146678,
+          "with_grad": 18,
+          "parameters": 18
+        },
+        "ib_communication.adapt_layer_out": {
+          "norm": 0.08754743991449344,
+          "with_grad": 2,
+          "parameters": 2
+        },
+        "backbone": {
+          "norm": 1.905106163022416,
+          "with_grad": 114,
+          "parameters": 114
+        },
+        "cls_head": {
+          "norm": 0.16538158061581573,
+          "with_grad": 2,
+          "parameters": 2
+        },
+        "reg_head": {
+          "norm": 1.5935923715053777,
+          "with_grad": 2,
+          "parameters": 2
+        },
+        "dir_head": {
+          "norm": 0.11029640301052271,
+          "with_grad": 2,
+          "parameters": 2
+        }
+      }
+    }
+  ],
+  "optimizer_steps": 0,
+  "bn_buffers_unchanged": true,
+  "identity_compatibility_frozen": [
+    "ib_communication.mu_net.1.scale",
+    "ib_communication.mu_net.1.shift",
+    "ib_communication.std_net.1.scale",
+    "ib_communication.std_net.1.shift"
+  ],
+  "stochastic_latent_preserved": true,
+  "checkpoint_sha256": "7375da04507b4f543666e15aa02897e41e3c32e08bcb3f74b27ad49fb28c803c",
+  "train_split_sha256": "dae42ad7dfbc6e917c6630279fd2f54f64efac8b62825f3686dc75e4a5da4788",
+  "raw_train_split_sha256": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+  "data_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+  "script_sha256": "4793007aa37d7be71e60be35d142655e879a1bdd94d4dcbbe3d4b3a01ccd7e7e",
+  "peak_cuda_allocated_bytes": 4638149120,
+  "scope": "Real-batch gradient readiness only; not a training run, AP result or budget parity claim"
+}
