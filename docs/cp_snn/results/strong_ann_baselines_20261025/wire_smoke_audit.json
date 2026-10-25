@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "frames": [
+    {
+      "frame_id": "000211",
+      "prediction_bitwise_equal": true,
+      "wire_bytes": 9020
+    },
+    {
+      "frame_id": "000212",
+      "prediction_bitwise_equal": true,
+      "wire_bytes": 8875
+    }
+  ],
+  "scope": "two-frame smoke only; exact latent/mask checked inside real forward; independent no-wire predictions equal"
+}

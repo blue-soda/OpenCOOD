@@ -1,0 +1,14 @@
+[
+  {
+    "original": "cosdh_common_full01/result_stat.json",
+    "gzip": "cosdh_common_full01/result_stat.json.gz",
+    "raw_sha256": "f792feceff3dec159fcec72424a61de979231e3eb4a356582be113bd7e4dcb58",
+    "gzip_sha256": "12c2755efdb71edf7508d0c0ed6f6f9c5361d5846b6475ee2ae2cc20975339d1"
+  },
+  {
+    "original": "cosdh_allpairs_full01/result_stat.json",
+    "gzip": "cosdh_allpairs_full01/result_stat.json.gz",
+    "raw_sha256": "b60a86dca8408a41e1948ba181f34c42ea11871b2e88bdf5d9290cd12b8d5bb0",
+    "gzip_sha256": "3ce4276668d400e917f698fba4bbc824b10eeb6fbeb5abf5ecc411d0655d83af"
+  }
+]

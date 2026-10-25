@@ -35,3 +35,13 @@ Our GT replay uses original `opencood` environment in that envs directory.
 Full split means all IDs supplied to that invocation; a custom two-frame split
 is still only a smoke. Do not report its AP as validation AP. Official payload
 estimates are NOT real wire bytes; codec measurement remains pending.
+
+Update: `infocom_wire.py` implements exact latent+mask transport (bitmap/value
+dictionary or dense FP32, zlib; 28-byte header plus separate 80-byte metadata).
+`evaluate_infocom.py --wire-codec` substitutes decoded messages into the real
+network, records per-frame packets and CPU cost. `launch_wire_stage.py` snapshots
+the scripts on GPU3; `verify_wire_full.py` independently checks every file and
+compares to the matched-participant no-wire run. All 1738 predictions matched
+bitwise. CoSDH wire accounting is still pending; `audit_cosdh_support.py` checks
+the latent dependency closure under its decoder convolutions and warp, without
+claiming a complete packet or final detection parity.

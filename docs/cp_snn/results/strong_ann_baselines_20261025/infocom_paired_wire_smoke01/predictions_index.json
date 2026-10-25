@@ -1,0 +1,94 @@
+[
+  {
+    "index": 0,
+    "frame_id": "000211",
+    "file": "predictions/000000.npz",
+    "sha256": "bc54b5d956ccdd307390c9c3fcaa673e14eb8b9a11d69b15a4d1746587a67843",
+    "pred_count": 17,
+    "gt_count": 19,
+    "record_len": [
+      2
+    ],
+    "forward_seconds": 0.04038275592029095,
+    "forward_postprocess_seconds": 0.10313684493303299,
+    "wire": {
+      "messages": [
+        {
+          "mode": 1,
+          "nonzero_values": 10080,
+          "dictionary_values": 10,
+          "code_bits": 4,
+          "packet_bytes": 8940,
+          "header_bytes": 28,
+          "compressed_body_bytes": 8912,
+          "uncompressed_body_bytes": 18716,
+          "dense_compressed_bytes": 15188,
+          "sparse_compressed_bytes": 8940,
+          "paper_value_only_bytes": 6064,
+          "sender": 1,
+          "frame_id": "000211",
+          "envelope_bytes": 80,
+          "total_bytes": 9020,
+          "sha256": "ea6736a9ad41a734fa121d43f123d60df408b8f649ef645fda67973da017c27f",
+          "host_copy_seconds": 0.00011456292122602463,
+          "encode_seconds": 0.006212522042915225,
+          "decode_seconds": 0.0007356130518019199,
+          "roundtrip_seconds": 0.007443820824846625,
+          "exact_fp32": true,
+          "file": "wire/000000_sender1.bin"
+        }
+      ],
+      "packet_bytes": 8940,
+      "envelope_bytes": 80,
+      "total_bytes": 9020,
+      "encode_seconds": 0.006212522042915225,
+      "decode_seconds": 0.0007356130518019199
+    }
+  },
+  {
+    "index": 1,
+    "frame_id": "000212",
+    "file": "predictions/000001.npz",
+    "sha256": "c846810a30bcaa6f7a2cb664829ff80df52a017a0e18c14f366551c06b9903cb",
+    "pred_count": 18,
+    "gt_count": 20,
+    "record_len": [
+      2
+    ],
+    "forward_seconds": 0.048136427998542786,
+    "forward_postprocess_seconds": 0.106924596009776,
+    "wire": {
+      "messages": [
+        {
+          "mode": 1,
+          "nonzero_values": 10080,
+          "dictionary_values": 10,
+          "code_bits": 4,
+          "packet_bytes": 8795,
+          "header_bytes": 28,
+          "compressed_body_bytes": 8767,
+          "uncompressed_body_bytes": 18716,
+          "dense_compressed_bytes": 14877,
+          "sparse_compressed_bytes": 8795,
+          "paper_value_only_bytes": 6064,
+          "sender": 1,
+          "frame_id": "000212",
+          "envelope_bytes": 80,
+          "total_bytes": 8875,
+          "sha256": "66c16e8d7cdc2c7c07efaf344a0f5cff94c63cda64aba2b1d8a6f52ceaefdf0d",
+          "host_copy_seconds": 0.00015376601368188858,
+          "encode_seconds": 0.006402420112863183,
+          "decode_seconds": 0.0008037958759814501,
+          "roundtrip_seconds": 0.007814564043655992,
+          "exact_fp32": true,
+          "file": "wire/000001_sender1.bin"
+        }
+      ],
+      "packet_bytes": 8795,
+      "envelope_bytes": 80,
+      "total_bytes": 8875,
+      "encode_seconds": 0.006402420112863183,
+      "decode_seconds": 0.0008037958759814501
+    }
+  }
+]

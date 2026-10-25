@@ -184,7 +184,12 @@ def run(args, output):
     meta['participant_range_metres'] = hypes['comm_range']
     meta['comm_range_override'] = args.comm_range
     meta['checkpoint_compatibility'] = compatibility
+    meta['wire_codec']='exact_fp32_bitmap_dictionary_or_dense_zlib_v1' if args.wire_codec else None
     write_json(output / 'metadata.json', meta)
+    wire=None
+    if args.wire_codec:
+        from infocom_wire import WireAudit
+        wire=WireAudit(model,output)
     # Hooks time only the unchanged official model forward. The public official
     # helper performs this forward then unchanged dataset.post_process.
     timing = {}
@@ -214,6 +219,7 @@ def run(args, output):
             if int(batch['ego']['sample_idx']) != i:
                 raise ValueError('Sample index mismatch')
             batch = train_utils.to_device(batch, torch.device('cuda:0'))
+            if wire:wire.begin(batch,str(ids[i]))
             if i == 0:
                 # Warmup must not consume randomness of the scored pass.
                 states = (random.getstate(), np.random.get_state(), torch.get_rng_state(),
@@ -223,6 +229,7 @@ def run(args, output):
                 random.setstate(states[0]); np.random.set_state(states[1])
                 torch.set_rng_state(states[2]); torch.cuda.set_rng_state_all(states[3])
                 timing['durations'] = []
+                if wire:wire.begin(batch,str(ids[i]))
                 torch.cuda.synchronize()
                 torch.cuda.reset_peak_memory_stats()
             torch.cuda.synchronize()
@@ -246,11 +253,13 @@ def run(args, output):
                           'record_len': batch['ego']['record_len'].detach().cpu().tolist(),
                           'forward_seconds': timing['durations'][-1],
                           'forward_postprocess_seconds': elapsed})
+            if wire:index[-1]['wire']=wire.finish(i)
             write_json(output / 'status.json', {'processed': i + 1, 'planned': count,
                                                'frame_id': str(ids[i]), 'finished': False})
             print(json.dumps(index[-1]), flush=True)
             del batch, result, pred, score, gt
     h1.remove(); h2.remove()
+    if wire:wire.handle.remove()
     ap = eval_utils.eval_final_results(stat, str(output), 'official')
     def statistics(values):
         return {'mean': float(np.mean(values)), 'median': float(np.median(values)),
@@ -266,6 +275,12 @@ def run(args, output):
                     'cuda_peak_allocated_bytes': int(torch.cuda.max_memory_allocated()),
                     'cuda_peak_reserved_bytes': int(torch.cuda.max_memory_reserved()),
                     'timing_is_smoke_only': count < 30})
+    if wire:
+        summary['wire_statistics']={k:statistics([x['wire'][k] for x in index]) for k in
+                                    ('packet_bytes','envelope_bytes','total_bytes','encode_seconds','decode_seconds')}
+        summary['wire_exact_fp32']=True
+        summary['wire_note']='Measured exact codec; separately counted 80-byte frame/sender/sequence/pairwise-transform envelope; excludes link/IP overhead. CPU codec included in forward timing.'
+    summary['participant_counts']={str(n):sum(x['record_len']==[n] for x in index) for n in (1,2)}
     write_json(output / 'predictions_index.json', index)
     write_json(output / 'summary.json', summary)
     write_json(output / 'status.json', {'processed': count, 'planned': count, 'finished': True})
@@ -280,6 +295,7 @@ def main():
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--comm-range', type=float, default=None)
     parser.add_argument('--checkpoint-compat', action='store_true', help='Explicit legacy sigma/identity-scale inference mapping; exact mismatch only')
+    parser.add_argument('--wire-codec',action='store_true',help='Serialize, decode and use every non-ego latent/mask; exact FP32')
     args = parser.parse_args()
     if args.limit < 0 or ',' in args.gpu:
         parser.error('limit must be nonnegative; select exactly one GPU')

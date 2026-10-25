@@ -1,6 +1,7 @@
 import argparse,json,subprocess,time
 from pathlib import Path
-p=argparse.ArgumentParser();p.add_argument('method',choices=['cosdh','infocom']);p.add_argument('--limit',type=int,default=0);p.add_argument('--tag',required=True);p.add_argument('--comm-range',type=float,default=None);a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('method',choices=['cosdh','infocom']);p.add_argument('--limit',type=int,default=0);p.add_argument('--tag',required=True);p.add_argument('--comm-range',type=float,default=None);p.add_argument('--wire-codec',action='store_true');a=p.parse_args()
+if a.wire_codec and a.method!='infocom':raise ValueError('Wire codec only implemented for InfoCom')
 root=Path('/data1/zhh/gzc/diagnostics/ann_baselines_20261025');repo={'cosdh':'CoSDH','infocom':'InfoCom'}[a.method];gpu={'cosdh':0,'infocom':2}[a.method]
 samples=[]
 for _ in range(5):
@@ -15,6 +16,7 @@ cmd=['/data1/zhh/gzc/miniconda3/envs/ann_runtime/bin/python',str(root/('evaluate
 with out.with_suffix('.log').open('wb') as log:
     if a.comm_range is not None:cmd.extend(['--comm-range',str(a.comm_range)])
     if a.method=='infocom':cmd.append('--checkpoint-compat')
+    if a.wire_codec:cmd.append('--wire-codec')
     child=subprocess.Popen(['timeout','--signal=TERM','14400']+cmd,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
 record={'pid':child.pid,'command':cmd,'gpu_samples':samples,'launched_unix':time.time(),'timeout_seconds':14400}
 out.with_suffix('.launch.json').write_text(json.dumps(record,indent=2));print(json.dumps(record))

@@ -1,0 +1,57 @@
+{
+  "pid": 500714,
+  "command": [
+    "/data1/zhh/gzc/miniconda3/envs/ann_runtime/bin/python",
+    "/data1/zhh/gzc/diagnostics/ann_baselines_20261025/wire_stage_20261025/evaluate_infocom.py",
+    "--repo",
+    "/data1/zhh/gzc/InfoCom",
+    "--model-dir",
+    "/data1/zhh/gzc/InfoCom/opencood/logs/dairv2x_coalign_base_0526",
+    "--data-root",
+    "/data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+    "--split",
+    "/data1/zhh/gzc/diagnostics/ann_baselines_20261025/common_val.json",
+    "--output",
+    "/data1/zhh/gzc/diagnostics/ann_baselines_20261025/infocom_paired_wire_full01",
+    "--gpu",
+    "3",
+    "--limit",
+    "0",
+    "--comm-range",
+    "1000000",
+    "--checkpoint-compat",
+    "--wire-codec"
+  ],
+  "gpu_samples": [
+    [
+      3,
+      24134,
+      0
+    ],
+    [
+      3,
+      24134,
+      0
+    ],
+    [
+      3,
+      24134,
+      0
+    ],
+    [
+      3,
+      24134,
+      0
+    ],
+    [
+      3,
+      24134,
+      0
+    ]
+  ],
+  "snapshot_sha256": {
+    "evaluate_infocom.py": "8f26f9d0f5878cce9d198ef19c3376516112f76434d7fb1597b67bf8470daa45",
+    "infocom_wire.py": "cb3802491222672210c785149f9f9e8afc97b361667a0eb8e35470c9a09c81ea"
+  },
+  "launched_unix": 1792931093.5910585
+}

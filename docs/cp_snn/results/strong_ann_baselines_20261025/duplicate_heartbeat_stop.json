@@ -1,0 +1,11 @@
+{
+  "stopped_owned_duplicates": {
+    "499607": "timeout --signal=TERM 14400 /data1/zhh/gzc/miniconda3/envs/ann_runtime/bin/python /data1/zhh/gzc/diagnostics/ann_baselines_20261025/evaluate_cosdh.py --repo /data1/zhh/gzc/CoSDH --model-dir /data1/zhh/gzc/CoSDH/opencood/logs/dairv2x_cosdh --data-root /data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure --split /data1/zhh/gzc/diagnostics/ann_baselines_20261025/common_val.json --output /data1/zhh/gzc/diagnostics/ann_baselines_20261025/cosdh_paired_full01 --gpu 0 --limit 0 --comm-range 1000000.0 ",
+    "499955": "/data1/zhh/gzc/miniconda3/envs/opencood/bin/python /data1/zhh/gzc/diagnostics/ann_baselines_20261025/finish_replays.py --tag paired_replay_watch --runs cosdh_paired_full01 infocom_paired_wire_full01 "
+  },
+  "preserved": [
+    "cosdh_allpairs_full01",
+    "infocom_allpairs_full01_compat"
+  ],
+  "unix": 1792931054.2943268
+}

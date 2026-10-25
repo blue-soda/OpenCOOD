@@ -1,8 +1,14 @@
 {
-  "completed": {},
-  "pending": [
-    "cosdh_common_full01",
-    "infocom_common_full01_compat"
-  ],
-  "updated_unix": 1792923144.368835
+  "completed": {
+    "infocom_common_full01_compat": {
+      "status": "replayed",
+      "returncode": 0
+    },
+    "cosdh_common_full01": {
+      "status": "replayed",
+      "returncode": 0
+    }
+  },
+  "pending": [],
+  "updated_unix": 1792924003.3638854
 }

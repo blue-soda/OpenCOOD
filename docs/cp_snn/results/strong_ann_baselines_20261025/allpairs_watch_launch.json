@@ -1,0 +1,13 @@
+{
+  "pid": 499520,
+  "command": [
+    "/data1/zhh/gzc/miniconda3/envs/opencood/bin/python",
+    "/data1/zhh/gzc/diagnostics/ann_baselines_20261025/finish_replays.py",
+    "--tag",
+    "allpairs_watch",
+    "--runs",
+    "cosdh_allpairs_full01",
+    "infocom_allpairs_full01_compat"
+  ],
+  "unix": 1792930981.9965444
+}

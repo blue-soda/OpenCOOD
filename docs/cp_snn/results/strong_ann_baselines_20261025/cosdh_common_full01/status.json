@@ -1,7 +1,25 @@
 {
-  "stage": "evaluating",
-  "completed": 825,
-  "planned": 1738,
-  "last_frame_id": "010956",
-  "updated_unix": 1792923161.0322688
+  "status": "completed",
+  "full_split": true,
+  "smoke_only": false,
+  "samples": 1738,
+  "gt_boxes": 28622,
+  "pred_boxes": 33120,
+  "bev_ap": {
+    "0.3": 0.8253538401246279,
+    "0.5": 0.780117950401748,
+    "0.7": 0.6432864074064439
+  },
+  "parameters": 8932150,
+  "inference_ms_mean": 156.58614819899407,
+  "inference_ms_median": 146.2497180327773,
+  "inference_ms_p95": 287.8277416690253,
+  "peak_allocated_bytes": 589178368,
+  "peak_reserved_bytes": 6136266752,
+  "all_outputs_finite": true,
+  "actual_communication_bytes": null,
+  "gt_parity_with_our_snn": "NOT_ESTABLISHED",
+  "frames_manifest_sha256": "0a7c87dc76b317109c534fd5d5e4e24eb7bc4c30d874b421129a75b127edfd50",
+  "completed_unix": 1792923742.213464,
+  "wall_seconds": 1010.0043995380402
 }

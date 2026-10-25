@@ -1,0 +1,107 @@
+{
+  "passed": true,
+  "frames": 2,
+  "rows": [
+    {
+      "frame_id": "000211",
+      "stage": 0,
+      "latent_shape": [
+        2,
+        4,
+        100,
+        252
+      ],
+      "target_selected": 4455,
+      "source_bilinear_sites": 4493,
+      "source_latent_sites_with_decoder_halo": 5172,
+      "fp16_value_bytes_only": 41376,
+      "max_abs_masked_feature_error": 0.0,
+      "masked_features_exact": true
+    },
+    {
+      "frame_id": "000211",
+      "stage": 1,
+      "latent_shape": [
+        2,
+        8,
+        50,
+        126
+      ],
+      "target_selected": 1130,
+      "source_bilinear_sites": 1159,
+      "source_latent_sites_with_decoder_halo": 1481,
+      "fp16_value_bytes_only": 23696,
+      "max_abs_masked_feature_error": 0.0,
+      "masked_features_exact": true
+    },
+    {
+      "frame_id": "000211",
+      "stage": 2,
+      "latent_shape": [
+        2,
+        16,
+        25,
+        63
+      ],
+      "target_selected": 282,
+      "source_bilinear_sites": 298,
+      "source_latent_sites_with_decoder_halo": 466,
+      "fp16_value_bytes_only": 14912,
+      "max_abs_masked_feature_error": 0.0,
+      "masked_features_exact": true
+    },
+    {
+      "frame_id": "000212",
+      "stage": 0,
+      "latent_shape": [
+        2,
+        4,
+        100,
+        252
+      ],
+      "target_selected": 4589,
+      "source_bilinear_sites": 4625,
+      "source_latent_sites_with_decoder_halo": 5311,
+      "fp16_value_bytes_only": 42488,
+      "max_abs_masked_feature_error": 0.0,
+      "masked_features_exact": true
+    },
+    {
+      "frame_id": "000212",
+      "stage": 1,
+      "latent_shape": [
+        2,
+        8,
+        50,
+        126
+      ],
+      "target_selected": 1159,
+      "source_bilinear_sites": 1195,
+      "source_latent_sites_with_decoder_halo": 1526,
+      "fp16_value_bytes_only": 24416,
+      "max_abs_masked_feature_error": 0.0,
+      "masked_features_exact": true
+    },
+    {
+      "frame_id": "000212",
+      "stage": 2,
+      "latent_shape": [
+        2,
+        16,
+        25,
+        63
+      ],
+      "target_selected": 290,
+      "source_bilinear_sites": 311,
+      "source_latent_sites_with_decoder_halo": 486,
+      "fp16_value_bytes_only": 15552,
+      "max_abs_masked_feature_error": 0.0,
+      "masked_features_exact": true
+    }
+  ],
+  "not_wire_bytes": true,
+  "not_final_detection_parity": true,
+  "decoder_radius": 2,
+  "numerical_guard_radius": 1,
+  "script_sha256": "74ba74091a348c1dd0b66cdeb7013c5a6f97e33593ab2d28703a2646aefa1564"
+}

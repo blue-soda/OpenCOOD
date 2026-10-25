@@ -1,0 +1,25 @@
+{
+  "status": "completed",
+  "full_split": true,
+  "smoke_only": false,
+  "samples": 1738,
+  "gt_boxes": 28622,
+  "pred_boxes": 33380,
+  "bev_ap": {
+    "0.3": 0.8369535404601591,
+    "0.5": 0.7921812663473523,
+    "0.7": 0.6519374620540678
+  },
+  "parameters": 8932150,
+  "inference_ms_mean": 158.87521057426116,
+  "inference_ms_median": 147.8275804547593,
+  "inference_ms_p95": 288.39580558706064,
+  "peak_allocated_bytes": 588538368,
+  "peak_reserved_bytes": 6268387328,
+  "all_outputs_finite": true,
+  "actual_communication_bytes": null,
+  "gt_parity_with_our_snn": "NOT_ESTABLISHED",
+  "frames_manifest_sha256": "009ede09ecbee6d917f9f73ff553a3ab8ba92dffbb79d91d016addd046b1532c",
+  "completed_unix": 1792931974.1469584,
+  "wall_seconds": 1027.782539844513
+}
