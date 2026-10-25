@@ -83,6 +83,10 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
         actual_hook_plus_linear_macs_verified=True,readout_dense_macs=readout_macs,
         spatial_dense_macs=spatial_macs))
     del modes['period1']
+    if a.readout_audit_frames:
+        from opencood.tools.audit_int_readout_phases import audit_phases
+        audit_phases(a,cfg,train,{k:modes[k] for k in ('period3','selected')},out,expected)
+        return
     states={k:None for k in modes}
     metrics={k:dict(time=[],peak=[],macs=0,write=[],area=[],hwrite=[],state=[],full=0) for k in modes}
     stats={k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}

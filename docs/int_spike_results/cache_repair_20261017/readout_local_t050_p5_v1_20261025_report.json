@@ -1,0 +1,68 @@
+{
+  "all_same_input_replays_passed": true,
+  "labels": 1738,
+  "note": "Weights fixed; spatial t.5 four-layer baseline held. Readout output cache changes own predictions and future H masks. No new training; no SNN attribution; FLOPs count conv/linear only.",
+  "own_trajectory_audited_frames": 0,
+  "readout_max_full_age_s": 0.45,
+  "readout_period": 5,
+  "results": {
+    "baseline": {
+      "ap50": 0.8327608934021072,
+      "ap70": 0.7553159775482435,
+      "conv_linear_gflops": 119.43160285006559,
+      "extra_readout_packed_weight_bytes": 0,
+      "max_incremental_cuda_peak_bytes": 267792896,
+      "mean_ms": 19.00549351375706,
+      "mean_readout_executed_fraction": 1.0,
+      "mean_readout_write_fraction": 1.0,
+      "mean_spatial_write_fraction": 0.4996233994115423,
+      "mean_state_bytes": 50500800.0,
+      "p95_ms": 28.268654923886057,
+      "readout_full_frames": 5794
+    },
+    "masked_dense": {
+      "ap50": 0.8327337801612762,
+      "ap70": 0.7552886919275542,
+      "conv_linear_gflops": 119.42680511774662,
+      "extra_readout_packed_weight_bytes": 1769472,
+      "max_incremental_cuda_peak_bytes": 322352128,
+      "mean_ms": 20.47497969670453,
+      "mean_readout_executed_fraction": 1.0,
+      "mean_readout_write_fraction": 0.7054100437781832,
+      "mean_spatial_write_fraction": 0.4994505879097698,
+      "mean_state_bytes": 86083200.0,
+      "p95_ms": 29.978409444447603,
+      "readout_full_frames": 1247
+    },
+    "period3": {
+      "ap50": 0.8327337843004576,
+      "ap70": 0.7552887126261554,
+      "conv_linear_gflops": 111.89855203899207,
+      "extra_readout_packed_weight_bytes": 1769472,
+      "max_incremental_cuda_peak_bytes": 299633664,
+      "mean_ms": 20.32786909464095,
+      "mean_readout_executed_fraction": 0.6801490389620352,
+      "mean_readout_write_fraction": 0.6554772383582359,
+      "mean_spatial_write_fraction": 0.49941722690687135,
+      "mean_state_bytes": 86083200.0,
+      "p95_ms": 28.60223525203764,
+      "readout_full_frames": 2005
+    },
+    "selected": {
+      "ap50": 0.8327337789313529,
+      "ap70": 0.7552887111296123,
+      "conv_linear_gflops": 113.0082887885012,
+      "extra_readout_packed_weight_bytes": 1769472,
+      "max_incremental_cuda_peak_bytes": 342972416,
+      "mean_ms": 20.84412038635255,
+      "mean_readout_executed_fraction": 0.7272659794982798,
+      "mean_readout_write_fraction": 0.7054100437781832,
+      "mean_spatial_write_fraction": 0.4994505879097698,
+      "mean_state_bytes": 86083200.0,
+      "p95_ms": 31.432375265285373,
+      "readout_full_frames": 1247
+    }
+  },
+  "scans": 5794,
+  "status": "COMPLETED"
+}

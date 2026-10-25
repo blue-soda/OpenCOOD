@@ -486,8 +486,12 @@ def main():
                    help='Fixed four-layer threshold.5 baseline plus local complete readout feature reuse')
     p.add_argument('--readout-period',type=int,choices=(3,5),default=3,
                    help='Readout only; period5/.45s is paired with unchanged period3/.25s')
+    p.add_argument('--readout-audit-frames',type=int,default=0,
+                   help='Training-prefix phase/selector diagnosis only, no AP or model latency')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.readout_audit_frames and (a.readout_period!=5 or not 64<=a.readout_audit_frames<=512):
+        p.error('Readout phase diagnosis requires period5 and 64..512 training scans')
     if a.readout_period==5 and a.readout_threshold!=.5:
         p.error('Long readout history requires the verified threshold.5 readout candidate')
     if a.readout_threshold is not None and (not a.row_plan or a.threshold!=.5 or
