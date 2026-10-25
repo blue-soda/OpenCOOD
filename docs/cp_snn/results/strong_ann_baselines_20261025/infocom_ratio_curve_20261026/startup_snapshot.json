@@ -1,0 +1,323 @@
+{
+  "trigger_utc": "2026-10-25T17:59:27.238Z",
+  "server_unix": 1792953618.2064204,
+  "curves": {
+    "infocom_ratio_curve_20261026": {
+      "protocol.json": {
+        "value": {
+          "points": [
+            [
+              "r001",
+              0.01
+            ],
+            [
+              "r0025",
+              0.025
+            ],
+            [
+              "r005",
+              0.05
+            ]
+          ],
+          "gpu": "4",
+          "seed": 303,
+          "snapshot_sha256": {
+            "evaluate_infocom.py": "43de1ced4010617bdc7a032c69784f519fc6f547efce041d7832b02ed6ca6215",
+            "infocom_wire.py": "cb3802491222672210c785149f9f9e8afc97b361667a0eb8e35470c9a09c81ea",
+            "replay_common_gt.py": "66eae5af6f73acf22afcee1aae85a2549b73da827842e09793dd40adc5bbcfdf",
+            "run_infocom_ratio_curve.py": "f80294a0fb9f5090c29d239e9c8c1c73ea4995eef510a04f638bcdb1a8db68b1"
+          },
+          "split_sha256": "eff0ec36dd5a465b0750cc58cfc4d85eee78bd46bd60b6304e4d1a9beaa46026",
+          "purpose": "Frozen strong-ANN inference rate/AP curve",
+          "no_hard_byte_cap": true,
+          "no_new_training": true,
+          "no_ap_dependent_parameter_search": true,
+          "original_ratio": 0.1,
+          "known_original_ap70": 0.6457136214761451,
+          "known_original_mean_bytes": 8754.928078250863,
+          "admission": [
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ]
+          ],
+          "timing": "Shared GPU operational time only; no compute superiority claim"
+        },
+        "sha256": "228d4ec48f69b7a849c94ecade52407ca7321151a8570d0035e0637d63563d4a"
+      },
+      "launch.json": {
+        "value": {
+          "pid": 516300,
+          "gpu": "4",
+          "unix": 1792953495.4383001,
+          "snapshot_sha256": {
+            "evaluate_infocom.py": "43de1ced4010617bdc7a032c69784f519fc6f547efce041d7832b02ed6ca6215",
+            "infocom_wire.py": "cb3802491222672210c785149f9f9e8afc97b361667a0eb8e35470c9a09c81ea",
+            "replay_common_gt.py": "66eae5af6f73acf22afcee1aae85a2549b73da827842e09793dd40adc5bbcfdf",
+            "run_infocom_ratio_curve.py": "f80294a0fb9f5090c29d239e9c8c1c73ea4995eef510a04f638bcdb1a8db68b1"
+          }
+        },
+        "sha256": "9c4c6e1823388f900cfec8ea10a64f3fd947bac5826a629cfe495a518af803dd"
+      },
+      "status.json": {
+        "value": {
+          "state": "failed",
+          "error": "Traceback (most recent call last):\n  File \"/data1/zhh/gzc/diagnostics/ann_baselines_20261025/infocom_ratio_curve_20261026/snapshot/run_infocom_ratio_curve.py\", line 93, in coordinate\n    out=run(name,ratio,0)\n  File \"/data1/zhh/gzc/diagnostics/ann_baselines_20261025/infocom_ratio_curve_20261026/snapshot/run_infocom_ratio_curve.py\", line 71, in run\n    gate=admission();write(root/'status.json',dict(state='running',stage=name,admission=gate))\n  File \"/data1/zhh/gzc/diagnostics/ann_baselines_20261025/infocom_ratio_curve_20261026/snapshot/run_infocom_ratio_curve.py\", line 36, in admission\n    if free<8000 or util>20:raise RuntimeError('GPU4 admission failed; no automatic retry: '+line)\nRuntimeError: GPU4 admission failed; no automatic retry: 24134, 85\n",
+          "automatic_retry": false
+        },
+        "sha256": "ff6c9e0c239845869596557e4737ee42c3ef155e319ae9f140e3abb61bcdd4d8"
+      },
+      "native_equivalence.json": {
+        "value": {
+          "passed": true,
+          "samples": 2,
+          "predictions_and_wire_bitwise_equal": true
+        },
+        "sha256": "bf009e550e08074e15f87873199e3ec64a880c69055d7b1bbaf939ddfd58cf4c"
+      },
+      "native_ratio_gate/wire_cpu_audit.json": {
+        "value": {
+          "passed": true,
+          "samples": 2,
+          "all_packet_and_prediction_sha_verified": true,
+          "envelope_and_shapes_verified": true,
+          "source_index_sha256": "476488f617da65f2de7e4f85e9f60eb061e0e52f8da4fb0125629a3eb87d9c0c"
+        },
+        "sha256": "745d090848dc9f3c13c87b60d8eebd411253892f59ee94f5f72df50aa07caa73"
+      }
+    },
+    "infocom_ratio_curve_20261026_r1": {
+      "protocol.json": {
+        "value": {
+          "points": [
+            [
+              "r001",
+              0.01
+            ],
+            [
+              "r0025",
+              0.025
+            ],
+            [
+              "r005",
+              0.05
+            ]
+          ],
+          "gpu": "4",
+          "seed": 303,
+          "snapshot_sha256": {
+            "evaluate_infocom.py": "43de1ced4010617bdc7a032c69784f519fc6f547efce041d7832b02ed6ca6215",
+            "infocom_wire.py": "cb3802491222672210c785149f9f9e8afc97b361667a0eb8e35470c9a09c81ea",
+            "replay_common_gt.py": "66eae5af6f73acf22afcee1aae85a2549b73da827842e09793dd40adc5bbcfdf",
+            "run_infocom_ratio_curve.py": "0c6f4b351b15e588f436e0d9a5646de9b10c1a2d9c7ed2184261c77d2c506886"
+          },
+          "split_sha256": "eff0ec36dd5a465b0750cc58cfc4d85eee78bd46bd60b6304e4d1a9beaa46026",
+          "purpose": "Frozen strong-ANN inference rate/AP curve",
+          "no_hard_byte_cap": true,
+          "no_new_training": true,
+          "no_ap_dependent_parameter_search": true,
+          "original_ratio": 0.1,
+          "known_original_ap70": 0.6457136214761451,
+          "known_original_mean_bytes": 8754.928078250863,
+          "admission": [
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ]
+          ],
+          "timing": "Shared GPU operational time only; no compute superiority claim"
+        },
+        "sha256": "38702855c09963934407d5b5961ca51133622b264e4cbac0aa8cee31bc715d90"
+      },
+      "launch.json": {
+        "value": {
+          "pid": 516884,
+          "gpu": "4",
+          "unix": 1792953580.7651079,
+          "snapshot_sha256": {
+            "evaluate_infocom.py": "43de1ced4010617bdc7a032c69784f519fc6f547efce041d7832b02ed6ca6215",
+            "infocom_wire.py": "cb3802491222672210c785149f9f9e8afc97b361667a0eb8e35470c9a09c81ea",
+            "replay_common_gt.py": "66eae5af6f73acf22afcee1aae85a2549b73da827842e09793dd40adc5bbcfdf",
+            "run_infocom_ratio_curve.py": "0c6f4b351b15e588f436e0d9a5646de9b10c1a2d9c7ed2184261c77d2c506886"
+          }
+        },
+        "sha256": "1622ad83ea3961c56a8d895ef2963e93e2fccf34931b00bdb6855a85346b346b"
+      },
+      "status.json": {
+        "value": {
+          "state": "running",
+          "stage": "r001",
+          "admission": [
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ],
+            [
+              24134,
+              0
+            ]
+          ]
+        },
+        "sha256": "f89ed6a05249dc8c789cbcd6b287c1fe5bbedd29df8ee9333ee4ca57848db45b"
+      },
+      "native_equivalence.json": {
+        "value": {
+          "passed": true,
+          "samples": 2,
+          "predictions_and_wire_bitwise_equal": true
+        },
+        "sha256": "bf009e550e08074e15f87873199e3ec64a880c69055d7b1bbaf939ddfd58cf4c"
+      },
+      "native_ratio_gate/wire_cpu_audit.json": {
+        "value": {
+          "passed": true,
+          "samples": 2,
+          "all_packet_and_prediction_sha_verified": true,
+          "envelope_and_shapes_verified": true,
+          "source_index_sha256": "c9bd73584e8c3d50a597b51e0ede1cf49d3809eaf912ec4600ee369073f5f293"
+        },
+        "sha256": "0d63b21741afcf136bd0af8ce649ef555918a10c55a7e99d2270c382d2cd477a"
+      }
+    }
+  },
+  "snn": {
+    "fixed2k": {
+      "train/progress.json": {
+        "state": "training",
+        "epoch": 4,
+        "epochs": 10,
+        "batch": 901,
+        "batches": 2339,
+        "loss": 1.066659575294429,
+        "gradient_norm": 5.26914644241333,
+        "elapsed_seconds": 1026.6776633909903,
+        "stream_means": {
+          "stream_budgets": 2048.0,
+          "packet_bytes": 2046.6875693673696,
+          "stream_events": 2728.9933407325193
+        }
+      },
+      "train/best_ap70_metrics.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 28812,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7599783916944439,
+          "0.5": 0.7107358902698931,
+          "0.7": 0.5816387077160713
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2046.8084004602993,
+          "median_bytes": 2047.0,
+          "min_bytes": 2038,
+          "max_bytes": 2048,
+          "p95_bytes": 2048.0,
+          "total_bytes": 3557353,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 2,
+        "train_loss": 0.9814991485758185,
+        "train_samples": 4678,
+        "seconds": 3787.0093531189486,
+        "train_loss_components": {
+          "fused_detection_loss": 0.6355911208239237,
+          "ego_detection_loss": 0.6918160555037901
+        },
+        "train_stream_means": {
+          "stream_budgets": 2048.0,
+          "packet_bytes": 2046.5243693886275,
+          "stream_events": 2820.7490380504487
+        }
+      },
+      "train/fixed_state.json": {
+        "initial_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+        "current_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+        "verified_through_epoch": 3,
+        "passed": true
+      }
+    },
+    "multi248k": {
+      "train/progress.json": {
+        "state": "training",
+        "epoch": 1,
+        "epochs": 10,
+        "batch": 1001,
+        "batches": 2339,
+        "loss": 1.857641867328165,
+        "gradient_norm": 8.628793716430664,
+        "elapsed_seconds": 11640.665793368127,
+        "stream_means": {
+          "stream_budgets": 4697.51048951049,
+          "packet_bytes": 4673.136863136863,
+          "stream_events": 10042.438561438561
+        }
+      },
+      "supervision_status.json": {
+        "state": "watching_existing_trainer",
+        "trainer_pid": 508752,
+        "elapsed_seconds": 7026.4123157190625,
+        "unix": 1792953607.6670957
+      }
+    }
+  },
+  "old_snn": {
+    "state": "training",
+    "epoch": 20,
+    "batch": 1451,
+    "total_batches": 2339,
+    "loss": 0.9553922847635491,
+    "communication_means": {
+      "bytes": 4441.279807029635,
+      "events": 1243.4810475534114,
+      "steps": 1.0
+    }
+  }
+}
