@@ -21,7 +21,7 @@ def sha(path):
     return h.hexdigest()
 
 
-def run(a):
+def prepare(a):
     os.environ['CUDA_VISIBLE_DEVICES'] = a.gpu
     os.environ['OMP_NUM_THREADS'] = '1'
     sys.path.insert(0, str(Path(a.repo).resolve()))
@@ -79,6 +79,13 @@ def run(a):
     before={n:v.detach().cpu().clone() for n,v in model.named_buffers()}
     dataset=build_dataset(hypes,visualize=False,train=True)
     assert list(dataset.split_info)==ids
+    return model,dataset,hypes,before,identity_keys,ids,checkpoint,split,source_split,manifest_path
+
+
+def run(a):
+    model,dataset,hypes,before,identity_keys,ids,checkpoint,split,source_split,manifest_path=prepare(a)
+    import torch
+    from opencood.tools import train_utils
     samples=[dataset[i] for i in range(2)]
     batch=dataset.collate_batch_train(samples)
     batch=train_utils.to_device(batch,torch.device('cuda'))

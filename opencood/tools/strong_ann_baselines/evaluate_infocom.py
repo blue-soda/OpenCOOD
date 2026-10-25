@@ -197,6 +197,14 @@ def run(args, output):
     meta['mask_ratio_override'] = mask_ratio
     meta['mask_ratio_note'] = ('Frozen official checkpoint operating point; not budget-adapted training; '
         'uses official raw learned ranking, ties, quantization and decoder; actual bytes measured, no hard byte cap') if mask_ratio is not None else None
+    adaptation_protocol=getattr(args,'adaptation_protocol',None)
+    if adaptation_protocol is not None:
+        protocol_path=Path(adaptation_protocol).resolve()
+        protocol=json.loads(protocol_path.read_text())
+        if args.checkpoint_compat:
+            raise ValueError('Adapted checkpoints must already contain canonical strict keys')
+        meta['adaptation_protocol']={'file':str(protocol_path),'sha256':sha256(protocol_path),'contract':protocol}
+        meta['mask_ratio_note']='Adapted checkpoint operating point; actual bytes measured, no hard byte cap'
     meta['checkpoint_compatibility'] = compatibility
     meta['wire_codec']='exact_fp32_bitmap_dictionary_or_dense_zlib_v1' if args.wire_codec else None
     write_json(output / 'metadata.json', meta)
@@ -312,6 +320,7 @@ def main():
         help='Frozen-model top-k mask fraction in (0,0.1]; explicit operating-curve override, not a byte cap')
     parser.add_argument('--checkpoint-compat', action='store_true', help='Explicit legacy sigma/identity-scale inference mapping; exact mismatch only')
     parser.add_argument('--wire-codec',action='store_true',help='Serialize, decode and use every non-ego latent/mask; exact FP32')
+    parser.add_argument('--adaptation-protocol',help='Training protocol for an adapted canonical checkpoint; records provenance')
     args = parser.parse_args()
     if args.mask_ratio is not None and (not math.isfinite(args.mask_ratio) or not 0 < args.mask_ratio <= .1):
         parser.error('mask ratio must be finite and in (0,0.1]')
