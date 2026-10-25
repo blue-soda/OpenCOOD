@@ -1,7 +1,4 @@
 {
-  "epoch": 1,
-  "loss": 0.20901564607767395,
-  "phase": "train",
-  "scans": 600,
-  "status": "RUNNING"
+  "error": "GPUContention('GPU 5 contention with PIDs [10515]; discard timing and stop only this benchmark')",
+  "status": "FAILED"
 }

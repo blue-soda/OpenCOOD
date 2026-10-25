@@ -1,0 +1,77 @@
+[
+  {
+    "depths": {},
+    "epoch": 0,
+    "loss": null,
+    "lr": 0.0001,
+    "stale": 0,
+    "updates": 0,
+    "validation": {
+      "labels": 1738,
+      "note": "Independent histories. Dense short D update; no local D skipping. Timing excludes IO/H2D/postprocess; sampled GPU isolation does not reserve shared CPU/IO. Conv/functional-linear MACsx2.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_ms": 20.0647393423957,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 29.156383185181767
+        },
+        "recurrent": {
+          "ap50": 0.8318508924994992,
+          "ap70": 0.750908741753608,
+          "conv_linear_gflops": 97.83347631196962,
+          "deep_full_frames": 1061,
+          "mean_ms": 17.605407367952175,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 27.99965809099376
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED"
+    }
+  },
+  {
+    "depths": {
+      "1": 1502,
+      "2": 1450,
+      "3": 1406,
+      "4": 1353,
+      "5": 1317
+    },
+    "epoch": 1,
+    "loss": 0.23755172553460893,
+    "lr": 0.0001,
+    "stale": 0,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Independent histories. Dense short D update; no local D skipping. Timing excludes IO/H2D/postprocess; sampled GPU isolation does not reserve shared CPU/IO. Conv/functional-linear MACsx2.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_ms": 19.6959097957207,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 29.21097968937829
+        },
+        "recurrent": {
+          "ap50": 0.8301980717323288,
+          "ap70": 0.7529309428307747,
+          "conv_linear_gflops": 97.79111916028995,
+          "deep_full_frames": 1061,
+          "mean_ms": 17.28519657288612,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 28.290076612029225
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
+  }
+]

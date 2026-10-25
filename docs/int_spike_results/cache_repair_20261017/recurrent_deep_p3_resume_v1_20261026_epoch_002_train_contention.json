@@ -1,0 +1,28 @@
+{
+  "error": "GPUContention('GPU 5 contention with PIDs [10515]; discard timing and stop only this benchmark')",
+  "evidence": [
+    {
+      "checked_unix": 1792951509.5589826,
+      "processes": [
+        {
+          "Name": "gaussian_cull_r",
+          "PPid": "10507",
+          "Uid": "1003\t1003\t1003\t1003",
+          "pid": 10515
+        }
+      ]
+    },
+    {
+      "checked_unix": 1792951511.266052,
+      "processes": [
+        {
+          "Name": "gaussian_cull_r",
+          "PPid": "10507",
+          "Uid": "1003\t1003\t1003\t1003",
+          "pid": 10515
+        }
+      ]
+    }
+  ],
+  "scan": 200
+}

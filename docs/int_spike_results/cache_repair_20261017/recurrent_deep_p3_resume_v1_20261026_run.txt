@@ -1,0 +1,77 @@
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.
+  warnings.warn("nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.")
+Traceback (most recent call last):
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/int_gpu_exclusivity.py", line 47, in check_gpu_exclusive
+    result=snapshot();result['timing_valid']=True
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/int_gpu_exclusivity.py", line 45, in snapshot
+    query('--query-compute-apps=gpu_uuid,pid'),index,os.getpid())
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/int_gpu_exclusivity.py", line 36, in verify_gpu_processes
+    if foreign:raise GPUContention(index,foreign)
+opencood.tools.int_gpu_exclusivity.GPUContention: GPU 5 contention with PIDs [10515]; discard timing and stop only this benchmark
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 605, in <module>
+    if __name__ == '__main__': main()
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 588, in main
+    try: worker(a)
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 301, in worker
+    evaluate_readout(a,cfg,train,val,modes['selected'],out,costs,mixing+basis_cost)
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_local_readout.py", line 113, in evaluate_readout
+    train_recurrent(a,cfg,train,val,baseline,out,costs,spatial_macs)
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/train_int_recurrent_deep.py", line 160, in train_recurrent
+    evidence=check_gpu_exclusive(a.gpu)
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/int_gpu_exclusivity.py", line 53, in check_gpu_exclusive
+    try:result=snapshot()
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/int_gpu_exclusivity.py", line 45, in snapshot
+    query('--query-compute-apps=gpu_uuid,pid'),index,os.getpid())
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/int_gpu_exclusivity.py", line 36, in verify_gpu_processes
+    if foreign:raise GPUContention(index,foreign)
+opencood.tools.int_gpu_exclusivity.GPUContention: GPU 5 contention with PIDs [10515]; discard timing and stop only this benchmark

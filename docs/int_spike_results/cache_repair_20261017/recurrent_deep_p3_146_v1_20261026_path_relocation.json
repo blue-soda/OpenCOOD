@@ -1,0 +1,9 @@
+{
+  "mapping": {
+    "/data1/tzm": "/data1/zhh/gzc/int181_snapshot/data1/tzm",
+    "/data1/tzm/dataset": "/data1/zhh/gzc/dataset",
+    "/data2/tzm": "/data1/zhh/gzc/int181_snapshot/data2/tzm"
+  },
+  "policy": "Only runtime file locations change; source bytes, SHA identities, contracts and resume optimizer remain unchanged.",
+  "sha256": "6b54e043c352e430e9a89201e4aa25c830644431c083845936445ed3d35a7c52"
+}

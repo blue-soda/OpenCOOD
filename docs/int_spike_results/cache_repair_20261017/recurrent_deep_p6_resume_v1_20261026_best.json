@@ -1,0 +1,6 @@
+{
+  "ap70": 0.7529309428307747,
+  "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_resume_v1_20261026/epoch_001/repair.pth",
+  "epoch": 1,
+  "sha256": "6d2b77c31316a8c317e671d4adc718d554495480364dd4798712deb18c0c7139"
+}

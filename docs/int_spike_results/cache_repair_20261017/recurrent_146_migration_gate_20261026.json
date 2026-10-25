@@ -1,0 +1,34 @@
+{
+  "status": "PASSED",
+  "observed_unix": 1792954874.938083,
+  "archive_sha256": "12ed761798f6556ec64e3e8feaffea8a5fcbc5538663310d6eeed38c93bcbb2b",
+  "artifact_files_sha_verified": 83,
+  "dataset_sizes_verified": 20803,
+  "dataset_sha_verified": 6472,
+  "dataset_hash_scope": "All labelled files and every257th stream pointcloud; all stream files checked by size, not all pointcloud contents hashed.",
+  "counts": {
+    "train": 8593,
+    "val": 5794
+  },
+  "resumes": {
+    "recurrent_deep_p3_resume_v1_20261026": {
+      "sha256": "89bc9226de1ce8e0bc42f9528949aed14eec0e5949fd9349f5e00c769466b019",
+      "completed_epoch": 1,
+      "next_epoch": 2,
+      "optimizer_state_entries": 6,
+      "lr": 0.0001
+    },
+    "recurrent_deep_p6_resume_v1_20261026": {
+      "sha256": "cbc88d6783d7a2cc9a9cd10c6dcc2c1b069ff35ba29bc3a5d4521d48f73a2526",
+      "completed_epoch": 1,
+      "next_epoch": 2,
+      "optimizer_state_entries": 6,
+      "lr": 0.0001
+    }
+  },
+  "path_map": {
+    "/data1/tzm/dataset": "/data1/zhh/gzc/dataset",
+    "/data1/tzm": "/data1/zhh/gzc/int181_snapshot/data1/tzm",
+    "/data2/tzm": "/data1/zhh/gzc/int181_snapshot/data2/tzm"
+  }
+}

@@ -2311,3 +2311,27 @@ readout_fixed_calibrated_v2_20261026完成5794扫描/1738标注；30次GPU2抽�
 181两条恢复任务均正常运行：epoch1训练完成，完整验证到4400/5794扫描；GPU5/6仍只有各自PID65132/65298。pending_validation.pth已实际落盘（185/197KiB），证明验证前保存机制已在真实训练中执行。尚无本轮完整训练后AP。data2剩余约5.9GiB，需要继续关注下降趋势；不因短时SSH异常重复训练或迁移健康任务。
 
 已按server_backup_deployment_20261016.md只读核验146：账号zhh，仓库/data1/zhh/gzc/OpenCOOD在main@068fd07（存在其他任务未跟踪文件，保持原样）；环境/data1/zhh/gzc/miniconda3/envs/opencood，torch1.10.0+cu113，CUDA可用；DAIR/data1/zhh/gzc/dataset/dair-v2x-c无悬空链接。data1余1.8TiB，data2余2.0TiB；GPU0/4/5/6/7当前无查询到的计算进程，GPU1/2/3已有任务，不干预。此为环境与资源可用性检查，不代表本路线权重/最新优化器状态已迁移；真正切换时须同步所需checkpoint/manifest、核验SHA和数据路径，保持本地main push→目标机pull，并先验证原基线AP口径。
+### 2026-10-26 02:30：epoch1完整结果与同账号GPU争用，迁移146继续epoch2
+
+两组181恢复任务完成epoch1的5794扫描/1738标注完整验证，baseline AP精确复现，gpu_exclusivity抽样均通过（timing_valid=true）。随后两组均在epoch2第200扫描的训练守卫退出：三帧GPU5新增PID10515、六帧GPU6新增PID10517；两次间隔1秒的/proc证据均显示Name=gaussian_cull_r、Uid=1003，分别PPid10507/10508。181 uid1003对应tzm，即同账号的其他任务，并非本实验PID，也不能把之前无法追溯的PID反推成同一来源。未发送终止信号或操作这些进程。争用发生在epoch1评估结束之后，不追溯否定已通过抽样检查的该次时间，但抽样隔离仍不是连续预约。
+
+| 同GPU完整配对（epoch1） | AP70 | 卷积/线性GFLOPs | 平均模型ms | 深层全刷帧数 |
+| --- | ---: | ---: | ---: | ---: |
+| 181 GPU5固定四层基线 | 75.53159775% | 119.43160285 | 19.56529 | 2005 |
+| 181 GPU5三帧完整D递推 | 75.61303474% | 119.42636539 | 19.58902 | 2005 |
+| 181 GPU6固定四层基线 | 75.53159775% | 119.43160285 | 19.69591 | 2005 |
+| 181 GPU6六帧完整D递推 | 75.29309428% | 97.79111916 | 17.28520 | 1061 |
+
+六帧较自身epoch0初始化提高约0.20222个百分点，距本轮固定四层基线还有0.23850个百分点；算量少18.1196%、同卡模型时间低12.2397%。三帧较基线高0.08144个百分点，不解读为统计优势。两个run只完成1个优化epoch，尚不能判定收敛；维持原损失、优化器、平台规则，继续训练。两组状态50.5008MB。D短更新器仍整图运行，当前节省主要来自减少长链全刷；达到精度门槛后才验证短更新器的局部执行，不能把此结果称为已经扩展了局部D跳算。epoch1report/GPU证据/history/best及epoch2争用证据和失败日志完整归档。
+
+按用户181不可用则146的指示，迁移本路线两条任务，避免在181反复被竞争中断。146代码/data1/zhh/gzc/OpenCOOD通过本地main提交push→146 pull部署dff8b61，217项INT测试通过（9.257秒）。新增显式--path-map，仅把运行时读取位置映射到新宿主；原config/manifest/checkpoint/best元数据字节、SHA、训练合同均保持不变，不篡改已嵌入的旧路径。映射按最长目录前缀与目录边界匹配，拒绝相对路径/根目录/父目录穿越；输入树不原地修改。目标输出记录path_relocation.json与映射文件SHA。
+
+最小迁移包119384868字节，SHA256=12ed761798f6556ec64e3e8feaffea8a5fcbc5538663310d6eeed38c93bcbb2b，146快照/data1/zhh/gzc/int181_snapshot。83个artifact全部SHA/大小一致；沿用146既有DAIR，20803个相关数据文件全部大小一致、6472项SHA一致（全部标注+每257扫描抽样点云，未声称全点云逐字节校验）；train8593/val5794，migration_gate.json已归档。两组latest均为epoch1完成状态，next_action=train、AdamW六个参数状态条目、lr1e-4完整保留；epoch2仅跑200扫描的未完成进度重跑，没有把旧pending_validation(epoch1)错误地当作更新的训练状态。
+
+| 146任务 | GPU/PID | 恢复位置 |
+| --- | --- | --- |
+| recurrent_deep_p3_146_v1_20261026 | 0 / 518819 | 181 p3_resume latest，继续epoch2 |
+| recurrent_deep_p6_146_v1_20261026 | 5 / 518960 | 181 p6_resume latest，继续epoch2 |
+
+新输出根/data1/zhh/gzc/diagnostics/int_cache_repair_20261017；只读来源在int181_snapshot/data1/tzm和data2/tzm，数据映射到/data1/zhh/gzc/dataset，环境/data1/zhh/gzc/miniconda3/envs/opencood。146的GPU1/2/3/4已有任务，保持原状。此次启动时GPU0/5空闲；两组当前进行启动工程检查，待验证resume合同通过与实际训练扫描增长后才能确认恢复完成。每轮完整验证继续核验原四层baseline AP，146时间必须用同卡配对，不能跨机直接比较181时间。20分钟轮询暂保留以覆盖首次迁移后的工程/验证事件；关注主路线精度、真实算量和时间，避免额外阈值分支。
+迁移后确认：两组启动工程与原训练合同均通过，实际已进入epoch2并各推进到600/8593扫描，损失有限（三帧0.20675、六帧0.22775）。两个resume.json的来源SHA与migration_gate完全一致，可确认已恢复训练，而不是仅创建了启动进程。
