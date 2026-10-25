@@ -1,0 +1,380 @@
+{
+  "unix": 1792955485.803885,
+  "files": {
+    "data_overlay_provenance.json": {
+      "source_host": "146",
+      "base_data": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+      "view": "/data2/tzm/cp_snn_recovery_20261026/data_view",
+      "archive_sha256": "68f2f3587ac6e0ac2b55453cd3dc3b795b5e066ae262d2688545f0b1702e8295",
+      "overlaid_directories": [
+        "cooperative/label_world_backup",
+        "vehicle-side/label/lidar_backup"
+      ],
+      "files": {
+        "cooperative/label_world_backup": 6601,
+        "vehicle-side/label/lidar_backup": 15285
+      },
+      "base_dataset_modified": false
+    },
+    "scheme2_joint_restart01/recovery_provenance.json": {
+      "source_sha256": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78",
+      "data_root": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+      "only_manifest_key_changed": "data_root",
+      "training": "Restart from same original checkpoint and seed; failed run has no epoch checkpoint; not a resume",
+      "failed_run": "/data1/zhh/gzc/diagnostics/scheme2_joint_20261025/multi248k",
+      "original_manifest_sha256": "fcdf853f70a83006c8a9937feef1c4957f27de07b6e738912afd56f34a31453d",
+      "new_manifest_sha256": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356",
+      "splits": {
+        "train": 4678,
+        "val": 1738
+      }
+    },
+    "scheme2_joint_restart01/protocol.json": {
+      "source_sha256": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78",
+      "seed": 20260929,
+      "config_hashes": {
+        "fixed2k/train.yaml": "76b8584eb72ca875cc1dea8186f3a96307c0bbca6ade6701f30e9a7b353aa298",
+        "fixed2k/b0.yaml": "d988d8927980978a8929fc378cdba278547aef579f8a7eeac0f0eb7819ecc9e4",
+        "fixed2k/b2048.yaml": "07f832d808ba1c951c0818c5022cfa255bb4d988fddd518bb4f37d1ace11f583",
+        "fixed2k/b4096.yaml": "24636ca006e3d3e7470ea2bbbf46fee6494ebd3102a96d46966591f9be19d50c",
+        "fixed2k/b8192.yaml": "fd67a6d82183d8aad81d90594cd991774444305bfad121760328439fab56ef7d",
+        "multi248k/train.yaml": "0a3a556918b59392285ae2f5b4977a8f6f55decce98605f00a3187d3284a29c9",
+        "multi248k/b0.yaml": "9eea1a7113d226694b201628182164a1b1db26b68fee3a984056982618fe727e",
+        "multi248k/b2048.yaml": "5cd03c1bb6b1ac6498b7f9127e7e09a7282d34c6e0520d850e019e8e2d21a86d",
+        "multi248k/b4096.yaml": "5c9f10decdeb0b7718c76fc4da11392e1f4abf94d0f143bb426f97f81a96548b",
+        "multi248k/b8192.yaml": "4e9de645934d8361d22de6a0e10a28a6555cb2d1baa11cde0020c857c59e447c"
+      },
+      "arms": {
+        "fixed2k": [
+          2048
+        ],
+        "multi248k": [
+          2048,
+          4096,
+          8192
+        ]
+      },
+      "epochs": 10,
+      "batch_size": 2,
+      "training_timeout_seconds": 432000,
+      "criterion": "Ldet(sampled budget) + 0.5 Ldet(local); no KD, no rate proxy",
+      "trainable": "3D conv4/conv_out, project, expand, local gate/current_scale, ANN BEV and continuous heads",
+      "frozen": "early 3D, all BN buffers, unused legacy fusion/order parameters",
+      "selection": "same 2048-byte validation AP70, epoch 1..10; historical source retained separately",
+      "exit": "No extension: if no >=0.5 AP point gain at 2048 bytes, close this joint-scope hypothesis",
+      "final_budgets": [
+        0,
+        2048,
+        4096,
+        8192
+      ],
+      "source_ap70": 0.5823401,
+      "dataset_hashes": {
+        "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+        "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814",
+        "data_manifest": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356"
+      }
+    },
+    "scheme2_joint_restart01/multi248k/audit.json": {
+      "passed": true,
+      "wire_parity": [
+        {
+          "budget": 0,
+          "bytes": [
+            0
+          ],
+          "exact": true
+        },
+        {
+          "budget": 2048,
+          "bytes": [
+            2044
+          ],
+          "exact": true
+        },
+        {
+          "budget": 4096,
+          "bytes": [
+            4095
+          ],
+          "exact": true
+        },
+        {
+          "budget": 8192,
+          "bytes": [
+            8192
+          ],
+          "exact": true
+        }
+      ],
+      "zero_equals_ego": true,
+      "source_sha256": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78",
+      "gradients": {
+        "2048": {
+          "backbone_3d.conv4.": 60.17620162293315,
+          "backbone_3d.conv_out.": 22.424634873867035,
+          "backbone_2d.": 514.4770166594535,
+          "cls_head.": 0.4933456480503082,
+          "reg_head.": 19.730852127075195,
+          "dir_head.": 0.21584321185946465,
+          "content.project.": 1.3725309371948242,
+          "content.expand.": 1.366136074066162,
+          "joint_receiver.": 1.377484291791916
+        },
+        "4096": {
+          "backbone_3d.conv4.": 45.949128080159426,
+          "backbone_3d.conv_out.": 18.424760669469833,
+          "backbone_2d.": 460.82316644117236,
+          "cls_head.": 0.4563564732670784,
+          "reg_head.": 18.585423707962036,
+          "dir_head.": 0.1742238774895668,
+          "content.project.": 1.6200661659240723,
+          "content.expand.": 2.132089614868164,
+          "joint_receiver.": 1.7373166382312775
+        },
+        "8192": {
+          "backbone_3d.conv4.": 82.12366400286555,
+          "backbone_3d.conv_out.": 30.97322380542755,
+          "backbone_2d.": 609.9939465709031,
+          "cls_head.": 0.39183178544044495,
+          "reg_head.": 18.381778478622437,
+          "dir_head.": 0.13573310151696205,
+          "content.project.": 5.54651403427124,
+          "content.expand.": 9.37396240234375,
+          "joint_receiver.": 4.648870572447777
+        }
+      },
+      "losses": [
+        1.0794277733241457,
+        1.0049019081260426,
+        1.0658922206402788
+      ],
+      "changed": [
+        "backbone_3d.conv4.down.1.weight",
+        "backbone_3d.conv4.down.2.weight",
+        "backbone_3d.conv4.down.2.bias",
+        "backbone_3d.conv4.blocks.0.block.1.weight",
+        "backbone_3d.conv4.blocks.0.block.2.weight",
+        "backbone_3d.conv4.blocks.0.block.2.bias",
+        "backbone_3d.conv4.blocks.0.voxel_block.1.weight",
+        "backbone_3d.conv4.blocks.0.voxel_block.2.weight",
+        "backbone_3d.conv4.blocks.0.voxel_block.2.bias",
+        "backbone_3d.conv4.blocks.0.voxel_block.4.weight",
+        "backbone_3d.conv4.blocks.0.voxel_block.5.weight",
+        "backbone_3d.conv4.blocks.0.voxel_block.5.bias",
+        "backbone_3d.conv4.blocks.1.block.1.weight",
+        "backbone_3d.conv4.blocks.1.block.2.weight",
+        "backbone_3d.conv4.blocks.1.block.2.bias",
+        "backbone_3d.conv4.blocks.1.voxel_block.1.weight",
+        "backbone_3d.conv4.blocks.1.voxel_block.2.weight",
+        "backbone_3d.conv4.blocks.1.voxel_block.2.bias",
+        "backbone_3d.conv4.blocks.1.voxel_block.4.weight",
+        "backbone_3d.conv4.blocks.1.voxel_block.5.weight",
+        "backbone_3d.conv4.blocks.1.voxel_block.5.bias",
+        "backbone_3d.conv_out.0.weight",
+        "backbone_3d.conv_out.1.weight",
+        "backbone_3d.conv_out.1.bias",
+        "backbone_2d.blocks.0.2.weight",
+        "backbone_2d.blocks.0.3.weight",
+        "backbone_2d.blocks.0.3.bias",
+        "backbone_2d.blocks.0.5.weight",
+        "backbone_2d.blocks.0.6.weight",
+        "backbone_2d.blocks.0.6.bias",
+        "backbone_2d.blocks.0.8.weight",
+        "backbone_2d.blocks.0.9.weight",
+        "backbone_2d.blocks.0.9.bias",
+        "backbone_2d.blocks.0.11.weight",
+        "backbone_2d.blocks.0.12.weight",
+        "backbone_2d.blocks.0.12.bias",
+        "backbone_2d.blocks.0.14.weight",
+        "backbone_2d.blocks.0.15.weight",
+        "backbone_2d.blocks.0.15.bias",
+        "backbone_2d.blocks.0.17.weight",
+        "backbone_2d.blocks.0.18.weight",
+        "backbone_2d.blocks.0.18.bias",
+        "backbone_2d.blocks.1.2.weight",
+        "backbone_2d.blocks.1.3.weight",
+        "backbone_2d.blocks.1.3.bias",
+        "backbone_2d.blocks.1.5.weight",
+        "backbone_2d.blocks.1.6.weight",
+        "backbone_2d.blocks.1.6.bias",
+        "backbone_2d.blocks.1.8.weight",
+        "backbone_2d.blocks.1.9.weight",
+        "backbone_2d.blocks.1.9.bias",
+        "backbone_2d.blocks.1.11.weight",
+        "backbone_2d.blocks.1.12.weight",
+        "backbone_2d.blocks.1.12.bias",
+        "backbone_2d.blocks.1.14.weight",
+        "backbone_2d.blocks.1.15.weight",
+        "backbone_2d.blocks.1.15.bias",
+        "backbone_2d.blocks.1.17.weight",
+        "backbone_2d.blocks.1.18.weight",
+        "backbone_2d.blocks.1.18.bias",
+        "backbone_2d.deblocks.0.1.weight",
+        "backbone_2d.deblocks.0.2.weight",
+        "backbone_2d.deblocks.0.2.bias",
+        "backbone_2d.deblocks.1.1.weight",
+        "backbone_2d.deblocks.1.2.weight",
+        "backbone_2d.deblocks.1.2.bias",
+        "cls_head.weight",
+        "cls_head.bias",
+        "reg_head.weight",
+        "reg_head.bias",
+        "dir_head.weight",
+        "dir_head.bias",
+        "content.project.weight",
+        "content.expand.weight",
+        "joint_receiver.current_scale",
+        "joint_receiver.local_gate.weight"
+      ],
+      "fixed_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+      "peak_allocated_bytes": 766833152,
+      "note": "All audit updates discarded; training reloads pristine source"
+    },
+    "scheme2_joint_restart01/multi248k/launch.json": {
+      "pid": 37045,
+      "gpu": 0,
+      "admission": [
+        {
+          "free_mib": 24252,
+          "util": 0
+        },
+        {
+          "free_mib": 24252,
+          "util": 0
+        },
+        {
+          "free_mib": 24252,
+          "util": 0
+        },
+        {
+          "free_mib": 24252,
+          "util": 0
+        },
+        {
+          "free_mib": 24252,
+          "util": 0
+        }
+      ],
+      "unix": 1792954707.5766773,
+      "commit": "577dd5ecbdba8ed17d6a5349cff69f2c9999c00f"
+    },
+    "scheme2_joint_restart01/multi248k/train/progress.json": {
+      "state": "training",
+      "epoch": 1,
+      "epochs": 10,
+      "batch": 51,
+      "batches": 2339,
+      "loss": 0.619886903300614,
+      "gradient_norm": 4.158964157104492,
+      "elapsed_seconds": 588.0640147030354,
+      "stream_means": {
+        "stream_budgets": 4537.725490196079,
+        "packet_bytes": 4529.803921568628,
+        "stream_events": 9971.823529411764
+      }
+    },
+    "infocom_5pct_recovery01/status.json": {
+      "state": "failed",
+      "error": "Traceback (most recent call last):\n  File \"/data2/tzm/cp_snn_recovery_20261026/infocom_5pct_recovery01/snapshot/recover_infocom_5pct_181.py\", line 55, in coordinate\n    smoke=run('native_181_gate',.1,2)\n  File \"/data2/tzm/cp_snn_recovery_20261026/infocom_5pct_recovery01/snapshot/recover_infocom_5pct_181.py\", line 52, in run\n    stderr=subprocess.STDOUT,check=True,timeout=14400)\n  File \"/data1/tzm/miniconda3/envs/opencood/lib/python3.7/subprocess.py\", line 512, in run\n    output=stdout, stderr=stderr)\nsubprocess.CalledProcessError: Command '['/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python', '/data2/tzm/cp_snn_recovery_20261026/infocom_5pct_recovery01/snapshot/evaluate_infocom.py', '--repo', '/data2/tzm/cp_snn_recovery_20261026/InfoCom', '--model-dir', '/data2/tzm/cp_snn_recovery_20261026', '--data-root', '/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure', '--split', '/data2/tzm/cp_snn_recovery_20261026/ann_evidence/common_val.json', '--output', '/data2/tzm/cp_snn_recovery_20261026/infocom_5pct_recovery01/native_181_gate', '--gpu', '4', '--limit', '2', '--comm-range', '1000000', '--checkpoint-compat', '--wire-codec', '--mask-ratio', '0.1']' returned non-zero exit status 1.\n",
+      "automatic_retry": false
+    },
+    "infocom_5pct_recovery02/status.json": {
+      "state": "running",
+      "stage": "r005",
+      "admission": [
+        [
+          24252,
+          0
+        ],
+        [
+          24252,
+          0
+        ],
+        [
+          24252,
+          0
+        ],
+        [
+          24252,
+          0
+        ],
+        [
+          24252,
+          0
+        ]
+      ]
+    },
+    "infocom_5pct_recovery02/launch.json": {
+      "pid": 44817,
+      "unix": 1792955371.5139081,
+      "gpu": 4
+    },
+    "infocom_5pct_recovery02/protocol.json": {
+      "snapshot_sha256": {
+        "evaluate_infocom.py": "43de1ced4010617bdc7a032c69784f519fc6f547efce041d7832b02ed6ca6215",
+        "infocom_wire.py": "cb3802491222672210c785149f9f9e8afc97b361667a0eb8e35470c9a09c81ea",
+        "run_infocom_ratio_curve.py": "0c6f4b351b15e588f436e0d9a5646de9b10c1a2d9c7ed2184261c77d2c506886",
+        "replay_common_gt.py": "66eae5af6f73acf22afcee1aae85a2549b73da827842e09793dd40adc5bbcfdf",
+        "recover_infocom_5pct_181.py": "b9725cb33ff888877ea735d6ab2e8f6d8f8bb61a6d4d730cde625645e7f8f4f2"
+      },
+      "checkpoint_sha256": "7375da04507b4f543666e15aa02897e41e3c32e08bcb3f74b27ad49fb28c803c",
+      "original_failed_run": "/data1/zhh/gzc/diagnostics/ann_baselines_20261025/infocom_ratio_curve_20261026_r1/r005",
+      "reason": "146 CUDA unavailable; only uncompleted 5pct operating point moved",
+      "mask_ratio": 0.05,
+      "gpu": 4,
+      "admission": [
+        [
+          24252,
+          0
+        ],
+        [
+          24252,
+          0
+        ],
+        [
+          24252,
+          0
+        ],
+        [
+          24252,
+          0
+        ],
+        [
+          24252,
+          0
+        ]
+      ],
+      "source_split_sha256": "eff0ec36dd5a465b0750cc58cfc4d85eee78bd46bd60b6304e4d1a9beaa46026",
+      "data_root": "/data2/tzm/cp_snn_recovery_20261026/data_view",
+      "data_overlay": {
+        "source_host": "146",
+        "base_data": "/data1/tzm/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+        "view": "/data2/tzm/cp_snn_recovery_20261026/data_view",
+        "archive_sha256": "68f2f3587ac6e0ac2b55453cd3dc3b795b5e066ae262d2688545f0b1702e8295",
+        "overlaid_directories": [
+          "cooperative/label_world_backup",
+          "vehicle-side/label/lidar_backup"
+        ],
+        "files": {
+          "cooperative/label_world_backup": 6601,
+          "vehicle-side/label/lidar_backup": 15285
+        },
+        "base_dataset_modified": false
+      },
+      "previous_recovery": "infocom_5pct_recovery01: missing original backup labels; preserved",
+      "completed_1pct_2p5pct_preserved": true,
+      "model_or_budget_changes": false
+    },
+    "infocom_5pct_recovery02/cross_host_parity.json": {
+      "passed": true,
+      "samples": 2,
+      "prediction_and_message_bitwise_equal": true,
+      "reference_host": "146",
+      "current_host": "181"
+    }
+  },
+  "infocom_5pct_recovery02/pipeline.log": "",
+  "infocom_5pct_recovery02/native_181_gate.log": "ted_limit\": 2, \"evaluated_ids\": [\"000211\", \"000212\"], \"seed\": 303, \"batch_size\": 1, \"num_workers\": 0, \"gpu_selector\": \"4\", \"gpu_name\": \"NVIDIA GeForce RTX 3090\", \"gpu_memory_fraction\": 0.25, \"torch_version\": \"1.10.0+cu113\", \"cuda_version\": \"11.3\", \"numpy_version\": \"1.21.6\", \"parameter_count\": 119853951, \"parameter_bytes\": 479415804, \"parameters_by_top_module\": {\"ib_communication\": 106952427, \"pillar_vfe\": 768, \"scatter\": 0, \"backbone\": 11420544, \"fusion_net\": 0, \"shrink_conv\": 1475072, \"cls_head\": 514, \"reg_head\": 3598, \"dir_head\": 1028}, \"metric\": \"official BEV polygon IoU AP, global confidence sorting\", \"wire_bytes\": null, \"wire_note\": \"Measured exact codec; separately counted 80-byte frame/sender/sequence/pairwise-transform envelope; excludes link/IP overhead. CPU codec included in forward timing.\", \"warmup_passes\": 3, \"timing_scope\": \"GPU-synchronized model forward and official helper incl CPU postprocess; excludes data loading, H2D, metric calculation, file IO\", \"overrides\": {\"data_dir\": \"/data2/tzm/cp_snn_recovery_20261026/data_view\", \"root_dir\": \"/data2/tzm/cp_snn_recovery_20261026/ann_evidence/common_val.json\", \"validate_dir\": \"/data2/tzm/cp_snn_recovery_20261026/ann_evidence/common_val.json\", \"test_dir\": \"/data2/tzm/cp_snn_recovery_20261026/ann_evidence/common_val.json\"}, \"participant_range_metres\": 1000000.0, \"comm_range_override\": 1000000.0, \"mask_ratio_override\": 0.1, \"mask_ratio_note\": \"Frozen official checkpoint operating point; not budget-adapted training; uses official raw learned ranking, ties, quantization and decoder; actual bytes measured, no hard byte cap\", \"checkpoint_compatibility\": \"legacy sigma->std; newly added AdaptiveScale layers set to identity; inference only, not proof of original training architecture\", \"wire_codec\": \"exact_fp32_bitmap_dictionary_or_dense_zlib_v1\", \"completed\": true, \"full_split\": false, \"frames\": 2, \"gt_count\": 39, \"pred_count\": 35, \"ap30\": 0.8703296703296703, \"ap50\": 0.8087572920906254, \"ap70\": 0.6895896780954252, \"forward_seconds\": {\"mean\": 0.04254466004204005, \"median\": 0.04254466004204005, \"p95\": 0.04330087146954611, \"min\": 0.04170442512258887, \"max\": 0.04338489496149123, \"count\": 2}, \"forward_postprocess_seconds\": {\"mean\": 0.10628231253940612, \"median\": 0.10628231253940612, \"p95\": 0.10840219632955268, \"min\": 0.10392688610590994, \"max\": 0.1086377389729023, \"count\": 2}, \"cuda_peak_allocated_bytes\": 869038080, \"cuda_peak_reserved_bytes\": 1210056704, \"timing_is_smoke_only\": true, \"wire_statistics\": {\"packet_bytes\": {\"mean\": 8867.5, \"median\": 8867.5, \"p95\": 8932.75, \"min\": 8795.0, \"max\": 8940.0, \"count\": 2}, \"envelope_bytes\": {\"mean\": 80.0, \"median\": 80.0, \"p95\": 80.0, \"min\": 80.0, \"max\": 80.0, \"count\": 2}, \"total_bytes\": {\"mean\": 8947.5, \"median\": 8947.5, \"p95\": 9012.75, \"min\": 8875.0, \"max\": 9020.0, \"count\": 2}, \"encode_seconds\": {\"mean\": 0.006949382019229233, \"median\": 0.006949382019229233, \"p95\": 0.0075223319348879155, \"min\": 0.006312771001830697, \"max\": 0.0075859930366277695, \"count\": 2}, \"decode_seconds\": {\"mean\": 0.0007204789435490966, \"median\": 0.0007204789435490966, \"p95\": 0.000749972031917423, \"min\": 0.0006877088453620672, \"max\": 0.000753249041736126, \"count\": 2}}, \"wire_exact_fp32\": true, \"participant_counts\": {\"1\": 0, \"2\": 2}}\n/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/nn/functional.py:1806: UserWarning: nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.\n  warnings.warn(\"nn.functional.sigmoid is deprecated. Use torch.sigmoid instead.\")\n",
+  "infocom_5pct_recovery02/r005.log": "984, \"envelope_bytes\": 80, \"total_bytes\": 4064, \"encode_seconds\": 0.004160132026299834, \"decode_seconds\": 0.0004867338575422764}}\n{\"index\": 207, \"frame_id\": \"001852\", \"file\": \"predictions/000207.npz\", \"sha256\": \"3af3858006a423e85d6031d5735ddc84d48efef7ac94a4c6ff86677d763957b6\", \"pred_count\": 3, \"gt_count\": 3, \"record_len\": [2], \"forward_seconds\": 0.04082268616184592, \"forward_postprocess_seconds\": 0.049103857949376106, \"wire\": {\"messages\": [{\"mode\": 1, \"nonzero_values\": 5040, \"dictionary_values\": 4, \"code_bits\": 2, \"packet_bytes\": 3980, \"header_bytes\": 28, \"compressed_body_bytes\": 3952, \"uncompressed_body_bytes\": 14912, \"dense_compressed_bytes\": 6656, \"sparse_compressed_bytes\": 3980, \"paper_value_only_bytes\": 3544, \"sender\": 1, \"frame_id\": \"001852\", \"envelope_bytes\": 80, \"total_bytes\": 4060, \"sha256\": \"23a86a3f34032a415311ceb27e03fc14939bd5d59765d400fe07959830d025e9\", \"host_copy_seconds\": 0.000185397919267416, \"encode_seconds\": 0.00422469899058342, \"decode_seconds\": 0.0005067130550742149, \"roundtrip_seconds\": 0.00537614687345922, \"exact_fp32\": true, \"file\": \"wire/000207_sender1.bin\"}], \"packet_bytes\": 3980, \"envelope_bytes\": 80, \"total_bytes\": 4060, \"encode_seconds\": 0.00422469899058342, \"decode_seconds\": 0.0005067130550742149}}\n{\"index\": 208, \"frame_id\": \"001853\", \"file\": \"predictions/000208.npz\", \"sha256\": \"dff3c3b1790bc2fff55a2e7b87829a06919121954c09bb15be367df708e3981e\", \"pred_count\": 5, \"gt_count\": 3, \"record_len\": [2], \"forward_seconds\": 0.040088898967951536, \"forward_postprocess_seconds\": 0.050254472997039557, \"wire\": {\"messages\": [{\"mode\": 1, \"nonzero_values\": 5040, \"dictionary_values\": 4, \"code_bits\": 2, \"packet_bytes\": 4031, \"header_bytes\": 28, \"compressed_body_bytes\": 4003, \"uncompressed_body_bytes\": 14912, \"dense_compressed_bytes\": 6782, \"sparse_compressed_bytes\": 4031, \"paper_value_only_bytes\": 3544, \"sender\": 1, \"frame_id\": \"001853\", \"envelope_bytes\": 80, \"total_bytes\": 4111, \"sha256\": \"c39e5a614bc2255b07970fc22397666f188c1c243c1ad4f549edcd3dd0f30a56\", \"host_copy_seconds\": 0.00018185912631452084, \"encode_seconds\": 0.004292740952223539, \"decode_seconds\": 0.0005107689648866653, \"roundtrip_seconds\": 0.0054768521804362535, \"exact_fp32\": true, \"file\": \"wire/000208_sender1.bin\"}], \"packet_bytes\": 4031, \"envelope_bytes\": 80, \"total_bytes\": 4111, \"encode_seconds\": 0.004292740952223539, \"decode_seconds\": 0.0005107689648866653}}\n{\"index\": 209, \"frame_id\": \"001854\", \"file\": \"predictions/000209.npz\", \"sha256\": \"572f72497bc78404b92fdbdfb7eb2fae644bd0487b1278d4e3f23bbfa415f539\", \"pred_count\": 3, \"gt_count\": 4, \"record_len\": [2], \"forward_seconds\": 0.040288839023560286, \"forward_postprocess_seconds\": 0.04788603400811553, \"wire\": {\"messages\": [{\"mode\": 1, \"nonzero_values\": 5040, \"dictionary_values\": 4, \"code_bits\": 2, \"packet_bytes\": 3959, \"header_bytes\": 28, \"compressed_body_bytes\": 3931, \"uncompressed_body_bytes\": 14912, \"dense_compressed_bytes\": 6650, \"sparse_compressed_bytes\": 3959, \"paper_value_only_bytes\": 3544, \"sender\": 1, \"frame_id\": \"001854\", \"envelope_bytes\": 80, \"total_bytes\": 4039, \"sha256\": \"c00eef2b6e7c35764c31f1d0e4bba496e9a321b74631b32e1ae8819de912644b\", \"host_copy_seconds\": 0.00019034300930798054, \"encode_seconds\": 0.004212083062157035, \"decode_seconds\": 0.0004899138584733009, \"roundtrip_seconds\": 0.0052941490430384874, \"exact_fp32\": true, \"file\": \"wire/000209_sender1.bin\"}], \"packet_bytes\": 3959, \"envelope_bytes\": 80, \"total_bytes\": 4039, \"encode_seconds\": 0.004212083062157035, \"decode_seconds\": 0.0004899138584733009}}\n"
+}

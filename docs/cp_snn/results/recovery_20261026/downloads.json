@@ -1,0 +1,7 @@
+{
+  "curve_archive_sha256": "0d08e68963a7b5c7d2dc5af66117161b7d18f3039fdd73770ae7b6cbe8581b76",
+  "fixed_backup": {
+    "best_ap70.pth": "9dc6d992301ad2626b73c90565ba688a0d946097cd6e139d5b65991f92a1f7ef",
+    "last.pt": "35986b48d2b71dc2387d829fcf94bd0023109cb2f12fe8851ff6f51658df53c4"
+  }
+}

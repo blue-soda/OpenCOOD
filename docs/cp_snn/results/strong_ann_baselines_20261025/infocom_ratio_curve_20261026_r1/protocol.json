@@ -1,0 +1,55 @@
+{
+  "points": [
+    [
+      "r001",
+      0.01
+    ],
+    [
+      "r0025",
+      0.025
+    ],
+    [
+      "r005",
+      0.05
+    ]
+  ],
+  "gpu": "4",
+  "seed": 303,
+  "snapshot_sha256": {
+    "evaluate_infocom.py": "43de1ced4010617bdc7a032c69784f519fc6f547efce041d7832b02ed6ca6215",
+    "infocom_wire.py": "cb3802491222672210c785149f9f9e8afc97b361667a0eb8e35470c9a09c81ea",
+    "replay_common_gt.py": "66eae5af6f73acf22afcee1aae85a2549b73da827842e09793dd40adc5bbcfdf",
+    "run_infocom_ratio_curve.py": "0c6f4b351b15e588f436e0d9a5646de9b10c1a2d9c7ed2184261c77d2c506886"
+  },
+  "split_sha256": "eff0ec36dd5a465b0750cc58cfc4d85eee78bd46bd60b6304e4d1a9beaa46026",
+  "purpose": "Frozen strong-ANN inference rate/AP curve",
+  "no_hard_byte_cap": true,
+  "no_new_training": true,
+  "no_ap_dependent_parameter_search": true,
+  "original_ratio": 0.1,
+  "known_original_ap70": 0.6457136214761451,
+  "known_original_mean_bytes": 8754.928078250863,
+  "admission": [
+    [
+      24134,
+      0
+    ],
+    [
+      24134,
+      0
+    ],
+    [
+      24134,
+      0
+    ],
+    [
+      24134,
+      0
+    ],
+    [
+      24134,
+      0
+    ]
+  ],
+  "timing": "Shared GPU operational time only; no compute superiority claim"
+}

@@ -1,0 +1,88 @@
+{
+  "unix": 1792957656.5947971,
+  "files": {
+    "multi248k/supervision_status.json": {
+      "state": "failed",
+      "error": "Traceback (most recent call last):\n  File \"/data1/zhh/gzc/OpenCOOD/opencood/tools/supervise_e3dsnn_snapshot_joint.py\", line 124, in watch\n    if status.get('state')!='complete':raise RuntimeError('Trainer failed; no automatic retry')\nRuntimeError: Trainer failed; no automatic retry\n",
+      "automatic_retry": false
+    },
+    "multi248k/train/status.json": {
+      "state": "failed",
+      "error": "Traceback (most recent call last):\n  File \"/data1/zhh/gzc/OpenCOOD/opencood/tools/train_e3dsnn_single.py\", line 562, in main\n    result = execute(args, output_dir)\n  File \"/data1/zhh/gzc/OpenCOOD/opencood/tools/train_e3dsnn_single.py\", line 439, in execute\n    loss.backward()\n  File \"/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/_tensor.py\", line 307, in backward\n    torch.autograd.backward(self, gradient, retain_graph, create_graph, inputs=inputs)\n  File \"/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/autograd/__init__.py\", line 156, in backward\n    allow_unreachable=True, accumulate_grad=True)  # allow_unreachable flag\nRuntimeError: CUDA error: unknown error\nCUDA kernel errors might be asynchronously reported at some other API call,so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1.\n"
+    },
+    "multi248k/train/progress.json": {
+      "state": "training",
+      "epoch": 1,
+      "epochs": 10,
+      "batch": 1201,
+      "batches": 2339,
+      "loss": 0.9811814836960796,
+      "gradient_norm": 6.1372456550598145,
+      "elapsed_seconds": 14244.040425599087,
+      "stream_means": {
+        "stream_budgets": 4755.930058284763,
+        "packet_bytes": 4730.494587843464,
+        "stream_events": 10170.30099916736
+      }
+    },
+    "fixed2k/train/best_ap70_metrics.json": {
+      "samples": 1738,
+      "indexed_samples": 1738,
+      "full_split": true,
+      "predicted_boxes": 29414,
+      "gt_boxes": 28622,
+      "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+      "ap": {
+        "0.3": 0.7687735230282565,
+        "0.5": 0.7189869483297162,
+        "0.7": 0.5862417090518248
+      },
+      "feature_packets": {
+        "count": 1738,
+        "mean_bytes": 2046.856731875719,
+        "median_bytes": 2047.0,
+        "min_bytes": 2041,
+        "max_bytes": 2048,
+        "p95_bytes": 2048.0,
+        "total_bytes": 3557437,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "epoch": 4,
+      "train_loss": 0.9414758576669694,
+      "train_samples": 4678,
+      "seconds": 3693.2378323080484,
+      "train_loss_components": {
+        "fused_detection_loss": 0.6072530957309872,
+        "ego_detection_loss": 0.6684455238719659
+      },
+      "train_stream_means": {
+        "stream_budgets": 2048.0,
+        "packet_bytes": 2046.685549380077,
+        "stream_events": 2684.47648567764
+      }
+    },
+    "fixed2k/train/progress.json": {
+      "state": "training",
+      "epoch": 5,
+      "epochs": 10,
+      "batch": 1251,
+      "batches": 2339,
+      "loss": 1.177212172873181,
+      "gradient_norm": 4.127326488494873,
+      "elapsed_seconds": 1381.5837676490191,
+      "stream_means": {
+        "stream_budgets": 2048.0,
+        "packet_bytes": 2046.7681854516386,
+        "stream_events": 2607.7434052757794
+      }
+    },
+    "fixed2k/train/fixed_state.json": {
+      "initial_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+      "current_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+      "verified_through_epoch": 4,
+      "passed": true
+    }
+  },
+  "gpu": "Unable to determine the device handle for GPU0: 0000:3D:00.0: Unknown Error\nindex, uuid, memory.free [MiB], utilization.gpu [%]\n1, GPU-7cbfb990-f529-8115-fb7c-824f3cd10af2, 20888 MiB, 0 %\n2, GPU-6d47f8f4-b966-0563-1a54-c9a708ce68d1, 20942 MiB, 50 %\n3, GPU-d31c5911-b089-3b28-82d1-17bc1216e954, 24134 MiB, 0 %\n4, GPU-20f31523-e954-7be0-b7fa-83dbc411f5f2, 24134 MiB, 0 %\n5, GPU-5f747879-14b4-7d12-8906-a7b006c0682b, 24134 MiB, 0 %\n6, GPU-37c7491f-8197-d03b-e844-b85ca749bc2e, 24134 MiB, 0 %\n7, GPU-8e77ad89-0172-35f7-4d1f-8eefa8c1fbe0, 24134 MiB, 0 %\n",
+  "multi_checkpoints": []
+}
