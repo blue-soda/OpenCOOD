@@ -1,0 +1,10 @@
+{
+  "actual_hook_plus_linear_macs_verified": true,
+  "frames": 32,
+  "partial_frames": 21,
+  "period1_exact_max_error": 0.0,
+  "readout_dense_macs": 11766988800,
+  "same_input_selected_vs_masked_max_error": 1.33514404296875e-05,
+  "spatial_dense_macs": 12386304000,
+  "status": "PASSED"
+}
