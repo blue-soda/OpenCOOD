@@ -83,6 +83,10 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
         actual_hook_plus_linear_macs_verified=True,readout_dense_macs=readout_macs,
         spatial_dense_macs=spatial_macs))
     del modes['period1']
+    if a.readout_selector_frames:
+        from opencood.tools.audit_int_readout_selector import audit_selector
+        audit_selector(a,cfg,train,modes['selected'],out)
+        return
     if a.readout_backend_frames:
         from opencood.tools.profile_int_readout_backend import profile_readout_backend
         profile_readout_backend(a,cfg,train,modes,out,expected,readout_macs)

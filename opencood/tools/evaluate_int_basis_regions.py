@@ -490,8 +490,13 @@ def main():
                    help='Training-prefix phase/selector diagnosis only, no AP or model latency')
     p.add_argument('--readout-backend-frames',type=int,default=0,
                    help='Same-state training-prefix row/tile8/tile16/masked benchmark, no AP')
+    p.add_argument('--readout-selector-frames',type=int,default=0,
+                   help='Training-prefix energy/fragmentation and discarded one-step mask audit')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.readout_selector_frames and (a.readout_period!=3 or a.readout_threshold!=.5 or
+            a.readout_audit_frames or a.readout_backend_frames or not 64<=a.readout_selector_frames<=512):
+        p.error('Selector audit requires period3/threshold.5 and 64..512 scans without other diagnostics')
     if a.readout_backend_frames and (a.readout_period!=3 or a.readout_threshold!=.5 or
             a.readout_audit_frames or not 64<=a.readout_backend_frames<=512):
         p.error('Readout backend profile requires period3/threshold.5 and 64..512 scans, without phase audit')
