@@ -14,6 +14,7 @@ from opencood.models.sub_modules.int_cache_repair import CacheRepairDetector, Pe
 from opencood.models.sub_modules.int_cache_gate import DESCRIPTOR_VERSION
 from opencood.tools.run_int_ego import loader, to_device, write_json
 from opencood.tools.launch_int_memory import digest
+from opencood.tools.int_artifact_paths import artifact_path,relocate_tree
 from opencood.utils import eval_utils
 
 
@@ -22,10 +23,10 @@ def setup(a):
     args=json.loads((train/'effective_runtime.json').read_text())['arguments']
     contract=json.loads((train/'manifest.json').read_text())['contract']
     best=json.loads((train/'best.json').read_text())
-    assert digest(best['checkpoint'])==best['sha256']
-    assert digest(args['config'])==contract['config_sha256']
-    assert digest(args['manifest'])==contract['manifest_sha256']
-    cfg=load_yaml(args['config']);cfg['data_augment']=[]
+    assert digest(artifact_path(best['checkpoint']))==best['sha256']
+    assert digest(artifact_path(args['config']))==contract['config_sha256']
+    assert digest(artifact_path(args['manifest']))==contract['manifest_sha256']
+    cfg=relocate_tree(load_yaml(artifact_path(args['config'])));cfg['data_augment']=[]
     split='train' if a.stage in ['calibrate','gate-check'] else 'val'
     a.content_threshold=None;a.content_calibration_sha256=None
     if a.content_calibration:
@@ -37,12 +38,12 @@ def setup(a):
         a.content_threshold=float(policy['selected']['threshold'])
         assert np.isfinite(a.content_threshold) and a.content_threshold>=0
         a.content_calibration_sha256=digest(a.content_calibration)
-    rows=json.loads(Path(args['manifest']).read_text())[split]
+    rows=relocate_tree(json.loads(Path(artifact_path(args['manifest'])).read_text())[split])
     torch.manual_seed(303);np.random.seed(303)
     torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     torch.backends.cudnn.deterministic=True;torch.backends.cudnn.benchmark=False
     model=PointPillarINT(cfg['model']['args'],a.mode).to(torch.device(getattr(a,'device','cuda'))).eval()
-    model.load_state_dict(torch.load(best['checkpoint'],map_location='cpu')['model'],strict=True)
+    model.load_state_dict(torch.load(artifact_path(best['checkpoint']),map_location='cpu')['model'],strict=True)
     return model,cfg,rows,dict(contract=contract,checkpoint=best,arguments=vars(a),split=split)
 
 

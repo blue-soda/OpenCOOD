@@ -29,11 +29,16 @@ from opencood.tools.train_int_anchor_residual import ConvCounter
 from opencood.tools.run_int_cache_repair import setup
 from opencood.tools.run_int_ego import loader, to_device, write_json
 from opencood.tools.launch_int_memory import digest
+from opencood.tools.int_artifact_paths import artifact_path,relocate_tree,read_mapping
 from opencood.utils import eval_utils
 
 
 def worker(a):
     out = Path(a.output); write_json(out/'status.json', dict(status='RUNNING', phase='setup'))
+    if a.path_map:
+        os.environ['OPENCOOD_INT_PATH_MAP']=str(Path(a.path_map).resolve())
+        write_json(out/'path_relocation.json',dict(mapping=dict(read_mapping(os.environ['OPENCOOD_INT_PATH_MAP'])),sha256=digest(a.path_map),
+            policy='Only runtime file locations change; source bytes, SHA identities, contracts and resume optimizer remain unchanged.'))
     for k, v in dict(mode='gru', stage='pilot', device='cuda', content_calibration=None, periodic_last=0, max_age=.25).items():
         setattr(a, k, v)
     base, cfg, val, source = setup(a)
@@ -46,9 +51,9 @@ def worker(a):
         root = Path(root)
         assert json.loads((root/'status.json').read_text())['status'] == 'COMPLETED'
         best = json.loads((root/'best.json').read_text())
-        assert digest(best['checkpoint']) == best['sha256']
+        assert digest(artifact_path(best['checkpoint'])) == best['sha256']
         if sha is not None: assert best['sha256'] == sha
-        artifacts.append((best, torch.load(best['checkpoint'], map_location='cpu')))
+        artifacts.append((best, torch.load(artifact_path(best['checkpoint']), map_location='cpu')))
     (mb, memory), (pb, repaired), (sb, spatial) = artifacts
     assert memory['contract']['data'] == repaired['contract']['data'] == spatial['contract']['data'] == source['contract']
     assert memory['contract']['source']['sha256'] == readout['contract']['source_sha256'] == source['checkpoint']['sha256']
@@ -57,7 +62,7 @@ def worker(a):
     if a.projected_run:
         assert spatial['contract']['rank'] in (64,96)
         assert spatial['contract']['phase'] == 'Dense precision recovery for projected four-map spatial update; no new spatial cache during training/validation'
-        dense_report = json.loads((Path(sb['checkpoint']).parent/'report.json').read_text())
+        dense_report = json.loads((Path(artifact_path(sb['checkpoint'])).parent/'report.json').read_text())
         assert spatial['epoch'] == sb['epoch']
     else:
         assert spatial['contract']['rank'] == 9
@@ -172,7 +177,7 @@ def worker(a):
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     (out/'unit_tests.log').write_bytes(tests.stdout); assert tests.returncode == 0
     arguments = json.loads((Path(a.root)/'full_gru'/'effective_runtime.json').read_text())['arguments']
-    train = json.loads(Path(arguments['manifest']).read_text())['train']
+    train = relocate_tree(json.loads(Path(artifact_path(arguments['manifest'])).read_text())['train'])
     states = {k:None for k in modes}; control_state = None; costs = {}; mixing = basis_cost = None
     maximum = control_error = fusion_error = warp_error = storage_error = long_error = compact_error = 0.; writes = []
     _, stream = loader(train[:32], cfg, 0, 303)
@@ -511,6 +516,7 @@ def main():
                    help='Train complete recursive D updater; maximum1..24 epochs, zero disables')
     p.add_argument('--recurrent-deep-period',type=int,choices=(3,6),default=6)
     p.add_argument('--recurrent-deep-resume',default=None,help='Completed-epoch latest.pth to resume in new output directory')
+    p.add_argument('--path-map',default=None,help='Explicit JSON source-prefix to host-prefix mapping; preserve artifact bytes/contracts')
     a = p.parse_args(); out = Path(a.output)
     if a.recurrent_deep_resume and not a.recurrent_deep_epochs:p.error('Resume requires recurrent D training')
     if not 0<=a.recurrent_deep_epochs<=24:p.error('Recurrent D budget must be0..24')

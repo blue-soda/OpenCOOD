@@ -22,6 +22,7 @@ from opencood.tools.train_int_anchor_residual import ConvCounter
 from opencood.tools.run_int_cache_repair import setup
 from opencood.tools.run_int_ego import loader, to_device, write_json
 from opencood.tools.launch_int_memory import digest
+from opencood.tools.int_artifact_paths import artifact_path
 from opencood.utils import eval_utils
 
 
@@ -31,8 +32,8 @@ def completed_best(directory):
     assert json.loads((directory/'status.json').read_text())['status'] == 'COMPLETED'
     assert report['stop_reason'] == 'plateau'
     best = json.loads((directory/'best.json').read_text())
-    assert digest(best['checkpoint']) == best['sha256']
-    return best, torch.load(best['checkpoint'], map_location='cpu')
+    assert digest(artifact_path(best['checkpoint'])) == best['sha256']
+    return best, torch.load(artifact_path(best['checkpoint']), map_location='cpu')
 
 
 def worker(a):
