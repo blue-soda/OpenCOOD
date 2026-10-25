@@ -1,0 +1,611 @@
+[
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 1
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 1
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 1
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 8.58306884765625e-06,
+    "readout_max_error": 1.2159347534179688e-05,
+    "scan": 201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 8.58306884765625e-06,
+    "readout_max_error": 1.2159347534179688e-05,
+    "scan": 201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 9.059906005859375e-06,
+    "readout_max_error": 1.2159347534179688e-05,
+    "scan": 201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 8.58306884765625e-06,
+    "readout_max_error": 1.811981201171875e-05,
+    "scan": 401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 8.58306884765625e-06,
+    "readout_max_error": 1.811981201171875e-05,
+    "scan": 401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 8.58306884765625e-06,
+    "readout_max_error": 1.811981201171875e-05,
+    "scan": 401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 9.298324584960938e-06,
+    "readout_max_error": 1.71661376953125e-05,
+    "scan": 601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 1.9073486328125e-05,
+    "scan": 601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 1.9073486328125e-05,
+    "scan": 601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 2.288818359375e-05,
+    "readout_max_error": 3.147125244140625e-05,
+    "scan": 801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 2.288818359375e-05,
+    "readout_max_error": 3.147125244140625e-05,
+    "scan": 801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 1.9073486328125e-05,
+    "readout_max_error": 3.528594970703125e-05,
+    "scan": 801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 2.193450927734375e-05,
+    "scan": 1001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 2.193450927734375e-05,
+    "scan": 1001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 2.193450927734375e-05,
+    "scan": 1001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 1201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 1201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 1201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 1.0728836059570312e-05,
+    "scan": 1401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 1.0728836059570312e-05,
+    "scan": 1401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 8.106231689453125e-06,
+    "readout_max_error": 1.33514404296875e-05,
+    "scan": 1401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 1.2874603271484375e-05,
+    "scan": 1601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 7.867813110351562e-06,
+    "readout_max_error": 1.049041748046875e-05,
+    "scan": 1601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 1.2874603271484375e-05,
+    "scan": 1601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 1801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 1801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 1801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 7.867813110351562e-06,
+    "readout_max_error": 1.33514404296875e-05,
+    "scan": 2001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 7.867813110351562e-06,
+    "readout_max_error": 1.33514404296875e-05,
+    "scan": 2001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 9.298324584960938e-06,
+    "readout_max_error": 1.0967254638671875e-05,
+    "scan": 2001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 2.384185791015625e-05,
+    "readout_max_error": 2.574920654296875e-05,
+    "scan": 2201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 1.7404556274414062e-05,
+    "readout_max_error": 2.956390380859375e-05,
+    "scan": 2201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 2.384185791015625e-05,
+    "readout_max_error": 2.574920654296875e-05,
+    "scan": 2201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 2.002716064453125e-05,
+    "readout_max_error": 5.91278076171875e-05,
+    "scan": 2401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 2.6702880859375e-05,
+    "readout_max_error": 5.340576171875e-05,
+    "scan": 2401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 2.6702880859375e-05,
+    "readout_max_error": 5.340576171875e-05,
+    "scan": 2401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 5.751848220825195e-06,
+    "readout_max_error": 1.1444091796875e-05,
+    "scan": 2601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 5.751848220825195e-06,
+    "readout_max_error": 1.1444091796875e-05,
+    "scan": 2601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 5.9604644775390625e-06,
+    "readout_max_error": 1.430511474609375e-05,
+    "scan": 2601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 1.0013580322265625e-05,
+    "readout_max_error": 1.52587890625e-05,
+    "scan": 2801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 1.0013580322265625e-05,
+    "readout_max_error": 1.52587890625e-05,
+    "scan": 2801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 1.0013580322265625e-05,
+    "readout_max_error": 1.52587890625e-05,
+    "scan": 2801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 1.0728836059570312e-05,
+    "readout_max_error": 1.1920928955078125e-05,
+    "scan": 3001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 1.0013580322265625e-05,
+    "readout_max_error": 1.239776611328125e-05,
+    "scan": 3001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 1.0013580322265625e-05,
+    "readout_max_error": 1.239776611328125e-05,
+    "scan": 3001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 3201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 3201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 3201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 1.1920928955078125e-05,
+    "readout_max_error": 2.288818359375e-05,
+    "scan": 3401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 1.1444091796875e-05,
+    "readout_max_error": 2.09808349609375e-05,
+    "scan": 3401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 1.1920928955078125e-05,
+    "readout_max_error": 2.288818359375e-05,
+    "scan": 3401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 3601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 3601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 3601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 1.0251998901367188e-05,
+    "readout_max_error": 1.430511474609375e-05,
+    "scan": 3801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 1.0251998901367188e-05,
+    "readout_max_error": 1.430511474609375e-05,
+    "scan": 3801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 9.059906005859375e-06,
+    "readout_max_error": 2.384185791015625e-05,
+    "scan": 3801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 1.621246337890625e-05,
+    "scan": 4001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 9.775161743164062e-06,
+    "readout_max_error": 1.52587890625e-05,
+    "scan": 4001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 1.621246337890625e-05,
+    "scan": 4001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 6.29425048828125e-05,
+    "readout_max_error": 6.29425048828125e-05,
+    "scan": 4201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 5.5789947509765625e-05,
+    "readout_max_error": 5.91278076171875e-05,
+    "scan": 4201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 5.5789947509765625e-05,
+    "readout_max_error": 5.91278076171875e-05,
+    "scan": 4201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 8.58306884765625e-06,
+    "readout_max_error": 1.0728836059570312e-05,
+    "scan": 4401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 8.58306884765625e-06,
+    "readout_max_error": 1.0728836059570312e-05,
+    "scan": 4401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 9.298324584960938e-06,
+    "readout_max_error": 1.1920928955078125e-05,
+    "scan": 4401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 1.1205673217773438e-05,
+    "readout_max_error": 1.6689300537109375e-05,
+    "scan": 4601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 1.2636184692382812e-05,
+    "readout_max_error": 1.6689300537109375e-05,
+    "scan": 4601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 1.1205673217773438e-05,
+    "readout_max_error": 1.6689300537109375e-05,
+    "scan": 4601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 1.0013580322265625e-05,
+    "readout_max_error": 1.3828277587890625e-05,
+    "scan": 4801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 1.0013580322265625e-05,
+    "readout_max_error": 1.3828277587890625e-05,
+    "scan": 4801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 1.0013580322265625e-05,
+    "readout_max_error": 1.3828277587890625e-05,
+    "scan": 4801
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 1.1444091796875e-05,
+    "readout_max_error": 1.3828277587890625e-05,
+    "scan": 5001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 1.1444091796875e-05,
+    "readout_max_error": 1.3828277587890625e-05,
+    "scan": 5001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 1.0967254638671875e-05,
+    "readout_max_error": 1.33514404296875e-05,
+    "scan": 5001
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 7.152557373046875e-06,
+    "readout_max_error": 2.288818359375e-05,
+    "scan": 5201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 9.5367431640625e-06,
+    "readout_max_error": 2.574920654296875e-05,
+    "scan": 5201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 7.152557373046875e-06,
+    "readout_max_error": 2.288818359375e-05,
+    "scan": 5201
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 5401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 5401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 0.0,
+    "readout_max_error": 0.0,
+    "scan": 5401
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_packed",
+    "prediction_max_error": 7.62939453125e-06,
+    "readout_max_error": 9.5367431640625e-06,
+    "scan": 5601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "readout_wide",
+    "prediction_max_error": 7.62939453125e-06,
+    "readout_max_error": 9.5367431640625e-06,
+    "scan": 5601
+  },
+  {
+    "deep_max_error": 0.0,
+    "mode": "local_readout",
+    "prediction_max_error": 6.67572021484375e-06,
+    "readout_max_error": 1.049041748046875e-05,
+    "scan": 5601
+  }
+]
