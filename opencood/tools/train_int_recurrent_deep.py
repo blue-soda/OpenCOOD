@@ -58,8 +58,8 @@ def engineering(baseline,mode,cfg,train,costs,spatial_macs):
         gradient_into_repair_only=True,teacher_not_used_in_partial_inference=True)
 
 
-def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch):
-    modes=dict(baseline=baseline,recurrent=mode);states={k:None for k in modes}
+def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variants=None,expected_ap=None):
+    modes=dict(baseline=baseline);modes.update(variants if variants is not None else dict(recurrent=mode));states={k:None for k in modes}
     stats={k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}
     metrics={k:dict(time=[],macs=0,full=0,state=[]) for k in modes};isolation=[]
     dataset,stream=loader(rows,cfg,4,303)
@@ -74,13 +74,16 @@ def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch):
     with torch.no_grad():
         for index,sample in enumerate(stream):
             ego=to_device(sample['ego'],torch.device('cuda'));names=list(modes)
-            if index%2:names.reverse()
+            if variants is not None:
+                offset=index%len(names);names=names[offset:]+names[:offset]
+                if (index//len(names))%2:names.reverse()
+            elif index%2:names.reverse()
             for name in names:
                 torch.cuda.synchronize();tick=time.perf_counter()
                 pred,states[name],info=modes[name].step(ego,states[name],sample['meta'])
                 torch.cuda.synchronize();ms=1000*(time.perf_counter()-tick)
                 if index>=10:metrics[name]['time'].append(ms)
-                recurrent=name=='recurrent';metrics[name]['macs']+=cost_of(costs,spatial_macs,info,recurrent)
+                recurrent=name!='baseline';metrics[name]['macs']+=cost_of(costs,spatial_macs,info,recurrent)
                 metrics[name]['full']+=int(not info['deep_partial'] if recurrent else not info['local_partial'])
                 metrics[name]['state'].append(info['state_bytes']+info['spatial_state_bytes']+info['anchor_bytes'])
                 assert all(torch.isfinite(v).all() for v in pred.values())
@@ -96,6 +99,8 @@ def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch):
         p95_ms=float(np.percentile(metrics[k]['time'],95)) if timing_valid else None,deep_full_frames=metrics[k]['full'],
         mean_state_bytes=float(np.mean(metrics[k]['state']))) for k in modes}
     assert abs(results['baseline']['ap70']-.7553159775482435)<1e-7
+    for name,ap in (expected_ap or {}).items():
+        assert abs(results[name]['ap70']-ap)<1e-7,(name,results[name]['ap70'],ap)
     report=dict(status='COMPLETED',scans=len(rows),labels=sum(r['supervised'] for r in rows),results=results,timing_valid=timing_valid,
         note='Independent histories. Dense short D update; no local D skipping. Timing excludes IO/H2D/postprocess; sampled GPU isolation does not reserve shared CPU/IO. Conv/functional-linear MACsx2.')
     write_json(directory/'report.json',report);return report

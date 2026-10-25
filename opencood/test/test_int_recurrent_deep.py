@@ -12,6 +12,17 @@ class AddUpdate(nn.Module):
 
 
 class TestRecurrentDeep(unittest.TestCase):
+    def test_period4_deployment_has_explicit_refresh_and_age(self):
+        cache=RecurrentDeepState(AddUpdate(),[-2,-2,-1,2,2,1],4)
+        self.assertEqual(cache.max_age_us,350000)
+        h=torch.zeros(1,128,4,4);meta=dict(segment='a',timestamp_us=1,pose=np.eye(4));state=None;values=[]
+        for index in range(5):
+            value,state,info=cache.step(h,state,dict(meta,timestamp_us=1+50000*index),lambda:torch.zeros(1,1,4,4))
+            values.append(float(value.mean()))
+        self.assertEqual(values,[0.,1.,2.,3.,0.]);self.assertEqual(info['deep_refresh_reason'],'period')
+        _,_,info=cache.step(h,state,dict(meta,timestamp_us=550001),lambda:torch.zeros(1,1,4,4))
+        self.assertEqual(info['deep_refresh_reason'],'age')
+
     def test_recursive_writeback_refresh_and_gradient(self):
         repair=AddUpdate();cache=RecurrentDeepState(repair,[-2,-2,-1,2,2,1],6)
         h=torch.zeros(1,128,4,4);calls=[]

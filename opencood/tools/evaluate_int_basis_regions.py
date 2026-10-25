@@ -517,7 +517,14 @@ def main():
     p.add_argument('--recurrent-deep-period',type=int,choices=(3,6),default=6)
     p.add_argument('--recurrent-deep-resume',default=None,help='Completed-epoch latest.pth to resume in new output directory')
     p.add_argument('--path-map',default=None,help='Explicit JSON source-prefix to host-prefix mapping; preserve artifact bytes/contracts')
+    p.add_argument('--recurrent-three-checkpoint',default=None,help='Frozen period3-trained repair for paired recurrence comparison')
+    p.add_argument('--recurrent-six-checkpoint',default=None,help='Frozen period6-trained repair; evaluate at periods3/4/6')
     a = p.parse_args(); out = Path(a.output)
+    if bool(a.recurrent_three_checkpoint)!=bool(a.recurrent_six_checkpoint):p.error('Both frozen recurrence checkpoints required')
+    if a.recurrent_three_checkpoint and (a.recurrent_deep_epochs or a.recurrent_deep_resume or a.deep_audit_frames or a.stem_audit_frames or
+            a.readout_period!=3 or a.readout_threshold!=.5 or a.readout_calibrate_frames or a.readout_calibration or a.readout_budget_scale is not None or
+            a.readout_selector_frames or a.readout_backend_frames or a.readout_audit_frames or a.readout_ranking_audit):
+        p.error('Frozen recurrence comparison requires fixed H baseline without training or other diagnostics')
     if a.recurrent_deep_resume and not a.recurrent_deep_epochs:p.error('Resume requires recurrent D training')
     if not 0<=a.recurrent_deep_epochs<=24:p.error('Recurrent D budget must be0..24')
     if a.recurrent_deep_epochs and (a.deep_audit_frames or a.stem_audit_frames or a.readout_period!=3 or a.readout_threshold!=.5 or

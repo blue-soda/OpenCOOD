@@ -6,9 +6,9 @@ from opencood.models.sub_modules.int_anchor_residual import predict
 
 class RecurrentDeepState:
     def __init__(self,repair,bounds,period=6):
-        if period not in (1,3,6):raise ValueError('Period1/3/6 required')
+        if period not in (1,3,4,6):raise ValueError('Period1/3/4/6 required')
         self.repair,self.bounds,self.period=repair,bounds,period
-        self.max_age_us=550000 if period==6 else 250000
+        self.max_age_us={1:250000,3:250000,4:350000,6:550000}[period]
 
     def step(self,h,state,meta,full_value,reset=False,detach=True):
         stamp=int(meta['timestamp_us']);reason=None
