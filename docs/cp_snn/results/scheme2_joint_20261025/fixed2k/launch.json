@@ -1,0 +1,28 @@
+{
+  "pid": 508030,
+  "gpu": 2,
+  "admission": [
+    {
+      "free_mib": 24134,
+      "util": 0
+    },
+    {
+      "free_mib": 24134,
+      "util": 0
+    },
+    {
+      "free_mib": 24134,
+      "util": 0
+    },
+    {
+      "free_mib": 24134,
+      "util": 0
+    },
+    {
+      "free_mib": 24134,
+      "util": 0
+    }
+  ],
+  "unix": 1792941219.268828,
+  "commit": "90524e4cea87a6fe0c908e3c6261cbb2dd48d629"
+}

@@ -1,6 +1,12 @@
 # CoSDH实际双向消息链路（2026-10-25）
 
-## 目标与当前状态
+## 全量完成及独立复核（2026-10-25 最新）
+
+1738帧全部完成。3476个双向包SHA/解码已独立核验，全部预测框、分数、GT与原生全配对推理逐位一致。统一GT复算AP30/50/70为83.69856% /79.20901% /65.17526%。实际双向总通信平均81814.45 B，P95 99400.2 B，最大103235 B；需求平均2472.64 B、响应79341.81 B。包含双向160 B元数据。不是作者原报理论带宽，也不是最优编码下界。诊断冗余decode/warp仍不能用于速度优势比较。
+
+证据：[完整wire审计](results/strong_ann_baselines_20261025/cosdh_wire_full01/wire_cpu_audit.json)、[统一GT复算](results/strong_ann_baselines_20261025/cosdh_wire_full01/common_gt_replay.json)、[逐帧字节汇总](results/strong_ann_baselines_20261025/cosdh_wire_full01/summary.json)。下文保留启动过程。用户最新要求方案二优化并行开展，已落实[固定/多预算联合训练](SCHEME2_JOINT_OPTIMIZATION_20261025.md)。
+
+## 目标与启动时状态
 
 沿用方案二对强ANN的总目标，补齐CoSDH真实通信量，避免用作者带宽估算与我们的实际包比较。方案二保留、方案三暂停；本项完成后转入公平低预算对照，不长期停留在基线编码工程。
 

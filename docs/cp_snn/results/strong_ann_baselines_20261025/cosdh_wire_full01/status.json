@@ -1,7 +1,58 @@
 {
-  "stage": "evaluating",
-  "completed": 150,
-  "planned": 1738,
-  "last_frame_id": "001763",
-  "updated_unix": 1792939596.5787535
+  "status": "completed",
+  "full_split": true,
+  "smoke_only": false,
+  "samples": 1738,
+  "gt_boxes": 28622,
+  "pred_boxes": 33380,
+  "bev_ap": {
+    "0.3": 0.8369535404601591,
+    "0.5": 0.7921812663473523,
+    "0.7": 0.6519374620540678
+  },
+  "parameters": 8932150,
+  "inference_ms_mean": 185.25056389679702,
+  "inference_ms_median": 173.55701106134802,
+  "inference_ms_p95": 314.54064861172805,
+  "peak_allocated_bytes": 590556160,
+  "peak_reserved_bytes": 6316621824,
+  "all_outputs_finite": true,
+  "actual_communication_bytes": 81814.45281933257,
+  "gt_parity_with_our_snn": "NOT_ESTABLISHED",
+  "frames_manifest_sha256": "39e25eb3ec524f353ab031c1f09b47ac426138f6599b6612f3daddc00b8b90d5",
+  "completed_unix": 1792940564.1893504,
+  "wall_seconds": 1070.5966312885284,
+  "wire_statistics": {
+    "demand_bytes": {
+      "mean": 2472.638089758343,
+      "p95": 2997.1499999999996,
+      "max": 3086.0,
+      "count": 1738
+    },
+    "response_bytes": {
+      "mean": 79341.81472957422,
+      "p95": 96882.09999999999,
+      "max": 101060.0,
+      "count": 1738
+    },
+    "total_bytes": {
+      "mean": 81814.45281933257,
+      "p95": 99400.2,
+      "max": 103235.0,
+      "count": 1738
+    },
+    "envelope_bytes": {
+      "mean": 160.0,
+      "p95": 160.0,
+      "max": 160.0,
+      "count": 1738
+    },
+    "late_boxes": {
+      "mean": 69.00115074798619,
+      "p95": 132.14999999999986,
+      "max": 180.0,
+      "count": 1738
+    }
+  },
+  "wire_note": "Actual binary demand, three dependency-closed FP16 latent/mask sections and pre-NMS late boxes; 160-byte two-way metadata included; link/IP overhead excluded; diagnostic redundant compute not suitable for efficiency comparison"
 }
