@@ -41,9 +41,17 @@ def run(a):
     torch.manual_seed(20260929);torch.cuda.manual_seed_all(20260929)
     checkpoint = Path(a.model_dir)/'net_epoch_bestval_at7.pth'
     assert sha(checkpoint) == '7375da04507b4f543666e15aa02897e41e3c32e08bcb3f74b27ad49fb28c803c'
-    split = Path(a.train_split)
-    assert sha(split) == '805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa'
-    ids = json.loads(split.read_text());assert len(ids) == len(set(ids)) == 4678
+    source_split = Path(a.train_split)
+    manifest_path = Path(a.data_manifest)
+    manifest = json.loads(manifest_path.read_text())
+    assert manifest['protocol'] == 'paired_dair_fusion_v1'
+    assert sha(source_split) == manifest['splits']['train']['source_sha256'] == '805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa'
+    assert sha(Path(a.data_root)/'cooperative/data_info.json') == manifest['cooperative_info_sha256']
+    ids = manifest['splits']['train']['valid_ids']
+    assert len(ids) == len(set(ids)) == manifest['splits']['train']['valid_count'] == 4678
+    assert set(ids).issubset(json.loads(source_split.read_text()))
+    split = Path(a.output)/'common_train.json'
+    split.write_text(json.dumps(ids,indent=2))
     hypes = yaml_utils.load_yaml(str(Path(a.model_dir)/'config.yaml'))
     hypes.update(data_dir=a.data_root,root_dir=str(split),validate_dir=str(split),
                  test_dir=str(split),comm_range=1000000)
@@ -115,14 +123,15 @@ def run(a):
         'batch_size':2,'record_len':[2,2],'probes':rows,'optimizer_steps':0,
         'bn_buffers_unchanged':True,'identity_compatibility_frozen':identity_keys,
         'stochastic_latent_preserved':True,'checkpoint_sha256':sha(checkpoint),
-        'train_split_sha256':sha(split),'script_sha256':sha(Path(__file__)),
+        'train_split_sha256':sha(split),'raw_train_split_sha256':sha(source_split),
+        'data_manifest_sha256':sha(manifest_path),'script_sha256':sha(Path(__file__)),
         'peak_cuda_allocated_bytes':torch.cuda.max_memory_allocated(),
         'scope':'Real-batch gradient readiness only; not a training run, AP result or budget parity claim'}
 
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
-    for n in ('repo','model-dir','data-root','train-split','output','gpu'):p.add_argument('--'+n,required=True)
+    for n in ('repo','model-dir','data-root','train-split','data-manifest','output','gpu'):p.add_argument('--'+n,required=True)
     a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
     try:result=run(a)
     except Exception:
