@@ -125,7 +125,7 @@ def audit(root, arm):
         note='All audit updates discarded; training reloads pristine source'))
 
 
-def coordinate(root,arm):
+def coordinate(root,arm,finish_only=False):
     folder=root/arm
     try:
         protocol=read(root/'protocol.json')
@@ -138,12 +138,19 @@ def coordinate(root,arm):
             with (folder/(name+'.log')).open('x') as log:
                 subprocess.run(command,cwd=str(REPO),env=env,stdout=log,stderr=subprocess.STDOUT,
                     stdin=subprocess.DEVNULL,check=True,timeout=timeout)
-        run('audit',[sys.executable,'-u','-m',__spec__.name,'--root',str(root),'--arm',arm,'--mode','audit'],1800)
-        assert read(folder/'audit.json')['passed']
         base=[sys.executable,'-u','-m','opencood.tools.train_e3dsnn_single','--workers','2','--seed',str(SEED)]
-        run('train',base+['--mode','train','--config',str(folder/'train.yaml'),
-            '--checkpoint',str(root/'source.pth'),'--output',str(folder/'train'),
-            '--epochs','10','--selection-iou','0.7'])
+        if not finish_only:
+            run('audit',[sys.executable,'-u','-m',__spec__.name,'--root',str(root),'--arm',arm,'--mode','audit'],1800)
+            assert read(folder/'audit.json')['passed']
+            run('train',base+['--mode','train','--config',str(folder/'train.yaml'),
+                '--checkpoint',str(root/'source.pth'),'--output',str(folder/'train'),
+                '--epochs','10','--selection-iou','0.7'])
+        else:
+            # Supervision can be handed over without restarting the trainer.
+            # Finalization never starts training or repeats the admission audit.
+            assert read(folder/'audit.json')['passed']
+            assert read(folder/'train/status.json')['state']=='complete'
+            assert torch.load(str(folder/'train/last.pt'),map_location='cpu')['epoch']==10
         result={}
         for budget in BUDGETS:
             name='b'+str(budget);out=folder/name
@@ -193,9 +200,9 @@ def launch(root,arm,gpu):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',required=True)
     p.add_argument('--arm',choices=tuple(ARMS));p.add_argument('--gpu',type=int)
-    p.add_argument('--mode',choices=('prepare','launch','audit','coordinate'),required=True)
+    p.add_argument('--mode',choices=('prepare','launch','audit','coordinate','finish'),required=True)
     a=p.parse_args();root=Path(a.root)
     if a.mode=='prepare':prepare(root)
     elif a.mode=='launch':launch(root,a.arm,a.gpu)
     elif a.mode=='audit':audit(root,a.arm)
-    else:coordinate(root,a.arm)
+    else:coordinate(root,a.arm,finish_only=a.mode=='finish')
