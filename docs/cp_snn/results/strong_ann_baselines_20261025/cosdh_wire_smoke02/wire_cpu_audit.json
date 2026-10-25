@@ -1,0 +1,57 @@
+{
+  "samples": 2,
+  "full_split": false,
+  "all_predictions_bitwise_equal": true,
+  "packet_sha_and_decode_verified": 4,
+  "bytes_mean": 44661.5,
+  "bytes_p95": 44694.35,
+  "bytes_max": 44698,
+  "rows": [
+    {
+      "frame_id": "000211",
+      "prediction_bitwise_equal": true,
+      "total_bytes": 44625,
+      "late_boxes": 111,
+      "latent_shapes": [
+        [
+          4,
+          100,
+          252
+        ],
+        [
+          8,
+          50,
+          126
+        ],
+        [
+          16,
+          25,
+          63
+        ]
+      ]
+    },
+    {
+      "frame_id": "000212",
+      "prediction_bitwise_equal": true,
+      "total_bytes": 44698,
+      "late_boxes": 107,
+      "latent_shapes": [
+        [
+          4,
+          100,
+          252
+        ],
+        [
+          8,
+          50,
+          126
+        ],
+        [
+          16,
+          25,
+          63
+        ]
+      ]
+    }
+  ]
+}

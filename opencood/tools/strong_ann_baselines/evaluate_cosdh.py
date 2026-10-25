@@ -57,6 +57,7 @@ def main():
     parser.add_argument('--output', required=True, help='A new output directory; existing paths rejected')
     parser.add_argument('--limit', type=int, default=2)
     parser.add_argument('--gpu', default='0', help='Single physical CUDA device index or UUID')
+    parser.add_argument('--wire-codec',action='store_true',help='Audited demand/latent/late-box actual transport; diagnostic compute overhead included')
     parser.add_argument('--comm-range', type=float, default=None, help='Explicit participant range override in metres; omitted preserves official config')
     args = parser.parse_args()
     if args.limit < 0 or ',' in args.gpu:
@@ -138,6 +139,10 @@ def main():
         parameters = sum(p.numel() for p in model.parameters())
 
         dataset = build_dataset(cfg, visualize=True, train=False)
+        wire=None
+        if args.wire_codec:
+            from cosdh_wire import CoSDHWire
+            wire=CoSDHWire(model,dataset,output)
         ids = list(dataset.split_info)
         source_ids = json.loads(split.read_text(encoding='utf-8'))
         if ids != source_ids or len(ids) != len(dataset):
@@ -167,6 +172,9 @@ def main():
                     'warmup_forwards_first_batch': 3,
                     'timing_scope': 'CUDA-synchronized official hybrid inference incl both model forwards and postprocess/NMS, excludes loading/H2D/export/AP; batch1',
                     'source_script_sha256': digest(__file__), 'started_unix': start_wall}
+        write_json(output / 'provenance.json', metadata)
+        metadata['wire_codec']='demand_sparse_latent_dependency_closure_late_boxes_v1' if args.wire_codec else None
+        metadata['wire_compute_scope']='includes redundant diagnostic decode/warp, not optimized algorithmic cost' if args.wire_codec else None
         write_json(output / 'provenance.json', metadata)
         stat = {t: {'tp': [], 'fp': [], 'gt': 0, 'score': []} for t in (.3, .5, .7)}
         rows = []
@@ -198,11 +206,13 @@ def main():
                     raise RuntimeError('Frame index mismatch')
                 t0 = time.perf_counter()
                 batch = train_utils.to_device(batch, device)
+                if wire:wire.begin(batch,str(ids[index]))
                 torch.cuda.synchronize()
                 h2d_seconds = time.perf_counter() - t0
                 if index == 0:
                     for _ in range(3):
                         raw_outputs.clear()
+                        if wire:wire.begin(batch,str(ids[index]))
                         warmup = inference_utils.inference_late_fusion(batch, model, dataset)
                         if not finite_tree(warmup) or not finite_tree(raw_outputs):
                             raise ValueError('Nonfinite warmup output')
@@ -211,6 +221,7 @@ def main():
                     torch.cuda.synchronize()
                     torch.cuda.reset_peak_memory_stats()
                 raw_outputs.clear()
+                if wire:wire.begin(batch,str(ids[index]))
                 torch.cuda.synchronize()
                 t0 = time.perf_counter()
                 result = inference_utils.inference_late_fusion(batch, model, dataset)
@@ -237,6 +248,7 @@ def main():
                        'record_len': batch['ego']['record_len'].detach().cpu().tolist(),
                        'gt_array_sha256': hashlib.sha256(gt.tobytes(order='C')).hexdigest()}
                 rows.append(row)
+                if wire:row['wire']=wire.finish(index)
                 with (output / 'frames.jsonl').open('a', encoding='utf-8') as f:
                     f.write(json.dumps(row, allow_nan=False) + '\n')
                 if (index + 1) % 25 == 0 or index == count - 1:
@@ -245,6 +257,7 @@ def main():
                                                        'updated_unix': time.time()})
                     print('completed {}/{}'.format(index + 1, count), flush=True)
         hook.remove()
+        if wire:wire.close()
         ap = {str(t): float(eval_utils.calculate_ap(stat, t)[0]) for t in stat}
         timings = np.asarray([r['inference_seconds'] for r in rows])
         summary = {'status': 'completed', 'full_split': count == len(dataset),
@@ -261,6 +274,12 @@ def main():
                    'frames_manifest_sha256': digest(output / 'frames.jsonl'),
                    'completed_unix': time.time(), 'wall_seconds': time.time() - start_wall}
         write_json(output / 'result_stat.json', stat)
+        if wire:
+            def stats(values):
+                return {'mean':float(np.mean(values)),'p95':float(np.percentile(values,95)),'max':float(np.max(values)),'count':len(values)}
+            summary['wire_statistics']={k:stats([r['wire'][k] for r in rows]) for k in ('demand_bytes','response_bytes','total_bytes','envelope_bytes','late_boxes')}
+            summary['actual_communication_bytes']=summary['wire_statistics']['total_bytes']['mean']
+            summary['wire_note']='Actual binary demand, three dependency-closed FP16 latent/mask sections and pre-NMS late boxes; 160-byte two-way metadata included; link/IP overhead excluded; diagnostic redundant compute not suitable for efficiency comparison'
         write_json(output / 'summary.json', summary)
         write_json(output / 'status.json', summary)
         print(json.dumps(summary, indent=2, allow_nan=False), flush=True)

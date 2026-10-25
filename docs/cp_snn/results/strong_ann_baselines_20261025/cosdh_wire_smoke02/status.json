@@ -1,0 +1,58 @@
+{
+  "status": "completed",
+  "full_split": false,
+  "smoke_only": true,
+  "samples": 2,
+  "gt_boxes": 39,
+  "pred_boxes": 34,
+  "bev_ap": {
+    "0.3": 0.8461538461538461,
+    "0.5": 0.8189588189588188,
+    "0.7": 0.7582264957264958
+  },
+  "parameters": 8932150,
+  "inference_ms_mean": 255.5653698509559,
+  "inference_ms_median": 255.5653698509559,
+  "inference_ms_p95": 263.0552626098506,
+  "peak_allocated_bytes": 492964864,
+  "peak_reserved_bytes": 943718400,
+  "all_outputs_finite": true,
+  "actual_communication_bytes": 44661.5,
+  "gt_parity_with_our_snn": "NOT_ESTABLISHED",
+  "frames_manifest_sha256": "36e8d01121bbe950c78cc9e2ff9cca2e97ec16a6319e2be6572135930cca0adb",
+  "completed_unix": 1792939438.547609,
+  "wall_seconds": 10.631059408187866,
+  "wire_statistics": {
+    "demand_bytes": {
+      "mean": 2019.5,
+      "p95": 2026.25,
+      "max": 2027.0,
+      "count": 2
+    },
+    "response_bytes": {
+      "mean": 42642.0,
+      "p95": 42668.1,
+      "max": 42671.0,
+      "count": 2
+    },
+    "total_bytes": {
+      "mean": 44661.5,
+      "p95": 44694.35,
+      "max": 44698.0,
+      "count": 2
+    },
+    "envelope_bytes": {
+      "mean": 160.0,
+      "p95": 160.0,
+      "max": 160.0,
+      "count": 2
+    },
+    "late_boxes": {
+      "mean": 109.0,
+      "p95": 110.8,
+      "max": 111.0,
+      "count": 2
+    }
+  },
+  "wire_note": "Actual binary demand, three dependency-closed FP16 latent/mask sections and pre-NMS late boxes; 160-byte two-way metadata included; link/IP overhead excluded; diagnostic redundant compute not suitable for efficiency comparison"
+}

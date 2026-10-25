@@ -45,3 +45,11 @@ compares to the matched-participant no-wire run. All 1738 predictions matched
 bitwise. CoSDH wire accounting is still pending; `audit_cosdh_support.py` checks
 the latent dependency closure under its decoder convolutions and warp, without
 claiming a complete packet or final detection parity.
+
+`cosdh_wire.py` now implements actual demand, dependency-closed FP16 latent/mask
+and pre-NMS box transport. `evaluate_cosdh.py --wire-codec` routes real fusion and
+postprocessing through decoded packets. `verify_cosdh_wire.py` independently
+checks binary files and official prediction parity; `launch_cosdh_wire.py`
+requires a passed smoke audit and starts bounded full evaluation on GPU4 from a
+script snapshot. Its extra diagnostic decoder/warp work is NOT a fair optimized
+compute benchmark. See `COSDH_WIRE_20261025.md` for protocol and limitations.

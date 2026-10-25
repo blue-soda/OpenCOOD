@@ -1,0 +1,60 @@
+{
+  "pid": 505980,
+  "verifier_pid": 505982,
+  "command": [
+    "/data1/zhh/gzc/miniconda3/envs/ann_runtime/bin/python",
+    "/data1/zhh/gzc/diagnostics/ann_baselines_20261025/cosdh_wire_snapshot01/evaluate_cosdh.py",
+    "--repo",
+    "/data1/zhh/gzc/CoSDH",
+    "--model-dir",
+    "/data1/zhh/gzc/CoSDH/opencood/logs/dairv2x_cosdh",
+    "--data-root",
+    "/data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+    "--split",
+    "/data1/zhh/gzc/diagnostics/ann_baselines_20261025/common_val.json",
+    "--output",
+    "/data1/zhh/gzc/diagnostics/ann_baselines_20261025/cosdh_wire_full01",
+    "--gpu",
+    "4",
+    "--limit",
+    "0",
+    "--comm-range",
+    "1000000",
+    "--wire-codec"
+  ],
+  "gpu_samples": [
+    [
+      4,
+      24134,
+      0
+    ],
+    [
+      4,
+      24134,
+      0
+    ],
+    [
+      4,
+      24134,
+      0
+    ],
+    [
+      4,
+      24134,
+      0
+    ],
+    [
+      4,
+      24134,
+      0
+    ]
+  ],
+  "snapshot_sha256": {
+    "evaluate_cosdh.py": "9f9cb9de36c9de27dec77cf231f5d2a8dce21748d5844588ba7cd21e16a11054",
+    "cosdh_wire.py": "6f2d3b18fb597cf5e4f1e946f72280e91e5ac185352248404f55d3b1c4909fdd",
+    "infocom_wire.py": "cb3802491222672210c785149f9f9e8afc97b361667a0eb8e35470c9a09c81ea",
+    "verify_cosdh_wire.py": "a2b890a91b4c8ef90ddae8a7979c8c5a96f124c3329366512899643ecffe22ec"
+  },
+  "launched_unix": 1792939493.5625703,
+  "timeout_seconds": 14400
+}
