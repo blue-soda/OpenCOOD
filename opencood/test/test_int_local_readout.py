@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 import torch
 from torch import nn
 from opencood.models.sub_modules.int_local_readout import LocalReadoutCache
@@ -8,8 +9,11 @@ class Readout(nn.Module):
     def __init__(self):
         super().__init__()
         self.spatial=nn.Conv2d(16,24,3,padding=1)
-        self.tail=nn.Sequential(nn.ReLU(),nn.Sequential(nn.Conv2d(24,8,1,bias=False),
-            nn.Conv2d(8,24,3,padding=1)),nn.ReLU())
+        self.tail=nn.Sequential(nn.BatchNorm2d(24),nn.ReLU(),nn.Sequential(nn.Conv2d(24,8,1,bias=False),
+            nn.Conv2d(8,24,3,padding=1)),nn.BatchNorm2d(24),nn.ReLU())
+        for bn in (self.tail[0],self.tail[3]):
+            bn.running_mean.copy_(torch.randn(24))
+            bn.running_var.copy_(torch.rand(24)+.2)
 
 
 class TestLocalReadout(unittest.TestCase):
@@ -38,7 +42,7 @@ class TestLocalReadout(unittest.TestCase):
     @torch.no_grad()
     def test_causal_cache_reuse_refresh_and_uncovered(self):
         x=torch.randn(1,16,10,12)
-        meta=dict(segment='a',timestamp_us=100000,pose=[0.,0.,0.,0.,0.,0.])
+        meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
         output,state,info=self.cache.step(x,None,meta)
         self.assertTrue(info['readout_refresh'])
         state['confidence']=torch.zeros(1,1,10,12)
@@ -56,13 +60,14 @@ class TestLocalReadout(unittest.TestCase):
         _,_,info=self.cache.step(x,state,dict(meta,timestamp_us=400000))
         self.assertEqual(info['readout_refresh_reason'],'age')
         _,initial,_=self.cache.step(x,None,meta);initial['confidence']=torch.zeros(1,1,10,12)
-        _,_,info=self.cache.step(x,initial,dict(meta,timestamp_us=150000,pose=[1.,0.,0.,0.,0.,0.]))
+        moved=np.eye(4);moved[0,3]=1.
+        _,_,info=self.cache.step(x,initial,dict(meta,timestamp_us=150000,pose=moved))
         self.assertGreater(info['readout_uncovered_fraction'],0)
         self.assertGreater(info['readout_write_fraction'],0)
 
     @torch.no_grad()
     def test_period1_exact_and_own_confidence_guard(self):
-        x=torch.randn(1,16,10,12);meta=dict(segment='a',timestamp_us=100000,pose=[0.]*6)
+        x=torch.randn(1,16,10,12);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
         cache=LocalReadoutCache(self.model,self.bounds,.25,period=1)
         output,state,_=cache.step(x,None,meta)
         state['confidence']=torch.zeros(1,1,10,12)
@@ -78,7 +83,7 @@ class TestLocalReadout(unittest.TestCase):
     @torch.no_grad()
     def test_same_input_masked_dense_and_retained_reference(self):
         masked=LocalReadoutCache(self.model,self.bounds,.25,execution='masked_dense')
-        x=torch.randn(1,16,10,12);meta=dict(segment='a',timestamp_us=100000,pose=[0.]*6)
+        x=torch.randn(1,16,10,12);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
         _,state,_=self.cache.step(x,None,meta);state['confidence']=torch.zeros(1,1,10,12)
         y=x.clone();y[:,:,1,1]+=10
         meta=dict(meta,timestamp_us=150000)

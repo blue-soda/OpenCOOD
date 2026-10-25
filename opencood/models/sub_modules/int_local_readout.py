@@ -12,7 +12,7 @@ from opencood.models.sub_modules.int_local_cache import local_change_mask
 from opencood.models.sub_modules.int_selected_conv import prepare_selected_neighborhoods, prepared_conv3x3_rows
 from opencood.models.sub_modules.int_row_spatial_state import row_lookup
 from opencood.models.sub_modules.int_planned_row_state import planned_conv
-from opencood.models.sub_modules.int_basis_spatial_state import _write_rows
+from opencood.models.sub_modules.int_basis_spatial_state import _write_rows, _selected_bn
 
 
 class LocalReadoutCache:
@@ -21,13 +21,14 @@ class LocalReadoutCache:
             raise ValueError('Frozen readout, selected/masked_dense and period1/3 required')
         if not math.isfinite(threshold) or threshold < 0:
             raise ValueError('Finite nonnegative threshold required')
-        # The checkpoint has ReLU -> (1x1,3x3) -> ReLU; no BN here.
+        # CoDynTrust-derived checkpoint: BN/ReLU -> (1x1,3x3) -> BN/ReLU.
         tail = readout.tail
-        if (len(tail)!=3 or not isinstance(tail[0],nn.ReLU) or
-                not isinstance(tail[1],nn.Sequential) or len(tail[1])!=2 or
-                not isinstance(tail[2],nn.ReLU)):
+        if (len(tail)!=5 or not isinstance(tail[0],nn.BatchNorm2d) or
+                not isinstance(tail[1],nn.ReLU) or not isinstance(tail[2],nn.Sequential) or len(tail[2])!=2 or
+                not isinstance(tail[3],nn.BatchNorm2d) or not isinstance(tail[4],nn.ReLU)):
             raise ValueError('Expected compact DoubleConv readout')
-        self.first, self.project, self.second = readout.spatial, tail[1][0], tail[1][1]
+        self.first, self.project, self.second = readout.spatial, tail[2][0], tail[2][1]
+        self.bn1,self.bn2=tail[0],tail[3]
         for conv in (self.first,self.second):
             if (not isinstance(conv,nn.Conv2d) or conv.kernel_size!=(3,3) or
                     conv.padding!=(1,1) or conv.stride!=(1,1) or conv.dilation!=(1,1) or
@@ -57,12 +58,12 @@ class LocalReadoutCache:
         support=F.max_pool2d(mask.float(),3,1,1)>0
         plan=prepare_selected_neighborhoods(support)
         middle,ids,macs=prepared_conv3x3_rows(self.first,self.weights[0],current,plan,4096)
-        middle=F.relu(middle)
+        middle=F.relu(_selected_bn(middle,self.bn1))
         projected=F.linear(middle,self.project.weight[:,:,0,0],self.project.bias)
         target,neighbors,_=prepare_selected_neighborhoods(mask)
         indices=row_lookup(ids,mask.numel())[neighbors]
         assert bool(((neighbors==mask.numel())|(indices<ids.numel())).all())
-        output=F.relu(planned_conv(self.second,self.weights[1],projected,indices))
+        output=F.relu(_selected_bn(planned_conv(self.second,self.weights[1],projected,indices),self.bn2))
         macs+=ids.numel()*self.project.weight.numel()+target.numel()*self.second.weight.numel()
         return _write_rows(old,target,output),macs,ids.numel()
 
