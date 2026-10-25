@@ -1,0 +1,11 @@
+{
+  "actual_macs_verified": true,
+  "d_sparse_frames": 16,
+  "frames": 32,
+  "max_deep_error": 1.9073486328125e-06,
+  "max_prediction_error": 1.3470649719238281e-05,
+  "max_readout_error": 2.09808349609375e-05,
+  "period1_max_error": 0.0,
+  "readout_sparse_frames": 21,
+  "status": "PASSED"
+}

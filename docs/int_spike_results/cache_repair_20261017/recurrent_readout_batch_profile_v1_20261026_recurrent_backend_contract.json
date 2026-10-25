@@ -1,0 +1,9 @@
+{
+  "frames": 512,
+  "limits": "Only chunk4096 versus32768 plus dense masked control. No tile/threshold search. Readout-only replay and all discarded states excluded from model timing.",
+  "model_timing": "Uninstrumented synchronized model wall time; rotate/reverse order; peak incremental allocated memory. MAC engineering done in separate first8 replays.",
+  "phase_timing": "Additional readout-only replay every8 frames, synchronization at select_mask and selected/dense boundaries. These intrusive phase times are NOT model timing and may alter scheduling. Remainder includes warp, packing, reference merge, metadata and synchronization.",
+  "scope": "Same canonical previous state/input/final masks. Only row4096 state advances. No independent AP or new selection.",
+  "split": "train",
+  "warmup": 16
+}
