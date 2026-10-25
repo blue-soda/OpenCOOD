@@ -7,6 +7,7 @@ Communication bytes are deliberately NOT estimated as a real packet metric.
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import random
@@ -150,6 +151,16 @@ def run(args, output):
     parameter_count = sum(p.numel() for p in model.parameters())
     parameter_bytes = sum(p.numel() * p.element_size() for p in model.parameters())
     model = model.cuda().eval()
+    mask_ratio = getattr(args, 'mask_ratio', None)
+    if mask_ratio is not None:
+        # Frozen-checkpoint operating curve: retain the official learned raw
+        # mask ranking, tie handling and quantization/STE expression exactly.
+        # This changes only the requested top-k spatial fraction, not weights.
+        namespace = model.ib_communication.get_mask.__func__.__globals__
+        original_topk = namespace['topk_mask']
+        def budget_topk(mask, ratio=.1):
+            return original_topk(mask, ratio=mask_ratio)
+        namespace['topk_mask'] = budget_topk
     dataset = build_dataset(hypes, visualize=True, train=False)
     if list(dataset.split_info) != ids or len(dataset) != len(ids):
         raise ValueError('Actual dataset does not match requested ordered IDs')
@@ -183,6 +194,9 @@ def run(args, output):
     write_json(output / 'metadata.json', meta)
     meta['participant_range_metres'] = hypes['comm_range']
     meta['comm_range_override'] = args.comm_range
+    meta['mask_ratio_override'] = mask_ratio
+    meta['mask_ratio_note'] = ('Frozen official checkpoint operating point; not budget-adapted training; '
+        'uses official raw learned ranking, ties, quantization and decoder; actual bytes measured, no hard byte cap') if mask_ratio is not None else None
     meta['checkpoint_compatibility'] = compatibility
     meta['wire_codec']='exact_fp32_bitmap_dictionary_or_dense_zlib_v1' if args.wire_codec else None
     write_json(output / 'metadata.json', meta)
@@ -294,9 +308,13 @@ def main():
     parser.add_argument('--limit', type=int, default=2)
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--comm-range', type=float, default=None)
+    parser.add_argument('--mask-ratio',type=float,default=None,
+        help='Frozen-model top-k mask fraction in (0,0.1]; explicit operating-curve override, not a byte cap')
     parser.add_argument('--checkpoint-compat', action='store_true', help='Explicit legacy sigma/identity-scale inference mapping; exact mismatch only')
     parser.add_argument('--wire-codec',action='store_true',help='Serialize, decode and use every non-ego latent/mask; exact FP32')
     args = parser.parse_args()
+    if args.mask_ratio is not None and (not math.isfinite(args.mask_ratio) or not 0 < args.mask_ratio <= .1):
+        parser.error('mask ratio must be finite and in (0,0.1]')
     if args.limit < 0 or ',' in args.gpu:
         parser.error('limit must be nonnegative; select exactly one GPU')
     output = Path(args.output).resolve()
