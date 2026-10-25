@@ -108,5 +108,43 @@
       "status": "COMPLETED",
       "timing_valid": true
     }
+  },
+  {
+    "depths": {
+      "1": 2855,
+      "2": 2766
+    },
+    "epoch": 3,
+    "loss": 0.21066808488653804,
+    "lr": 5e-05,
+    "stale": 2,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Independent histories. Dense short D update; no local D skipping. Timing excludes IO/H2D/postprocess; sampled GPU isolation does not reserve shared CPU/IO. Conv/functional-linear MACsx2.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_ms": 19.73491992293741,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 29.098083032295104
+        },
+        "recurrent": {
+          "ap50": 0.8330571317300302,
+          "ap70": 0.7560737517111611,
+          "conv_linear_gflops": 119.42673538960304,
+          "deep_full_frames": 2005,
+          "mean_ms": 19.76359479871925,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 29.019970865920182
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
   }
 ]

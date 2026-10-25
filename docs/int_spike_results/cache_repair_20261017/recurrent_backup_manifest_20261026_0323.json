@@ -1,0 +1,24 @@
+{
+  "archive": "/dev/shm/tzm_int_checkpoint_backup_20261026_0323.tar.gz",
+  "bytes": 672297,
+  "sha256": "1e9cc90413889ad05c3bc64d801f132310c1e8a7b81856c7fa4f5d34208634c7",
+  "checkpoints": [
+    {
+      "source": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/latest.pth",
+      "bytes": 140207,
+      "sha256": "161eb48f95f5ca1e92457067b5fe04045190e85acb016ce6d98c2e65313d6d3b",
+      "next_action": "train",
+      "epoch": 3
+    },
+    {
+      "source": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/latest.pth",
+      "bytes": 140271,
+      "sha256": "00de7c21a8be8b4a61c0ed191893ce98cbf0281ce53a875478321f422c45d012",
+      "next_action": "train",
+      "epoch": 3
+    }
+  ],
+  "destination_host": "mindspore-146",
+  "destination_archive": "/data1/zhh/gzc/int181_snapshot/live_backups/checkpoints_20261026_0323.tar.gz",
+  "destination_sha256_verified": true
+}
