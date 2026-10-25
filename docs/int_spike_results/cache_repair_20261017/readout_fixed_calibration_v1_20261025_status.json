@@ -1,0 +1,5 @@
+{
+  "phase": "readout_calibration",
+  "scans": 512,
+  "status": "COMPLETED"
+}
