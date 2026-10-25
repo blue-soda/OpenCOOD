@@ -8,37 +8,7 @@ from opencood.models.sub_modules.int_local_cache import local_change_mask
 from opencood.tools.run_int_ego import loader,to_device,write_json
 
 
-def executed_macs(mask,w1,w2):
-    support=F.max_pool2d(mask.float(),3,1,1)>0
-    return int(support.sum())*w1+int(mask.sum())*w2
-
-
-def budgeted_ranking(scores,mandatory,budget,w1,w2):
-    """Largest nested score prefix within actual halo-aware row MAC budget.
-
-    This is not globally optimal subset selection. Costs include the final
-    mask's radius1 intermediates, not just its number of selected output cells.
-    """
-    if scores.ndim!=4 or scores.shape[:2]!=(1,1) or not torch.isfinite(scores).all():
-        raise ValueError('Single finite score grid required')
-    if mandatory.dtype!=torch.bool or mandatory.shape[:2]!=(1,1):
-        raise ValueError('Single boolean mandatory mask required')
-    if min(w1,w2)<=0 or executed_macs(mandatory,w1,w2)>budget:
-        raise ValueError('Mandatory costs must fit budget')
-    order=scores.flatten().argsort(descending=True)
-    def candidate(k):
-        chosen=torch.zeros_like(scores,dtype=torch.bool)
-        chosen.flatten()[order[:k]]=True
-        core=F.max_pool2d(expand_tiles(chosen,4,mandatory.shape[-2:]).float(),5,1,2)>0
-        mask=core|mandatory
-        return mask,executed_macs(mask,w1,w2)
-    lo,hi=0,order.numel();best=mandatory.clone();cost=executed_macs(best,w1,w2)
-    while lo<hi:
-        mid=(lo+hi+1)//2;mask,value=candidate(mid)
-        if value<=budget:lo=mid;best=mask;cost=value
-        else:hi=mid-1
-    assert cost<=budget and bool((best|~mandatory).all())
-    return best,dict(tiles=lo,macs=cost,budget=budget,budget_fraction=cost/max(budget,1))
+from opencood.models.sub_modules.int_budgeted_readout import executed_macs, budgeted_ranking
 
 
 def audit_ranking(a,cfg,train,mode,out):

@@ -5,6 +5,7 @@ import time
 import numpy as np
 import torch
 from opencood.models.sub_modules.int_local_readout import LocalReadoutCache
+from opencood.models.sub_modules.int_budgeted_readout import BudgetedReadoutCache
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.train_int_anchor_residual import ConvCounter
 from opencood.tools.int_selection_audit import capture_step
@@ -15,10 +16,12 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
     modes=dict(baseline=baseline)
     for name,execution in (('selected','selected'),('masked_dense','masked_dense'),('period1','selected')):
         mode=copy.copy(baseline)
-        mode.readout_cache=LocalReadoutCache(baseline.readout,baseline.bounds,a.readout_threshold,
-            execution=execution,period=1 if name=='period1' else a.readout_period)
+        cls=BudgetedReadoutCache if a.readout_budget_scale is not None else LocalReadoutCache
+        options=dict(budget_scale=a.readout_budget_scale) if a.readout_budget_scale is not None else {}
+        mode.readout_cache=cls(baseline.readout,baseline.bounds,a.readout_threshold,
+            execution=execution,period=1 if name=='period1' else a.readout_period,**options)
         modes[name]=mode
-    if a.readout_period==5:
+    if a.readout_period==5 or a.readout_budget_scale is not None:
         mode=copy.copy(baseline)
         mode.readout_cache=LocalReadoutCache(baseline.readout,baseline.bounds,a.readout_threshold,period=3)
         modes['period3']=mode
@@ -38,6 +41,10 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
             control='period1 matches baseline; independent masked_dense plus discarded same-input replay on any own-trajectory mask/output divergence',
             accounting='MACsx2 conv+functional linear only; extra256+96+1 state channels and fixed packed weights separate; model includes geometry/gather/scatter/copy; no hooks or replay in timing'))
     write_json(out/'contract.json',contract)
+    if a.readout_budget_scale is not None:
+        contract.update(readout_budget_scale=a.readout_budget_scale,
+            budgeted_selector='Overrides relative selector for selected/masked_dense: absolute pooled input error ranked into largest tile prefix under scale*(own-state relative-mask row MACs). Same content radius2/coverage/confidence4. Mandatory protected cost is a floor, reported when above target. No oracle/current dense output/GT used in selection. Sorting, iterative geometry and host synchronizations are included in model time; no speed claim from arithmetic alone. period3 mode is original relative selector with independent history. Weights unchanged.')
+        write_json(out/'contract.json',contract)
 
     def expected(name,info):
         value=costs[('dense',bool(info['local_partial']))]
@@ -100,7 +107,7 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
         audit_phases(a,cfg,train,{k:modes[k] for k in ('period3','selected')},out,expected)
         return
     states={k:None for k in modes}
-    metrics={k:dict(time=[],peak=[],macs=0,write=[],area=[],hwrite=[],state=[],full=0) for k in modes}
+    metrics={k:dict(time=[],peak=[],macs=0,write=[],area=[],hwrite=[],state=[],full=0,budget_reference=0,budget_used=0,budget_override=0) for k in modes}
     stats={k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}
     dataset,stream=loader(val,cfg,4,303);audits=[]
     with torch.no_grad():
@@ -124,6 +131,9 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
                 item['area'].append(info.get('readout_executed_fraction',1.))
                 item['hwrite'].append(info['spatial_write_fraction'])
                 item['full']+=int(info.get('readout_refresh',True))
+                item['budget_reference']+=info.get('readout_relative_reference_macs',0)
+                item['budget_used']+=info.get('readout_selector_macs',0)
+                item['budget_override']+=int(info.get('readout_budget_protection_override',False))
                 item['state'].append(info['state_bytes']+info['spatial_state_bytes']+info['anchor_bytes']+info.get('readout_state_bytes',0))
                 predictions[name]=pred;masks[name]=(hmask,rmask)
                 if sample['meta']['supervised']:
@@ -146,11 +156,15 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
             mean_readout_executed_fraction=float(np.mean(item['area'])),mean_spatial_write_fraction=float(np.mean(item['hwrite'])),
             mean_state_bytes=float(np.mean(item['state'])),max_incremental_cuda_peak_bytes=max(item['peak']),readout_full_frames=item['full'],
             extra_readout_packed_weight_bytes=0 if name=='baseline' else modes[name].readout_cache.packed_weight_bytes)
+        if a.readout_budget_scale is not None:
+            results[name].update(selector_partial_cost_ratio=item['budget_used']/max(item['budget_reference'],1),
+                selector_protection_override_frames=item['budget_override'])
     assert abs(results['baseline']['ap70']-.7553159775482435)<1e-7,'Fixed four-layer reference drift'
     if 'period3' in results:
         assert abs(results['period3']['ap70']-.7552887126261554)<1e-7,'Period3 readout reference drift'
     write_json(out/'report.json',dict(status='COMPLETED',scans=len(val),labels=sum(r['supervised'] for r in val),results=results,
         readout_period=a.readout_period,readout_max_full_age_s=feature_cache.max_full_age_us/1e6,
+        readout_budget_scale=a.readout_budget_scale,
         own_trajectory_audited_frames=len(audits),all_same_input_replays_passed=True,
         note='Weights fixed; spatial t.5 four-layer baseline held. Readout output cache changes own predictions and future H masks. No new training; no SNN attribution; FLOPs count conv/linear only.'))
     write_json(out/'status.json',dict(status='COMPLETED',scans=len(val)))

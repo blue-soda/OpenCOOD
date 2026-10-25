@@ -68,6 +68,12 @@ class LocalReadoutCache:
         macs+=ids.numel()*self.project.weight.numel()+target.numel()*self.second.weight.numel()
         return _write_rows(old,target,output),macs,ids.numel()
 
+    def select_mask(self,current,reference,valid,confidence):
+        changed=local_change_mask(current,reference,valid,self.threshold)
+        mask=F.max_pool2d(changed.float(),5,1,2)>0
+        priority=F.max_pool2d((confidence>=.1).float(),9,1,4)>0
+        return mask|priority|~valid
+
     def step(self, current, state, meta, reset=False):
         if torch.is_grad_enabled() or self.readout.training:
             raise ValueError('Frozen inference required')
@@ -87,11 +93,7 @@ class LocalReadoutCache:
             aligned,valid=warp_bev(packed,state['pose'],meta['pose'],self.bounds)
             co=self.second.out_channels; ci=current.shape[1]
             old,reference=aligned[:,:co],aligned[:,co:co+ci]
-            changed=local_change_mask(current,reference,valid,self.threshold)
-            # Two spatial convolutions: changed input can affect radius2 outputs.
-            mask=F.max_pool2d(changed.float(),5,1,2)>0
-            priority=F.max_pool2d((aligned[:,-1:]>=.1).float(),9,1,4)>0
-            mask=mask|priority|~valid
+            mask=self.select_mask(current,reference,valid,aligned[:,-1:])
             assert bool((mask|valid).all())
             if self.execution=='selected':
                 output,extra,support_count=self.selected(current,old,mask)

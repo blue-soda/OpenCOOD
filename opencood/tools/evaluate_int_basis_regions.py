@@ -494,8 +494,13 @@ def main():
                    help='Training-prefix energy/fragmentation and discarded one-step mask audit')
     p.add_argument('--readout-ranking-audit',action='store_true',
                    help='Within selector diagnosis compare score rankings under equal executed-MAC budget')
+    p.add_argument('--readout-budget-scale',type=float,choices=(.8,1.),default=None,
+                   help='Absolute input-error selection under own-relative mask executed cost budget')
     p.add_argument('--gpu', type=int, required=True); p.add_argument('--worker', action='store_true')
     a = p.parse_args(); out = Path(a.output)
+    if a.readout_budget_scale is not None and (a.readout_period!=3 or a.readout_threshold!=.5 or
+            a.readout_selector_frames or a.readout_backend_frames or a.readout_audit_frames):
+        p.error('Budgeted readout requires period3/threshold.5 full validation without diagnostic modes')
     if a.readout_ranking_audit and not a.readout_selector_frames:
         p.error('Ranking diagnosis requires readout-selector-frames')
     if a.readout_selector_frames and (a.readout_period!=3 or a.readout_threshold!=.5 or

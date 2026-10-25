@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch import nn
 from opencood.models.sub_modules.int_local_readout import LocalReadoutCache
+from opencood.models.sub_modules.int_budgeted_readout import BudgetedReadoutCache, executed_macs
 
 
 class Readout(nn.Module):
@@ -22,6 +23,25 @@ class TestLocalReadout(unittest.TestCase):
         self.model=Readout().eval()
         self.bounds=[-6.,-5.,-3.,6.,5.,3.]
         self.cache=LocalReadoutCache(self.model,self.bounds,.25)
+
+    @torch.no_grad()
+    def test_absolute_budget_selection_and_dense_fidelity(self):
+        x=torch.randn(1,16,10,12);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
+        for scale in (.8,1.):
+            local=BudgetedReadoutCache(self.model,self.bounds,.5,budget_scale=scale)
+            dense=BudgetedReadoutCache(self.model,self.bounds,.5,execution='masked_dense',budget_scale=scale)
+            _,state,_=local.step(x,None,meta);state['confidence']=torch.zeros(1,1,10,12)
+            y=x.clone();y[:,:,1:4,2:5]+=1
+            output,new,info=local.step(y,state,dict(meta,timestamp_us=150000))
+            control,other,_=dense.step(y,state,dict(meta,timestamp_us=150000))
+            self.assertTrue(torch.allclose(output,control,atol=1e-6,rtol=1e-5))
+            self.assertTrue(torch.equal(local.last_mask,dense.last_mask))
+            self.assertLessEqual(info['readout_selector_macs'],info['readout_selector_budget'])
+            self.assertEqual(info['readout_selector_macs'],info['readout_extra_linear_macs'])
+            state['confidence'].fill_(.9)
+            _,_,info=local.step(y,state,dict(meta,timestamp_us=150000))
+            self.assertTrue(bool(local.last_mask.all()))
+            self.assertEqual(info['readout_budget_protection_override'],scale<1.)
 
     @torch.no_grad()
     def test_selected_complete_dependencies_and_cost(self):
