@@ -1,4 +1,14 @@
 {
-  "phase": "setup",
-  "status": "RUNNING"
+  "status": "STOPPED",
+  "reason": "GPU1 shared with another account; incomplete run and all timing discarded. Only our PID17423 terminated; no other account process changed.",
+  "prior_status": {
+    "phase": "readout_validation",
+    "scans": 1400,
+    "status": "RUNNING"
+  },
+  "stopped_pid": 17423,
+  "competing_pid": 17082,
+  "observed_gpu": 1,
+  "recorded_unix": 1792944227.435301,
+  "replacement_run": "readout_fixed_calibrated_v2_20261026"
 }

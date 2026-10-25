@@ -11,6 +11,7 @@ from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.train_int_anchor_residual import ConvCounter
 from opencood.tools.int_selection_audit import capture_step
 from opencood.utils import eval_utils
+from opencood.tools.int_gpu_exclusivity import check_gpu_exclusive
 
 
 def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
@@ -131,6 +132,16 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
     metrics={k:dict(time=[],peak=[],macs=0,write=[],area=[],hwrite=[],state=[],full=0,budget_reference=0,budget_used=0,budget_override=0) for k in modes}
     stats={k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}
     dataset,stream=loader(val,cfg,4,303);audits=[]
+    isolation=[]
+    def verify_isolation(scan):
+        try:
+            evidence=check_gpu_exclusive(a.gpu);evidence['scan']=scan;isolation.append(evidence)
+            write_json(out/'gpu_exclusivity.json',dict(status='SAMPLED_CLEAR',samples=isolation,
+                limitation='Before validation, every200 scans and after validation; not continuous GPU reservation or shared CPU/IO isolation. Query outside timing.'))
+        except Exception as exc:
+            write_json(out/'gpu_exclusivity.json',dict(status='INVALID_TIMING',scan=scan,error=repr(exc),samples=isolation))
+            raise
+    verify_isolation(0)
     with torch.no_grad():
         for index,sample in enumerate(stream):
             ego=to_device(sample['ego'],torch.device('cuda'))
@@ -167,8 +178,11 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
                 audits.append(dict(scan=index+1,own_masks_equal=same_masks,own_predictions_close=close,same_input_max_error=error))
                 write_json(out/'readout_recurrence_audits.json',dict(audits=audits))
                 assert len(audits)<=128,'Frequent own-trajectory divergence requires review'
-            if (index+1)%200==0:write_json(out/'status.json',dict(status='RUNNING',phase='readout_validation',scans=index+1))
+            if (index+1)%200==0:
+                verify_isolation(index+1)
+                write_json(out/'status.json',dict(status='RUNNING',phase='readout_validation',scans=index+1))
     assert index+1==len(val)
+    verify_isolation(index+1)
     results={}
     for name,item in metrics.items():
         results[name]=dict(ap70=eval_utils.calculate_ap(stats[name],.7)[0],ap50=eval_utils.calculate_ap(stats[name],.5)[0],
@@ -187,6 +201,7 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
         readout_period=a.readout_period,readout_max_full_age_s=feature_cache.max_full_age_us/1e6,
         readout_budget_scale=a.readout_budget_scale,readout_ranking=a.readout_ranking if a.readout_budget_scale is not None else None,
         deployed_readout_threshold=threshold,readout_calibration=a.readout_calibration,
+        gpu_exclusivity_sample_count=len(isolation),
         own_trajectory_audited_frames=len(audits),all_same_input_replays_passed=True,
         note='Weights fixed; spatial t.5 four-layer baseline held. Readout output cache changes own predictions and future H masks. No new training; no SNN attribution; FLOPs count conv/linear only.'))
     write_json(out/'status.json',dict(status='COMPLETED',scans=len(val)))
