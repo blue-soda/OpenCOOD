@@ -1,0 +1,82 @@
+{
+  "frozen_contract": {
+    "attribution": "Period3-trained control plus SAME period6-trained weights evaluated at3/4/6. Period4 is deployment transfer without period4 training; no causal claim about training length.",
+    "checkpoints": {
+      "3": {
+        "epoch": 2,
+        "expected_ap70": 0.756440285232639,
+        "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/epoch_002/repair.pth",
+        "sha256": "d46bc3f2a148294d9d1640201bcb4f9841cb696f58bb0c9b6799a8426a3b21da",
+        "trained_period": 3
+      },
+      "6": {
+        "epoch": 5,
+        "expected_ap70": 0.7540614234380489,
+        "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/epoch_005/repair.pth",
+        "sha256": "d1f7d3f07c50891eb6f3808b488cde418254523d13acf23f9423138106bbe2ec",
+        "trained_period": 6
+      }
+    },
+    "period_age_us": {
+      "trained3_period3": 250000,
+      "trained6_period3": 250000,
+      "trained6_period4": 350000,
+      "trained6_period6": 550000
+    },
+    "scope": "Frozen comparison only. Preserve four-layer H baseline and dense readout; ordinary D updater dense. No optimizer or local D skipping.",
+    "selection": "Use measured accuracy/actual conv-linear FLOPs/model time to choose refresh period before local update; training may continue independently on a separate GPU.",
+    "validation": "5794 scans/1738 labels, independent complete histories, all five modes rotate/reverse on SAME GPU. Baseline and matching-period checkpoint AP must reproduce."
+  },
+  "labels": 1738,
+  "note": "Independent histories. Dense short D update; no local D skipping. Timing excludes IO/H2D/postprocess; sampled GPU isolation does not reserve shared CPU/IO. Conv/functional-linear MACsx2.",
+  "results": {
+    "baseline": {
+      "ap50": 0.8327608934021072,
+      "ap70": 0.7553159775482435,
+      "conv_linear_gflops": 119.43160285006559,
+      "deep_full_frames": 2005,
+      "mean_ms": 19.259331035268342,
+      "mean_state_bytes": 50500800.0,
+      "p95_ms": 28.773822495713826
+    },
+    "trained3_period3": {
+      "ap50": 0.8331708260826356,
+      "ap70": 0.756440285232639,
+      "conv_linear_gflops": 119.42664924635416,
+      "deep_full_frames": 2005,
+      "mean_ms": 19.317400755256383,
+      "mean_state_bytes": 50500800.0,
+      "p95_ms": 28.814954962581396
+    },
+    "trained6_period3": {
+      "ap50": 0.832849942307759,
+      "ap70": 0.7555532721335443,
+      "conv_linear_gflops": 119.42501720314256,
+      "deep_full_frames": 2005,
+      "mean_ms": 19.272430738111197,
+      "mean_state_bytes": 50500800.0,
+      "p95_ms": 28.749401704408225
+    },
+    "trained6_period4": {
+      "ap50": 0.8311569719918577,
+      "ap70": 0.7555115949963113,
+      "conv_linear_gflops": 108.5595113459275,
+      "deep_full_frames": 1531,
+      "mean_ms": 17.938822309928078,
+      "mean_state_bytes": 50500800.0,
+      "p95_ms": 30.611771077383306
+    },
+    "trained6_period6": {
+      "ap50": 0.8309097320771687,
+      "ap70": 0.7540614234380489,
+      "conv_linear_gflops": 97.7930974180076,
+      "deep_full_frames": 1061,
+      "mean_ms": 16.717640330266583,
+      "mean_state_bytes": 50500800.0,
+      "p95_ms": 28.287064633332193
+    }
+  },
+  "scans": 5794,
+  "status": "COMPLETED",
+  "timing_valid": true
+}

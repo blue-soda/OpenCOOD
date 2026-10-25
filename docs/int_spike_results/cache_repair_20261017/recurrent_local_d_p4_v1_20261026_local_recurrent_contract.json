@@ -1,0 +1,18 @@
+{
+  "accounting": "Conv hooks plus H and D functional MACs; no fabricated savings for masked_dense. State stays complete D plus existing H/FM, no additional persistent activation/reference.",
+  "bounds": "Short repair dense0.532224G per ordinary frame; total available saving limited to this small term. No claim of large total gain from local D. Index/gather/scatter overhead timed.",
+  "checkpoint": {
+    "epoch": 5,
+    "expected_ap70": 0.7540614234380489,
+    "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/epoch_005/repair.pth",
+    "sha256": "d1f7d3f07c50891eb6f3808b488cde418254523d13acf23f9423138106bbe2ec",
+    "trained_period": 6
+  },
+  "controls": "Same frozen weights/period, independent dense recurrence vs selected local policy vs dense-compute masked local policy. No training or threshold fit.",
+  "execution": "First1x1 only on core+halo1, depthwise3x3 and last1x1 only core. All-core uses native dense repair. Unselected cells retain aligned COMPLETE D; each frame writes the complete mixed state.",
+  "max_age_us": 350000,
+  "period": 4,
+  "reference_sha256": "1521aee08e5626ee8cae666ff9e884a4e7065ac3f59a1a89f321e77ad4ee3ffb",
+  "selection": "Actual own H recomputed mask dilated1 (repair output dependency), union uncovered D. H already includes own confidence protection. No extra descriptor or historical reference.",
+  "validation": "Baseline and dense recurrence AP must reproduce. Real-weight same-input local selected/masked replay32 train frames and every200 validation frames, discarded outside model timing."
+}

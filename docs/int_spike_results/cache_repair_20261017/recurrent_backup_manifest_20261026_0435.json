@@ -1,0 +1,164 @@
+{
+  "archive": "/dev/shm/tzm_int_final_20261026_0435.tar.gz",
+  "bytes": 1062615,
+  "sha256": "db6c308d18bef93a86da642dbe971aaa882841b6b981ee662741015ecca8b5d4",
+  "files": [
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/latest.pth",
+      "bytes": 141295,
+      "sha256": "72dd3b5d4d14cac6f68e277104db6867c8f6e56ebbd141ce0ba6acfda9d372bf",
+      "epoch": null,
+      "next_action": "train"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/pending_validation.pth",
+      "bytes": 191599,
+      "sha256": "668018954da07be9d335f4741879a1d90b27aeda8bc2729ab4ff71f15373bd48",
+      "epoch": 6,
+      "next_action": "evaluate"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/best.json",
+      "bytes": 267,
+      "sha256": "cb9fbee6e786fbff5343d29be1aecc35f30a0c96bdac97847aebdc1e88672f27"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/history.json",
+      "bytes": 8051,
+      "sha256": "fcc2edebea0df43c20807d9bf4d5dd3f90b39436557263c59db7ae0845e2eccc"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/recurrent_training_contract.json",
+      "bytes": 3087,
+      "sha256": "a085e5a5ddc96397cbdfe72944cdb7f0b990e407a5f212d3d3402bd42f940e4e"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/report.json",
+      "bytes": 359,
+      "sha256": "436702006e5088f95e4a9d802aee379aacb4cda65c0dd5a58c6d71cd4325946f"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/status.json",
+      "bytes": 43,
+      "sha256": "214f2b9a86cc37d3d198fe0ba26d64f2e23d18bc6aee425762fb0c99cb3254ec"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/epoch_006/repair.pth",
+      "bytes": 47639,
+      "sha256": "f5c0857c7a723cb9b1dfadc75f53bd79f6ee25576ce99b9e881df6fa3b66e713",
+      "epoch": 6,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/epoch_002/repair.pth",
+      "bytes": 47639,
+      "sha256": "d46bc3f2a148294d9d1640201bcb4f9841cb696f58bb0c9b6799a8426a3b21da",
+      "epoch": 2,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/epoch_003/repair.pth",
+      "bytes": 47639,
+      "sha256": "85f6aa42d20e190ed142071c72329c2751b2c93e16a1e29ad9b68e972dce6912",
+      "epoch": 3,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/epoch_005/repair.pth",
+      "bytes": 47639,
+      "sha256": "8bb585e4d260a644faadd55e3e4a5e3cf3f228c97f04f167bcd3ead4c7321fdb",
+      "epoch": 5,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/epoch_004/repair.pth",
+      "bytes": 47639,
+      "sha256": "ed594d05a60aad74bd36a974728447d2704e322c82a9aad565ee4d57c31e1ab4",
+      "epoch": 4,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/latest.pth",
+      "bytes": 141743,
+      "sha256": "6d98ada0f6c330461bcc34bbbcabf90920bbeb2b16bb442025ce1bc80f673e5a",
+      "epoch": null,
+      "next_action": "train"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/pending_validation.pth",
+      "bytes": 204719,
+      "sha256": "6ff77d64d3f6b14b04a19acf55a329a34960b2e4bbdcd25002cef71ec9bdaa7c",
+      "epoch": 7,
+      "next_action": "evaluate"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/best.json",
+      "bytes": 268,
+      "sha256": "df69fe3b93e71b3bf7bffc947f0a839dc36820bd24c03e154a52f3141317abb0"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/history.json",
+      "bytes": 9558,
+      "sha256": "40c4573c3cd1be4cda68e8b0860c582af4856cf6fa32f36a0aec1a5c9a431120"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/recurrent_training_contract.json",
+      "bytes": 3087,
+      "sha256": "a3874e0bc5dd680d96005f1513b20567c3842a1714d7a8737fbb89fbf45802da"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/report.json",
+      "bytes": 360,
+      "sha256": "75e936ba30427300183d45460f055c8424bc3f6142148a32b7a7b947342a4be8"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/status.json",
+      "bytes": 43,
+      "sha256": "4acc0db9a7b42e979165b3d65ea84876ae151a10b14e066588c453e5345ca482"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/epoch_006/repair.pth",
+      "bytes": 47639,
+      "sha256": "85b91868ba7967835522d9422cbfa130d795a529caafa69c29342b488943af74",
+      "epoch": 6,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/epoch_002/repair.pth",
+      "bytes": 47639,
+      "sha256": "66c1ee5ab674b0c12f2fe1c3b5a25cd5c29521af72739bac06fb502313186fb1",
+      "epoch": 2,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/epoch_003/repair.pth",
+      "bytes": 47639,
+      "sha256": "47b6f37576a15eecfdcc94730d88798c206f295f1f802075688a2c3ae30bb549",
+      "epoch": 3,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/epoch_007/repair.pth",
+      "bytes": 47639,
+      "sha256": "b66d32bf233f499712d0337036721b89b30f1740e75a6a90b5fa7a8ff77c53e7",
+      "epoch": 7,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/epoch_005/repair.pth",
+      "bytes": 47639,
+      "sha256": "d1f7d3f07c50891eb6f3808b488cde418254523d13acf23f9423138106bbe2ec",
+      "epoch": 5,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/epoch_004/repair.pth",
+      "bytes": 47639,
+      "sha256": "d71e5f8fc12087c83f40b163f194a4f8f997f5579df6299df9b87988cf7ac6a6",
+      "epoch": 4,
+      "next_action": null
+    }
+  ],
+  "destination": "/data1/zhh/gzc/int181_snapshot/live_backups/checkpoints_20261026_0435.tar.gz",
+  "destination_sha256_verified": true
+}
