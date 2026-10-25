@@ -1,0 +1,73 @@
+{
+  "146": {
+    "unix": 1792971561.3453555,
+    "files": {
+      "scheme2_joint_20261025/fixed2k/train/progress.json": {
+        "state": "training",
+        "epoch": 9,
+        "epochs": 10,
+        "batch": 1001,
+        "batches": 2339,
+        "loss": 0.5945321702185234,
+        "gradient_norm": 2.536194324493408,
+        "elapsed_seconds": 1077.9440686318558,
+        "stream_means": {
+          "stream_budgets": 2048.0,
+          "packet_bytes": 2046.8636363636363,
+          "stream_events": 2403.010989010989
+        }
+      },
+      "scheme2_joint_20261025/fixed2k/train/fixed_state.json": {
+        "initial_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+        "current_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+        "verified_through_epoch": 8,
+        "passed": true
+      },
+      "e3dsnn_residual_main_20261023/old_snn/status.json": {
+        "state": "final_evaluation"
+      }
+    }
+  },
+  "181": {
+    "unix": 1792969390.4919255,
+    "files": {
+      "scheme2_joint_restart01/multi248k/train/progress.json": {
+        "state": "training",
+        "epoch": 1,
+        "epochs": 10,
+        "batch": 1251,
+        "batches": 2339,
+        "loss": 0.736023810856409,
+        "gradient_norm": 4.492669105529785,
+        "elapsed_seconds": 14508.59556847415,
+        "stream_means": {
+          "stream_budgets": 4734.4652278177455,
+          "packet_bytes": 4710.498001598721,
+          "stream_events": 10137.16067146283
+        }
+      },
+      "fixed2k_final_standby01/standby.json": {
+        "state": "standby_only",
+        "training_launched": false,
+        "evaluation_launched": false,
+        "purpose": "Same four-budget fixed2k final evaluation if 146 cannot initialize a new CUDA process",
+        "requirements": [
+          "original fixed2k completes 10 epochs",
+          "copy original last.pt/best_ap70.pth/audit.json/training completion and selected metrics with SHA verification",
+          "verify configs differ only in host data/output paths",
+          "record original finalization failure before alternate host launch",
+          "run finish only; never restart fixed training"
+        ],
+        "original_root": "/data1/zhh/gzc/diagnostics/scheme2_joint_20261025",
+        "new_root": "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01",
+        "budgets": [
+          0,
+          2048,
+          4096,
+          8192
+        ],
+        "available_bytes": 2082250752
+      }
+    }
+  }
+}

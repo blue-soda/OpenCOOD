@@ -82,3 +82,14 @@ fixed2k第4轮1738帧全验证AP30/50/70=76.87735%/71.89869%/58.62417%，平均2
 146固定组第7轮401/2339批；181多预算第1轮551/2339批，仍正常。old_snn仍第20轮验证、进程CPU持续运行，不重复投递。146 CUDA故障尚未宣告解决，不重置仍运行的作业。第6轮last.pt和best_ap70.pth已复制、取回本机并逐文件校验SHA；备份目录scheme2_joint_20261025/safety_backup_epoch6。last SHA=223ea182bbd7a6bd1ffe2eb44247f47c1cc1b519f532b12e3ee44bb9dfd0bbd4；best SHA=0add747f31daf1c34315621990ef1b9424e2606f2cb60fa23cc3f396bf9e6f9e。权重不提交Git。
 
 [第6轮指标](results/scheme2_joint_20261025/epoch6_backup/best_ap70_metrics.json)、[冻结摘要](results/scheme2_joint_20261025/epoch6_backup/fixed_state.json)、[六轮历史](results/scheme2_joint_20261025/epoch6_backup/metrics.jsonl)、[备份SHA](results/scheme2_joint_20261025/epoch6_backup/sha256.json)。后续保持已登记协议，不因跨过阈值提前停止或追加超参数。
+
+
+## 2026-10-26 07:03轮询：继续原训练，预备跨机收尾
+
+fixed2k第9轮851/2339批，最佳仍第6轮58.85365%；多预算第1轮1201/2339批。old_snn已进入七预算最终评估，尚未完成。不重复启动推理、训练或发送相同资源问题；InfoCom适配仍等待181足够检查点空间，未开始正式训练。
+
+146当前训练使用已经初始化的CUDA上下文，但后续新评估进程可能因既知CUDA异常无法启动。为避免届时重新搭建，在181准备fixed2k_final_standby01，仅生成同一0/2048/4096/8192字节评估配置和源权重引用，未启动任何训练或评估。所有数据路径使用已验证181数据及paired manifest，保存standby.json。该目录的source.pth是初始源权重，只用于原协议校验，绝不能把它当作最终已训练best。
+
+后续条件：146固定组实际完成10轮；取回并核验最终last/best、audit、完成状态、选中epoch指标及原训练配置；确认重定位配置只有数据/输出路径差异；若146最终评估失败则保留失败，再在181调用finish入口，不再次训练固定组。已有正常工作的146最终评估不重复执行。当前181仍约2GB空闲，收尾小权重及四预算包占用需重新检查；不占用尚未获准的InfoCom大检查点空间。
+
+证据：[状态及备用收尾目录](results/scheme2_joint_20261025/heartbeat_20261025_2303Z.json)。本轮无新AP、无新故障或用户动作需求，静默。
