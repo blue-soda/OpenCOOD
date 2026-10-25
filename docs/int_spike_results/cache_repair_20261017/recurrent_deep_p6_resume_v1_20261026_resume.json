@@ -1,0 +1,7 @@
+{
+  "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_v1_20261026/latest.pth",
+  "next_action": "train",
+  "next_epoch": 1,
+  "scope": "Optimizer/scheduler/model continuation; pending validation resumes without repeating training; interrupted partial training epoch restarts.",
+  "sha256": "b9641e703685e17dd206c21a3db190d875bb8c6ec0ba06c9b7a9d384a050257a"
+}

@@ -1,0 +1,31 @@
+{
+  "observed_unix": 1792950624.0718992,
+  "old_runs": {
+    "recurrent_deep_p3_v2_20261026": {
+      "latest_completed_epoch": 0,
+      "trained_epoch1_checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_v2_20261026/epoch_001/repair.pth",
+      "bytes": 47639,
+      "sha256": "9367f67df885e51ebce38872d7ba8e0bf80e0e707f84c83674c5c48a6a009050",
+      "has_pending_validation": false,
+      "has_epoch1_report": false
+    },
+    "recurrent_deep_p6_v1_20261026": {
+      "latest_completed_epoch": 0,
+      "trained_epoch1_checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_v1_20261026/epoch_001/repair.pth",
+      "bytes": 47639,
+      "sha256": "0ab2cf6044088ae3af8dc3298fc1e231f83460869176296b45d6faef0645d149",
+      "has_pending_validation": false,
+      "has_epoch1_report": false
+    }
+  },
+  "disk": {
+    "/data1": {
+      "free": 0,
+      "total": 3936817758208
+    },
+    "/data2": {
+      "free": 7676428288,
+      "total": 3936817758208
+    }
+  }
+}
