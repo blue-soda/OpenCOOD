@@ -16,11 +16,13 @@ from opencood.models.sub_modules.int_basis_spatial_state import _write_rows, _se
 
 
 class LocalReadoutCache:
-    def __init__(self, readout, bounds, threshold, execution='selected', period=3):
+    def __init__(self, readout, bounds, threshold, execution='selected', period=3,row_chunk_size=4096):
         if readout.training or execution not in ('selected', 'masked_dense') or period not in (1,3,5):
             raise ValueError('Frozen readout, selected/masked_dense and period1/3/5 required')
         if not math.isfinite(threshold) or threshold < 0:
             raise ValueError('Finite nonnegative threshold required')
+        if not isinstance(row_chunk_size,int) or row_chunk_size<1:raise ValueError('Positive row chunk size required')
+        self.row_chunk_size=row_chunk_size
         # CoDynTrust-derived checkpoint: BN/ReLU -> (1x1,3x3) -> BN/ReLU.
         tail = readout.tail
         if (len(tail)!=5 or not isinstance(tail[0],nn.BatchNorm2d) or
@@ -58,13 +60,13 @@ class LocalReadoutCache:
             raise ValueError('Matching single-frame input, output cache and boolean mask required')
         support=F.max_pool2d(mask.float(),3,1,1)>0
         plan=prepare_selected_neighborhoods(support)
-        middle,ids,macs=prepared_conv3x3_rows(self.first,self.weights[0],current,plan,4096)
+        middle,ids,macs=prepared_conv3x3_rows(self.first,self.weights[0],current,plan,self.row_chunk_size)
         middle=F.relu(_selected_bn(middle,self.bn1))
         projected=F.linear(middle,self.project.weight[:,:,0,0],self.project.bias)
         target,neighbors,_=prepare_selected_neighborhoods(mask)
         indices=row_lookup(ids,mask.numel())[neighbors]
         assert bool(((neighbors==mask.numel())|(indices<ids.numel())).all())
-        output=F.relu(_selected_bn(planned_conv(self.second,self.weights[1],projected,indices),self.bn2))
+        output=F.relu(_selected_bn(planned_conv(self.second,self.weights[1],projected,indices,self.row_chunk_size),self.bn2))
         macs+=ids.numel()*self.project.weight.numel()+target.numel()*self.second.weight.numel()
         return _write_rows(old,target,output),macs,ids.numel()
 

@@ -26,6 +26,24 @@ class TestLocalReadout(unittest.TestCase):
         self.cache=LocalReadoutCache(self.model,self.bounds,.25)
 
     @torch.no_grad()
+    def test_row_batching_preserves_values_cost_and_old_state(self):
+        x=torch.randn(1,16,10,12);old=torch.randn(1,24,10,12);saved=old.clone()
+        for pattern in ('empty','full','edge','scattered'):
+            mask=torch.zeros(1,1,10,12,dtype=torch.bool)
+            if pattern=='full':mask.fill_(True)
+            elif pattern=='edge':mask[:,:,:2,:]=True;mask[:,:,:,-1]=True
+            elif pattern=='scattered':mask[:,:,::3,::3]=True
+            expected,cost,support=self.cache.selected(x,old,mask)
+            for chunk in (1,7,32768):
+                cache=LocalReadoutCache(self.model,self.bounds,.25,row_chunk_size=chunk)
+                actual,macs,count=cache.selected(x,old,mask)
+                self.assertTrue(torch.allclose(actual,expected,atol=1e-6,rtol=1e-5))
+                self.assertTrue(torch.equal(actual.masked_select(~mask),old.masked_select(~mask)))
+                self.assertEqual((macs,count),(cost,support))
+            self.assertTrue(torch.equal(old,saved))
+        with self.assertRaises(ValueError):LocalReadoutCache(self.model,self.bounds,.25,row_chunk_size=0)
+
+    @torch.no_grad()
     def test_budget_selection_and_dense_fidelity(self):
         x=torch.randn(1,16,10,12);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
         for scale,ranking in product((.8,1.),('absolute','relative')):

@@ -522,9 +522,12 @@ def main():
     p.add_argument('--recurrent-local-reference',default=None,help='Completed frozen-period comparison used to fix checkpoint and dense AP')
     p.add_argument('--recurrent-local-period',type=int,choices=(3,4,6),default=4)
     p.add_argument('--recurrent-readout-calibration',default=None,help='Compose frozen train-calibrated readout reuse with complete D recurrence')
+    p.add_argument('--recurrent-readout-profile-frames',type=int,choices=(0,512),default=0,help='Bounded same-state row batching and stage timing on train prefix')
     a = p.parse_args(); out = Path(a.output)
     if a.recurrent_readout_calibration and not a.recurrent_local_reference:
         p.error('Readout composition requires frozen recurrent reference')
+    if a.recurrent_readout_profile_frames and not a.recurrent_readout_calibration:
+        p.error('Readout backend profile requires frozen composition')
     if a.recurrent_local_reference and (a.recurrent_three_checkpoint or a.recurrent_six_checkpoint or a.recurrent_deep_epochs or a.recurrent_deep_resume or
             a.deep_audit_frames or a.stem_audit_frames or a.readout_period!=3 or a.readout_threshold!=.5 or
             a.readout_calibrate_frames or a.readout_calibration or a.readout_budget_scale is not None or

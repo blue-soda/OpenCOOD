@@ -86,6 +86,9 @@ def compare_composition(a,cfg,train,val,baseline,out,costs,spatial_macs,repair,c
         d_sparse_frames=d_partial,readout_sparse_frames=r_partial,period1_max_error=period1_max,
         max_prediction_error=max(r['prediction_max_error'] for r in records),
         max_readout_error=max(r['readout_max_error'] for r in records),max_deep_error=max(r['deep_max_error'] for r in records)))
+    if a.recurrent_readout_profile_frames:
+        from opencood.tools.profile_int_recurrent_readout import profile_composition
+        return profile_composition(a,cfg,train,modes['local_readout'],out,costs,spatial_macs)
     audits=[]
     def audit(name,ego,previous,meta,pred,state,info,index):
         if name in selected_names and index%200==0:
