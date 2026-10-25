@@ -1,8 +1,21 @@
 import unittest
+from unittest.mock import patch
 import torch
-from opencood.test.test_int_local_readout import Readout
+from torch import nn
+from torch.nn import functional as F
 from opencood.models.sub_modules.int_local_readout import LocalReadoutCache
 from opencood.models.sub_modules.int_tiled_readout import TiledReadoutCache
+
+
+class Readout(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.spatial=nn.Conv2d(16,24,3,padding=1)
+        self.tail=nn.Sequential(nn.BatchNorm2d(24),nn.ReLU(),nn.Sequential(nn.Conv2d(24,8,1,bias=False),
+            nn.Conv2d(8,24,3,padding=1)),nn.BatchNorm2d(24),nn.ReLU())
+        for bn in (self.tail[0],self.tail[3]):
+            bn.running_mean.copy_(torch.randn(24))
+            bn.running_var.copy_(torch.rand(24)+.2)
 
 
 class TestTiledReadout(unittest.TestCase):
@@ -37,7 +50,15 @@ class TestTiledReadout(unittest.TestCase):
         mask=torch.rand(1,1,21,27)>.8;before=x.clone();saved=old.clone()
         a=TiledReadoutCache(model,bounds,.5,tile=8,chunk_tiles=1)
         b=TiledReadoutCache(model,bounds,.5,tile=8,chunk_tiles=32)
-        first,ma,_=a.selected(x,old,mask);second,mb,_=b.selected(x,old,mask)
+        conv=F.conv2d;executed=[]
+        def counted(inputs,weights,*args,**kwargs):
+            result=conv(inputs,weights,*args,**kwargs)
+            executed.append(result.numel()*weights.shape[1]*weights.shape[2]*weights.shape[3])
+            return result
+        with patch('opencood.models.sub_modules.int_tiled_readout.F.conv2d',side_effect=counted):
+            first,ma,_=a.selected(x,old,mask)
+        self.assertEqual(ma,sum(executed))
+        second,mb,_=b.selected(x,old,mask)
         self.assertTrue(torch.allclose(first,second,atol=2e-6,rtol=1e-5));self.assertEqual(ma,mb)
         self.assertTrue(torch.equal(x,before));self.assertTrue(torch.equal(old,saved))
 
