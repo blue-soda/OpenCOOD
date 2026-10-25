@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from opencood.test.test_int_local_readout import Readout
+from test_int_local_readout import Readout
 from opencood.models.sub_modules.int_local_readout import LocalReadoutCache
 from opencood.models.sub_modules.int_packed_readout import PackedReadoutCache
 
