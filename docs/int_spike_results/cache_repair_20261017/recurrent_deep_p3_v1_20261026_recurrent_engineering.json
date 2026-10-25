@@ -1,0 +1,10 @@
+{
+  "executed_macs_verified": true,
+  "frames": 32,
+  "gradient_into_repair_only": true,
+  "partial_frames": 21,
+  "period1_exact": true,
+  "status": "PASSED",
+  "teacher_not_used_in_partial_inference": true,
+  "train_inference_exact_max_error": 0.0
+}
