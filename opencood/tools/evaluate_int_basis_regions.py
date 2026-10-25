@@ -524,7 +524,14 @@ def main():
     p.add_argument('--recurrent-readout-calibration',default=None,help='Compose frozen train-calibrated readout reuse with complete D recurrence')
     p.add_argument('--recurrent-readout-profile-frames',type=int,choices=(0,512),default=0,help='Bounded same-state row batching and stage timing on train prefix')
     p.add_argument('--recurrent-readout-layout',action='store_true',help='Full independent comparison of row batching and packed aligned state')
+    p.add_argument('--short-readout-epochs',type=int,default=0,help='Train complete readout short recurrence, maximum budget')
+    p.add_argument('--short-readout-width',type=int,choices=(32,64),default=32)
+    p.add_argument('--short-readout-resume',default=None)
     a = p.parse_args(); out = Path(a.output)
+    if not 0<=a.short_readout_epochs<=24:p.error('Short readout budget must be0..24')
+    if a.short_readout_resume and not a.short_readout_epochs:p.error('Resume requires short readout training')
+    if a.short_readout_epochs and (not a.recurrent_local_reference or a.recurrent_readout_calibration or a.recurrent_local_period!=4):
+        p.error('Short readout training requires frozen four-frame D reference without readout composition')
     if a.recurrent_readout_calibration and not a.recurrent_local_reference:
         p.error('Readout composition requires frozen recurrent reference')
     if a.recurrent_readout_profile_frames and not a.recurrent_readout_calibration:
@@ -611,7 +618,7 @@ def main():
     if a.long_history and not a.cache_fp16:
         p.error('Long spatial history requires --cache-fp16')
     if a.worker:
-        limit=28800 if a.recurrent_deep_epochs else 14400
+        limit=28800 if a.recurrent_deep_epochs or a.short_readout_epochs else 14400
         def expired(s, f): raise TimeoutError('Basis experiment exceeded its wall-clock budget')
         signal.signal(signal.SIGALRM, expired); signal.alarm(limit)
         try: worker(a)
@@ -626,7 +633,7 @@ def main():
     command = [sys.executable, '-m', 'opencood.tools.evaluate_int_basis_regions']+sys.argv[1:]+['--worker']
     with (out/'run.log').open('x') as log:
         proc = subprocess.Popen(command, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-    write_json(out/'launch.json', dict(pid=proc.pid, gpu=a.gpu, command=command, created_unix=time.time(), timeout_seconds=28800 if a.recurrent_deep_epochs else 14400,
+    write_json(out/'launch.json', dict(pid=proc.pid, gpu=a.gpu, command=command, created_unix=time.time(), timeout_seconds=28800 if a.recurrent_deep_epochs or a.short_readout_epochs else 14400,
         code_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()))
     print(json.dumps(dict(pid=proc.pid, output=str(out))))
 

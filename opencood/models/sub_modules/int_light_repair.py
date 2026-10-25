@@ -5,14 +5,14 @@ import torch.nn.functional as F
 
 
 class LightRepair(nn.Module):
-    def __init__(self,channels,width=64):
-        super().__init__();self.channels=channels
-        self.net=nn.Sequential(nn.Conv2d(128+channels+1,width,1),nn.ReLU(),
+    def __init__(self,channels,width=64,current_channels=128):
+        super().__init__();self.channels=channels;self.current_channels=current_channels
+        self.net=nn.Sequential(nn.Conv2d(current_channels+channels+1,width,1),nn.ReLU(),
             nn.Conv2d(width,width,3,padding=1,groups=width),nn.ReLU(),nn.Conv2d(width,channels,1))
         nn.init.zeros_(self.net[-1].weight);nn.init.zeros_(self.net[-1].bias)
 
     def forward(self,x):
-        return x[:,128:128+self.channels]+self.net(x)
+        return x[:,self.current_channels:self.current_channels+self.channels]+self.net(x)
 
 
 def repair_input_request(first,old,valid,changed,index):
