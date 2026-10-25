@@ -23,13 +23,20 @@ def process_identity(pid):
 
 
 def verify_gpu_processes(gpu_rows,process_rows,index,pid):
-    devices={int(row.split(',')[0].strip()):row.split(',')[1].strip()
-             for row in gpu_rows.splitlines() if row.strip()}
+    devices={}
+    for row in gpu_rows.splitlines():
+        if not row.strip():continue
+        fields=[v.strip() for v in row.split(',')]
+        if len(fields)!=2 or not fields[0].isdigit() or not fields[1].startswith('GPU-'):
+            raise RuntimeError('GPU device query unavailable or malformed: '+row)
+        devices[int(fields[0])]=fields[1]
     if index not in devices:raise RuntimeError('Physical benchmark GPU not found')
     uuid=devices[index];pids=[]
     for row in process_rows.splitlines():
         if not row.strip():continue
         fields=[v.strip() for v in row.split(',')]
+        if len(fields)!=2 or not fields[0].startswith('GPU-') or not fields[1].isdigit():
+            raise RuntimeError('GPU process query unavailable or malformed: '+row)
         if fields[0]==uuid:pids.append(int(fields[1]))
     if pid not in pids:raise RuntimeError('Benchmark PID absent from GPU query; cannot validate isolation')
     foreign=sorted(set(pids)-{pid})
@@ -39,7 +46,9 @@ def verify_gpu_processes(gpu_rows,process_rows,index,pid):
 
 def check_gpu_exclusive(index):
     def query(fields):
-        return subprocess.check_output(['nvidia-smi',fields,'--format=csv,noheader,nounits'],timeout=15).decode()
+        # Scope both queries to the physical task GPU. An unrelated failed GPU
+        # can otherwise inject diagnostic text into the all-device CSV output.
+        return subprocess.check_output(['nvidia-smi','-i',str(index),fields,'--format=csv,noheader,nounits'],timeout=15).decode()
     def snapshot():
         return verify_gpu_processes(query('--query-gpu=index,uuid'),
             query('--query-compute-apps=gpu_uuid,pid'),index,os.getpid())
@@ -57,3 +66,27 @@ def check_gpu_exclusive(index):
         result.update(timing_valid=False,transient_contention=evidence)
     result['checked_unix']=time.time()
     return result
+
+
+def wait_for_training_gpu(index,timeout_seconds=600,poll_seconds=15,on_event=None):
+    """Cooperatively pause kernels at a training boundary, never kill other jobs.
+
+    Allocated model/state memory remains resident. Hardware/query failures are
+    not contention and still fail closed. Benchmark evaluation stays strict.
+    """
+    if timeout_seconds<=0 or poll_seconds<=0:raise ValueError('Wait limits must be positive')
+    start=time.monotonic();events=[]
+    while True:
+        try:result=check_gpu_exclusive(index)
+        except GPUContention as exc:
+            events.extend(exc.evidence)
+            remaining=timeout_seconds-(time.monotonic()-start)
+            if on_event:on_event(dict(status='WAIT_TIMEOUT' if remaining<=0 else 'WAITING_GPU',
+                evidence=events,pids=exc.pids,remaining_seconds=max(remaining,0.)))
+            if remaining<=0:raise
+            time.sleep(min(poll_seconds,remaining))
+        else:
+            if events:
+                result.update(timing_valid=False,training_wait_seconds=time.monotonic()-start,training_contention=events)
+                if on_event:on_event(dict(status='RESUMED',evidence=events,result=result))
+            return result

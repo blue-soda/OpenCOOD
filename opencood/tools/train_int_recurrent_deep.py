@@ -12,7 +12,7 @@ from opencood.loss.point_pillar_dir_loss import PointPillarDirLoss
 from opencood.tools.train_int_anchor_residual import ConvCounter
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
-from opencood.tools.int_gpu_exclusivity import check_gpu_exclusive
+from opencood.tools.int_gpu_exclusivity import check_gpu_exclusive,wait_for_training_gpu
 from opencood.utils import eval_utils
 
 
@@ -156,8 +156,12 @@ def train_recurrent(a,cfg,train,val,baseline,out,costs,spatial_macs):
                         optimizer.step();optimizer.zero_grad(set_to_none=True);pending=[];updates+=1
                     state['deep']['value']=state['deep']['value'].detach()
                 if (index+1)%200==0:
+                    torch.cuda.synchronize()
+                    def waiting(event):
+                        write_json(directory/('train_wait_%06d.json'%(index+1)),event)
+                        write_json(out/'status.json',dict(status='RUNNING',phase='waiting_gpu' if event['status']=='WAITING_GPU' else event['status'].lower(),epoch=epoch,scans=index+1))
                     try:
-                        evidence=check_gpu_exclusive(a.gpu)
+                        evidence=wait_for_training_gpu(a.gpu,on_event=waiting)
                         if not evidence['timing_valid']:
                             write_json(directory/('train_contention_%06d.json'%(index+1)),evidence)
                     except Exception as exc:
