@@ -1,0 +1,62 @@
+{
+  "trigger_utc": "2026-10-25T15:03:24.323Z",
+  "server_unix": 1792942837.1115227,
+  "runs": {
+    "fixed2k": {
+      "pipeline": {
+        "state": "running",
+        "stage": "train",
+        "unix": 1792941303.181843
+      },
+      "progress": {
+        "state": "training",
+        "epoch": 1,
+        "epochs": 10,
+        "batch": 1351,
+        "batches": 2339,
+        "loss": 0.9975731858502146,
+        "gradient_norm": 2.7855746746063232,
+        "elapsed_seconds": 1493.7014262329321,
+        "stream_means": {
+          "stream_budgets": 2048.0,
+          "packet_bytes": 2046.143227239082,
+          "stream_events": 2760.896373056995
+        }
+      }
+    },
+    "multi248k": {
+      "pipeline": {
+        "state": "running",
+        "stage": "train",
+        "unix": 1792941352.8564699
+      },
+      "progress": {
+        "state": "training",
+        "epoch": 1,
+        "epochs": 10,
+        "batch": 101,
+        "batches": 2339,
+        "loss": 0.6033855126619846,
+        "gradient_norm": 5.522009372711182,
+        "elapsed_seconds": 1217.0545390450861,
+        "stream_means": {
+          "stream_budgets": 4542.0990099009905,
+          "packet_bytes": 4527.559405940594,
+          "stream_events": 10162.366336633664
+        }
+      }
+    }
+  },
+  "old_snn": {
+    "state": "training",
+    "epoch": 19,
+    "batch": 651,
+    "total_batches": 2339,
+    "loss": 0.6476278023016718,
+    "communication_means": {
+      "bytes": 4365.721966205837,
+      "events": 1216.7657450076804,
+      "steps": 1.0
+    }
+  }
+}
