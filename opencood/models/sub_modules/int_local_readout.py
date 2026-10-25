@@ -109,7 +109,7 @@ class LocalReadoutCache:
         selected=not reason and self.execution=='selected'
         info=dict(readout_refresh=reason is not None,readout_refresh_reason=reason,
             readout_write_fraction=count/float(cells),readout_uncovered_fraction=uncovered,
-            readout_executed_fraction=(support_count*weight1+count*weight2)/float(cells*(weight1+weight2)) if selected else 1.,
+            readout_executed_fraction=extra/float(cells*(weight1+weight2)) if selected else 1.,
             readout_extra_linear_macs=extra,readout_full_age_s=(stamp-full_stamp)/1e6,
             readout_state_bytes=sum(v.numel()*v.element_size() for v in (new['value'],new['reference'])))
         return output,new,info
