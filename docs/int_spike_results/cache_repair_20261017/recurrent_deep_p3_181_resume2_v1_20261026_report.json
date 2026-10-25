@@ -1,0 +1,11 @@
+{
+  "best": {
+    "ap70": 0.756440285232639,
+    "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p3_181_resume2_v1_20261026/epoch_002/repair.pth",
+    "epoch": 2,
+    "sha256": "d46bc3f2a148294d9d1640201bcb4f9841cb696f58bb0c9b6799a8426a3b21da"
+  },
+  "epochs": 6,
+  "status": "COMPLETED",
+  "stop_reason": "plateau"
+}

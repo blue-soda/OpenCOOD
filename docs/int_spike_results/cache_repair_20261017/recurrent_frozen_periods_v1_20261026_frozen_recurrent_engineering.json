@@ -1,0 +1,11 @@
+{
+  "actual_macs_verified": true,
+  "frames": 32,
+  "partial_frames": {
+    "trained3_period3": 21,
+    "trained6_period3": 21,
+    "trained6_period4": 23,
+    "trained6_period6": 26
+  },
+  "status": "PASSED"
+}
