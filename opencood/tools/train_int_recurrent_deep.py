@@ -20,7 +20,7 @@ def cost_of(costs,spatial_macs,info,recurrent):
     partial=info['deep_partial'] if recurrent else info['local_partial']
     value=costs[('dense',partial)]
     if not info['spatial_refresh']:value=value-spatial_macs+info['spatial_extra_linear_macs']
-    return value
+    return value-info.get('deep_macs_saved',0)
 
 
 def engineering(baseline,mode,cfg,train,costs,spatial_macs):
@@ -58,10 +58,10 @@ def engineering(baseline,mode,cfg,train,costs,spatial_macs):
         gradient_into_repair_only=True,teacher_not_used_in_partial_inference=True)
 
 
-def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variants=None,expected_ap=None):
+def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variants=None,expected_ap=None,note=None,audit=None):
     modes=dict(baseline=baseline);modes.update(variants if variants is not None else dict(recurrent=mode));states={k:None for k in modes}
     stats={k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}
-    metrics={k:dict(time=[],macs=0,full=0,state=[]) for k in modes};isolation=[]
+    metrics={k:dict(time=[],macs=0,full=0,state=[],deep_write=[],short_ratio=[]) for k in modes};isolation=[]
     dataset,stream=loader(rows,cfg,4,303)
     def guard(scan):
         try:
@@ -79,13 +79,17 @@ def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variant
                 if (index//len(names))%2:names.reverse()
             elif index%2:names.reverse()
             for name in names:
+                previous=states[name]
                 torch.cuda.synchronize();tick=time.perf_counter()
-                pred,states[name],info=modes[name].step(ego,states[name],sample['meta'])
+                pred,states[name],info=modes[name].step(ego,previous,sample['meta'])
                 torch.cuda.synchronize();ms=1000*(time.perf_counter()-tick)
                 if index>=10:metrics[name]['time'].append(ms)
                 recurrent=name!='baseline';metrics[name]['macs']+=cost_of(costs,spatial_macs,info,recurrent)
                 metrics[name]['full']+=int(not info['deep_partial'] if recurrent else not info['local_partial'])
                 metrics[name]['state'].append(info['state_bytes']+info['spatial_state_bytes']+info['anchor_bytes'])
+                if 'deep_write_fraction' in info:metrics[name]['deep_write'].append(info['deep_write_fraction'])
+                if 'deep_short_macs_ratio' in info:metrics[name]['short_ratio'].append(info['deep_short_macs_ratio'])
+                if audit is not None:audit(name,ego,previous,sample['meta'],pred,states[name],info,index)
                 assert all(torch.isfinite(v).all() for v in pred.values())
                 if sample['meta']['supervised']:
                     data=dict(ego=ego);boxes,scores=dataset.post.post_process(data,dict(ego=pred));gt=dataset.post.generate_gt_bbx(data)
@@ -97,12 +101,14 @@ def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variant
     results={k:dict(ap70=eval_utils.calculate_ap(stats[k],.7)[0],ap50=eval_utils.calculate_ap(stats[k],.5)[0],
         conv_linear_gflops=2*metrics[k]['macs']/len(rows)/1e9,mean_ms=float(np.mean(metrics[k]['time'])) if timing_valid else None,
         p95_ms=float(np.percentile(metrics[k]['time'],95)) if timing_valid else None,deep_full_frames=metrics[k]['full'],
-        mean_state_bytes=float(np.mean(metrics[k]['state']))) for k in modes}
+        mean_state_bytes=float(np.mean(metrics[k]['state'])),
+        mean_deep_write_fraction=float(np.mean(metrics[k]['deep_write'])) if metrics[k]['deep_write'] else None,
+        mean_short_update_macs_ratio=float(np.mean(metrics[k]['short_ratio'])) if metrics[k]['short_ratio'] else None) for k in modes}
     assert abs(results['baseline']['ap70']-.7553159775482435)<1e-7
     for name,ap in (expected_ap or {}).items():
         assert abs(results[name]['ap70']-ap)<1e-7,(name,results[name]['ap70'],ap)
     report=dict(status='COMPLETED',scans=len(rows),labels=sum(r['supervised'] for r in rows),results=results,timing_valid=timing_valid,
-        note='Independent histories. Dense short D update; no local D skipping. Timing excludes IO/H2D/postprocess; sampled GPU isolation does not reserve shared CPU/IO. Conv/functional-linear MACsx2.')
+        note=note or 'Independent histories. Dense short D update; no local D skipping. Timing excludes IO/H2D/postprocess; sampled GPU isolation does not reserve shared CPU/IO. Conv/functional-linear MACsx2.')
     write_json(directory/'report.json',report);return report
 
 

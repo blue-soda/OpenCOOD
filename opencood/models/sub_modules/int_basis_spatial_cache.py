@@ -156,6 +156,7 @@ class SpatialBasisCache:
                 if getattr(self.stage,'row_spatial_execution',False):
                     projection_cells=self.stage.last_projection_cells
                     info['spatial_projection_executed_fraction']=sum(n*c.project.weight.numel() for n,c in zip(projection_cells,kernels))/float(cells*sum(c.project.weight.numel() for c in kernels))
+        if getattr(self,'capture_update_mask',False):info['spatial_update_mask']=mask.detach()
         return output, new_state, info
 
 

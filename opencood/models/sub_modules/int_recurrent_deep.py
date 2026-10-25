@@ -10,8 +10,11 @@ class RecurrentDeepState:
         self.repair,self.bounds,self.period=repair,bounds,period
         self.max_age_us={1:250000,3:250000,4:350000,6:550000}[period]
 
-    def step(self,h,state,meta,full_value,reset=False,detach=True):
-        stamp=int(meta['timestamp_us']);reason=None
+    def update(self,h,old,valid,update_mask=None):
+        return self.repair(torch.cat((h,old,valid.to(old.dtype)),1)),dict(deep_write_fraction=1.,deep_short_macs_ratio=1.)
+
+    def step(self,h,state,meta,full_value,reset=False,detach=True,update_mask=None):
+        stamp=int(meta['timestamp_us']);reason=None;detail=dict(deep_write_fraction=1.)
         if state is None or reset or state['scene']!=meta['segment']:reason='reset'
         else:
             if stamp<=state['stamp']:raise ValueError('Noncausal D state')
@@ -21,13 +24,14 @@ class RecurrentDeepState:
             value=full_value();frames=0;full_stamp=stamp;uncovered=0.
         else:
             old,valid=warp_bev(state['value'],state['pose'],meta['pose'],self.bounds)
-            value=self.repair(torch.cat((h,old,valid.to(old.dtype)),1))
+            value,detail=self.update(h,old,valid,update_mask)
             frames=state['frames']+1;full_stamp=state['full_stamp'];uncovered=float((~valid).float().mean())
         new=dict(value=value.detach() if detach else value,pose=meta['pose'],stamp=stamp,
                  full_stamp=full_stamp,frames=frames,scene=meta['segment'])
-        return value,new,dict(deep_partial=reason is None,deep_refresh_reason=reason,
+        info=dict(deep_partial=reason is None,deep_refresh_reason=reason,
             deep_age_s=(stamp-full_stamp)/1e6,deep_depth=frames,deep_uncovered_fraction=uncovered,
             anchor_bytes=value.numel()*value.element_size())
+        info.update(detail);return value,new,info
 
 
 class RecurrentDeepDetector:
@@ -62,7 +66,8 @@ class RecurrentDeepDetector:
             target=self.full_deep(h) if supervise else None
             target_pred=predict(m,self.readout.fuse(current,target)) if supervise else None
         value,deep,deep_info=self.deep.step(h,None if state is None else state['deep'],meta,
-            lambda:target if target is not None else self.full_deep(h),bool(info['reset']),detach=not supervise)
+            lambda:target if target is not None else self.full_deep(h),bool(info['reset']),detach=not supervise,
+            update_mask=detail.get('spatial_update_mask'))
         pred=predict(m,self.readout.fuse(current,value))
         confidence=pred['psm'].detach().sigmoid().amax(1,keepdim=True)
         if confidence.shape[-2:]!=h.shape[-2:]:
