@@ -507,7 +507,17 @@ def main():
                    help='Train-only pre-stem descriptor and six-layer dependency-cost feasibility')
     p.add_argument('--deep-audit-frames',type=int,choices=(0,512),default=0,
                    help='Train-only dependency-cost feasibility of periodic deep local refresh')
+    p.add_argument('--recurrent-deep-epochs',type=int,default=0,
+                   help='Train complete recursive D updater; maximum1..24 epochs, zero disables')
+    p.add_argument('--recurrent-deep-period',type=int,choices=(3,6),default=6)
+    p.add_argument('--recurrent-deep-resume',default=None,help='Completed-epoch latest.pth to resume in new output directory')
     a = p.parse_args(); out = Path(a.output)
+    if a.recurrent_deep_resume and not a.recurrent_deep_epochs:p.error('Resume requires recurrent D training')
+    if not 0<=a.recurrent_deep_epochs<=24:p.error('Recurrent D budget must be0..24')
+    if a.recurrent_deep_epochs and (a.deep_audit_frames or a.stem_audit_frames or a.readout_period!=3 or a.readout_threshold!=.5 or
+            a.readout_calibrate_frames or a.readout_calibration or a.readout_budget_scale is not None or
+            a.readout_selector_frames or a.readout_backend_frames or a.readout_audit_frames or a.readout_ranking_audit):
+        p.error('Recurrent D training requires fixed H baseline without other diagnostics')
     if a.deep_audit_frames and (a.stem_audit_frames or a.readout_period!=3 or a.readout_threshold!=.5 or
             a.readout_calibrate_frames or a.readout_calibration or a.readout_budget_scale is not None or
             a.readout_selector_frames or a.readout_backend_frames or a.readout_audit_frames or a.readout_ranking_audit):
@@ -572,8 +582,9 @@ def main():
     if a.long_history and not a.cache_fp16:
         p.error('Long spatial history requires --cache-fp16')
     if a.worker:
-        def expired(s, f): raise TimeoutError('Basis region evaluation exceeded4 hours')
-        signal.signal(signal.SIGALRM, expired); signal.alarm(14400)
+        limit=28800 if a.recurrent_deep_epochs else 14400
+        def expired(s, f): raise TimeoutError('Basis experiment exceeded its wall-clock budget')
+        signal.signal(signal.SIGALRM, expired); signal.alarm(limit)
         try: worker(a)
         except Exception as exc: write_json(out/'status.json', dict(status='FAILED', error=repr(exc))); raise
         finally: signal.alarm(0)
@@ -586,7 +597,7 @@ def main():
     command = [sys.executable, '-m', 'opencood.tools.evaluate_int_basis_regions']+sys.argv[1:]+['--worker']
     with (out/'run.log').open('x') as log:
         proc = subprocess.Popen(command, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-    write_json(out/'launch.json', dict(pid=proc.pid, gpu=a.gpu, command=command, created_unix=time.time(), timeout_seconds=14400,
+    write_json(out/'launch.json', dict(pid=proc.pid, gpu=a.gpu, command=command, created_unix=time.time(), timeout_seconds=28800 if a.recurrent_deep_epochs else 14400,
         code_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()))
     print(json.dumps(dict(pid=proc.pid, output=str(out))))
 

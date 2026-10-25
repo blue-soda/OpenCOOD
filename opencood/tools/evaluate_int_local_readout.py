@@ -108,6 +108,10 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
         actual_hook_plus_linear_macs_verified=True,readout_dense_macs=readout_macs,
         spatial_dense_macs=spatial_macs))
     del modes['period1']
+    if a.recurrent_deep_epochs:
+        from opencood.tools.train_int_recurrent_deep import train_recurrent
+        train_recurrent(a,cfg,train,val,baseline,out,costs,spatial_macs)
+        return
     if a.deep_audit_frames:
         from opencood.tools.audit_int_deep_refresh import audit_deep
         audit_deep(a,cfg,train,modes['baseline'],out)
