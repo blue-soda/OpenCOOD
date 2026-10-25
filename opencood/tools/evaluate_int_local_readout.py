@@ -148,10 +148,10 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
     def verify_isolation(scan):
         try:
             evidence=check_gpu_exclusive(a.gpu);evidence['scan']=scan;isolation.append(evidence)
-            write_json(out/'gpu_exclusivity.json',dict(status='SAMPLED_CLEAR',samples=isolation,
+            write_json(out/'gpu_exclusivity.json',dict(status='SAMPLED_CLEAR' if all(x['timing_valid'] for x in isolation) else 'INVALID_TIMING',samples=isolation,
                 limitation='Before validation, every200 scans and after validation; not continuous GPU reservation or shared CPU/IO isolation. Query outside timing.'))
         except Exception as exc:
-            write_json(out/'gpu_exclusivity.json',dict(status='INVALID_TIMING',scan=scan,error=repr(exc),samples=isolation))
+            write_json(out/'gpu_exclusivity.json',dict(status='INVALID_TIMING',scan=scan,error=repr(exc),samples=isolation,evidence=getattr(exc,'evidence',[])))
             raise
     verify_isolation(0)
     with torch.no_grad():
@@ -195,10 +195,11 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
                 write_json(out/'status.json',dict(status='RUNNING',phase='readout_validation',scans=index+1))
     assert index+1==len(val)
     verify_isolation(index+1)
+    timing_valid=all(x['timing_valid'] for x in isolation)
     results={}
     for name,item in metrics.items():
         results[name]=dict(ap70=eval_utils.calculate_ap(stats[name],.7)[0],ap50=eval_utils.calculate_ap(stats[name],.5)[0],
-            mean_ms=float(np.mean(item['time'])),p95_ms=float(np.percentile(item['time'],95)),
+            mean_ms=float(np.mean(item['time'])) if timing_valid else None,p95_ms=float(np.percentile(item['time'],95)) if timing_valid else None,
             conv_linear_gflops=2*item['macs']/len(val)/1e9,mean_readout_write_fraction=float(np.mean(item['write'])),
             mean_readout_executed_fraction=float(np.mean(item['area'])),mean_spatial_write_fraction=float(np.mean(item['hwrite'])),
             mean_state_bytes=float(np.mean(item['state'])),max_incremental_cuda_peak_bytes=max(item['peak']),readout_full_frames=item['full'],
@@ -214,6 +215,7 @@ def evaluate_readout(a,cfg,train,val,baseline,out,costs,spatial_macs):
         readout_budget_scale=a.readout_budget_scale,readout_ranking=a.readout_ranking if a.readout_budget_scale is not None else None,
         deployed_readout_threshold=feature_cache.threshold,readout_calibration=a.readout_calibration,
         gpu_exclusivity_sample_count=len(isolation),
+        timing_valid=timing_valid,
         own_trajectory_audited_frames=len(audits),all_same_input_replays_passed=True,
         note='Weights fixed; spatial t.5 four-layer baseline held. Readout output cache changes own predictions and future H masks. No new training; no SNN attribution; FLOPs count conv/linear only.'))
     write_json(out/'status.json',dict(status='COMPLETED',scans=len(val)))

@@ -64,8 +64,12 @@ def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch):
     metrics={k:dict(time=[],macs=0,full=0,state=[]) for k in modes};isolation=[]
     dataset,stream=loader(rows,cfg,4,303)
     def guard(scan):
-        evidence=check_gpu_exclusive(a.gpu);evidence['scan']=scan;isolation.append(evidence)
-        write_json(directory/'gpu_exclusivity.json',dict(status='SAMPLED_CLEAR',samples=isolation))
+        try:
+            evidence=check_gpu_exclusive(a.gpu);evidence['scan']=scan;isolation.append(evidence)
+            write_json(directory/'gpu_exclusivity.json',dict(status='SAMPLED_CLEAR' if all(x['timing_valid'] for x in isolation) else 'INVALID_TIMING',samples=isolation))
+        except Exception as exc:
+            write_json(directory/'gpu_exclusivity.json',dict(status='INVALID_TIMING',scan=scan,error=repr(exc),samples=isolation,evidence=getattr(exc,'evidence',[])))
+            raise
     guard(0)
     with torch.no_grad():
         for index,sample in enumerate(stream):
@@ -86,12 +90,13 @@ def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch):
             if (index+1)%200==0:
                 guard(index+1);write_json(directory.parent/'status.json',dict(status='RUNNING',phase='validation',epoch=epoch,scans=index+1))
     assert index+1==len(rows);guard(index+1)
+    timing_valid=all(x['timing_valid'] for x in isolation)
     results={k:dict(ap70=eval_utils.calculate_ap(stats[k],.7)[0],ap50=eval_utils.calculate_ap(stats[k],.5)[0],
-        conv_linear_gflops=2*metrics[k]['macs']/len(rows)/1e9,mean_ms=float(np.mean(metrics[k]['time'])),
-        p95_ms=float(np.percentile(metrics[k]['time'],95)),deep_full_frames=metrics[k]['full'],
+        conv_linear_gflops=2*metrics[k]['macs']/len(rows)/1e9,mean_ms=float(np.mean(metrics[k]['time'])) if timing_valid else None,
+        p95_ms=float(np.percentile(metrics[k]['time'],95)) if timing_valid else None,deep_full_frames=metrics[k]['full'],
         mean_state_bytes=float(np.mean(metrics[k]['state']))) for k in modes}
     assert abs(results['baseline']['ap70']-.7553159775482435)<1e-7
-    report=dict(status='COMPLETED',scans=len(rows),labels=sum(r['supervised'] for r in rows),results=results,
+    report=dict(status='COMPLETED',scans=len(rows),labels=sum(r['supervised'] for r in rows),results=results,timing_valid=timing_valid,
         note='Independent histories. Dense short D update; no local D skipping. Timing excludes IO/H2D/postprocess; sampled GPU isolation does not reserve shared CPU/IO. Conv/functional-linear MACsx2.')
     write_json(directory/'report.json',report);return report
 
@@ -114,21 +119,25 @@ def train_recurrent(a,cfg,train,val,baseline,out,costs,spatial_macs):
     optimizer=torch.optim.AdamW(repair.parameters(),lr=1e-4,weight_decay=1e-4)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=1,threshold=.0005,threshold_mode='abs',min_lr=1e-6)
     criterion=PointPillarDirLoss(cfg['loss']['args']).cuda();history=[];best_ap=significant=-1.;stale=0;best=None
-    start=0
+    start=0;pending_evaluation=None
     if a.recurrent_deep_resume:
         saved=torch.load(a.recurrent_deep_resume,map_location='cpu')
         assert dict(saved['contract'],epochs_max=a.recurrent_deep_epochs)==contract
         repair.load_state_dict(saved['repair'],strict=True);optimizer.load_state_dict(saved['optimizer']);scheduler.load_state_dict(saved['scheduler'])
-        history=saved['history'];best=saved['best'];best_ap=best['ap70'];significant=saved['significant'];stale=saved['stale']
-        start=history[-1]['epoch']+1
+        history=saved['history'];best=saved['best'];best_ap=best['ap70'] if best is not None else -1.;significant=saved['significant'];stale=saved['stale']
+        if saved.get('next_action')=='evaluate':
+            start=saved['epoch'];pending_evaluation=saved['training_summary']
+        else:start=history[-1]['epoch']+1
         if start>a.recurrent_deep_epochs:raise ValueError('Resume requires a larger epoch budget')
-        write_json(out/'best.json',best)
+        if best is not None:write_json(out/'best.json',best)
         write_json(out/'resume.json',dict(checkpoint=str(Path(a.recurrent_deep_resume).resolve()),sha256=digest(a.recurrent_deep_resume),
-            completed_epoch=start-1,scope='Exact optimizer/scheduler/model continuation from last completed epoch; an interrupted partial epoch restarts.'))
+            next_epoch=start,next_action=saved.get('next_action','train'),scope='Optimizer/scheduler/model continuation; pending validation resumes without repeating training; interrupted partial training epoch restarts.'))
     for epoch in range(start,a.recurrent_deep_epochs+1):
         directory=out/('epoch_%03d'%epoch);directory.mkdir()
         losses=[];depths={};updates=0
-        if epoch:
+        if pending_evaluation is not None and epoch==start:
+            losses=pending_evaluation['losses'];depths=pending_evaluation['depths'];updates=pending_evaluation['updates']
+        elif epoch:
             state=None;pending=[];optimizer.zero_grad(set_to_none=True)
             _,stream=loader(train,cfg,4,303+epoch)
             for index,sample in enumerate(stream):
@@ -147,11 +156,21 @@ def train_recurrent(a,cfg,train,val,baseline,out,costs,spatial_macs):
                         optimizer.step();optimizer.zero_grad(set_to_none=True);pending=[];updates+=1
                     state['deep']['value']=state['deep']['value'].detach()
                 if (index+1)%200==0:
-                    check_gpu_exclusive(a.gpu)
+                    try:
+                        evidence=check_gpu_exclusive(a.gpu)
+                        if not evidence['timing_valid']:
+                            write_json(directory/('train_contention_%06d.json'%(index+1)),evidence)
+                    except Exception as exc:
+                        write_json(directory/'train_contention.json',dict(scan=index+1,error=repr(exc),evidence=getattr(exc,'evidence',[])))
+                        raise
                     write_json(out/'status.json',dict(status='RUNNING',phase='train',epoch=epoch,scans=index+1,loss=float(np.mean(losses))))
             assert index+1==len(train) and losses and not pending
             assert all(p.grad is None for m in (mode.model,mode.readout) for p in m.parameters())
         path=directory/'repair.pth';torch.save(dict(repair=repair.state_dict(),contract=contract,epoch=epoch),str(path))
+        torch.save(dict(repair=repair.state_dict(),optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),
+            history=history,contract=contract,best=best,significant=significant,stale=stale,epoch=epoch,next_action='evaluate',
+            training_summary=dict(losses=losses,depths=depths,updates=updates)),str(out/'pending_validation.tmp'))
+        (out/'pending_validation.tmp').replace(out/'pending_validation.pth')
         report=evaluate(a,baseline,mode,cfg,val,directory,costs,spatial_macs,epoch)
         ap=report['results']['recurrent']['ap70']
         if epoch:scheduler.step(ap)
@@ -163,7 +182,7 @@ def train_recurrent(a,cfg,train,val,baseline,out,costs,spatial_macs):
             validation=report,lr=optimizer.param_groups[0]['lr'],stale=stale))
         write_json(out/'history.json',history)
         torch.save(dict(repair=repair.state_dict(),optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),
-            history=history,contract=contract,best=best,significant=significant,stale=stale),str(out/'latest.pth'))
+            history=history,contract=contract,best=best,significant=significant,stale=stale,next_action='train'),str(out/'latest.pth'))
         if epoch>=6 and stale>=4 and optimizer.param_groups[0]['lr']<=2.5e-5:break
     write_json(out/'report.json',dict(status='COMPLETED',epochs=epoch,best=best,
         stop_reason='plateau' if epoch<a.recurrent_deep_epochs else 'budget_not_convergence'))
