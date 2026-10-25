@@ -1,0 +1,4 @@
+{
+  "completed": false,
+  "traceback": "Traceback (most recent call last):\n  File \"/data1/zhh/gzc/diagnostics/ann_baselines_20261025/evaluate_infocom.py\", line 259, in main\n    run(args, output)\n  File \"/data1/zhh/gzc/diagnostics/ann_baselines_20261025/evaluate_infocom.py\", line 117, in run\n    raise ValueError('Checkpoint mismatch; see load_audit.json; no partial load allowed')\nValueError: Checkpoint mismatch; see load_audit.json; no partial load allowed\n"
+}

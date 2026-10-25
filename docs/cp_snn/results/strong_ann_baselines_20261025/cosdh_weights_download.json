@@ -1,0 +1,14 @@
+[
+  {
+    "id": "19o6pOTfN4r5oCh0wmuaxr9O2EQCv-Bhn",
+    "path": "dairv2x_cosdh\\config.yaml",
+    "bytes": 3957,
+    "sha256": "94d5da9b07bd07b053917ab404b6d2c44741c682994b5628ffc6a5b7609603c8"
+  },
+  {
+    "id": "1P8Btgui-6iPSJxUdj0Z_HwbemeZ5wzop",
+    "path": "dairv2x_cosdh\\net_epoch11.pth",
+    "bytes": 35841807,
+    "sha256": "df4a06be9d0f170de60e686afdf691b3ab115e1f5185b571885fb21caf4354cf"
+  }
+]

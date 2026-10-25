@@ -1,0 +1,27 @@
+{
+  "splits": {
+    "train": {
+      "count": 4678,
+      "sha256": "dae42ad7dfbc6e917c6630279fd2f54f64efac8b62825f3686dc75e4a5da4788"
+    },
+    "val": {
+      "count": 1738,
+      "sha256": "eff0ec36dd5a465b0750cc58cfc4d85eee78bd46bd60b6304e4d1a9beaa46026"
+    }
+  },
+  "backup_restore": {
+    "cooperative/label_world_backup": 6601,
+    "vehicle-side/label/lidar_backup": 15285
+  },
+  "extensions": {
+    "CoSDH": {
+      "source_byte_identical": true,
+      "binary_sha256": "15f813ef2dd656da5e60ad370e8f0f0a8ba70e51464e4c91d8f2c54db3ef4ba4"
+    },
+    "InfoCom": {
+      "source_byte_identical": true,
+      "binary_sha256": "15f813ef2dd656da5e60ad370e8f0f0a8ba70e51464e4c91d8f2c54db3ef4ba4"
+    }
+  },
+  "archive_sha256": "a59209d619c2109caedfe45cb6d1a96ec9965435ed4d39bb6108907c154f05e6"
+}

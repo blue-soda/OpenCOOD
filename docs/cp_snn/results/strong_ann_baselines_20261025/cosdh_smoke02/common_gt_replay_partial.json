@@ -1,0 +1,37 @@
+{
+  "samples": 2,
+  "full_split": false,
+  "not_a_main_result": true,
+  "bev_gt_mismatch_frames": 2,
+  "our_gt_boxes": 39,
+  "official_gt_boxes": 39,
+  "common_gt_bev_ap": {
+    "0.3": 0.7692307692307693,
+    "0.5": 0.7692307692307693,
+    "0.7": 0.6923076923076923
+  },
+  "original_gt_our_evaluator_bev_ap": {
+    "0.3": 0.7692307692307693,
+    "0.5": 0.7692307692307693,
+    "0.7": 0.6923076923076923
+  },
+  "frames": [
+    {
+      "frame_id": "000211",
+      "our_gt": 19,
+      "official_gt": 19,
+      "bev_gt_match": false,
+      "max_xy_error": 0.03031158447265625,
+      "max_xyz_error": 0.03031158447265625
+    },
+    {
+      "frame_id": "000212",
+      "our_gt": 20,
+      "official_gt": 20,
+      "bev_gt_match": false,
+      "max_xy_error": 0.03087615966796875,
+      "max_xyz_error": 0.03087615966796875
+    }
+  ],
+  "script_sha256": "31a2f1ae466f96639e72c6478a00921022e0a8dc97bee318c9407c24debf6fb2"
+}

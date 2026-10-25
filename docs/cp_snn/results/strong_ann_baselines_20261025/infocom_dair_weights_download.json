@@ -1,0 +1,38 @@
+[
+  {
+    "id": "1PN_U1Ho9Zylfk-mVfs5AWjBsIKDdO6m3",
+    "path": "logs_infocom\\all_models_base\\coib\\coalign\\dairv2x_coalign_coib\\config.yaml",
+    "bytes": 3632,
+    "sha256": "b28a76eaa2320a564c23b4aff3d8088fbd3aec78807ae740da6c2151d95b5396"
+  },
+  {
+    "id": "1xPAMPlduoHhuegIDHg0i2KdtulpbvXEI",
+    "path": "logs_infocom\\all_models_base\\coib\\coalign\\dairv2x_coalign_coib\\net_epoch_bestval_at1.pth",
+    "bytes": 51745433,
+    "sha256": "429e1eaf96f4e71dce073fb3d384c192db526fcd67422d0b236dbf049c9f752c"
+  },
+  {
+    "id": "1ju312R1sDpmKojXFQ_UcWA7Hu_KfIUb8",
+    "path": "logs_infocom\\dair_v2x\\dairv2x_coalign_base_0526\\config.yaml",
+    "bytes": 3770,
+    "sha256": "b2a12d2074e7f70664148761d8aa823481f5e224e590c8fb4838ef2ba8446046"
+  },
+  {
+    "id": "1V5nkK7Z9d-ZpgJLtdYjEJtt8RvmMIk3Q",
+    "path": "logs_infocom\\dair_v2x\\dairv2x_coalign_base_0526\\eval_intermediate_epoch7.yaml",
+    "bytes": 2722104,
+    "sha256": "adf1f0aafb77f908f23224a5affb8e172beb9d792c9c2bb4d9e799ea4464845a"
+  },
+  {
+    "id": "1QOR993ndAtyBH3LmrcdM_33m5kXwxBNi",
+    "path": "logs_infocom\\dair_v2x\\dairv2x_coalign_base_0526\\net_epoch_bestval_at7.pth",
+    "bytes": 479613793,
+    "sha256": "7375da04507b4f543666e15aa02897e41e3c32e08bcb3f74b27ad49fb28c803c"
+  },
+  {
+    "id": "1uBNxWLXSAPtY3aOuvAvJTDMIsz0vm-Xh",
+    "path": "logs_infocom\\readme.md",
+    "bytes": 998,
+    "sha256": "7e4d3aaa7f97c848a0bb02a5c1dd5585e1171e8966f191029634a592edeffa32"
+  }
+]

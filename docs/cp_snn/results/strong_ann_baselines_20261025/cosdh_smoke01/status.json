@@ -1,0 +1,13 @@
+{
+  "stage": "initializing",
+  "started_unix": 1792922466.2423322,
+  "args": {
+    "repo": "/data1/zhh/gzc/CoSDH",
+    "model_dir": "/data1/zhh/gzc/CoSDH/opencood/logs/dairv2x_cosdh",
+    "data_root": "/data1/zhh/gzc/dataset/dair-v2x-c/extracted/cooperative-vehicle-infrastructure",
+    "split": "/data1/zhh/gzc/diagnostics/ann_baselines_20261025/common_val.json",
+    "output": "/data1/zhh/gzc/diagnostics/ann_baselines_20261025/cosdh_smoke01",
+    "limit": 2,
+    "gpu": "0"
+  }
+}
