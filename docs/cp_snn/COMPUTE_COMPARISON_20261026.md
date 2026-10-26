@@ -158,3 +158,12 @@ SNN新增一次有界固定后端诊断，详见[预登记与退出标准](BACKE
 
 
 本轮执行准备补记：native01在首个forward之前遇到spconv.SparseConvolution顶层导入不存在的问题，记录failure后停止，无模型数值结果。已修正为spconv.pytorch.conv显式导入，181实际导入及统一KRSC布局验证通过，本地13项测试继续通过。新目录native02由PID7428执行同一有界协议，冻结代码fb54479到compute64_source05，保留旧失败，未修改算法选项或验收阈值。见[修正后启动](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/scheme2_backend_native02.launch.json)与[准备失败记录](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/backend_preflight/failure.json)。后续仅在模型实际计算与跨进程证据完成后作结论。
+
+
+### 同轮退出：Native后端调用不兼容，未取得数值结果
+
+native02首个前向在spconv Native的indice_conv处TypeError退出：Python调用实参与当前编译扩展签名不兼容，act_alpha位置收到Activation枚举。该错误说明当前安装的Native路径不可直接用于此诊断，不能据此判定新后端稳定或不稳定。保留完整failure与backend设置，剩余两个64帧进程未执行，未放宽确定性或历史等价门，也未变更共享环境库。本次固定Native路线按计算异常退出规则结束，不继续逐层探针或换算法扫参；历史ImplicitGemm训练与InfoCom队列均未受影响。
+
+当前SNN仍缺可信的跨进程真实包等价计时结果，不能宣称计算优势。后续优先收尾InfoCom三轮复核和原方案二多预算训练；若计算比较仍决定研究取舍，再单独登记隔离环境中的库一致性修复和全量参考验证，不在训练环境中临时改编译扩展。总目标不被工程调试替代。
+
+证据：[Native计算失败](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/backend_native02/failure.json)、[实际后端配置](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/backend_native02/compute_protocol.json)。

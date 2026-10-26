@@ -7,3 +7,12 @@
 CoSDH原64帧×3轮均已完成严格输出/双向包复核；保留重复解码与对齐审计，不纳入公平速度排名。InfoCom完整RNG重放修复的适配1%首轮已通过128次正式调用，官方10%及余下轮次仍按原队列继续。方案二多预算训练第3轮1601/2339，继续原10轮、不追加局部调参。总目标仍为方案二对强ANN的AP—真实通信—计算折中，方案三暂停。
 
 执行准备修正：native01在第一次模型前向之前失败，因为当前spconv没有在pytorch顶层导出SparseConvolution。已改为从spconv.pytorch.conv显式导入，181实际导入验证通过，KRSC=True。保留native01失败，不计入数值实验结果；修正接口后以native02新目录执行同一4/64/64协议。此后遇到模型计算错误或数值不稳定仍按上述退出规则停止，不继续更换算法。
+
+
+### 同轮退出：Native后端调用不兼容，未取得数值结果
+
+native02首个前向在spconv Native的indice_conv处TypeError退出：Python调用实参与当前编译扩展签名不兼容，act_alpha位置收到Activation枚举。该错误说明当前安装的Native路径不可直接用于此诊断，不能据此判定新后端稳定或不稳定。保留完整failure与backend设置，剩余两个64帧进程未执行，未放宽确定性或历史等价门，也未变更共享环境库。本次固定Native路线按计算异常退出规则结束，不继续逐层探针或换算法扫参；历史ImplicitGemm训练与InfoCom队列均未受影响。
+
+当前SNN仍缺可信的跨进程真实包等价计时结果，不能宣称计算优势。后续优先收尾InfoCom三轮复核和原方案二多预算训练；若计算比较仍决定研究取舍，再单独登记隔离环境中的库一致性修复和全量参考验证，不在训练环境中临时改编译扩展。总目标不被工程调试替代。
+
+证据：[Native计算失败](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/backend_native02/failure.json)、[实际后端配置](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/backend_native02/compute_protocol.json)。
