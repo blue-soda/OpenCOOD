@@ -1,6 +1,6 @@
 {
   "epoch": "local_current",
   "phase": "validation",
-  "scans": 200,
+  "scans": 2400,
   "status": "RUNNING"
 }
