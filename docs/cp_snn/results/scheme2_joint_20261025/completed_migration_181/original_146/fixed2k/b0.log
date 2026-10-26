@@ -1,0 +1,14 @@
+/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/cuda/__init__.py:80: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at  ../c10/cuda/CUDAFunctions.cpp:112.)
+  return torch._C._cuda_getDeviceCount() > 0
+Traceback (most recent call last):
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/train_e3dsnn_single.py", line 572, in <module>
+    main()
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/train_e3dsnn_single.py", line 562, in main
+    result = execute(args, output_dir)
+  File "/data1/zhh/gzc/OpenCOOD/opencood/tools/train_e3dsnn_single.py", line 194, in execute
+    raise RuntimeError('CUDA required')
+RuntimeError: CUDA required
