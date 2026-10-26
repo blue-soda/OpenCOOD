@@ -1,0 +1,11 @@
+[
+  {
+    "method": "scheme2_2k",
+    "repeat": 0,
+    "returncode": 1,
+    "started_unix": 1793022179.7995648,
+    "finished_unix": 1793022237.000234,
+    "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/scheme2_2k_repeat0",
+    "eligible_for_speed_table": true
+  }
+]

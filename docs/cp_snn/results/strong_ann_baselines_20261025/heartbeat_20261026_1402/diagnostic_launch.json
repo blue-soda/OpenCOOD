@@ -1,0 +1,49 @@
+{
+  "pid": 45595,
+  "command": [
+    "timeout",
+    "900",
+    "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.strong_ann_baselines.compute_snapshot_smoke",
+    "--config",
+    "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048.yaml",
+    "--checkpoint",
+    "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/train/best_ap70.pth",
+    "--reference",
+    "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048",
+    "--gpu",
+    "1",
+    "--output",
+    "/data2/tzm/cp_snn_recovery_20261026/scheme2_compute_diagnostic01",
+    "--compute-count",
+    "64",
+    "--diagnose"
+  ],
+  "resource_samples": [
+    {
+      "free_mib": 16789,
+      "utilization": 64
+    },
+    {
+      "free_mib": 16789,
+      "utilization": 14
+    },
+    {
+      "free_mib": 16789,
+      "utilization": 35
+    },
+    {
+      "free_mib": 16789,
+      "utilization": 57
+    },
+    {
+      "free_mib": 16789,
+      "utilization": 48
+    }
+  ],
+  "no_timing_claim": true,
+  "shared_gpu_per_user_authorization": true,
+  "source_commit": "3ab2a28db3a5e94bb366fb7286834e0407707dce"
+}

@@ -1,0 +1,34 @@
+{
+  "metadata_equal": true,
+  "scales_equal": true,
+  "actual_events": 2083,
+  "reference_events": 2085,
+  "changed_sites": 2,
+  "changes": [
+    {
+      "index": [
+        0,
+        3,
+        2,
+        16,
+        110
+      ],
+      "actual": 0,
+      "reference": 1
+    },
+    {
+      "index": [
+        0,
+        16,
+        2,
+        16,
+        110
+      ],
+      "actual": 0,
+      "reference": 1
+    }
+  ],
+  "actual_bytes": 2046,
+  "reference_bytes": 2047,
+  "interpretation": "Decoded count differences; not metadata or compression-only difference. Root cause not established."
+}

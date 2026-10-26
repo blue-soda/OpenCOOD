@@ -99,3 +99,16 @@ CoSDH仍保留重复诊断解码/warp，本次仅作为不可用于公平速度�
 队列当前waiting_for_gpu，第一项scheme2_2k/repeat0；GPU UUID为GPU-1fa76848-4737-2fdc-5205-5314117e890f。快照和plan02已冻结，source01/plan01因资源拒绝未执行，保留其来源。后续读取compute64_suite01/status.json、results_so_far.json、summary.json与failure.json；若resource_timeout，只记录资源阻塞并重新核实可用卡，不能误报测量完成或自动选择更快样本。归档SHA=856a6a07b9a106b24dc0339fdd47d6484a7997b5a029e36abdb2e617a0446812。
 
 证据：[固定四方法三轮计划](results/strong_ann_baselines_20261025/heartbeat_20261026_1305/compute64_queue/compute64_plan02.json)、[队列PID](results/strong_ann_baselines_20261025/heartbeat_20261026_1305/compute64_queue/compute64_suite01.launch.json)、[资源等待状态](results/strong_ann_baselines_20261025/heartbeat_20261026_1305/compute64_queue/status.json)。
+
+
+## 2026-10-26 22:02触发：64帧门失败已定位到单帧消息，检测输出无差异
+
+compute64_suite01首次方案二repeat0曾通过GPU准入并启动，但在实际输出/包的严格等价门停止，returncode=1。失败及原协议保留，监督器跳过该方法剩余重复，不自动重试；其余ANN方法仍排队。没有完整SNN64帧计时，不能从局部调用生成速度表。此前四帧通过不保证64帧通过。
+
+3ab2a28增加显式--diagnose，不改变正式门、不放宽任何容差。在相同检查点/config/64个ID上运行两遍不计时诊断，导出所有不一致帧的数组、实际包与指纹。依据用户允许共享低负载GPU的授权，使用181 GPU1，五次空闲16789MiB、利用率64/14/35/57/48%（平均43.6%），25%显存上限，900秒上限；GPU2先前准入失败未启动。共享诊断不提供速度证据。PID45595任务已完成。
+
+128次调用中，全部检测框与分数同原始全量参考逐位一致。仅index579/frame004276两次消息不一致，且两次诊断自身逐位一致：实际2046 B，原参考2047 B。解析实际包与原包后，身份、坐标系、位姿、通道基及尺度全部相同；差异来自两个单位计数，实际2083个、原2085个。两个差异坐标为[batch0,channel3,z2,y16,x110]和[batch0,channel16,z2,y16,x110]，实际均0、参考均1。故不是纯压缩编码变化或元数据差异；发送端输入、数值计算或事件前缀选择的具体来源尚未确定。不可将这些证据直接称为浮点误差修复或算法bug已解决。
+
+结论边界：本次诊断没有发现检测AP输出变化；保留原1738帧AP结果及其原实际通信，不能将其包字节悄悄替换成当前诊断值，也不能因此宣布整个1738帧的发送过程跨运行完全稳定。正式通信逐位门仍失败，SNN速度行继续不可用，不修改阈值凑通过。下一步有界定位该帧的输入/发送计数/排序前缀，并在原因明确后才决定修复与重新复核；不重训模型，不把通信差异掩盖成检测改善。继续原多预算训练（第3轮1051/2339，暂无新AP）及ANN计算队列，不恢复方案三。
+
+诊断记录与序列化回归测试加入后，本机12项计算相关测试通过；新增测试证明仅分数变化也被保留、不能被等价通过。main与181/146同步；运行中的原计算队列使用既有快照，不热改进程。证据：[失败](results/strong_ann_baselines_20261025/heartbeat_20261026_1402/failed64/failure.json)、[128次诊断](results/strong_ann_baselines_20261025/heartbeat_20261026_1402/diagnostic/diagnostic_summary.json)、[解码计数差异](results/strong_ann_baselines_20261025/heartbeat_20261026_1402/diagnostic/packet_difference.json)、[实际与参考指纹](results/strong_ann_baselines_20261025/heartbeat_20261026_1402/diagnostic/mismatch_r0_i0579/fingerprints.json)。回传归档SHA=22de64eec650bc71eb269053eaad4a55435b09534e40903b438c421a477e3042。

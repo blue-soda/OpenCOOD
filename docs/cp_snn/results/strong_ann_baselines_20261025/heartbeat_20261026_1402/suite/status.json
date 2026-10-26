@@ -1,0 +1,20 @@
+{
+  "state": "waiting_for_gpu",
+  "method": "infocom_adapt1pct",
+  "repeat": 0,
+  "last_resource": {
+    "unix": 1793023738.7993872,
+    "gpu": "5",
+    "uuid": "GPU-1fa76848-4737-2fdc-5205-5314117e890f",
+    "free_mib": 9446,
+    "utilization": 0,
+    "other_compute_processes": [
+      "GPU-1fa76848-4737-2fdc-5205-5314117e890f, 45206, 14798"
+    ],
+    "passed": false,
+    "method": "infocom_adapt1pct",
+    "repeat": 0
+  },
+  "deadline_unix": 1793041969.8993564,
+  "automatic_model_retry": false
+}
