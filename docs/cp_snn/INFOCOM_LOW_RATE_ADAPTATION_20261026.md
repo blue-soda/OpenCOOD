@@ -95,3 +95,14 @@ SNN多预算第2轮451/2339批，固定组8KiB评估继续。old_snn的0/2/3/4/6
 并行登记[统一计算测量边界](COMPUTE_COMPARISON_20261026.md)：共同64固定帧、同设备/线程、三遍计时、保留必要双端和真实codec成本，先核验输出/bytes等价；尚未实现共同计时器或启动受控测量。现有SNN与ANN计时的热身、诊断冗余、包导出边界不同，不能直接合并作速度主表。
 
 证据：[第4轮复核摘要](results/strong_ann_baselines_20261025/infocom_adaptation_epoch04_20261026/verification.json)、[逐帧bytes](results/strong_ann_baselines_20261025/infocom_adaptation_epoch04_20261026/epoch04/per_frame_bytes.csv)、[训练历史](results/strong_ann_baselines_20261025/infocom_adaptation_epoch04_20261026/history.json)。本次是正常中期推进，无需用户行动；等待训练完成/实质失败再通知，不逐轮重复发送同一结论。
+
+
+## 2026-10-26 16:11触发：第5轮复核，最佳仍第4轮
+
+第5轮共同GT AP30/50/70=81.50804% / 76.94865% / 62.28430%，平均2353.428078 B，中位2325、P95 2553、最大2608、最小2133 B。1738帧均超过2KiB；较第4轮AP70低0.07552个百分点、字节增加102.708 B。按预登记规则最佳仍为第4轮62.35982%/2250.720 B，不因训练loss继续下降而选择第5轮。未宣布收敛或结束，继续原10轮。
+
+本轮再次全量核验包/预测SHA、真实载荷及身份，使用共同1738帧/28622GT CPU复算，本机核对索引SHA和均值。第6轮训练正常；多预算SNN第2轮1651/2339批，8KiB评估1155/1738帧，监督健康。无新失败或需用户行动的变化。
+
+并行实现统一计算计时核心，5项CPU回归在本机和181通过；尚未接入真实模型adapter或运行受控GPU对照，不能当作计算结果。下一步先接入一个冻结工作点的4帧输出/真实bytes等价门，再依协议接入其余方法；不修改当前训练进程的快照。见[计算测量准备](COMPUTE_COMPARISON_20261026.md)。
+
+证据：[第5轮核验](results/strong_ann_baselines_20261025/infocom_adaptation_epoch05_20261026/verification.json)、[逐帧通信](results/strong_ann_baselines_20261025/infocom_adaptation_epoch05_20261026/epoch05/per_frame_bytes.csv)、[历史及选模](results/strong_ann_baselines_20261025/infocom_adaptation_epoch05_20261026/history.json)。正常中期结果不逐轮通知，保留全部正负结果。
