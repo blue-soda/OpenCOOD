@@ -1,0 +1,36 @@
+{
+  "voxel_means": {
+    "exact": true,
+    "shape_equal": true,
+    "max_abs": 0.0,
+    "changed_values": 0
+  },
+  "voxel_coordinates": {
+    "exact": true,
+    "shape_equal": true,
+    "max_abs": 0.0,
+    "changed_values": 0
+  },
+  "pre_count_target": {
+    "exact": false,
+    "shape_equal": true,
+    "max_abs": 2.1457672119140625e-06,
+    "changed_values": 89
+  },
+  "encoder_counts": {
+    "exact": false,
+    "shape_equal": true,
+    "max_abs": 1.0,
+    "changed_values": 1
+  },
+  "projected_drive": {
+    "exact": false,
+    "shape_equal": true,
+    "max_abs": 0.4037489891052246,
+    "changed_values": 32
+  },
+  "target_ch100": {
+    "four": 2.499999523162842,
+    "sixtyfour": 2.5
+  }
+}

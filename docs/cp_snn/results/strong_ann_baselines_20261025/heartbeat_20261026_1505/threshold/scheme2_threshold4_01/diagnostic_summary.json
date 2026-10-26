@@ -1,0 +1,180 @@
+{
+  "diagnostic_only": true,
+  "no_timing_or_AP_claim": true,
+  "reference_gate_not_relaxed": true,
+  "unique_frames": 4,
+  "calls": 8,
+  "mismatched_calls": 2,
+  "packet_mismatched_calls": 2,
+  "unstable_repeat_calls": 0,
+  "rows": [
+    {
+      "index": 0,
+      "frame_id": "000211",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 579,
+      "frame_id": "004276",
+      "repeat": 0,
+      "changed_fields": [
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "sender_trace": {
+        "voxel_means": {
+          "shape": [
+            32757,
+            4
+          ],
+          "sha256": "86b718e44b0ae7c826b90457e923b4266c61290f53d03dfd1328b6bffc5beeee"
+        },
+        "voxel_coordinates": {
+          "shape": [
+            32757,
+            4
+          ],
+          "sha256": "04e7d659dad97b79a7c22069bd8c147013e020d0d49f37c4ae6db3cafd585c58"
+        },
+        "pre_count_target": {
+          "shape": [
+            1,
+            128
+          ],
+          "sha256": "1bdc95ff8ffbaf463b3451d6d1e2c074b76a21c4879c2c62942e92df2280ace8"
+        },
+        "encoder_counts": {
+          "shape": [
+            1,
+            128,
+            3,
+            50,
+            126
+          ],
+          "sha256": "33ea0819fe05302e3001d5750aa1ac281de3394cb24020bb501fdff07c525e26"
+        },
+        "projected_drive": {
+          "shape": [
+            1,
+            32,
+            3,
+            50,
+            126
+          ],
+          "sha256": "310972f72c65bca55a2c06923a6f04106fca084364934059e0ce2cd240cc53d7"
+        }
+      },
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 0.0,
+      "boxes_changed_values": 0,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.0,
+      "scores_changed_values": 0
+    },
+    {
+      "index": 1158,
+      "frame_id": "013871",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1737,
+      "frame_id": "019992",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 0,
+      "frame_id": "000211",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 579,
+      "frame_id": "004276",
+      "repeat": 1,
+      "changed_fields": [
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": true,
+      "sender_trace": {
+        "voxel_means": {
+          "shape": [
+            32757,
+            4
+          ],
+          "sha256": "86b718e44b0ae7c826b90457e923b4266c61290f53d03dfd1328b6bffc5beeee"
+        },
+        "voxel_coordinates": {
+          "shape": [
+            32757,
+            4
+          ],
+          "sha256": "04e7d659dad97b79a7c22069bd8c147013e020d0d49f37c4ae6db3cafd585c58"
+        },
+        "pre_count_target": {
+          "shape": [
+            1,
+            128
+          ],
+          "sha256": "1bdc95ff8ffbaf463b3451d6d1e2c074b76a21c4879c2c62942e92df2280ace8"
+        },
+        "encoder_counts": {
+          "shape": [
+            1,
+            128,
+            3,
+            50,
+            126
+          ],
+          "sha256": "33ea0819fe05302e3001d5750aa1ac281de3394cb24020bb501fdff07c525e26"
+        },
+        "projected_drive": {
+          "shape": [
+            1,
+            32,
+            3,
+            50,
+            126
+          ],
+          "sha256": "310972f72c65bca55a2c06923a6f04106fca084364934059e0ce2cd240cc53d7"
+        }
+      },
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 0.0,
+      "boxes_changed_values": 0,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.0,
+      "scores_changed_values": 0
+    },
+    {
+      "index": 1158,
+      "frame_id": "013871",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1737,
+      "frame_id": "019992",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    }
+  ]
+}

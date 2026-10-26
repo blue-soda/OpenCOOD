@@ -1,0 +1,1122 @@
+{
+  "diagnostic_only": true,
+  "no_timing_or_AP_claim": true,
+  "reference_gate_not_relaxed": true,
+  "unique_frames": 64,
+  "calls": 128,
+  "mismatched_calls": 0,
+  "packet_mismatched_calls": 0,
+  "unstable_repeat_calls": 0,
+  "rows": [
+    {
+      "index": 0,
+      "frame_id": "000211",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 27,
+      "frame_id": "000923",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 55,
+      "frame_id": "000954",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 82,
+      "frame_id": "001005",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 110,
+      "frame_id": "001035",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 137,
+      "frame_id": "001751",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 165,
+      "frame_id": "001781",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 193,
+      "frame_id": "001838",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 220,
+      "frame_id": "003072",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 248,
+      "frame_id": "003148",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 275,
+      "frame_id": "003175",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 303,
+      "frame_id": "003245",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 330,
+      "frame_id": "003273",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 358,
+      "frame_id": "003345",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 386,
+      "frame_id": "003373",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 413,
+      "frame_id": "003588",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 441,
+      "frame_id": "003676",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 468,
+      "frame_id": "004099",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 496,
+      "frame_id": "004127",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 523,
+      "frame_id": "004200",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 551,
+      "frame_id": "004230",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 579,
+      "frame_id": "004276",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null,
+      "sender_trace": {
+        "voxel_means": {
+          "shape": [
+            32757,
+            4
+          ],
+          "sha256": "86b718e44b0ae7c826b90457e923b4266c61290f53d03dfd1328b6bffc5beeee"
+        },
+        "voxel_coordinates": {
+          "shape": [
+            32757,
+            4
+          ],
+          "sha256": "04e7d659dad97b79a7c22069bd8c147013e020d0d49f37c4ae6db3cafd585c58"
+        },
+        "pre_count_target": {
+          "shape": [
+            1,
+            128
+          ],
+          "sha256": "8c25ce2cc67131bc9f2c857d2095ce4340879059d77245cf46360f50811c9ca8"
+        },
+        "encoder_counts": {
+          "shape": [
+            1,
+            128,
+            3,
+            50,
+            126
+          ],
+          "sha256": "1fe296238ab2fc8595c81ffc3c6795dfc20114dc9fd5156f86b00b2ca5936d0c"
+        },
+        "projected_drive": {
+          "shape": [
+            1,
+            32,
+            3,
+            50,
+            126
+          ],
+          "sha256": "32434238aaccb16f580421634d26632996eb92f71dbc20a4d3e9e1e81c2f60be"
+        }
+      }
+    },
+    {
+      "index": 606,
+      "frame_id": "004346",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 634,
+      "frame_id": "004376",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 661,
+      "frame_id": "004444",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 689,
+      "frame_id": "010819",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 716,
+      "frame_id": "010846",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 744,
+      "frame_id": "010875",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 772,
+      "frame_id": "010903",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 799,
+      "frame_id": "010930",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 827,
+      "frame_id": "010959",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 854,
+      "frame_id": "010987",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 882,
+      "frame_id": "011015",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 909,
+      "frame_id": "011044",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 937,
+      "frame_id": "011530",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 965,
+      "frame_id": "011799",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 992,
+      "frame_id": "011827",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1020,
+      "frame_id": "011885",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1047,
+      "frame_id": "011934",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1075,
+      "frame_id": "013745",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1102,
+      "frame_id": "013775",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1130,
+      "frame_id": "013824",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1158,
+      "frame_id": "013871",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1185,
+      "frame_id": "013925",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1213,
+      "frame_id": "014259",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1240,
+      "frame_id": "014302",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1268,
+      "frame_id": "014337",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1295,
+      "frame_id": "014381",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1323,
+      "frame_id": "014529",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1351,
+      "frame_id": "017294",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1378,
+      "frame_id": "017342",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1406,
+      "frame_id": "017393",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1433,
+      "frame_id": "017431",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1461,
+      "frame_id": "017777",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1488,
+      "frame_id": "018887",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1516,
+      "frame_id": "018955",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1544,
+      "frame_id": "018985",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1571,
+      "frame_id": "019055",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1599,
+      "frame_id": "019084",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1626,
+      "frame_id": "019832",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1654,
+      "frame_id": "019860",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1681,
+      "frame_id": "019928",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1709,
+      "frame_id": "019957",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1737,
+      "frame_id": "019992",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 0,
+      "frame_id": "000211",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 27,
+      "frame_id": "000923",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 55,
+      "frame_id": "000954",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 82,
+      "frame_id": "001005",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 110,
+      "frame_id": "001035",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 137,
+      "frame_id": "001751",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 165,
+      "frame_id": "001781",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 193,
+      "frame_id": "001838",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 220,
+      "frame_id": "003072",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 248,
+      "frame_id": "003148",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 275,
+      "frame_id": "003175",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 303,
+      "frame_id": "003245",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 330,
+      "frame_id": "003273",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 358,
+      "frame_id": "003345",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 386,
+      "frame_id": "003373",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 413,
+      "frame_id": "003588",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 441,
+      "frame_id": "003676",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 468,
+      "frame_id": "004099",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 496,
+      "frame_id": "004127",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 523,
+      "frame_id": "004200",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 551,
+      "frame_id": "004230",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 579,
+      "frame_id": "004276",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true,
+      "sender_trace": {
+        "voxel_means": {
+          "shape": [
+            32757,
+            4
+          ],
+          "sha256": "86b718e44b0ae7c826b90457e923b4266c61290f53d03dfd1328b6bffc5beeee"
+        },
+        "voxel_coordinates": {
+          "shape": [
+            32757,
+            4
+          ],
+          "sha256": "04e7d659dad97b79a7c22069bd8c147013e020d0d49f37c4ae6db3cafd585c58"
+        },
+        "pre_count_target": {
+          "shape": [
+            1,
+            128
+          ],
+          "sha256": "8c25ce2cc67131bc9f2c857d2095ce4340879059d77245cf46360f50811c9ca8"
+        },
+        "encoder_counts": {
+          "shape": [
+            1,
+            128,
+            3,
+            50,
+            126
+          ],
+          "sha256": "1fe296238ab2fc8595c81ffc3c6795dfc20114dc9fd5156f86b00b2ca5936d0c"
+        },
+        "projected_drive": {
+          "shape": [
+            1,
+            32,
+            3,
+            50,
+            126
+          ],
+          "sha256": "32434238aaccb16f580421634d26632996eb92f71dbc20a4d3e9e1e81c2f60be"
+        }
+      }
+    },
+    {
+      "index": 606,
+      "frame_id": "004346",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 634,
+      "frame_id": "004376",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 661,
+      "frame_id": "004444",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 689,
+      "frame_id": "010819",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 716,
+      "frame_id": "010846",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 744,
+      "frame_id": "010875",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 772,
+      "frame_id": "010903",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 799,
+      "frame_id": "010930",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 827,
+      "frame_id": "010959",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 854,
+      "frame_id": "010987",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 882,
+      "frame_id": "011015",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 909,
+      "frame_id": "011044",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 937,
+      "frame_id": "011530",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 965,
+      "frame_id": "011799",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 992,
+      "frame_id": "011827",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1020,
+      "frame_id": "011885",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1047,
+      "frame_id": "011934",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1075,
+      "frame_id": "013745",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1102,
+      "frame_id": "013775",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1130,
+      "frame_id": "013824",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1158,
+      "frame_id": "013871",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1185,
+      "frame_id": "013925",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1213,
+      "frame_id": "014259",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1240,
+      "frame_id": "014302",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1268,
+      "frame_id": "014337",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1295,
+      "frame_id": "014381",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1323,
+      "frame_id": "014529",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1351,
+      "frame_id": "017294",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1378,
+      "frame_id": "017342",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1406,
+      "frame_id": "017393",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1433,
+      "frame_id": "017431",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1461,
+      "frame_id": "017777",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1488,
+      "frame_id": "018887",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1516,
+      "frame_id": "018955",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1544,
+      "frame_id": "018985",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1571,
+      "frame_id": "019055",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1599,
+      "frame_id": "019084",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1626,
+      "frame_id": "019832",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1654,
+      "frame_id": "019860",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1681,
+      "frame_id": "019928",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1709,
+      "frame_id": "019957",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1737,
+      "frame_id": "019992",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    }
+  ]
+}

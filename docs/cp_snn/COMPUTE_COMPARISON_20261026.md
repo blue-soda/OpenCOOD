@@ -131,3 +131,14 @@ SNN另有独立证据：同GPU6、同权重的4帧/64帧两遍trace中，4帧全
 CoSDH参考首轮64帧、两种计时边界的128次正式调用已全部通过原预测/双向包逐位等价；原三轮队列继续。仍含重复审计decode/warp，不能用它的时间宣称SNN或InfoCom速度优势。阶段成本结论继续未完成。
 
 证据：[InfoCom适配诊断](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/infocom_adapt1pct_diagnostic01/diagnostic_summary.json)、[官方模型诊断](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/infocom_official10pct_diagnostic01/diagnostic_summary.json)、[SNN输入投影比较](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/scheme2_sender_trace_comparison.json)、[修复后双方法计划](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/compute64_infocom_rng_plan01.json)、[串行依赖启动](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/compute64_infocom_rng02.launch.json)、[量化前观测启动](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/scheme2_threshold_pair.launch.json)。回传归档SHA=4f9892afaf00fe84bfa8a8c6ec3f88c5b3f9296da11babf8190e6a76e337d167。
+
+
+### 同轮补充：SNN单帧差异已确认是量化边界跨越
+
+scheme2_threshold4_01和threshold64_01均完成。该帧32757个输入体素的均值与坐标逐位一致；最后Count4之前，目标通道浮点值分别2.499999523162842与2.5，相差4.76837158203125e-7。代码使用floor(clamp(x,0,4)+0.5)，两者因此分别得到2和3，放大为一个整数计数差及两个发送事件差。目标位置128通道的量化前最大绝对差2.1457672119140625e-6，只有一个通道跨过离散边界；投影后32通道随之改变。输入、传输身份、几何元数据均相同，压缩器不是该差异源。
+
+本次加观测钩子后，4帧运行表现为计数2/2046 B，而64帧运行表现为计数3/2047 B；相较上一组trace方向反转。各进程内部两遍仍一致，且全部检测输出均与原参考逐位一致。因此只能确认主干浮点值跨Count4边界的直接机制，不能宣称“4帧必然是3、64帧必然是2”，也不能据此锁定某一个CUDA内核或缓存算法。跨进程/运行上下文的数值可重复性仍需处理。
+
+本次有界逐层定位到此结束，不继续无限追加层级探针，不改脉冲阈值/加任意epsilon凑通过。后续优先固定执行后端和数值设置，验证同输入计数的跨运行稳定性；若稳定设置改变原输出，另存同环境参考并复核实际通信/AP，保留原历史结果，不把新参考冒充旧门通过。当前仍没有可用的SNN公平速度表，不把64帧输出一致推广成整个1738帧在任意运行环境下完全一致。InfoCom RNG修复与训练按既定队列继续。
+
+证据：[输入及量化前比较](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/threshold/comparison.json)、[四帧观测](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/threshold/scheme2_threshold4_01/diagnostic_summary.json)、[64帧观测](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/threshold/scheme2_threshold64_01/diagnostic_summary.json)。原始体素均值、坐标、量化前目标值和投影张量以NPZ归档在同目录。回传SHA=a41729e06e51faa5cd9a841ed2eb10b135d1989f6ea43f4057c2164c85c98309。
