@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/run_e3dsnn_snapshot_joint.py", line 213, in <module>
+    else:coordinate(root,a.arm,finish_only=a.mode=='finish')
+  File "/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/run_e3dsnn_snapshot_joint.py", line 150, in coordinate
+    '--epochs','10','--selection-iou','0.7'],protocol.get('training_timeout_seconds',172800))
+  File "/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/run_e3dsnn_snapshot_joint.py", line 143, in run
+    stdin=subprocess.DEVNULL,check=True,timeout=timeout)
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/subprocess.py", line 512, in run
+    output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/data1/tzm/miniconda3/envs/opencood/bin/python', '-u', '-m', 'opencood.tools.train_e3dsnn_single', '--workers', '2', '--seed', '20260929', '--mode', 'train', '--config', '/data2/tzm/cp_snn_recovery_20261026/scheme2_joint_restart01/multi248k/train.yaml', '--checkpoint', '/data2/tzm/cp_snn_recovery_20261026/scheme2_joint_restart01/source.pth', '--output', '/data2/tzm/cp_snn_recovery_20261026/scheme2_joint_restart01/multi248k/train', '--epochs', '10', '--selection-iou', '0.7']' returned non-zero exit status 1.
