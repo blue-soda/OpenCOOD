@@ -70,3 +70,17 @@ SNN多预算第2轮451/2339批，固定组8KiB评估继续。old_snn的0/2/3/4/6
 本轮不追加比例、学习率或新接收模块，不重启方案三。先完成InfoCom原10轮及最终四比例复核、方案二多预算10轮、固定组8KiB收尾；之后按完整结果选择匹配码率/计算测量和机制消融。8KiB日志已到500/1738帧，多预算SNN第2轮751/2339批；未把未完成评估记为结果。尚无统一计算优势结论。
 
 证据：[重新核验摘要](results/strong_ann_baselines_20261025/infocom_adaptation_epoch01_20261026/verification.json)、[训练历史](results/strong_ann_baselines_20261025/infocom_adaptation_epoch01_20261026/history.json)、[逐帧字节](results/strong_ann_baselines_20261025/infocom_adaptation_epoch01_20261026/epoch01/per_frame_bytes.csv)、[共同GT复算（gzip）](results/strong_ann_baselines_20261025/infocom_adaptation_epoch01_20261026/epoch01/common_gt_replay.json.gz)。原始全部预测和真实包保留在181验证目录；压缩索引解压后SHA与审计记录一致。
+
+
+## 2026-10-26 14:14触发：第2/3轮验证，继续原协议
+
+| 适配epoch | 共同GT AP30 (%) | AP50 (%) | AP70 (%) | 平均B/帧 | P95 B | 最大B | 超2048 B帧数 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 2 | 80.42112 | 75.81580 | 61.82606 | 2081.911 | 2254 | 2321 | 1079/1738 |
+| 3 | 81.09134 | 76.48603 | 62.07308 | 2159.934 | 2371 | 2444 | 1578/1738 |
+
+两轮均完成1738帧实际wire、共同28622 GT CPU复算，并重新核验所有包/预测SHA与载荷身份、形状；本机解压索引SHA、逐帧字节均值再次核对。第3轮是目前按预登记AP70规则选择的最佳，正式训练进入第4轮，尚未完成10轮及最终四比例收尾。选模规则仍只在1%工作点按AP70取最佳，不临时改成AP/字节筛选。
+
+第1轮到第3轮AP70升高1.14002个百分点，但平均字节也由2043.014增至2159.934，增加约5.72%；必须将二者同时报告，不能解释为同码率纯精度提升。当前适配ANN更强这一事实不改变方案二多预算训练的已登记10轮，不扩展局部调参或恢复方案三。最终曲线后再决定可证伪的机制消融和统一计算实验。
+
+证据：[本轮完整复核摘要](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/verification.json)、[训练历史](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/infocom/history.json)、[第3轮逐帧字节](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/epoch03/per_frame_bytes.csv)。第2/3轮共同GT复算及完整预测索引以gzip归档，原始预测和真实包保留在181。

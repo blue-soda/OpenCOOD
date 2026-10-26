@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "infocom": [
+    {
+      "epoch": 2,
+      "common_gt_bev_ap": {
+        "0.3": 0.8042111515901152,
+        "0.5": 0.7581580422402419,
+        "0.7": 0.6182605607477216
+      },
+      "wire": {
+        "mean": 2081.91081703107,
+        "median": 2070.0,
+        "p95": 2254.0,
+        "min": 1874.0,
+        "max": 2321.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "cdf8ddc885d2bb01e25923f7ea7fdcf62eb2eaeebaf6c894e59d96dd4d19a191",
+      "frames_above_2048": 1079,
+      "packet_and_prediction_sha_rechecked": true
+    },
+    {
+      "epoch": 3,
+      "common_gt_bev_ap": {
+        "0.3": 0.8109133905892814,
+        "0.5": 0.7648602924624586,
+        "0.7": 0.6207307725858943
+      },
+      "wire": {
+        "mean": 2159.934407364787,
+        "median": 2136.0,
+        "p95": 2371.0,
+        "min": 1967.0,
+        "max": 2444.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "522fb0e6eb8532b504c24c7cac8e69da4a68d19f031d64c821815a69859efeca",
+      "frames_above_2048": 1578,
+      "packet_and_prediction_sha_rechecked": true
+    }
+  ],
+  "snn_eval": {
+    "pid": 35497,
+    "completed_prediction_files": 789,
+    "elapsed_seconds": 11994,
+    "linear_total_seconds": 26420.243346007606,
+    "original_timeout_seconds": 21600
+  },
+  "unix": 1792995365.7699237
+}

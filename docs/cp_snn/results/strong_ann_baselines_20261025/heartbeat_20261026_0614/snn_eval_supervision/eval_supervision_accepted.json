@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "watcher_pid": 64971,
+  "evaluator_pid": 35497,
+  "evaluator_start_ticks": 187828386,
+  "previous_supervisor_pid": 27255,
+  "evaluator_preserved": true,
+  "unix": 1792995336.8648984
+}

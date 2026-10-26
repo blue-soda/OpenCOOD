@@ -1,0 +1,6 @@
+{
+  "archive_sha256": "a32b2675d68a34d6344ff2df0b83d29c9826a4502acc7a194a75018d17f5b08c",
+  "local_index_sha_and_mean_verified": true,
+  "local_tests": "7 tests, 1 Linux-only skipped",
+  "server_tests": "7 tests passed including Linux parent-only termination"
+}

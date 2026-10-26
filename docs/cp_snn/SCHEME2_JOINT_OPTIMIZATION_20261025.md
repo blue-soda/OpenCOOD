@@ -136,3 +136,14 @@ fixed2k第9轮851/2339批，最佳仍第6轮58.85365%；多预算第1轮1201/233
 多预算已完成第1轮，2KiB验证AP30/50/70=73.98462%/69.54647%/57.98674%，平均2045.745109 B，低于原源58.23401%；冻结摘要通过第1轮，已进入第2轮。此为中间验证，不作路线退出结论。固定组8KiB仍在执行，old_snn七预算最终评估仍运行；InfoCom空间准入条件未变。
 
 证据：[4KiB完整核验](results/scheme2_joint_20261025/fixed_4k_verified_20261026/b4096/verification.json)、[4KiB逐帧字节](results/scheme2_joint_20261025/fixed_4k_verified_20261026/b4096/communication_frames.csv)、[多预算第1轮](results/scheme2_joint_20261025/fixed_4k_verified_20261026/multi248k/best_ap70_metrics.json)。0/2/4KiB都已完成，待8KiB后再形成完整曲线；2KiB增益结论保留，适用工作点边界明确。
+
+
+## 2026-10-26 14:14触发：保留8KiB评估进程，延长监督窗口
+
+181固定组的最终8KiB真实wire评估仍健康，但记录时789/1738份预测已生成、子进程运行11994秒；线性外推约26420秒，超过原21600秒监督超时。此估计只用于工程准入，不是完成时间承诺或受控性能结果。
+
+新增supervise_e3dsnn_snapshot_eval，仅可接管指定root/arm、finish父进程和8KiB eval子进程；核验同用户PID启动ticks、父子关系、完整命令、源/配置/最佳权重摘要及已完成0/2/4KiB全部审计。先启动ready/accepted握手，再只结束父监督PID27255；**评估PID35497及其workers保持运行**，检查点、配置、已算帧和计算语义均未改动，无重新训练/重新评估。新watcher PID64971，进程身份及交接证据已保存；Linux实际父进程终止保留子进程回归测试通过（共7项），本地6项通过/1项Linux专用跳过。
+
+新监督窗口为36小时；到期仅标needs_attention，保留评估进程，不自动重试。子进程结束后必须有evaluation.json，再做同一8KiB独立CPU复算、全四预算完整预测/包/GT核验，全部通过才写summary和complete。失败保留，不跳过坏帧，不覆盖旧0/2/4KiB结果。此改动解决工程超时风险，不构成AP/通信或计算收益。
+
+证据：[精确进程与哈希](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/snn_eval_supervision/eval_supervision_handoff.json)、[交接成功](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/snn_eval_supervision/eval_supervision_accepted.json)、[观察进度](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/verification.json)。代码29e38d1已提交main、181拉取并运行。多预算SNN仍第2轮，old_snn仍原full收尾；没有其他任务被终止。

@@ -1,0 +1,56 @@
+{
+  "parent": {
+    "pid": 27255,
+    "start_ticks": 187153376,
+    "parent": 1,
+    "command": [
+      "/data1/tzm/miniconda3/envs/opencood/bin/python",
+      "-u",
+      "-m",
+      "opencood.tools.run_e3dsnn_snapshot_joint",
+      "--root",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01",
+      "--arm",
+      "fixed2k",
+      "--mode",
+      "finish"
+    ]
+  },
+  "evaluator": {
+    "pid": 35497,
+    "start_ticks": 187828386,
+    "parent": 27255,
+    "command": [
+      "/data1/tzm/miniconda3/envs/opencood/bin/python",
+      "-u",
+      "-m",
+      "opencood.tools.train_e3dsnn_single",
+      "--workers",
+      "2",
+      "--seed",
+      "20260929",
+      "--mode",
+      "eval",
+      "--config",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b8192.yaml",
+      "--checkpoint",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/train/best_ap70.pth",
+      "--output",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b8192",
+      "--packet-roundtrip",
+      "--eval-3d",
+      "--save-predictions",
+      "--profile"
+    ]
+  },
+  "contract": {
+    "protocol_sha256": "7a0f10345aba52b7f04757d200304bd136bb8dadd15d1edf29caa508b98a47cd",
+    "best_sha256": "0add747f31daf1c34315621990ef1b9424e2606f2cb60fa23cc3f396bf9e6f9e"
+  },
+  "root": "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01",
+  "arm": "fixed2k",
+  "reason": "Measured 8KiB evaluation throughput projects beyond 6h timeout",
+  "attention_after_hours": 36,
+  "evaluation_unchanged": true,
+  "unix": 1792995336.743368
+}
