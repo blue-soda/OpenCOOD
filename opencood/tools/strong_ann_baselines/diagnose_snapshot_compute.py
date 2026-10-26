@@ -47,6 +47,7 @@ def diagnose(adapter,indices,references,reference,output):
                 packets=adapter.packets();actual=fingerprint(fid,arrays,packets);expected=references[fid]
                 changed=[k for k in expected if actual.get(k)!=expected[k]]
                 row=dict(index=index,frame_id=fid,repeat=repeat,changed_fields=changed,
+                         actual_fingerprint=actual,
                          packets_exact=actual['packets']==expected['packets'],
                          equal_previous=None if fid not in previous else actual==previous[fid])
                 if trace:

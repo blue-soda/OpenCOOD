@@ -18,6 +18,30 @@ def write(p,obj):
     tmp=p.with_name(p.name+'.tmp');tmp.write_text(json.dumps(obj,indent=2,allow_nan=False));tmp.replace(p)
 
 
+def configure_backend(model, mode):
+    """Opt-in numerical diagnostic, never a change to the trained activation."""
+    import spconv.pytorch as spconv
+    from spconv.core import ConvAlgo
+    from spconv.constants import ALL_WEIGHT_IS_KRSC
+    layers=[(name,m) for name,m in model.named_modules() if isinstance(m,spconv.SparseConvolution)]
+    before={name:str(m.algo) for name,m in layers}
+    if mode=='native_deterministic':
+        # Changing algorithms is safe only with the same stored KRSC layout.
+        # Every layer sharing an indice key must use the same algorithm.
+        if not ALL_WEIGHT_IS_KRSC:raise RuntimeError('Native diagnostic requires shared KRSC weight layout')
+        if not layers:raise RuntimeError('No sparse convolutions found')
+        for name,m in layers:m.algo=ConvAlgo.Native
+    return dict(mode=mode,spconv_before=before,spconv_after={name:str(m.algo) for name,m in layers},
+                all_weight_is_krsc=ALL_WEIGHT_IS_KRSC,
+                cudnn_benchmark=torch.backends.cudnn.benchmark,
+                cudnn_deterministic=torch.backends.cudnn.deterministic,
+                cudnn_allow_tf32=torch.backends.cudnn.allow_tf32,
+                matmul_allow_tf32=torch.backends.cuda.matmul.allow_tf32,
+                deterministic_algorithms=torch.are_deterministic_algorithms_enabled(),
+                cublas_workspace_config=os.environ.get('CUBLAS_WORKSPACE_CONFIG'),
+                spconv_determinism_guaranteed=False)
+
+
 class Adapter:
     def __init__(self,model,data,prepared):
         self.model=model;self.data=data;self.prepared=prepared;self.messages=[];self.fid=None
@@ -50,6 +74,14 @@ def execute(a):
     manifest=read(manifests[0])
     if sha(checkpoint)!=manifest['checkpoint_sha256']:raise ValueError('Wrong checkpoint')
     if sha(a.config)!=manifest['config_sha256']:raise ValueError('Wrong reference config')
+    if a.backend=='native_deterministic':
+        if not a.diagnose:raise ValueError('Backend experiment is diagnostic only; historical timing gate unchanged')
+        os.environ['CUBLAS_WORKSPACE_CONFIG']=':4096:8'
+        torch.backends.cudnn.benchmark=False
+        torch.backends.cudnn.deterministic=True
+        torch.backends.cudnn.allow_tf32=False
+        torch.backends.cuda.matmul.allow_tf32=False
+        torch.use_deterministic_algorithms(True)
     if not torch.cuda.is_available():raise RuntimeError('CUDA required')
     random.seed(20260929);np.random.seed(20260929);torch.manual_seed(20260929);torch.cuda.manual_seed_all(20260929)
     torch.set_num_threads(1);torch.cuda.set_per_process_memory_fraction(.25)
@@ -60,6 +92,7 @@ def execute(a):
     data=build_dataset(cfg,train=False)
     if len(data)!=1738:raise ValueError('Wrong paired validation')
     model=train_utils.create_model(cfg).cuda();model.load_state_dict(torch.load(str(checkpoint),map_location='cpu'),strict=True)
+    backend=configure_backend(model,a.backend)
     model.eval();model.requires_grad_(False);model.packet_roundtrip=True
     indices=measurement_indices(a.compute_count)
     index=read(reference/'predictions/index.json')['frames']
@@ -88,7 +121,7 @@ def execute(a):
                   preprocessing='paired validation is deterministic; same selected CPU inputs reused, no message/model cache',
                   scripts={p:sha(Path(__file__).resolve().parents[2]/p) for p in
                       ['tools/strong_ann_baselines/compute_harness.py','tools/strong_ann_baselines/compute_snapshot_smoke.py','models/fuse_modules/e3dsnn_snapshot_adapter.py']},
-                  parameters=sum(p.numel() for p in model.parameters()),gpu_memory_fraction=.25)
+                  parameters=sum(p.numel() for p in model.parameters()),gpu_memory_fraction=.25,backend=backend)
     write(root/'compute_protocol.json',protocol);adapter=Adapter(model,data,prepared);results=[]
     if a.diagnose:
         from opencood.tools.strong_ann_baselines.diagnose_snapshot_compute import diagnose
@@ -115,6 +148,7 @@ if __name__=='__main__':
     p.add_argument('--compute-count',type=int,choices=(4,64),default=4)
     p.add_argument('--compute-repeat',type=int,choices=(0,1,2),default=0)
     p.add_argument('--diagnose',action='store_true',help='Two untimed passes with mismatch arrays/packets; no gate relaxation')
+    p.add_argument('--backend',choices=('historical','native_deterministic'),default='historical')
     a=p.parse_args();os.environ['CUDA_VISIBLE_DEVICES']=a.gpu
     root=Path(a.output);root.mkdir(parents=True,exist_ok=False)
     try:execute(a)
