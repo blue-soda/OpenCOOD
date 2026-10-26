@@ -108,3 +108,20 @@ fixed2k第9轮851/2339批，最佳仍第6轮58.85365%；多预算第1轮1201/233
 多预算181仍第1轮1851/2339批；old_snn继续146原进程中的七预算最终评估，无重复投递。InfoCom仍等待之前请求的至少6GiB检查点存储，不因SNN小体量收尾可以运行而放宽ANN大检查点准入。
 
 证据：[原训练完成](results/scheme2_joint_20261025/completed_migration_181/original_146/fixed2k/train/status.json)、[十轮历史](results/scheme2_joint_20261025/completed_migration_181/original_146/fixed2k/train/metrics.jsonl)、[原CUDA错误](results/scheme2_joint_20261025/completed_migration_181/original_146/fixed2k/b0.log)、[迁移核验](results/scheme2_joint_20261025/completed_migration_181/recovery_181/migration.json)、[新收尾启动](results/scheme2_joint_20261025/completed_migration_181/recovery_181/finish_launch.json)。
+
+
+## 2026-10-26 10:08触发：主锚点与零通信独立复核完成
+
+181已完成b0和b2048，各1738帧/28622 GT；GPU真实包推理与独立CPU回放的BEV和附加3D AP逐值一致，预测文件SHA全部核验。另独立检查每个实际packet文件SHA、frame_id、原始字节数与预测记录一致，全部不超过对应硬预算。共同有序GT摘要等于预定54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee。
+
+| 同一第6轮最佳权重的通信设置 | AP30% | AP50% | AP70% | 平均B/帧 | P95/最大B | 独立复核 |
+|---|---:|---:|---:|---:|---:|---|
+| 0，无路端消息 | 71.96681 | 67.94576 | 57.67396 | 0 | 0/0 | 完成 |
+| 2048 B硬预算 | 77.19168 | 72.13967 | 58.85365 | 2046.885501 | 2048/2048 | 完成 |
+| 4096/8192 B | 待完成 | 待完成 | 待完成 | 待完成 | 待完成 | 运行中 |
+
+2KiB的AP字典及通信统计字典与146第6轮训练验证逐值相同，跨机迁移没有改变已观测主锚点。相对原已复核方案二58.23401%增加0.61964个百分点；相对该适配模型自身零通信增加1.17969个百分点；也高于历史ANN单车57.98007%和SNN单车54.77316%。这支持主锚点的工程收益与单车精度门槛，但还不等于稳健、多种子或外部测试结论。
+
+历史量化ANN紧凑参照59.40337%/2044.42 B仍更高，InfoCom低比例适配尚未训练，CoSDH/InfoCom原生高通信点精度也更高；不能将本结果称为已经打赢全部ANN。保留预登记多预算训练，待完整四预算曲线后继续匹配ANN适配、统一计算及机制消融，不追加固定组训练轮数。
+
+目前协调器已进入b4096，多预算第1轮2201/2339批；InfoCom磁盘条件未恢复，不重复催问。证据：[独立汇总和训练锚点逐值一致检查](results/scheme2_joint_20261025/fixed_anchor_verified_20261026/anchor_verified.json)、[2KiB逐帧通信CSV](results/scheme2_joint_20261025/fixed_anchor_verified_20261026/b2048/communication_frames.csv)、[2KiB CPU复算](results/scheme2_joint_20261025/fixed_anchor_verified_20261026/b2048/offline_replay.json)。完整预测/包索引以gzip保留，解压恢复原始SHA；没有下载权重或点云到Git。
