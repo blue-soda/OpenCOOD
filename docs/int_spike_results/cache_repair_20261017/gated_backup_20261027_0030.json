@@ -1,0 +1,55 @@
+{
+  "archive": "/dev/shm/tzm_gated_20261027_0030.tar.gz",
+  "bytes": 2895156,
+  "sha256": "af2901b89a4e14a37f504f314b033eb9bda261906c612f4d5e495a690e5825b6",
+  "files": [
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/latest.pth",
+      "bytes": 1328806,
+      "sha256": "1c116fbbffcc81532ec6c3d08f2e1a15689f34a9e646897b3cb3394bace36c34",
+      "epoch": 15,
+      "next_action": "train"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/pending_validation.pth",
+      "bytes": 1378854,
+      "sha256": "d3b6c508a609a296408ff20e0614ee59e1e502b5514f20b48bdbc75b541f5532",
+      "epoch": 15,
+      "next_action": "evaluate"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/best.json",
+      "bytes": 272,
+      "sha256": "2651bf7916a6f033b7678e13553c5c1f0e2d8d577122af4bafc79754e04f21d2"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/history.json",
+      "bytes": 37904,
+      "sha256": "6d697dd40e6319ace8d46fff1ddb40c9ccf9c5c1f1ad2dc8dab16652dc0c8340"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/short_readout_contract.json",
+      "bytes": 4774,
+      "sha256": "67faa1ff4fbe294ebd5d50d57cd9f6e976090babdb3d2e36cf5f73dd3b507b72"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/contract.json",
+      "bytes": 12551,
+      "sha256": "1cc681fb0e509518798d2d93afb14155f67457183fabb2a413784886019c3404"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/status.json",
+      "bytes": 109,
+      "sha256": "dfe04b8ff759087b0fd3223fe38b18d37414cc11b77272e5aae7489e9f973d48"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/epoch_015/repair.pth",
+      "bytes": 442003,
+      "sha256": "1f6430a7620e63801ba851984ee3beb2a0ad5d07bf0d5c932caba1cf7b49bf71",
+      "epoch": 15,
+      "next_action": null
+    }
+  ],
+  "destination": "/data1/zhh/gzc/int181_snapshot/live_backups/gated_20261027_0030.tar.gz",
+  "destination_sha256_verified": true
+}

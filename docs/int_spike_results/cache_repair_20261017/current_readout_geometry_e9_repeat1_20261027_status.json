@@ -1,4 +1,5 @@
 {
-  "phase": "setup",
-  "status": "RUNNING"
+  "phase": "current_backend_profile",
+  "scans": 512,
+  "status": "COMPLETED"
 }
