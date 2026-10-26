@@ -1,0 +1,27 @@
+{
+  "samples": [
+    {
+      "checked_unix": 1793028080.3435776,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        45488
+      ],
+      "scan": 0,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1793028106.6409862,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        45488
+      ],
+      "scan": 200,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    }
+  ],
+  "status": "SAMPLED_CLEAR"
+}
