@@ -212,6 +212,14 @@ def run(args, output):
     if args.wire_codec:
         from infocom_wire import WireAudit
         wire=WireAudit(model,output)
+    compute_reference = getattr(args, 'compute_smoke_reference', None)
+    if compute_reference is not None:
+        from compute_infocom_adapter import smoke
+        try:
+            smoke(model, dataset, wire, ids, Path(compute_reference), output, meta, args.gpu)
+        finally:
+            if wire:wire.handle.remove()
+        return
     # Hooks time only the unchanged official model forward. The public official
     # helper performs this forward then unchanged dataset.post_process.
     timing = {}
@@ -321,11 +329,14 @@ def main():
     parser.add_argument('--checkpoint-compat', action='store_true', help='Explicit legacy sigma/identity-scale inference mapping; exact mismatch only')
     parser.add_argument('--wire-codec',action='store_true',help='Serialize, decode and use every non-ego latent/mask; exact FP32')
     parser.add_argument('--adaptation-protocol',help='Training protocol for an adapted canonical checkpoint; records provenance')
+    parser.add_argument('--compute-smoke-reference', help='Four fixed-frame real-wire timing adapter parity gate; not an AP/performance run')
     args = parser.parse_args()
     if args.mask_ratio is not None and (not math.isfinite(args.mask_ratio) or not 0 < args.mask_ratio <= .1):
         parser.error('mask ratio must be finite and in (0,0.1]')
     if args.limit < 0 or ',' in args.gpu:
         parser.error('limit must be nonnegative; select exactly one GPU')
+    if args.compute_smoke_reference and not args.wire_codec:
+        parser.error('Compute smoke requires actual wire codec')
     output = Path(args.output).resolve()
     output.mkdir(parents=True, exist_ok=False)
     try:
