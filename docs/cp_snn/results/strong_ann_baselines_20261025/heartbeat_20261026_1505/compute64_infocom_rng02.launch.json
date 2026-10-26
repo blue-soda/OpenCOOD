@@ -1,0 +1,8 @@
+{
+  "pid": 48209,
+  "waits_for": "compute64_suite01 terminal status",
+  "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_infocom_rng02",
+  "script_sha256": "a5f4ae26ff712821c8166ca1d158ed50d916e1eb449797873423c41da7bcddbc",
+  "no_models_retried_before_dependency": true,
+  "launch_unix": 1793028189.4692593
+}

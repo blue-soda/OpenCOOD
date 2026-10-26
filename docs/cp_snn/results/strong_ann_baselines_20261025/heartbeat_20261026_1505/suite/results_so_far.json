@@ -1,0 +1,61 @@
+[
+  {
+    "method": "scheme2_2k",
+    "repeat": 0,
+    "returncode": 1,
+    "started_unix": 1793022179.7995648,
+    "finished_unix": 1793022237.000234,
+    "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/scheme2_2k_repeat0",
+    "eligible_for_speed_table": true
+  },
+  {
+    "method": "infocom_adapt1pct",
+    "repeat": 0,
+    "returncode": 1,
+    "started_unix": 1793025852.678351,
+    "finished_unix": 1793026292.6061056,
+    "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/infocom_adapt1pct_repeat0",
+    "eligible_for_speed_table": true
+  },
+  {
+    "method": "infocom_official10pct",
+    "repeat": 0,
+    "returncode": 1,
+    "started_unix": 1793026301.3209918,
+    "finished_unix": 1793026923.1645255,
+    "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/infocom_official10pct_repeat0",
+    "eligible_for_speed_table": true
+  },
+  {
+    "method": "cosdh_reference",
+    "repeat": 0,
+    "returncode": 0,
+    "started_unix": 1793026931.869571,
+    "finished_unix": 1793027715.2577217,
+    "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/cosdh_reference_repeat0",
+    "eligible_for_speed_table": false,
+    "summary_sha256": "b4aa386bb0ea7df3b0bf1da26dbeef4b0897ad176d6e7384f19be2df8a022efc",
+    "scope_statistics": [
+      {
+        "scope": "ready_cpu_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.2034834803562262,
+          "median": 0.19237308099400252,
+          "p95": 0.3406779707176609
+        },
+        "peak_allocated_bytes": 591741440,
+        "peak_reserved_bytes": 3382706176
+      },
+      {
+        "scope": "device_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.18980195940457634,
+          "median": 0.17416258994489908,
+          "p95": 0.327449144644197
+        },
+        "peak_allocated_bytes": 591770112,
+        "peak_reserved_bytes": 3382706176
+      }
+    ]
+  }
+]

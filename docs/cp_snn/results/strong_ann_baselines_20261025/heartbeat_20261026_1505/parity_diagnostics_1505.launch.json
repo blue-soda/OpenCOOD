@@ -1,0 +1,162 @@
+[
+  {
+    "name": "infocom_adapt1pct",
+    "gpu": "3",
+    "pid": 33996,
+    "command": [
+      "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+      "/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/strong_ann_baselines/evaluate_infocom.py",
+      "--repo",
+      "/data2/tzm/cp_snn_recovery_20261026/InfoCom",
+      "--model-dir",
+      "/data2/tzm/cp_snn_recovery_20261026/infocom_lowrate_adapt01/best",
+      "--data-root",
+      "/data2/tzm/cp_snn_recovery_20261026/data_view",
+      "--split",
+      "/data2/tzm/cp_snn_recovery_20261026/ann_evidence/common_val.json",
+      "--gpu",
+      "3",
+      "--limit",
+      "0",
+      "--comm-range",
+      "1000000",
+      "--wire-codec",
+      "--mask-ratio",
+      "0.01",
+      "--adaptation-protocol",
+      "/data2/tzm/cp_snn_recovery_20261026/infocom_lowrate_adapt01/protocol.json",
+      "--compute-smoke-reference",
+      "/data2/tzm/cp_snn_recovery_20261026/infocom_lowrate_adapt01/final_ratio0.01_attempt1793011431762198011",
+      "--output",
+      "/data2/tzm/cp_snn_recovery_20261026/infocom_adapt1pct_diagnostic01",
+      "--compute-count",
+      "64",
+      "--compute-diagnose"
+    ],
+    "admission": [
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ]
+    ],
+    "no_timing_claim": true
+  },
+  {
+    "name": "infocom_official10pct",
+    "gpu": "4",
+    "pid": 33997,
+    "command": [
+      "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+      "/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/strong_ann_baselines/evaluate_infocom.py",
+      "--repo",
+      "/data2/tzm/cp_snn_recovery_20261026/InfoCom",
+      "--model-dir",
+      "/data2/tzm/cp_snn_recovery_20261026",
+      "--data-root",
+      "/data2/tzm/cp_snn_recovery_20261026/data_view",
+      "--split",
+      "/data2/tzm/cp_snn_recovery_20261026/ann_evidence/common_val.json",
+      "--gpu",
+      "4",
+      "--limit",
+      "0",
+      "--comm-range",
+      "1000000",
+      "--wire-codec",
+      "--checkpoint-compat",
+      "--compute-smoke-reference",
+      "/data2/tzm/cp_snn_recovery_20261026/compute_reference64/infocom",
+      "--output",
+      "/data2/tzm/cp_snn_recovery_20261026/infocom_official10pct_diagnostic01",
+      "--compute-count",
+      "64",
+      "--compute-diagnose"
+    ],
+    "admission": [
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ]
+    ],
+    "no_timing_claim": true
+  },
+  {
+    "name": "scheme2_trace4_01",
+    "gpu": "6",
+    "pid": 33999,
+    "command": [
+      "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+      "-u",
+      "-m",
+      "opencood.tools.strong_ann_baselines.compute_snapshot_smoke",
+      "--config",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048.yaml",
+      "--checkpoint",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/train/best_ap70.pth",
+      "--reference",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048",
+      "--gpu",
+      "6",
+      "--output",
+      "/data2/tzm/cp_snn_recovery_20261026/scheme2_trace4_01",
+      "--compute-count",
+      "4",
+      "--diagnose"
+    ],
+    "admission": [
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ],
+      [
+        24252,
+        0
+      ]
+    ],
+    "no_timing_claim": true
+  }
+]

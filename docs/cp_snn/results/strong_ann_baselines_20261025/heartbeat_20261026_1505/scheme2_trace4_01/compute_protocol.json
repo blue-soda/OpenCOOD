@@ -1,0 +1,40 @@
+{
+  "smoke_only": true,
+  "not_a_performance_result": true,
+  "repeat": 0,
+  "host": {
+    "platform": "Linux-4.15.0-213-generic-x86_64-with-debian-buster-sid",
+    "cpu_models": [
+      "Intel(R) Xeon(R) Gold 6226R CPU @ 2.90GHz"
+    ],
+    "python": "3.7.11"
+  },
+  "torch_version": "1.10.0+cu113",
+  "cuda_version": "11.3",
+  "indices": [
+    0,
+    579,
+    1158,
+    1737
+  ],
+  "ids": [
+    "000211",
+    "004276",
+    "013871",
+    "019992"
+  ],
+  "checkpoint_sha256": "0add747f31daf1c34315621990ef1b9424e2606f2cb60fa23cc3f396bf9e6f9e",
+  "config_sha256": "898ae51ed4d46fe642845e39da6794bd72953c9bf864b7ec54fe3a5d2d2f70f0",
+  "config_change": "packet_directory=None; observer holds actual packet in memory",
+  "reference_index_sha256": "92cf8bede84d755910d04b70c7ff6b8c1ef348b225b143c727189b7ac59779ed",
+  "warmup": 20,
+  "preprocessing": "paired validation is deterministic; same selected CPU inputs reused, no message/model cache",
+  "scripts": {
+    "tools/strong_ann_baselines/compute_harness.py": "14053ed7a41f8dfad7dded9acf434ea51fb758fb03206011e71eee2a7f92f90f",
+    "tools/strong_ann_baselines/compute_snapshot_smoke.py": "9e3147add12f659ca2b889fe93b25a81c2340f290967e56a856ad00f066740e4",
+    "models/fuse_modules/e3dsnn_snapshot_adapter.py": "f04c531f789851a94d5a8752fa901600c6a057fce69a347450b6468f16560950"
+  },
+  "parameters": 3120631,
+  "gpu_memory_fraction": 0.25,
+  "diagnostic_only": true
+}

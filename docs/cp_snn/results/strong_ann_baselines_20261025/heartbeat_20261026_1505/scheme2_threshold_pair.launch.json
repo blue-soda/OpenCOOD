@@ -1,0 +1,68 @@
+{
+  "pid": 48850,
+  "commands": [
+    [
+      "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+      "-u",
+      "-m",
+      "opencood.tools.strong_ann_baselines.compute_snapshot_smoke",
+      "--config",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048.yaml",
+      "--checkpoint",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/train/best_ap70.pth",
+      "--reference",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048",
+      "--gpu",
+      "6",
+      "--output",
+      "/data2/tzm/cp_snn_recovery_20261026/scheme2_threshold4_01",
+      "--compute-count",
+      "4",
+      "--diagnose"
+    ],
+    [
+      "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+      "-u",
+      "-m",
+      "opencood.tools.strong_ann_baselines.compute_snapshot_smoke",
+      "--config",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048.yaml",
+      "--checkpoint",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/train/best_ap70.pth",
+      "--reference",
+      "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048",
+      "--gpu",
+      "6",
+      "--output",
+      "/data2/tzm/cp_snn_recovery_20261026/scheme2_threshold64_01",
+      "--compute-count",
+      "64",
+      "--diagnose"
+    ]
+  ],
+  "admission": [
+    [
+      24249,
+      0
+    ],
+    [
+      24249,
+      0
+    ],
+    [
+      24249,
+      0
+    ],
+    [
+      24249,
+      0
+    ],
+    [
+      24249,
+      0
+    ]
+  ],
+  "source_commit": "72efd289f135a7159824e59b77e45769a0fd7a23",
+  "script_sha256": "279a3d01ffbad625b470781f2a83e6b7af3c432d6a7d78a6d1b3f80ab79c49c9",
+  "no_timing_claim": true
+}

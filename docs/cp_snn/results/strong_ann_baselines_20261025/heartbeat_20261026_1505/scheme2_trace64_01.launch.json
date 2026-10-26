@@ -1,0 +1,47 @@
+{
+  "pid": 35840,
+  "command": [
+    "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.strong_ann_baselines.compute_snapshot_smoke",
+    "--config",
+    "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048.yaml",
+    "--checkpoint",
+    "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/train/best_ap70.pth",
+    "--reference",
+    "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048",
+    "--gpu",
+    "6",
+    "--output",
+    "/data2/tzm/cp_snn_recovery_20261026/scheme2_trace64_01",
+    "--compute-count",
+    "64",
+    "--diagnose"
+  ],
+  "gpu": 6,
+  "admission": [
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ]
+  ],
+  "no_timing_claim": true,
+  "comparison": "same GPU/checkpoint, 4 versus 64 preceding input shapes; observe sender tensors"
+}

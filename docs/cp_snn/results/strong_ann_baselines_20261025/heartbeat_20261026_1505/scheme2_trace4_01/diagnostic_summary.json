@@ -1,0 +1,120 @@
+{
+  "diagnostic_only": true,
+  "no_timing_or_AP_claim": true,
+  "reference_gate_not_relaxed": true,
+  "unique_frames": 4,
+  "calls": 8,
+  "mismatched_calls": 0,
+  "packet_mismatched_calls": 0,
+  "unstable_repeat_calls": 0,
+  "rows": [
+    {
+      "index": 0,
+      "frame_id": "000211",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 579,
+      "frame_id": "004276",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null,
+      "sender_trace": {
+        "encoder_counts": {
+          "shape": [
+            1,
+            128,
+            3,
+            50,
+            126
+          ],
+          "sha256": "1fe296238ab2fc8595c81ffc3c6795dfc20114dc9fd5156f86b00b2ca5936d0c"
+        },
+        "projected_drive": {
+          "shape": [
+            1,
+            32,
+            3,
+            50,
+            126
+          ],
+          "sha256": "32434238aaccb16f580421634d26632996eb92f71dbc20a4d3e9e1e81c2f60be"
+        }
+      }
+    },
+    {
+      "index": 1158,
+      "frame_id": "013871",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 1737,
+      "frame_id": "019992",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 0,
+      "frame_id": "000211",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 579,
+      "frame_id": "004276",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true,
+      "sender_trace": {
+        "encoder_counts": {
+          "shape": [
+            1,
+            128,
+            3,
+            50,
+            126
+          ],
+          "sha256": "1fe296238ab2fc8595c81ffc3c6795dfc20114dc9fd5156f86b00b2ca5936d0c"
+        },
+        "projected_drive": {
+          "shape": [
+            1,
+            32,
+            3,
+            50,
+            126
+          ],
+          "sha256": "32434238aaccb16f580421634d26632996eb92f71dbc20a4d3e9e1e81c2f60be"
+        }
+      }
+    },
+    {
+      "index": 1158,
+      "frame_id": "013871",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    },
+    {
+      "index": 1737,
+      "frame_id": "019992",
+      "repeat": 1,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": true
+    }
+  ]
+}

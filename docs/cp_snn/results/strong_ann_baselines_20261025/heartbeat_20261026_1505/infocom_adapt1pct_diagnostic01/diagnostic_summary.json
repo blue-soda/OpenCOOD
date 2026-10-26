@@ -1,0 +1,2227 @@
+{
+  "diagnostic_only": true,
+  "no_timing_or_AP_claim": true,
+  "reference_gate_not_relaxed": true,
+  "unique_frames": 64,
+  "calls": 128,
+  "mismatched_calls": 127,
+  "packet_mismatched_calls": 127,
+  "unstable_repeat_calls": 64,
+  "rows": [
+    {
+      "index": 0,
+      "frame_id": "000211",
+      "repeat": 0,
+      "changed_fields": [],
+      "packets_exact": true,
+      "equal_previous": null
+    },
+    {
+      "index": 27,
+      "frame_id": "000923",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 55,
+      "frame_id": "000954",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 82,
+      "frame_id": "001005",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 37.96875,
+      "boxes_changed_values": 364,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.0694074034690857,
+      "scores_changed_values": 21
+    },
+    {
+      "index": 110,
+      "frame_id": "001035",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 137,
+      "frame_id": "001751",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 66.29296875,
+      "boxes_changed_values": 106,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.0334804505109787,
+      "scores_changed_values": 8
+    },
+    {
+      "index": 165,
+      "frame_id": "001781",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 24.625,
+      "boxes_changed_values": 146,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.03783464431762695,
+      "scores_changed_values": 11
+    },
+    {
+      "index": 193,
+      "frame_id": "001838",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 0.0078125,
+      "boxes_changed_values": 18,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.0011278986930847168,
+      "scores_changed_values": 1
+    },
+    {
+      "index": 220,
+      "frame_id": "003072",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 5.984375,
+      "boxes_changed_values": 188,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.13029074668884277,
+      "scores_changed_values": 9
+    },
+    {
+      "index": 248,
+      "frame_id": "003148",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 59.46875,
+      "boxes_changed_values": 288,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.15486374497413635,
+      "scores_changed_values": 16
+    },
+    {
+      "index": 275,
+      "frame_id": "003175",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 303,
+      "frame_id": "003245",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 73.087890625,
+      "boxes_changed_values": 168,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.13364508748054504,
+      "scores_changed_values": 9
+    },
+    {
+      "index": 330,
+      "frame_id": "003273",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 358,
+      "frame_id": "003345",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 386,
+      "frame_id": "003373",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 13.371337890625,
+      "boxes_changed_values": 100,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.031114131212234497,
+      "scores_changed_values": 5
+    },
+    {
+      "index": 413,
+      "frame_id": "003588",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 63.90625,
+      "boxes_changed_values": 128,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.11678755283355713,
+      "scores_changed_values": 7
+    },
+    {
+      "index": 441,
+      "frame_id": "003676",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 0.8203125,
+      "boxes_changed_values": 58,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.11828438937664032,
+      "scores_changed_values": 4
+    },
+    {
+      "index": 468,
+      "frame_id": "004099",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 496,
+      "frame_id": "004127",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 48.10546875,
+      "boxes_changed_values": 106,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.036390841007232666,
+      "scores_changed_values": 7
+    },
+    {
+      "index": 523,
+      "frame_id": "004200",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 52.6826171875,
+      "boxes_changed_values": 82,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.14713796973228455,
+      "scores_changed_values": 6
+    },
+    {
+      "index": 551,
+      "frame_id": "004230",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 579,
+      "frame_id": "004276",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 0.515625,
+      "boxes_changed_values": 60,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.09446197748184204,
+      "scores_changed_values": 3
+    },
+    {
+      "index": 606,
+      "frame_id": "004346",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 634,
+      "frame_id": "004376",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 32.65380859375,
+      "boxes_changed_values": 122,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.03270822763442993,
+      "scores_changed_values": 6
+    },
+    {
+      "index": 661,
+      "frame_id": "004444",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 119.40625,
+      "boxes_changed_values": 234,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.11136859655380249,
+      "scores_changed_values": 11
+    },
+    {
+      "index": 689,
+      "frame_id": "010819",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 44.498046875,
+      "boxes_changed_values": 142,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.054431140422821045,
+      "scores_changed_values": 8
+    },
+    {
+      "index": 716,
+      "frame_id": "010846",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 102.7421875,
+      "boxes_changed_values": 262,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.07192456722259521,
+      "scores_changed_values": 15
+    },
+    {
+      "index": 744,
+      "frame_id": "010875",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 75.876953125,
+      "boxes_changed_values": 316,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.06186378002166748,
+      "scores_changed_values": 16
+    },
+    {
+      "index": 772,
+      "frame_id": "010903",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 63.015625,
+      "boxes_changed_values": 280,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.035753607749938965,
+      "scores_changed_values": 14
+    },
+    {
+      "index": 799,
+      "frame_id": "010930",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 827,
+      "frame_id": "010959",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 89.685546875,
+      "boxes_changed_values": 250,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.06573376059532166,
+      "scores_changed_values": 16
+    },
+    {
+      "index": 854,
+      "frame_id": "010987",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 882,
+      "frame_id": "011015",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 909,
+      "frame_id": "011044",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 937,
+      "frame_id": "011530",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 0.333984375,
+      "boxes_changed_values": 198,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.12439864873886108,
+      "scores_changed_values": 14
+    },
+    {
+      "index": 965,
+      "frame_id": "011799",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 101.6708984375,
+      "boxes_changed_values": 420,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.06498861312866211,
+      "scores_changed_values": 21
+    },
+    {
+      "index": 992,
+      "frame_id": "011827",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 107.4375,
+      "boxes_changed_values": 506,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.10947170853614807,
+      "scores_changed_values": 25
+    },
+    {
+      "index": 1020,
+      "frame_id": "011885",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 125.1875,
+      "boxes_changed_values": 420,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.11830699443817139,
+      "scores_changed_values": 21
+    },
+    {
+      "index": 1047,
+      "frame_id": "011934",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 96.453125,
+      "boxes_changed_values": 432,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.07813146710395813,
+      "scores_changed_values": 19
+    },
+    {
+      "index": 1075,
+      "frame_id": "013745",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1102,
+      "frame_id": "013775",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1130,
+      "frame_id": "013824",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1158,
+      "frame_id": "013871",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1185,
+      "frame_id": "013925",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 163.4375,
+      "boxes_changed_values": 364,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.10511714220046997,
+      "scores_changed_values": 16
+    },
+    {
+      "index": 1213,
+      "frame_id": "014259",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 77.6103515625,
+      "boxes_changed_values": 404,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.0697430968284607,
+      "scores_changed_values": 21
+    },
+    {
+      "index": 1240,
+      "frame_id": "014302",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1268,
+      "frame_id": "014337",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1295,
+      "frame_id": "014381",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 153.625,
+      "boxes_changed_values": 564,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.0796060860157013,
+      "scores_changed_values": 26
+    },
+    {
+      "index": 1323,
+      "frame_id": "014529",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 80.259765625,
+      "boxes_changed_values": 72,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.09269845485687256,
+      "scores_changed_values": 4
+    },
+    {
+      "index": 1351,
+      "frame_id": "017294",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 90.71875,
+      "boxes_changed_values": 146,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.04925429821014404,
+      "scores_changed_values": 13
+    },
+    {
+      "index": 1378,
+      "frame_id": "017342",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 30.3525390625,
+      "boxes_changed_values": 192,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.02692878246307373,
+      "scores_changed_values": 12
+    },
+    {
+      "index": 1406,
+      "frame_id": "017393",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 0.48193359375,
+      "boxes_changed_values": 204,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.038236260414123535,
+      "scores_changed_values": 15
+    },
+    {
+      "index": 1433,
+      "frame_id": "017431",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 104.265625,
+      "boxes_changed_values": 690,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.07780539989471436,
+      "scores_changed_values": 30
+    },
+    {
+      "index": 1461,
+      "frame_id": "017777",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 52.6015625,
+      "boxes_changed_values": 192,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.03734835982322693,
+      "scores_changed_values": 12
+    },
+    {
+      "index": 1488,
+      "frame_id": "018887",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1516,
+      "frame_id": "018955",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1544,
+      "frame_id": "018985",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 94.787109375,
+      "boxes_changed_values": 570,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.11458304524421692,
+      "scores_changed_values": 29
+    },
+    {
+      "index": 1571,
+      "frame_id": "019055",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1599,
+      "frame_id": "019084",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1626,
+      "frame_id": "019832",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1654,
+      "frame_id": "019860",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1681,
+      "frame_id": "019928",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1709,
+      "frame_id": "019957",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1737,
+      "frame_id": "019992",
+      "repeat": 0,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": null,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 0,
+      "frame_id": "000211",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 142.03125,
+      "boxes_changed_values": 214,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.03949087858200073,
+      "scores_changed_values": 10
+    },
+    {
+      "index": 27,
+      "frame_id": "000923",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 69.6376953125,
+      "boxes_changed_values": 414,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.16570919752120972,
+      "scores_changed_values": 19
+    },
+    {
+      "index": 55,
+      "frame_id": "000954",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 82,
+      "frame_id": "001005",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 0.546875,
+      "boxes_changed_values": 350,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.03325679898262024,
+      "scores_changed_values": 21
+    },
+    {
+      "index": 110,
+      "frame_id": "001035",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 37.074951171875,
+      "boxes_changed_values": 450,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.11893385648727417,
+      "scores_changed_values": 21
+    },
+    {
+      "index": 137,
+      "frame_id": "001751",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 66.29296875,
+      "boxes_changed_values": 120,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.0334804505109787,
+      "scores_changed_values": 7
+    },
+    {
+      "index": 165,
+      "frame_id": "001781",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 25.25,
+      "boxes_changed_values": 162,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.043909549713134766,
+      "scores_changed_values": 11
+    },
+    {
+      "index": 193,
+      "frame_id": "001838",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 220,
+      "frame_id": "003072",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 17.9375,
+      "boxes_changed_values": 188,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.2219400405883789,
+      "scores_changed_values": 9
+    },
+    {
+      "index": 248,
+      "frame_id": "003148",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 4.8671875,
+      "boxes_changed_values": 232,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.09569588303565979,
+      "scores_changed_values": 15
+    },
+    {
+      "index": 275,
+      "frame_id": "003175",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 21.808837890625,
+      "boxes_changed_values": 226,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.037853240966796875,
+      "scores_changed_values": 15
+    },
+    {
+      "index": 303,
+      "frame_id": "003245",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 73.150390625,
+      "boxes_changed_values": 170,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.22196337580680847,
+      "scores_changed_values": 9
+    },
+    {
+      "index": 330,
+      "frame_id": "003273",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 58.3212890625,
+      "boxes_changed_values": 114,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.07355862855911255,
+      "scores_changed_values": 8
+    },
+    {
+      "index": 358,
+      "frame_id": "003345",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 4.59375,
+      "boxes_changed_values": 110,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.12969574332237244,
+      "scores_changed_values": 6
+    },
+    {
+      "index": 386,
+      "frame_id": "003373",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 187.0625,
+      "boxes_changed_values": 132,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.11668682098388672,
+      "scores_changed_values": 6
+    },
+    {
+      "index": 413,
+      "frame_id": "003588",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 44.81640625,
+      "boxes_changed_values": 128,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.06685054302215576,
+      "scores_changed_values": 8
+    },
+    {
+      "index": 441,
+      "frame_id": "003676",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 468,
+      "frame_id": "004099",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 89.0625,
+      "boxes_changed_values": 144,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.2310921847820282,
+      "scores_changed_values": 8
+    },
+    {
+      "index": 496,
+      "frame_id": "004127",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 0.26953125,
+      "boxes_changed_values": 72,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.012055933475494385,
+      "scores_changed_values": 7
+    },
+    {
+      "index": 523,
+      "frame_id": "004200",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 53.2763671875,
+      "boxes_changed_values": 80,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.017598956823349,
+      "scores_changed_values": 6
+    },
+    {
+      "index": 551,
+      "frame_id": "004230",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 579,
+      "frame_id": "004276",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 109.78125,
+      "boxes_changed_values": 74,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.19159960746765137,
+      "scores_changed_values": 4
+    },
+    {
+      "index": 606,
+      "frame_id": "004346",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 634,
+      "frame_id": "004376",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 29.9306640625,
+      "boxes_changed_values": 138,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.03754383325576782,
+      "scores_changed_values": 6
+    },
+    {
+      "index": 661,
+      "frame_id": "004444",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 96.53125,
+      "boxes_changed_values": 216,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.11122238636016846,
+      "scores_changed_values": 10
+    },
+    {
+      "index": 689,
+      "frame_id": "010819",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 44.466796875,
+      "boxes_changed_values": 128,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.03577876091003418,
+      "scores_changed_values": 8
+    },
+    {
+      "index": 716,
+      "frame_id": "010846",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 99.8515625,
+      "boxes_changed_values": 236,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.04542994499206543,
+      "scores_changed_values": 14
+    },
+    {
+      "index": 744,
+      "frame_id": "010875",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 75.751953125,
+      "boxes_changed_values": 266,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.04364126920700073,
+      "scores_changed_values": 16
+    },
+    {
+      "index": 772,
+      "frame_id": "010903",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 63.015625,
+      "boxes_changed_values": 278,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.0411984920501709,
+      "scores_changed_values": 14
+    },
+    {
+      "index": 799,
+      "frame_id": "010930",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 75.03125,
+      "boxes_changed_values": 392,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.03423726558685303,
+      "scores_changed_values": 18
+    },
+    {
+      "index": 827,
+      "frame_id": "010959",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 162.75,
+      "boxes_changed_values": 254,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.040979593992233276,
+      "scores_changed_values": 17
+    },
+    {
+      "index": 854,
+      "frame_id": "010987",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 882,
+      "frame_id": "011015",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 909,
+      "frame_id": "011044",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 937,
+      "frame_id": "011530",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 965,
+      "frame_id": "011799",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 127.765625,
+      "boxes_changed_values": 534,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.06653082370758057,
+      "scores_changed_values": 25
+    },
+    {
+      "index": 992,
+      "frame_id": "011827",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 105.59375,
+      "boxes_changed_values": 420,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.09770885109901428,
+      "scores_changed_values": 22
+    },
+    {
+      "index": 1020,
+      "frame_id": "011885",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 125.1875,
+      "boxes_changed_values": 412,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.09638744592666626,
+      "scores_changed_values": 21
+    },
+    {
+      "index": 1047,
+      "frame_id": "011934",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1075,
+      "frame_id": "013745",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 47.84375,
+      "boxes_changed_values": 502,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.10638976097106934,
+      "scores_changed_values": 24
+    },
+    {
+      "index": 1102,
+      "frame_id": "013775",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1130,
+      "frame_id": "013824",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1158,
+      "frame_id": "013871",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1185,
+      "frame_id": "013925",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 177.625,
+      "boxes_changed_values": 370,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.0769076943397522,
+      "scores_changed_values": 16
+    },
+    {
+      "index": 1213,
+      "frame_id": "014259",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 88.4013671875,
+      "boxes_changed_values": 436,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.1631176769733429,
+      "scores_changed_values": 23
+    },
+    {
+      "index": 1240,
+      "frame_id": "014302",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1268,
+      "frame_id": "014337",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1295,
+      "frame_id": "014381",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1323,
+      "frame_id": "014529",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 80.50390625,
+      "boxes_changed_values": 76,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.10743944346904755,
+      "scores_changed_values": 4
+    },
+    {
+      "index": 1351,
+      "frame_id": "017294",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 90.71875,
+      "boxes_changed_values": 130,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.06666851043701172,
+      "scores_changed_values": 13
+    },
+    {
+      "index": 1378,
+      "frame_id": "017342",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 104.9375,
+      "boxes_changed_values": 238,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.030721068382263184,
+      "scores_changed_values": 13
+    },
+    {
+      "index": 1406,
+      "frame_id": "017393",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 51.984375,
+      "boxes_changed_values": 258,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.07030533254146576,
+      "scores_changed_values": 16
+    },
+    {
+      "index": 1433,
+      "frame_id": "017431",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1461,
+      "frame_id": "017777",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 78.390625,
+      "boxes_changed_values": 234,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.07498803734779358,
+      "scores_changed_values": 13
+    },
+    {
+      "index": 1488,
+      "frame_id": "018887",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 133.78125,
+      "boxes_changed_values": 240,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.09182357788085938,
+      "scores_changed_values": 11
+    },
+    {
+      "index": 1516,
+      "frame_id": "018955",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 67.775390625,
+      "boxes_changed_values": 394,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.10486260056495667,
+      "scores_changed_values": 20
+    },
+    {
+      "index": 1544,
+      "frame_id": "018985",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 62.125,
+      "boxes_changed_values": 464,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.09037023782730103,
+      "scores_changed_values": 29
+    },
+    {
+      "index": 1571,
+      "frame_id": "019055",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1599,
+      "frame_id": "019084",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1626,
+      "frame_id": "019832",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1654,
+      "frame_id": "019860",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1681,
+      "frame_id": "019928",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    },
+    {
+      "index": 1709,
+      "frame_id": "019957",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": true,
+      "boxes_max_abs": 124.34375,
+      "boxes_changed_values": 466,
+      "scores_shape_equal": true,
+      "scores_max_abs": 0.1176571249961853,
+      "scores_changed_values": 26
+    },
+    {
+      "index": 1737,
+      "frame_id": "019992",
+      "repeat": 1,
+      "changed_fields": [
+        "boxes",
+        "scores",
+        "packets",
+        "total_bytes"
+      ],
+      "packets_exact": false,
+      "equal_previous": false,
+      "boxes_shape_equal": false,
+      "scores_shape_equal": false
+    }
+  ]
+}

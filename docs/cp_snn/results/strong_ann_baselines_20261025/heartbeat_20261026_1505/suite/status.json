@@ -1,0 +1,33 @@
+{
+  "state": "running",
+  "method": "cosdh_reference",
+  "repeat": 1,
+  "completed": 4,
+  "command": [
+    "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+    "/data2/tzm/cp_snn_recovery_20261026/compute64_source02/opencood/tools/strong_ann_baselines/evaluate_cosdh.py",
+    "--repo",
+    "/data2/tzm/cp_snn_recovery_20261026/cosdh_compute_source01/repo",
+    "--model-dir",
+    "/data2/tzm/cp_snn_recovery_20261026/cosdh_compute_source01/model",
+    "--data-root",
+    "/data2/tzm/cp_snn_recovery_20261026/data_view",
+    "--split",
+    "/data2/tzm/cp_snn_recovery_20261026/ann_evidence/common_val.json",
+    "--gpu",
+    "5",
+    "--limit",
+    "0",
+    "--comm-range",
+    "1000000",
+    "--wire-codec",
+    "--compute-smoke-reference",
+    "/data2/tzm/cp_snn_recovery_20261026/compute_reference64/cosdh",
+    "--output",
+    "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/cosdh_reference_repeat1",
+    "--compute-count",
+    "64",
+    "--compute-repeat",
+    "1"
+  ]
+}

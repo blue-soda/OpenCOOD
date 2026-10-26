@@ -112,3 +112,22 @@ compute64_suite01首次方案二repeat0曾通过GPU准入并启动，但在实�
 结论边界：本次诊断没有发现检测AP输出变化；保留原1738帧AP结果及其原实际通信，不能将其包字节悄悄替换成当前诊断值，也不能因此宣布整个1738帧的发送过程跨运行完全稳定。正式通信逐位门仍失败，SNN速度行继续不可用，不修改阈值凑通过。下一步有界定位该帧的输入/发送计数/排序前缀，并在原因明确后才决定修复与重新复核；不重训模型，不把通信差异掩盖成检测改善。继续原多预算训练（第3轮1051/2339，暂无新AP）及ANN计算队列，不恢复方案三。
 
 诊断记录与序列化回归测试加入后，本机12项计算相关测试通过；新增测试证明仅分数变化也被保留、不能被等价通过。main与181/146同步；运行中的原计算队列使用既有快照，不热改进程。证据：[失败](results/strong_ann_baselines_20261025/heartbeat_20261026_1402/failed64/failure.json)、[128次诊断](results/strong_ann_baselines_20261025/heartbeat_20261026_1402/diagnostic/diagnostic_summary.json)、[解码计数差异](results/strong_ann_baselines_20261025/heartbeat_20261026_1402/diagnostic/packet_difference.json)、[实际与参考指纹](results/strong_ann_baselines_20261025/heartbeat_20261026_1402/diagnostic/mismatch_r0_i0579/fingerprints.json)。回传归档SHA=22de64eec650bc71eb269053eaad4a55435b09534e40903b438c421a477e3042。
+
+
+## 2026-10-26 23:05触发：InfoCom随机平局重放缺陷与SNN主干差异分开定位
+
+原compute64_suite01的InfoCom适配1%和官方10%首轮均在严格等价门失败，未自动重跑。两组固定64帧各两遍的不计时诊断已完成：适配1%共127/128次与参考不一致，64帧跨遍也均不稳定，包含框/分数变化；官方10%只有index937/frame011530两次消息包不一致，所有检测框/分数仍逐位一致。不得将前者归结为小浮点误差，更不能放宽数值门后称通过。
+
+查明官方InfoCom extensions/utils.py的topk_mask在阈值平局时使用torch.randperm，eval也执行。原完整评估按1738帧顺序消耗CUDA RNG，且第0帧3次warmup后恢复random/NumPy/Torch/CUDA随机状态；旧计时入口只重放预处理、跳过中间模型调用，额外warmup又改变CUDA随机序列。因此过去四帧通过不足以覆盖有大量平局的1%适配模型。原完整AP仍是固定seed303及原顺序下的结果，独立CPU复算没有失效；不能把该单次结果说成与随机平局选择无关的稳健性能。
+
+72efd28修复计时入口：按原顺序执行完整输入和模型重放，精确复制第0帧warmup及随后RNG恢复，在64个选中帧前保存CPU/CUDA RNG；重放时就将这些帧的实际包和输出同原参考逐位核对。正式warmup/计时每次在计时外恢复该帧原RNG，再执行真实网络、排序/随机平局选择、codec和接收；只缓存CPU输入/RNG，不缓存输出或消息，不改变官方平局规则/权重/阈值。13项相关测试在本机及181通过，严格GPU门尚待运行，不能提前声称已通过。
+
+仅对这两种InfoCom工作点进行有理由的工程修复复核，仍固定64帧×3轮和原模型/种子，不新增训练。compute64_source03固定72efd28；compute64_infocom_rng02由PID48209等待原compute64_suite01进入终态后，再在同一GPU5检查资源并启动，避免两个监督器争抢同卡。先前rng01监督器PID47419在waiting_for_gpu且无active_child时终止，未执行任何模型，保存superseded_before_model_start记录。新路径每轮先完整RNG重放，任何新差异保留失败且不自动重复；本次有界修复不开展额外ANN参数搜索。
+
+SNN另有独立证据：同GPU6、同权重的4帧/64帧两遍trace中，4帧全部通过，64帧仍仅原004276差异；同一运行内两遍一致。投影前的[1,128,3,50,126]整数体素表征有且仅有一个值不同：[0,100,2,16,110]由3变2，导致同址32通道投影驱动改变（最大绝对差0.4037489891），再少发两个脉冲。差异已出现在3D主干末端，不能再笼统归因于压缩器或仅投影浮点误差。根因仍需区分输入/主干数值及量化边界；未修改模型或容差。
+
+为完成这一次有界定位，GPU6/PID48850按顺序执行scheme2_threshold4_01与scheme2_threshold64_01：额外记录该帧输入体素均值/坐标及最后Count4前目标位置浮点值，所有钩子只观测、不替换张量，仍不计时。两项均1500秒上限、冻结同一代码/检查点；结果出来后先决定最小修复或明确可复现性限制，不继续无限逐层诊断。主训练仍第3轮1351/2339，暂无新验证AP；不因计时问题重启训练或恢复方案三。
+
+CoSDH参考首轮64帧、两种计时边界的128次正式调用已全部通过原预测/双向包逐位等价；原三轮队列继续。仍含重复审计decode/warp，不能用它的时间宣称SNN或InfoCom速度优势。阶段成本结论继续未完成。
+
+证据：[InfoCom适配诊断](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/infocom_adapt1pct_diagnostic01/diagnostic_summary.json)、[官方模型诊断](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/infocom_official10pct_diagnostic01/diagnostic_summary.json)、[SNN输入投影比较](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/scheme2_sender_trace_comparison.json)、[修复后双方法计划](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/compute64_infocom_rng_plan01.json)、[串行依赖启动](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/compute64_infocom_rng02.launch.json)、[量化前观测启动](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/scheme2_threshold_pair.launch.json)。回传归档SHA=4f9892afaf00fe84bfa8a8c6ec3f88c5b3f9296da11babf8190e6a76e337d167。

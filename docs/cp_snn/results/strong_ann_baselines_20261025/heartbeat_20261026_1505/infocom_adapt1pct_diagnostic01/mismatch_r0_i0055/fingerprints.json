@@ -1,0 +1,56 @@
+{
+  "actual": {
+    "frame_id": "000954",
+    "boxes": {
+      "shape": [
+        18,
+        8,
+        3
+      ],
+      "dtype": "<f4",
+      "sha256": "391d3ee555996039986488c9a1a4ac152a027001c44d8a4c2d5ebfb775285662"
+    },
+    "scores": {
+      "shape": [
+        18
+      ],
+      "dtype": "<f4",
+      "sha256": "03a5c237e71e579074876c97e5597d600d8ba23dbc4db38f1cb7ec3ff4f44de3"
+    },
+    "packets": [
+      {
+        "label": "road_to_vehicle_sender1",
+        "bytes": 2295,
+        "sha256": "95adf5beffcdc81857cadcd55671deee487bde3ce771b21d44efae4b6612d16f"
+      }
+    ],
+    "total_bytes": 2295
+  },
+  "expected": {
+    "frame_id": "000954",
+    "boxes": {
+      "shape": [
+        19,
+        8,
+        3
+      ],
+      "dtype": "<f4",
+      "sha256": "d1d3c0e68b99fbc519c7ddea96cd0f72604fa2ba13504956cfbee4aa5e40d340"
+    },
+    "scores": {
+      "shape": [
+        19
+      ],
+      "dtype": "<f4",
+      "sha256": "dacee64922234e7d879d38d5d8b7ed651a5995acf9ad10586f85f5b525fa2d1d"
+    },
+    "packets": [
+      {
+        "label": "road_to_vehicle_sender1",
+        "bytes": 2343,
+        "sha256": "779f07bcc0f56be85c2e5c955596d5bda1466e6f2bb95762f4a222def87e1feb"
+      }
+    ],
+    "total_bytes": 2343
+  }
+}
