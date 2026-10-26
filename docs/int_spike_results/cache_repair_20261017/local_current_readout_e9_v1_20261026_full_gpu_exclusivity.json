@@ -1,0 +1,21 @@
+{
+  "samples": [
+    {
+      "checked_unix": 1793025734.3107777,
+      "foreign_pids": [
+        10911,
+        17055
+      ],
+      "gpu": 1,
+      "pids": [
+        17055,
+        11410,
+        10911
+      ],
+      "scan": 0,
+      "timing_valid": false,
+      "uuid": "GPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76"
+    }
+  ],
+  "status": "INVALID_TIMING"
+}
