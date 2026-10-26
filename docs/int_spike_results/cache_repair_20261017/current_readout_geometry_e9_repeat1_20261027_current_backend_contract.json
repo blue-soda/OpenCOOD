@@ -1,0 +1,9 @@
+{
+  "frames": 512,
+  "limits": "Chunk4096 versus32768, dense masked control and geometry-only fixed-grid lookup with chunk32768. No tile/threshold search. Geometry construction occurs on first use; only steady-state timing after warmup. Geometry memory explicit. Readout-only replay and all discarded states excluded from model timing.",
+  "model_timing": "Uninstrumented synchronized model wall time; rotate/reverse order; peak incremental allocated memory. MAC engineering done in separate first8 replays.",
+  "phase_timing": "Additional readout-only replay every8 frames. Synchronized warp/selection/compute boundaries and nested geometry, gathered first/second convolutions, scatter. Nested times are INCLUDED in compute, not additive to it. Refresh remainder includes mature convolutions. Intrusive times alter scheduling and are NOT model timing.",
+  "scope": "Same canonical previous state/input/final masks. Only row32768 state advances. No independent AP or new selection.",
+  "split": "train",
+  "warmup": 16
+}
