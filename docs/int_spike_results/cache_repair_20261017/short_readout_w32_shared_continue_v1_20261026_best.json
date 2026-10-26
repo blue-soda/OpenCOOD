@@ -1,0 +1,6 @@
+{
+  "ap70": 0.6389364723067741,
+  "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_shared_continue_v1_20261026/epoch_027/repair.pth",
+  "epoch": 27,
+  "sha256": "800d713a0ba49d006b9fafd455a95ae4f8c4367a1d642948a74aec09ebd648c2"
+}

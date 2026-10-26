@@ -1,0 +1,12 @@
+{
+  "causality": "Teacher full output never enters returned student state/confidence. Teacher history is diagnostic only; cannot deploy it without full readout each frame.",
+  "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_shared_continue_v1_20261026/epoch_034/repair.pth",
+  "comparison": "Same real recursive upstream/current input: recursive readout vs repair with previous full readout as history vs warped previous full readout alone.",
+  "controls": "Real recursive prediction and complete readout state replayed against uninstrumented inference on EVERY frame.",
+  "epoch": 34,
+  "frames": 512,
+  "metrics": "Global and teacher-confidence>=.1 foreground relative RMSE, split by depth1/2. Pooled squared error/target energy. No AP or runtime/savings claims.",
+  "sha256": "7ad70788587f134297b63a2f40f83e62f057c254a79b1673129b4f62d56287e7",
+  "split": "train prefix; no fitting",
+  "width": 64
+}

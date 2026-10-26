@@ -1,0 +1,150 @@
+{
+  "actual_trajectory_exact": true,
+  "gpu_samples": [
+    {
+      "checked_unix": 1793013350.6301436,
+      "foreign_pids": [],
+      "gpu": 1,
+      "pids": [
+        60709
+      ],
+      "timing_valid": true,
+      "uuid": "GPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76"
+    },
+    {
+      "checked_unix": 1793013356.4206696,
+      "foreign_pids": [],
+      "gpu": 1,
+      "pids": [
+        60709
+      ],
+      "timing_valid": true,
+      "uuid": "GPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76"
+    },
+    {
+      "checked_unix": 1793013361.9341264,
+      "foreign_pids": [],
+      "gpu": 1,
+      "pids": [
+        60709
+      ],
+      "timing_valid": true,
+      "uuid": "GPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76"
+    },
+    {
+      "checked_unix": 1793013367.6017554,
+      "foreign_pids": [],
+      "gpu": 1,
+      "pids": [
+        60709
+      ],
+      "timing_valid": true,
+      "uuid": "GPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76"
+    },
+    {
+      "checked_unix": 1793013373.3515346,
+      "foreign_pids": [],
+      "gpu": 1,
+      "pids": [
+        60709
+      ],
+      "timing_valid": true,
+      "uuid": "GPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76"
+    }
+  ],
+  "metrics": {
+    "1/recursive/all": {
+      "elements": 1109606400.0,
+      "relative_rmse": 0.19748610943666037,
+      "rmse": 0.12322955366959251,
+      "squared_error": 16849953.39453125,
+      "target_energy": 432041629.875
+    },
+    "1/recursive/foreground": {
+      "elements": 3448832.0,
+      "relative_rmse": 0.480219955641557,
+      "rmse": 0.19458325996740014,
+      "squared_error": 130581.90188598633,
+      "target_energy": 566242.6569213867
+    },
+    "1/teacher_history/all": {
+      "elements": 1109606400.0,
+      "relative_rmse": 0.19748610943666037,
+      "rmse": 0.12322955366959251,
+      "squared_error": 16849953.39453125,
+      "target_energy": 432041629.875
+    },
+    "1/teacher_history/foreground": {
+      "elements": 3448832.0,
+      "relative_rmse": 0.480219955641557,
+      "rmse": 0.19458325996740014,
+      "squared_error": 130581.90188598633,
+      "target_energy": 566242.6569213867
+    },
+    "1/teacher_warp_only/all": {
+      "elements": 1109606400.0,
+      "relative_rmse": 0.20326339218236922,
+      "rmse": 0.12683452607098097,
+      "squared_error": 17850234.83203125,
+      "target_energy": 432041629.875
+    },
+    "1/teacher_warp_only/foreground": {
+      "elements": 3448832.0,
+      "relative_rmse": 0.5273337551822147,
+      "rmse": 0.21367358846452444,
+      "squared_error": 157461.26162719727,
+      "target_energy": 566242.6569213867
+    },
+    "2/recursive/all": {
+      "elements": 1038643200.0,
+      "relative_rmse": 0.26816725790571844,
+      "rmse": 0.1679768262414086,
+      "squared_error": 29306578.9609375,
+      "target_energy": 407524405.5
+    },
+    "2/recursive/foreground": {
+      "elements": 3255808.0,
+      "relative_rmse": 0.6064607400345263,
+      "rmse": 0.2450564298352885,
+      "squared_error": 195519.91067504883,
+      "target_energy": 531600.7770385742
+    },
+    "2/teacher_history/all": {
+      "elements": 1038643200.0,
+      "relative_rmse": 0.21333842108035864,
+      "rmse": 0.13363268569137166,
+      "squared_error": 18547773.15234375,
+      "target_energy": 407524405.5
+    },
+    "2/teacher_history/foreground": {
+      "elements": 3255808.0,
+      "relative_rmse": 0.470498001770168,
+      "rmse": 0.1901171056050068,
+      "squared_error": 117679.59732818604,
+      "target_energy": 531600.7770385742
+    },
+    "2/teacher_warp_only/all": {
+      "elements": 1038643200.0,
+      "relative_rmse": 0.22090381876927245,
+      "rmse": 0.13837156210366136,
+      "squared_error": 19886578.5390625,
+      "target_energy": 407524405.5
+    },
+    "2/teacher_warp_only/foreground": {
+      "elements": 3255808.0,
+      "relative_rmse": 0.5163909718226116,
+      "rmse": 0.20866136849488387,
+      "squared_error": 141756.4695854187,
+      "target_energy": 531600.7770385742
+    }
+  },
+  "note": "Offline conditional feature diagnostic; no teacher-history AP, latency or FLOPs benefit claimed.",
+  "ordinary_by_depth": {
+    "1": 172,
+    "2": 161
+  },
+  "prediction_max_error": 0.0,
+  "refresh_frames": 179,
+  "scans": 512,
+  "status": "COMPLETED"
+}
