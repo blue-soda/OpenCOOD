@@ -1,0 +1,61 @@
+{
+  "pid": 38875,
+  "command": [
+    "timeout",
+    "1800",
+    "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+    "/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/strong_ann_baselines/evaluate_cosdh.py",
+    "--repo",
+    "/data2/tzm/cp_snn_recovery_20261026/cosdh_compute_source01/repo",
+    "--model-dir",
+    "/data2/tzm/cp_snn_recovery_20261026/cosdh_compute_source01/model",
+    "--data-root",
+    "/data2/tzm/cp_snn_recovery_20261026/data_view",
+    "--split",
+    "/data2/tzm/cp_snn_recovery_20261026/ann_evidence/common_val.json",
+    "--output",
+    "/data2/tzm/cp_snn_recovery_20261026/cosdh_compute_smoke01",
+    "--limit",
+    "0",
+    "--gpu",
+    "5",
+    "--wire-codec",
+    "--comm-range",
+    "1000000",
+    "--compute-smoke-reference",
+    "/data2/tzm/cp_snn_recovery_20261026/cosdh_compute_source01/reference"
+  ],
+  "resource_admission": [
+    {
+      "memory_free_mib": 24252,
+      "utilization": 0,
+      "time": 1793017107.7672951
+    },
+    {
+      "memory_free_mib": 24252,
+      "utilization": 0,
+      "time": 1793017109.8038034
+    },
+    {
+      "memory_free_mib": 24252,
+      "utilization": 0,
+      "time": 1793017111.8577998
+    },
+    {
+      "memory_free_mib": 24252,
+      "utilization": 0,
+      "time": 1793017113.9152892
+    },
+    {
+      "memory_free_mib": 24252,
+      "utilization": 0,
+      "time": 1793017115.9757879
+    }
+  ],
+  "log": "/data2/tzm/cp_snn_recovery_20261026/cosdh_compute_smoke01.log",
+  "git_commit": "fe5e5978119940a0a0debeea0c3d24b4cbb7ceed",
+  "source_archive_sha256": "71bac97772034bb3de3df97ccd9e4dd81b2034acad5ec7bbc83fc7ebedbc26a8",
+  "diagnostic_only": true,
+  "launched_unix": 1793017115.981646,
+  "gpu4_rejected_before_launch": true
+}

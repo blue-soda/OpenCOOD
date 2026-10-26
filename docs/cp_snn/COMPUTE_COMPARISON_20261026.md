@@ -64,3 +64,16 @@ InfoCom smoke02已完成：完整有序DataLoader预处理重放后，复用四�
 下一步先为CoSDH接入同样的输入/真实包等价门，明确其审计重复decode/warp；再等待InfoCom最终选模，将冻结后的全部工作点接到共同64帧×3轮计时。参数/显存可独立报告，但正式速度主表必须满足共同边界与干扰记录，不由本轮四帧粗测提前下结论。多预算后续8KiB收尾也需提前检查原6小时监督上限，避免同类超时，不能热改当前模型或减少评估帧。
 
 证据：[InfoCom真实门](results/strong_ann_baselines_20261025/heartbeat_20261026_1012/infocom_compute/compute_summary.json)、[方案二真实门](results/strong_ann_baselines_20261025/heartbeat_20261026_1012/scheme2_compute/compute_summary.json)、[方案二加载/配置/脚本摘要](results/strong_ann_baselines_20261025/heartbeat_20261026_1012/scheme2_compute/compute_protocol.json)。
+
+
+## 2026-10-26 20:10触发后：CoSDH真实计算等价门已启动
+
+fe5e597接入CoSDH真实双向消息计时。CoSDHWire.packets将原finish中的envelope/section拼接分离为无文件IO函数；原正式评估finish仍使用同一组包函数。新adapter在infer返回前完成真实组包，确保双向包头和拼接没有被排除在计时之外；SHA和参考对比放在计时后。warmup与计时复用按原seed303有序重放的四帧CPU输入，每次仍执行完整官方hybrid双前向、选择、编解码、对齐、接收与NMS，不缓存消息或模型结果。
+
+CoSDH官方源b270b69fe133c0c1ca2044ad072cd77fc21863fb、原net_epoch11.pth/config以及全量参考的4帧预测/包从146独立归档至181；归档SHA=71bac97772034bb3de3df97ccd9e4dd81b2034acad5ec7bbc83fc7ebedbc26a8，部署目录cosdh_compute_source01，未覆盖其他项目。运行时借用同181环境已经可用的Python3.7编译扩展。源目录为归档快照无.git，provenance中repo_commit为空，原提交与归档摘要在deployment和launch记录，不把空字段当作来源缺失。
+
+原GPU4在启动前出现其他负载，准入拒绝且没有启动模型；改GPU5五次采样均24252MiB空闲/0%，内存比例上限0.25。smoke01/PID38875已启动，外层1800秒；严格权重键/形状审计通过，进入完整有序数据预处理重放。当前仅启动并通过加载，尚未证明四帧预测/包等价。相关10项CPU测试在本机、181均通过，覆盖组包与原文件导出的字节一致性、计时内组包及禁止旧消息复用。
+
+该门明确保留参考codec中的重复诊断decode/warp，标eligible_for_main_speed_table=false。即使通过，也只能证明计算入口等价，不能直接作优化后CoSDH速度主表；需按预登记有界地消除冗余并再次等价验证，或如实保留不可公平计时的限制。不将四帧结果当作完整64帧×3轮成本，也不将真实GPU稀疏零值直接折算为神经形态AC节能。现有SNN多预算训练未改动。
+
+证据：[准入、命令、来源和PID](results/strong_ann_baselines_20261025/heartbeat_20261026_1210/cosdh_compute_smoke01.launch.json)。下轮检查cosdh_compute_smoke01的compute_summary/failure/status，不重复启动。
