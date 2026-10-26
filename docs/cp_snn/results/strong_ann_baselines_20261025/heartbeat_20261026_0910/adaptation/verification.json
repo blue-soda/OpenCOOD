@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "epochs": [
+    {
+      "epoch": 6,
+      "common_gt_bev_ap": {
+        "0.3": 0.819883813339405,
+        "0.5": 0.7738324298822218,
+        "0.7": 0.6267465033893901
+      },
+      "wire": {
+        "mean": 2376.2077100115075,
+        "median": 2346.0,
+        "p95": 2564.1499999999996,
+        "min": 2148.0,
+        "max": 2612.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "3707132588b062a1a622e7937046113770265d8d7f9c55b83bf5862d75c06a1e",
+      "all_packet_and_prediction_sha_rechecked": true
+    },
+    {
+      "epoch": 7,
+      "common_gt_bev_ap": {
+        "0.3": 0.8140362730500618,
+        "0.5": 0.7680263741364103,
+        "0.7": 0.6262857918488489
+      },
+      "wire": {
+        "mean": 2384.987341772152,
+        "median": 2354.0,
+        "p95": 2579.1499999999996,
+        "min": 2145.0,
+        "max": 2632.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "7aa45caf2135e8328cf84b416af976821bfecbbeee9ccb5e3d3bd6b96e51ab05",
+      "all_packet_and_prediction_sha_rechecked": true
+    }
+  ]
+}

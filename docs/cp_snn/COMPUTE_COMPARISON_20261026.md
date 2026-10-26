@@ -38,3 +38,16 @@
 5项CPU回归验证边界、D2H位置、哈希在计时外、同长度错误包/错帧拒绝、重复方向标签/非有限输出拒绝、warmup排除且保留资源干扰、固定64索引。Windows和181均通过。首次以`opencood.test.test_compute_harness`运行触发仓库原有`opencood/test.py`命名冲突及其外部数据路径错误；改用`unittest discover -s opencood/test -p test_compute_harness.py`正确发现测试，未修改数据或原测试模块。
 
 代码7c4c6f7已推main/181 pull。仅为CPU可验证的计时基础设施，真实模型adapter、显存采集、同卡独占证据、阶段钩子与4帧GPU等价门尚未完成。先用已冻结官方InfoCom10%工作点开发adapter，正式主表仍等待适配选模完成；之后接入SNN/CoSDH。不能将合成adapter测试当成实际检测数值/性能证据。下一轮优先实现并运行真实4帧门，不重复扩充协议文档替代落地。
+
+
+## 2026-10-26 17:10：真实InfoCom adapter已接入，修正输入重放后检查中
+
+14dab83新增compute_infocom_adapter和显式compute-smoke-reference入口，复用既有官方模型严格加载、原生推理/后处理和真实WireAudit；计时中不调用finish写包文件，保留真实encode/decode和接收端使用解码消息。使用官方10%冻结源权重、既有全量参考的4个固定索引0/579/1158/1737及原包SHA；参考来自146已完成1738帧验证，压缩归档SHA=43cfa28f47bcbf7b662c135b6827444da8eda7eca97cd3adf6d23a2266c321e9。源权重和逐帧包未变。
+
+181 GPU2五次准入均24252MiB/0%，smoke01在数值/包内容严格等价门停止，失败已保留。源码检查发现官方评估路径也调用numpy随机shuffle_points；直接随机访问四帧，且每次warmup重新加载/体素化，会改变随机数序列与体素内取点。这是计时输入一致性缺陷，不能放松预测或包的逐位要求来掩盖。
+
+8bbf106改为按原seed和完整有序DataLoader重放预处理，只缓存四帧CPU输入；40次warmup/8次计时复用这些输入，但每次重新执行完整网络、消息选择、实际codec和接收，不缓存模型输出/消息。to_device递归创建新容器，CPU输入保留。已补CPU回归验证不再随机访问数据集、重复调用清空消息及错帧拒绝，连同原计时核心本机7项通过。
+
+基于上述明确修正，smoke02独立目录/PID45902启动，GPU2重新五次准入通过，外层1800秒（包含完整输入重放），无自动重试；smoke01失败保留。当前处于preparing_reference_inputs，**尚未证明修正后四帧等价，也没有受控速度结果**。若仍失败，先输出差异定位，不能继续放松精度门或改模型。现有训练与SNN评估未改动。下一次读取smoke02的compute_summary/failure/status，不能重复启动。
+
+证据：[原始失败](results/strong_ann_baselines_20261025/heartbeat_20261026_0910/compute/infocom_compute_smoke01/failure.json)、[修正后启动与理由](results/strong_ann_baselines_20261025/heartbeat_20261026_0910/compute/infocom_compute_smoke02.launch.json)、[门检查协议](results/strong_ann_baselines_20261025/heartbeat_20261026_0910/compute/infocom_compute_smoke02/compute_protocol.json)。此为有界工程门检查，不是增加研究训练臂；正常中期进展保持静默。

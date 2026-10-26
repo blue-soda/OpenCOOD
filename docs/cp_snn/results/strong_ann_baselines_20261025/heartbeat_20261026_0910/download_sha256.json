@@ -1,0 +1,15 @@
+{
+  "archives": [
+    [
+      "infocom_epoch06_07_evidence.tar.gz",
+      "7d16cd6c04018b66606ec409e5dbb7cd8711d2a9224c454dd2c32a1b3cf51a87",
+      "adaptation"
+    ],
+    [
+      "infocom_compute_gate_progress.tar.gz",
+      "ad4857d90c55f4b6b38574a9414fe291a0f8e0a147797494cf0b653b5424129f",
+      "compute"
+    ]
+  ],
+  "local_index_sha_and_mean_verified": true
+}

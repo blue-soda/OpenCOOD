@@ -106,3 +106,17 @@ SNN多预算第2轮451/2339批，固定组8KiB评估继续。old_snn的0/2/3/4/6
 并行实现统一计算计时核心，5项CPU回归在本机和181通过；尚未接入真实模型adapter或运行受控GPU对照，不能当作计算结果。下一步先接入一个冻结工作点的4帧输出/真实bytes等价门，再依协议接入其余方法；不修改当前训练进程的快照。见[计算测量准备](COMPUTE_COMPARISON_20261026.md)。
 
 证据：[第5轮核验](results/strong_ann_baselines_20261025/infocom_adaptation_epoch05_20261026/verification.json)、[逐帧通信](results/strong_ann_baselines_20261025/infocom_adaptation_epoch05_20261026/epoch05/per_frame_bytes.csv)、[历史及选模](results/strong_ann_baselines_20261025/infocom_adaptation_epoch05_20261026/history.json)。正常中期结果不逐轮通知，保留全部正负结果。
+
+
+## 2026-10-26 17:10触发：第6/7轮复核完成，继续原定训练
+
+| epoch | 共同GT AP30 (%) | AP50 (%) | AP70 (%) | 平均B/帧 | P95 B | 最大B |
+|---|---:|---:|---:|---:|---:|---:|
+| 6 | 81.98838 | 77.38324 | 62.67465 | 2376.208 | 2564.15 | 2612 |
+| 7 | 81.40363 | 76.80264 | 62.62858 | 2384.987 | 2579.15 | 2632 |
+
+两轮1738帧包/预测SHA及真实解码已重新核验，采用共同28622 GT的CPU AP；本机确认压缩索引解压SHA和均值。最佳更新为第6轮，第7轮没有改善；第8轮850/2339步，按既定日程lr降至1.5e-5，没有新增调参。InfoCom仍未完成10轮及最终四比例曲线，通信仍大于2KiB，路线判断未变。
+
+SNN多预算第2轮1951/2339，8KiB收尾1385/1738帧，监督正常。本轮并行接入实际InfoCom计时adapter，原始4帧等价门未通过；已发现重复预处理会重新shuffle_points，按有依据的输入一致性修正保留原失败并启动第二次门检查，见[计算测量准备](COMPUTE_COMPARISON_20261026.md)。不修改正在训练的快照，不将开发门检查失败混为训练失败或新AP。
+
+证据：[第6/7轮审计](results/strong_ann_baselines_20261025/heartbeat_20261026_0910/adaptation/verification.json)、[训练历史](results/strong_ann_baselines_20261025/heartbeat_20261026_0910/adaptation/history.json)。

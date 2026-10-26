@@ -1,0 +1,31 @@
+{
+  "smoke_only": true,
+  "not_a_performance_result": true,
+  "indices": [
+    0,
+    579,
+    1158,
+    1737
+  ],
+  "ids": [
+    "000211",
+    "004276",
+    "013871",
+    "019992"
+  ],
+  "checkpoint_sha256": "7375da04507b4f543666e15aa02897e41e3c32e08bcb3f74b27ad49fb28c803c",
+  "reference_summary_sha256": "3001ee754852df6775b130fcfe958954439b667205ad57d4f887545cffc55ee4",
+  "reference_index_sha256": "b8b70e63d97abb8d451e6c78f9d54f2224fc5be6ab347817899fe8b6e13f486e",
+  "warmup": 20,
+  "scopes": [
+    "ready_cpu_batch_to_cpu_boxes",
+    "device_batch_to_cpu_boxes"
+  ],
+  "real_codec": true,
+  "packet_file_io_inside_timing": false,
+  "reference_validation_outside_timing": true,
+  "retains_reference_codec_roundtrip_checks": true,
+  "model_weight_updates": false,
+  "script_sha256": "6535dfd7a65568691326c2bc11527988c07c1d068649ca339b4386b681739be0",
+  "harness_sha256": "0b41197297e5d21bdf4b1f96ffb8f8127d2cceab24162de707f3e66f83a41346"
+}

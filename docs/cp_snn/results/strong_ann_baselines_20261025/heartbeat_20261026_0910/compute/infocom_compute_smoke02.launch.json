@@ -1,0 +1,54 @@
+{
+  "pid": 45902,
+  "gpu": 2,
+  "admission": [
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ]
+  ],
+  "command": [
+    "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+    "/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/strong_ann_baselines/evaluate_infocom.py",
+    "--repo",
+    "/data2/tzm/cp_snn_recovery_20261026/InfoCom",
+    "--model-dir",
+    "/data2/tzm/cp_snn_recovery_20261026",
+    "--data-root",
+    "/data2/tzm/cp_snn_recovery_20261026/data_view",
+    "--split",
+    "/data2/tzm/cp_snn_recovery_20261026/ann_evidence/common_val.json",
+    "--output",
+    "/data2/tzm/cp_snn_recovery_20261026/infocom_compute_smoke02",
+    "--gpu",
+    "2",
+    "--limit",
+    "0",
+    "--comm-range",
+    "1000000",
+    "--checkpoint-compat",
+    "--wire-codec",
+    "--compute-smoke-reference",
+    "/data2/tzm/cp_snn_recovery_20261026/infocom_compute_reference4"
+  ],
+  "smoke_only": true,
+  "timeout_seconds": 1800,
+  "unix": 1793006067.9378982,
+  "reason": "Explicit preprocessing fix: official eval shuffle_points requires ordered RNG replay and fixed CPU inputs; smoke01 preserved, no model or codec change"
+}

@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "samples": 1738,
+  "all_packet_and_prediction_sha_verified": true,
+  "envelope_and_shapes_verified": true,
+  "source_index_sha256": "2027cbe9bbf7f5b2e6f2bfe59be66cc3d761fbdd277db71e944b3c510c3d1e74"
+}
