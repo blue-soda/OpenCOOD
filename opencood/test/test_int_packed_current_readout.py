@@ -32,7 +32,7 @@ class TestPackedCurrentReadout(unittest.TestCase):
             left['confidence']=confidence;packed.set_confidence(right,confidence)
             self.assertTrue(torch.equal(right['confidence'],confidence))
             if old is not None:self.assertTrue(torch.equal(old['packed'],before))
-            current[:,:,8:10,9:11]+=.1
+            current=current.clone();current[:,:,8:10,9:11]+=.1
         self.assertEqual(packed.geometry_bytes,24*32*3*4)
 
     @torch.no_grad()
