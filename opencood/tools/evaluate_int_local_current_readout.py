@@ -28,6 +28,9 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
     modes['current_dense'].readout_cache=ShortReadoutState(baseline.readout,repair,baseline.bounds,3)
     for name,backend in (('current_local','selected'),('current_masked_dense','masked_dense')):
         modes[name].readout_cache=LocalCurrentReadoutCache(baseline.readout,repair,baseline.bounds,threshold,backend)
+    if a.current_readout_geometry:
+        modes['current_geometry']=RecurrentDeepDetector(baseline,deep_repair,4)
+        modes['current_geometry'].readout_cache=LocalCurrentReadoutCache(baseline.readout,repair,baseline.bounds,threshold,cache_geometry=True)
     policy=dict(checkpoint=str(path),sha256=digest(path),epoch=saved['epoch'],kind='current',
         calibration=dict(path=str(calibration_path),sha256=digest(calibration_path),threshold=threshold),
         selection='Transfer existing512-train calibrated threshold unchanged; compare actual current96 input to own retained reference; content dilation2, own confidence>=.1 dilation4, uncovered always selected. No new fit on validation.',
@@ -39,15 +42,19 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
     if a.current_readout_profile:
         from opencood.tools.profile_int_current_readout import profile
         return profile(a,cfg,train,modes['current_local'],out,costs,spatial_macs)
-    def replay(ego,previous,meta,pred,state,info):
-        mode=modes['current_local'];cache=mode.readout_cache;mask=cache.last_mask.clone();cache.backend='masked_dense'
+    policy['geometry_comparison']=bool(a.current_readout_geometry)
+    if a.current_readout_geometry:
+        policy['geometry_policy']='Independent same-selection trajectory. Fixed H/W/device neighbor table only; memory counted separately. First-use construction included in full evaluation timing.'
+    write_json(out/'local_current_contract.json',policy)
+    def replay(ego,previous,meta,pred,state,info,name='current_local'):
+        mode=modes[name];cache=mode.readout_cache;mask=cache.last_mask.clone();cache.backend='masked_dense'
         try:other,other_state,_=mode.step(ego,previous,meta)
         finally:cache.backend='selected'
         assert torch.equal(mask,cache.last_mask)
         for k in pred:assert torch.allclose(pred[k],other[k],atol=1e-3,rtol=1e-3)
         assert torch.allclose(state['readout']['value'],other_state['readout']['value'],atol=1e-3,rtol=1e-3)
         assert torch.equal(state['readout']['reference'],other_state['readout']['reference'])
-        return dict(prediction_max_error=max(float((pred[k]-other[k]).abs().max()) for k in pred),
+        return dict(mode=name,prediction_max_error=max(float((pred[k]-other[k]).abs().max()) for k in pred),
             state_max_error=float((state['readout']['value']-other_state['readout']['value']).abs().max()))
     states={k:None for k in modes};records=[];partial=0
     _,stream=loader(train[:32],cfg,0,303)
@@ -60,18 +67,18 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
                 finally:counter.close()
                 actual=counter.total+info['spatial_extra_linear_macs']+info.get('readout_extra_linear_macs',0)
                 assert actual==cost_of(costs,spatial_macs,info,True),(name,actual,cost_of(costs,spatial_macs,info,True))
-                if name=='current_local':
-                    records.append(replay(ego,previous,meta,pred,states[name],info))
-                    partial+=int(not info['readout_refresh'] and info['readout_write_fraction']<1.)
+                if name in ('current_local','current_geometry'):
+                    records.append(replay(ego,previous,meta,pred,states[name],info,name))
+                    if name=='current_local':partial+=int(not info['readout_refresh'] and info['readout_write_fraction']<1.)
     assert partial>0
     write_json(out/'local_current_engineering.json',dict(status='PASSED',frames=32,actual_sparse_frames=partial,actual_macs_verified=True,
         max_prediction_error=max(r['prediction_max_error'] for r in records),max_state_error=max(r['state_max_error'] for r in records)))
     audits=[];areas=[]
     def audit(name,ego,previous,meta,pred,state,info,index):
-        if name=='current_local':
-            areas.append(dict(scan=index+1,refresh=info['readout_refresh'],core=info['readout_write_fraction'],first_support=info['readout_first_support_fraction'],executed_macs=info['readout_executed_macs']))
+        if name in ('current_local','current_geometry'):
+            areas.append(dict(mode=name,scan=index+1,refresh=info['readout_refresh'],core=info['readout_write_fraction'],first_support=info['readout_first_support_fraction'],executed_macs=info['readout_executed_macs']))
             if index%200==0:
-                audits.append(replay(ego,previous,meta,pred,state,info));write_json(out/'local_current_replays.json',audits)
+                audits.append(replay(ego,previous,meta,pred,state,info,name));write_json(out/'local_current_replays.json',audits)
     directory=out/'full';directory.mkdir()
     report=evaluate(a,baseline,None,cfg,val,directory,costs,spatial_macs,'local_current',variants=modes,
         expected_ap={'dense_recurrent':expected,'current_dense':trained['results']['short_readout']['ap70']},audit=audit,share_gpu=True,
