@@ -134,3 +134,23 @@ SNN多预算第2轮1951/2339，8KiB收尾1385/1738帧，监督正常。本轮并
 SNN多预算第2轮2251/2339，固定组8KiB收尾1627/1738，监督健康。InfoCom及方案二的实际计时接口各通过四帧严格预测/包内容等价门，详见[计算准备](COMPUTE_COMPARISON_20261026.md)；这是测量工具验证，不是新AP或速度优势。等待主实验完整结果，正常中期不重复通知。
 
 证据：[本轮复核](results/strong_ann_baselines_20261025/heartbeat_20261026_1012/verification.json)、[完整训练历史](results/strong_ann_baselines_20261025/heartbeat_20261026_1012/adaptation/history.json)。
+
+
+## 2026-10-26 19:10触发：10轮训练完成，最佳模型四比例收尾中
+
+InfoCom正式适配完成10轮。第10轮AP70=62.77516%，按原规则选择第8轮62.87639%；导出的最佳权重SHA=653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a。重新序列化best的文件SHA不同于第8轮candidate文件，不将文件SHA差异当作参数改变；最终1%预测/包及AP复核可与第8轮结果核对。状态trained仅表示训练完成，不等于全部收尾完成。
+
+| 最佳模型空间比例 | AP30 (%) | AP50 (%) | AP70 (%) | 平均B/帧 | P95 B | 最大B | 状态 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 1% | 81.85335 | 77.24909 | 62.87639 | 2389.707 | 2586 | 2635 | 全量wire/共同GT复核 |
+| 2.5% | 81.96951 | 77.58036 | 63.37953 | 2735.560 | 3155.15 | 3235 | 全量wire/共同GT复核 |
+| 5% | — | — | — | — | — | — | 正在执行 |
+| 10% | — | — | — | — | — | — | 待执行 |
+
+已完成两点均1738帧/28622 GT，真实包和预测重新全量SHA/身份/解码检查，共同GT CPU AP；本机验证索引SHA与均值。1%汇总AP与通信统计等于第8轮验证。不能以训练完成代替四比例完整结果；不追加训练，不因2.5%AP更高改变预登记1%选模规则。
+
+此时SNN固定组完整曲线显示8KiB AP70显著退化，见[固定组完整结果](SCHEME2_JOINT_OPTIMIZATION_20261025.md)。SNN 2KiB是较低通信/较低AP的工作点，但历史同平均字节的InfoCom首轮已超过它，仍不能宣称SNN精度—通信优势。继续多预算臂和统一计算，按完整证据讨论不同资源折中，不以新复杂度替代公平对照。
+
+证据：[已完成比例与独立核验](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/verification.json)、[选模记录](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/infocom/best/selection.json)、[训练历史](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/infocom/history.json)、[真实逐帧1%通信](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/infocom/ratio0.01/per_frame_bytes.csv)。
+
+补充核验：最终1%全部1738帧预测框、分数、GT数组及实际包内容与选中第8轮验证逐位一致，已保存final_1pct_selection_equivalence.json。最佳net_epoch0.pth及config/selection已备份到本机baseline_repro_20261025/infocom_adapt_best_epoch8，权重SHA核对为653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a；大权重不纳入Git。

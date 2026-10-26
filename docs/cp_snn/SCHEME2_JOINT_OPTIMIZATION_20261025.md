@@ -147,3 +147,23 @@ fixed2k第9轮851/2339批，最佳仍第6轮58.85365%；多预算第1轮1201/233
 新监督窗口为36小时；到期仅标needs_attention，保留评估进程，不自动重试。子进程结束后必须有evaluation.json，再做同一8KiB独立CPU复算、全四预算完整预测/包/GT核验，全部通过才写summary和complete。失败保留，不跳过坏帧，不覆盖旧0/2/4KiB结果。此改动解决工程超时风险，不构成AP/通信或计算收益。
 
 证据：[精确进程与哈希](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/snn_eval_supervision/eval_supervision_handoff.json)、[交接成功](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/snn_eval_supervision/eval_supervision_accepted.json)、[观察进度](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/verification.json)。代码29e38d1已提交main、181拉取并运行。多预算SNN仍第2轮，old_snn仍原full收尾；没有其他任务被终止。
+
+
+## 2026-10-26 19:10触发：固定预算组四点完整结束
+
+固定2KiB训练组10轮及同一个第6轮最佳的0/2/4/8KiB最终复核全部完成。监督状态complete；重新核验四点全部1738帧预测/包SHA、身份和每帧硬预算，独立CPU AP/3D AP逐值等于在线结果，四点共同GT摘要均为54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee。总汇总SHA=6721748e749d33534c4b76ab5c1ed585692d66fb5ae79bb0a76b351c7b8a43ea，回传后核验汇总及8KiB索引/字节总数。
+
+| 硬预算 B | AP30 (%) | AP50 (%) | AP70 (%) | 平均 B/帧 | P95 B | 最大 B |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 71.96681 | 67.94576 | 57.67396 | 0.000 | 0 | 0 |
+| 2048 | 77.19168 | 72.13967 | 58.85365 | 2046.886 | 2048 | 2048 |
+| 4096 | 78.23758 | 72.85190 | 57.97232 | 4091.599 | 4096 | 4096 |
+| 8192 | 77.68645 | 71.44463 | 54.29342 | 8182.514 | 8192 | 8192 |
+
+核心结论：2KiB点保留58.85365%的有效改进（源58.23401%，+0.61964个百分点；自身零通信57.67396%，+1.17969个百分点），但4KiB退化0.88133个百分点，8KiB较2KiB退化4.56024个百分点，并低于自身零通信3.38055个百分点。固定预算模型没有证明“更多消息带来更好精度”，不能用AP30上升替代AP70硬指标。大预算输入分布与固定2KiB训练不匹配是待检验解释，不是由这条曲线独立证明的唯一机制原因；现有多预算臂正用于检验，不需因此恢复方案三或增加参数搜索。
+
+补充3D AP70按0/2/4/8KiB为40.53810% / 40.51586% / 38.74190% / 33.42375%。按用户约定正文AP为BEV；上述3D补充不得混作主AP结论。原监督交接保留了评估进程，最终8KiB完整完成，无重算/跳帧。
+
+多预算组第2轮2KiB验证58.12877%/2045.772 B，现第3轮151/2339；尚未到10轮退出点，不能据前两轮关闭训练或宣布失败。继续原计划，同时完成适配ANN四比例及统一计算测量；固定组不再追加训练/预算点。
+
+证据：[四点重新核验](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/verification.json)、[完整汇总gzip](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/fixed/summary.json.gz)、[8KiB独立CPU复算](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/fixed/b8192/offline_replay.json)、[8KiB逐帧bytes](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/fixed/b8192/per_frame_bytes.csv)。原始完整预测/包仍在181，已有0/2/4KiB分阶段证据保留。

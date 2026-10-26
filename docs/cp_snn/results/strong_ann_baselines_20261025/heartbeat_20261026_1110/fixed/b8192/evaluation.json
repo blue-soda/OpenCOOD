@@ -1,0 +1,69 @@
+{
+  "samples": 1738,
+  "indexed_samples": 1738,
+  "full_split": true,
+  "predicted_boxes": 35184,
+  "gt_boxes": 28622,
+  "metric": "BEV and upright 3D AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+  "ap": {
+    "0.3": 0.7768645492173217,
+    "0.5": 0.7144462989724741,
+    "0.7": 0.5429341847252771
+  },
+  "ap_3d": {
+    "0.3": 0.7547411024685804,
+    "0.5": 0.6272484655914025,
+    "0.7": 0.3342374667568453
+  },
+  "ap_convention": "VOC2010 precision-envelope integral; global score sorting; not KITTI R11/R40",
+  "iou_3d": "rotated BEV intersection area times height overlap / volume union",
+  "predictions": {
+    "directory": "predictions",
+    "frames": 1738,
+    "index_sha256": "d0375eb85a184377604b4a75d18f3542e0cfca10570862d984f69f64da2b8a86"
+  },
+  "feature_packets": {
+    "count": 1738,
+    "mean_bytes": 8182.514384349827,
+    "median_bytes": 8184.0,
+    "min_bytes": 8147,
+    "max_bytes": 8192,
+    "p95_bytes": 8192.0,
+    "total_bytes": 14221210,
+    "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+  },
+  "profile": {
+    "batch_size": 1,
+    "warmup_frames_excluded": 20,
+    "timed_frames": 1718,
+    "milliseconds": {
+      "batch_wait_ms": {
+        "mean": 9.108691383180306,
+        "median": 8.756199036724865,
+        "p95": 13.076326972804962
+      },
+      "h2d_ms": {
+        "mean": 11.187174856474101,
+        "median": 10.241359937936068,
+        "p95": 22.906268981751047
+      },
+      "forward_ms": {
+        "mean": 15821.33293703412,
+        "median": 15339.348917012103,
+        "p95": 20366.72160810558
+      },
+      "postprocess_ms": {
+        "mean": 34.52898864634335,
+        "median": 31.282829004339874,
+        "p95": 77.3747508181259
+      },
+      "ready_batch_inference_ms": {
+        "mean": 15867.049100536937,
+        "median": 15384.963190066628,
+        "p95": 20424.01686870726
+      }
+    },
+    "peak_allocated_bytes": 239884800,
+    "scope": "CUDA-synchronized wall time. Ready-batch inference includes H2D, forward, decode/NMS; excludes AP, export and loader preprocessing. Batch wait is separately measured with prefetched workers; shared-server measurement, not isolated end-to-end latency."
+  }
+}

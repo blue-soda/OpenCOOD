@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checkpoint_sha256": "653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a",
+  "checkpoint_bytes": 479600153,
+  "local_path": "C:\\Workspace\\OpenCOOD\\baseline_repro_20261025\\infocom_adapt_best_epoch8\\net_epoch0.pth",
+  "selected_epoch": 8,
+  "large_checkpoint_not_in_git": true
+}

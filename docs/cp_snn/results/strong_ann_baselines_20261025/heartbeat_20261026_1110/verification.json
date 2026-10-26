@@ -1,0 +1,147 @@
+{
+  "passed": true,
+  "fixed_complete": true,
+  "fixed": [
+    {
+      "budget": 0,
+      "ap": {
+        "0.3": 0.7196680896372082,
+        "0.5": 0.6794575669127538,
+        "0.7": 0.5767396447209762
+      },
+      "ap_3d": {
+        "0.3": 0.7060393924814182,
+        "0.5": 0.6331158748089958,
+        "0.7": 0.4053810039534817
+      },
+      "bytes": {
+        "count": 1738,
+        "mean_bytes": 0.0,
+        "median_bytes": 0.0,
+        "min_bytes": 0,
+        "max_bytes": 0,
+        "p95_bytes": 0.0,
+        "total_bytes": 0,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "ordered_gt_sha256": "54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee",
+      "all_packets_and_predictions_verified": true
+    },
+    {
+      "budget": 2048,
+      "ap": {
+        "0.3": 0.7719168358760412,
+        "0.5": 0.7213966768772077,
+        "0.7": 0.5885365413004336
+      },
+      "ap_3d": {
+        "0.3": 0.757009688144081,
+        "0.5": 0.6612020051936349,
+        "0.7": 0.4051585784678716
+      },
+      "bytes": {
+        "count": 1738,
+        "mean_bytes": 2046.885500575374,
+        "median_bytes": 2047.0,
+        "min_bytes": 2041,
+        "max_bytes": 2048,
+        "p95_bytes": 2048.0,
+        "total_bytes": 3557487,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "ordered_gt_sha256": "54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee",
+      "all_packets_and_predictions_verified": true
+    },
+    {
+      "budget": 4096,
+      "ap": {
+        "0.3": 0.7823757972546946,
+        "0.5": 0.7285189814529395,
+        "0.7": 0.5797232141256051
+      },
+      "ap_3d": {
+        "0.3": 0.7659815015269256,
+        "0.5": 0.6609701123625491,
+        "0.7": 0.3874190124975808
+      },
+      "bytes": {
+        "count": 1738,
+        "mean_bytes": 4091.5989643268126,
+        "median_bytes": 4093.0,
+        "min_bytes": 4066,
+        "max_bytes": 4096,
+        "p95_bytes": 4096.0,
+        "total_bytes": 7111199,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "ordered_gt_sha256": "54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee",
+      "all_packets_and_predictions_verified": true
+    },
+    {
+      "budget": 8192,
+      "ap": {
+        "0.3": 0.7768645492173217,
+        "0.5": 0.7144462989724741,
+        "0.7": 0.5429341847252771
+      },
+      "ap_3d": {
+        "0.3": 0.7547411024685804,
+        "0.5": 0.6272484655914025,
+        "0.7": 0.3342374667568453
+      },
+      "bytes": {
+        "count": 1738,
+        "mean_bytes": 8182.514384349827,
+        "median_bytes": 8184.0,
+        "min_bytes": 8147,
+        "max_bytes": 8192,
+        "p95_bytes": 8192.0,
+        "total_bytes": 14221210,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "ordered_gt_sha256": "54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee",
+      "all_packets_and_predictions_verified": true
+    }
+  ],
+  "infocom_training_epochs": 10,
+  "infocom_best_epoch": 8,
+  "infocom_final_verified": [
+    {
+      "ratio": 0.01,
+      "ap": {
+        "0.3": 0.8185334984481274,
+        "0.5": 0.7724909129994161,
+        "0.7": 0.6287639302839104
+      },
+      "bytes": {
+        "mean": 2389.707134637514,
+        "median": 2356.0,
+        "p95": 2586.0,
+        "min": 2144.0,
+        "max": 2635.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a",
+      "all_packets_and_predictions_verified": true
+    },
+    {
+      "ratio": 0.025,
+      "ap": {
+        "0.3": 0.8196951217485196,
+        "0.5": 0.7758035905828385,
+        "0.7": 0.6337952501335072
+      },
+      "bytes": {
+        "mean": 2735.559838895282,
+        "median": 2683.0,
+        "p95": 3155.1499999999996,
+        "min": 2327.0,
+        "max": 3235.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a",
+      "all_packets_and_predictions_verified": true
+    }
+  ],
+  "infocom_final_complete": false
+}
