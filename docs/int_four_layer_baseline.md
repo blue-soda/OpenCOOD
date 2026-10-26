@@ -710,3 +710,14 @@ recurrent_readout_layout_v1_20261026完成5794扫描/1738标注，timing_valid=t
 上述轮次均lr1e-4/stale0，尚未触发平台降学习率。宽64 epoch15仍比成熟四帧D控制低11.65982个百分点；当前只能确认继续可学习，不能称为精度达标或收敛。宽32最新epoch13验证3200/5794，宽64epoch16训练2400/8593；GPU1/2仍仅各自PID29800/44906，无新的争用证据。不修改训练结构/损失，不启动重复实验，先完成既定训练与平台判断；原75.5387%/99.29G方案仍保留为已验证工作点。
 
 新增报告、隔离证据、history/best/status已归档。异机备份更新为146 CPU存储/data1/zhh/gzc/int181_snapshot/live_backups/short_readout_20261026_1205.tar.gz，1706168字节，SHA256=5c4c11265c33bb6cfa88c25e707c1a4c1a1a22d7e23a2dc3e1bb224f3136d528，两端校验一致，所有pth可解析。宽32latest为完整epoch12、pending为训练已完待验证epoch13，恢复优先pending；宽64latest为完整epoch15、pending仍为已评估epoch15，应从latest进入epoch16。data2剩余1880166400字节，未删除其他文件或操作其他账号进程。保持40分钟路线级检查，目前无新的完成事件或需用户操作的异常。
+### 2026-10-26 13:24：再次遇GPU争用，迁移空闲卡并从待验证断点恢复
+
+新增完整评估均5794/1738，原固定基线与四帧D控制AP精确复现。宽32epoch13 AP70=60.73751292%、loss=0.26251716；宽64epoch16/17/18/19 AP70分别64.14241832%/64.22367676%/64.48313019%/64.68757283%，loss分别0.23930859/0.23759458/0.23606382/0.23460430。以上lr仍1e-4、stale0，尚未触发平台。宽64第19轮完成全部精度评估，但发生短暂GPU争用，timing_valid=false；其AP保留，延迟不能用于性能结论。其余上述轮次timing_valid=true，不把所有完整评估一概称为计时有效。
+
+两组resume1随后分别在宽32epoch14验证3200扫描、宽64epoch20验证1000扫描遇持续两次GPU争用：GPU2 PID6858/UID1001，GPU1 PID36234/UID1003。保护仅停止本研究进程；失败状态和INVALID_TIMING证据原样保存，未完成轮次无有效AP。已检查两组pending完整可解析，分别epoch14/20、next_action=evaluate，训练无需重做。
+
+181当前GPU3/5空闲，已启动short_readout_w32_resume2_v1_20261026（GPU3/PID37093）和short_readout_w64_resume2_v1_20261026（GPU5/PID37256），继续最大24epoch并保留optimizer/scheduler/历史。恢复源pending SHA256分别5d47a787beccebd4964b5525d8cfb066919c12c18e325980ee7828e97416b5bd、8c6c9c0cd2b7c07e4992c21edb55fdcaf31faf0208635b0312372e269b8e81dc。两档各228项测试通过（8.355/7.850秒），32扫描工程通过；已分别进入epoch14/20完整验证200/5794。没有改动模型或干预其他进程。
+
+新恢复断点已备份146 CPU存储/data1/zhh/gzc/int181_snapshot/live_backups/short_readout_20261026_1322.tar.gz，1940153字节，SHA256=34f821fcd7af520a213d0bb76a60e3a2b7148b3358eff375e4445532c8a01704，两端一致。含完整latest（13/19）及较新的pending（14/20）、best、合同和失败证据；所有pth可解析。共享data2本轮可用157560070144字节，空间压力已缓解，本研究未执行清理。完整结果与恢复证据已归档，按本地main push→181 pull同步。
+
+宽64当前仍比成熟四帧D控制低10.86359个百分点，不以较低GFLOPs包装未达标精度。继续原训练至平台/预算决策；宽64到24epoch时应重新判断延长的边际价值和结构诊断，不能把预算结束当成收敛，也不无依据重置优化器或反复只跑短训。GPU隔离保护导致的中断不构成网络不稳定证据，保持40分钟检查及已验证75.5387%/99.29G工作点。

@@ -1,0 +1,81 @@
+{
+  "error": "GPUContention('GPU 1 contention with PIDs [36234]; discard timing and stop only this benchmark')",
+  "evidence": [
+    {
+      "checked_unix": 1792991798.4544573,
+      "processes": [
+        {
+          "Name": "gaussian_cull_r",
+          "PPid": "1",
+          "Uid": "1003\t1003\t1003\t1003",
+          "pid": 36234
+        }
+      ]
+    },
+    {
+      "checked_unix": 1792991799.894314,
+      "processes": [
+        {
+          "Name": "gaussian_cull_r",
+          "PPid": "1",
+          "Uid": "1003\t1003\t1003\t1003",
+          "pid": 36234
+        }
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "checked_unix": 1792991670.158478,
+      "gpu": 1,
+      "pids": [
+        29800
+      ],
+      "scan": 0,
+      "timing_valid": true,
+      "uuid": "GPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76"
+    },
+    {
+      "checked_unix": 1792991686.3530095,
+      "gpu": 1,
+      "pids": [
+        29800
+      ],
+      "scan": 200,
+      "timing_valid": true,
+      "uuid": "GPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76"
+    },
+    {
+      "checked_unix": 1792991731.258695,
+      "gpu": 1,
+      "pids": [
+        29800
+      ],
+      "scan": 400,
+      "timing_valid": true,
+      "uuid": "GPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76"
+    },
+    {
+      "checked_unix": 1792991750.4215689,
+      "gpu": 1,
+      "pids": [
+        29800
+      ],
+      "scan": 600,
+      "timing_valid": true,
+      "uuid": "GPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76"
+    },
+    {
+      "checked_unix": 1792991768.9373865,
+      "gpu": 1,
+      "pids": [
+        29800
+      ],
+      "scan": 800,
+      "timing_valid": true,
+      "uuid": "GPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76"
+    }
+  ],
+  "scan": 1000,
+  "status": "INVALID_TIMING"
+}

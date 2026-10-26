@@ -1,0 +1,9 @@
+{
+  "actual_macs_verified": true,
+  "frames": 32,
+  "gradient_only_short_updater": true,
+  "partial_frames": 21,
+  "period1_max_error": 0.0,
+  "status": "PASSED",
+  "teacher_on_off_exact": true
+}

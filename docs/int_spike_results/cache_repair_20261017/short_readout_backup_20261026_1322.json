@@ -1,0 +1,135 @@
+{
+  "archive": "/dev/shm/tzm_short_readout_20261026_1322.tar.gz",
+  "bytes": 1940153,
+  "sha256": "34f821fcd7af520a213d0bb76a60e3a2b7148b3358eff375e4445532c8a01704",
+  "files": [
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume1_v1_20261026/latest.pth",
+      "bytes": 258863,
+      "sha256": "1d8eac7e3e4c38a0849c37eccab22de2da5afa580ceaa9e0430361462d34988b",
+      "epoch": 13,
+      "next_action": "train"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume1_v1_20261026/pending_validation.pth",
+      "bytes": 309487,
+      "sha256": "5d47a787beccebd4964b5525d8cfb066919c12c18e325980ee7828e97416b5bd",
+      "epoch": 14,
+      "next_action": "evaluate"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume1_v1_20261026/best.json",
+      "bytes": 265,
+      "sha256": "7cf8febcfeef97dfe7740b6646e3d2cc2973ea6fc5055daf04aea57b45bf8fc0"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume1_v1_20261026/history.json",
+      "bytes": 33528,
+      "sha256": "0590f68a37b9efc18a05818e18a69024e0cb3c3214e4f7bcd1252e79b256cbeb"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume1_v1_20261026/short_readout_contract.json",
+      "bytes": 3603,
+      "sha256": "adfed2d1281a3c4ca31ba3dacd8176f8a846d8d66e92965819987a315b02f16c"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume1_v1_20261026/contract.json",
+      "bytes": 12551,
+      "sha256": "1cc681fb0e509518798d2d93afb14155f67457183fabb2a413784886019c3404"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume1_v1_20261026/resume.json",
+      "bytes": 257,
+      "sha256": "7aaefd37ef395f9a102cbc405c2aaf6cbd575a64697964b2a5f3f6488b8fd698"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume1_v1_20261026/status.json",
+      "bytes": 135,
+      "sha256": "2db9deb368d2a847e0f2c797fde033a63c76f1fb37e9a7f48f50a9e39662fe8e"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume1_v1_20261026/epoch_014/gpu_exclusivity.json",
+      "bytes": 4070,
+      "sha256": "28637c52e1705d16f5d473e8a4817f35c6e72046820335b00ff6f3b29e8f8bb9"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume1_v1_20261026/epoch_013/repair.pth",
+      "bytes": 85655,
+      "sha256": "20d53785aa4a38a1488fe67721f2d99567cdefa7d514ea7218e07b90b987ad56",
+      "epoch": 13,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume1_v1_20261026/epoch_014/repair.pth",
+      "bytes": 85655,
+      "sha256": "c469978d45662476043e56b5b524998da94030a53cdf7494c49424e1534fe91c",
+      "epoch": 14,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume1_v1_20261026/latest.pth",
+      "bytes": 500591,
+      "sha256": "df82b5e0226daca97e7608b704350e3743c37e870d066998232fea59a58a7802",
+      "epoch": 19,
+      "next_action": "train"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume1_v1_20261026/pending_validation.pth",
+      "bytes": 551279,
+      "sha256": "8c6c9c0cd2b7c07e4992c21edb55fdcaf31faf0208635b0312372e269b8e81dc",
+      "epoch": 20,
+      "next_action": "evaluate"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume1_v1_20261026/best.json",
+      "bytes": 265,
+      "sha256": "981392ffed7eb58cd4d8ba8955ec3dfe9f8188e7851c4efc1f60f5e12bfe4475"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume1_v1_20261026/history.json",
+      "bytes": 47826,
+      "sha256": "27f6f49aa1f9bdc9b53a830d0ae608608905d8fae57fcac17bf895fc337923a1"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume1_v1_20261026/short_readout_contract.json",
+      "bytes": 3603,
+      "sha256": "fe4808d3bf5cda307753f81be401411236e6db52825b6cebb63a42d82e7243f3"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume1_v1_20261026/contract.json",
+      "bytes": 12551,
+      "sha256": "1cc681fb0e509518798d2d93afb14155f67457183fabb2a413784886019c3404"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume1_v1_20261026/resume.json",
+      "bytes": 257,
+      "sha256": "f8ef55a1933ce0bf8f033cc525473c9f52dc5e41318b1604e8481f54096236d8"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume1_v1_20261026/status.json",
+      "bytes": 136,
+      "sha256": "969e5739b0c658ab3f78e1d96962a1c62a2dfa5a248a7a08116683c90adb4a0c"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume1_v1_20261026/epoch_020/gpu_exclusivity.json",
+      "bytes": 1724,
+      "sha256": "73ee5b734efdf6130e04401deae66622d34883f3fd5e8c06744d88a8b466e05e"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume1_v1_20261026/epoch_019/repair.pth",
+      "bytes": 165015,
+      "sha256": "a7961dd299587536f661bb44ba5cd6937ff5b68471566c1bd05a28ef736cd6c5",
+      "epoch": 19,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume1_v1_20261026/epoch_020/repair.pth",
+      "bytes": 165015,
+      "sha256": "c7ec602dc40f7842dd0c46e806011aa5a256395336f779368802f5b7c05acc4d",
+      "epoch": 20,
+      "next_action": null
+    }
+  ],
+  "destination": "/data1/zhh/gzc/int181_snapshot/live_backups/short_readout_20261026_1322.tar.gz",
+  "destination_sha256_verified": true
+}
