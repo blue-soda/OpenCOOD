@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/data2/tzm/cp_snn_recovery_20261026/infocom_lowrate_adapt01/candidate/net_epoch0.pth",
+  "sha256": "68e6b3c0eeedc9df1d8cf33c65e8bad164b24a5b633a85f432c4cf2e8c1d21ad",
+  "wrapper": null,
+  "expected_keys": 404,
+  "loaded_keys": 404,
+  "missing_keys": [],
+  "unexpected_keys": [],
+  "shape_errors": {},
+  "strict_passed": true,
+  "raw_checkpoint_mismatch": {
+    "missing_keys": [],
+    "unexpected_keys": []
+  },
+  "explicit_compatibility": null
+}

@@ -51,3 +51,16 @@
 基于上述明确修正，smoke02独立目录/PID45902启动，GPU2重新五次准入通过，外层1800秒（包含完整输入重放），无自动重试；smoke01失败保留。当前处于preparing_reference_inputs，**尚未证明修正后四帧等价，也没有受控速度结果**。若仍失败，先输出差异定位，不能继续放松精度门或改模型。现有训练与SNN评估未改动。下一次读取smoke02的compute_summary/failure/status，不能重复启动。
 
 证据：[原始失败](results/strong_ann_baselines_20261025/heartbeat_20261026_0910/compute/infocom_compute_smoke01/failure.json)、[修正后启动与理由](results/strong_ann_baselines_20261025/heartbeat_20261026_0910/compute/infocom_compute_smoke02.launch.json)、[门检查协议](results/strong_ann_baselines_20261025/heartbeat_20261026_0910/compute/infocom_compute_smoke02/compute_protocol.json)。此为有界工程门检查，不是增加研究训练臂；正常中期进展保持静默。
+
+
+## 2026-10-26 18:12：InfoCom和方案二实际四帧等价门通过
+
+InfoCom smoke02已完成：完整有序DataLoader预处理重放后，复用四帧CPU输入，每次重新执行真实网络、选择/codec与接收。两种计时边界共40次warmup和8次正式调用都与既有1738帧参考预测和包内容逐位一致，原smoke01失败保留。这验证了输入重放修正后的门，不放松数值门；仍不能用4帧时间或不同模型的历史日志宣布速度优势。
+
+进一步实现de21ff7的Scheme-2 compute_snapshot_smoke。模型增加显式可选的真实包observer（仅eval+packet_roundtrip可用，默认无操作），将已生成的真实packet交给内存收集器，计时中关闭packet_directory磁盘导出；消息选择、实际压缩/解码、三维对齐、接收、BEV/头和NMS均保留。加载与完整2KiB复核相同的第6轮最佳检查点及config，除禁用导出目录外不改模型配置。PairedDAIRFusion评估仅在train时shuffle，四帧CPU输入可直接固定复用；不缓存模型或消息结果。
+
+181 GPU2重新五次24252MiB/0%准入后，scheme2_compute_smoke01/PID12505已完成。相同索引0/579/1158/1737、两种边界、40次warmup/8次计时均通过完整预测和真实包SHA/长度等价；预算仍2048 B，未修改当前训练或8KiB评估进程。两个门的数据及资源快照已取回，均标smoke_only/no_full_AP_or_speed_claim。
+
+下一步先为CoSDH接入同样的输入/真实包等价门，明确其审计重复decode/warp；再等待InfoCom最终选模，将冻结后的全部工作点接到共同64帧×3轮计时。参数/显存可独立报告，但正式速度主表必须满足共同边界与干扰记录，不由本轮四帧粗测提前下结论。多预算后续8KiB收尾也需提前检查原6小时监督上限，避免同类超时，不能热改当前模型或减少评估帧。
+
+证据：[InfoCom真实门](results/strong_ann_baselines_20261025/heartbeat_20261026_1012/infocom_compute/compute_summary.json)、[方案二真实门](results/strong_ann_baselines_20261025/heartbeat_20261026_1012/scheme2_compute/compute_summary.json)、[方案二加载/配置/脚本摘要](results/strong_ann_baselines_20261025/heartbeat_20261026_1012/scheme2_compute/compute_protocol.json)。

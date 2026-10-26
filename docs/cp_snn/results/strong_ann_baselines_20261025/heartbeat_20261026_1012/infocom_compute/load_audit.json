@@ -1,0 +1,26 @@
+{
+  "checkpoint": "/data2/tzm/cp_snn_recovery_20261026/net_epoch_bestval_at7.pth",
+  "sha256": "7375da04507b4f543666e15aa02897e41e3c32e08bcb3f74b27ad49fb28c803c",
+  "wrapper": null,
+  "expected_keys": 404,
+  "loaded_keys": 404,
+  "missing_keys": [],
+  "unexpected_keys": [],
+  "shape_errors": {},
+  "strict_passed": true,
+  "raw_checkpoint_mismatch": {
+    "missing_keys": [
+      "ib_communication.mu_net.1.scale",
+      "ib_communication.mu_net.1.shift",
+      "ib_communication.std_net.0.bias",
+      "ib_communication.std_net.0.weight",
+      "ib_communication.std_net.1.scale",
+      "ib_communication.std_net.1.shift"
+    ],
+    "unexpected_keys": [
+      "ib_communication.sigma_net.0.bias",
+      "ib_communication.sigma_net.0.weight"
+    ]
+  },
+  "explicit_compatibility": "legacy sigma->std; newly added AdaptiveScale layers set to identity; inference only, not proof of original training architecture"
+}

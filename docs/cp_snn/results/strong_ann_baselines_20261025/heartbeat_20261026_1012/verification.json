@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "epochs": [
+    {
+      "epoch": 8,
+      "common_gt_bev_ap": {
+        "0.3": 0.8185334984481274,
+        "0.5": 0.7724909129994161,
+        "0.7": 0.6287639302839104
+      },
+      "wire": {
+        "mean": 2389.707134637514,
+        "median": 2356.0,
+        "p95": 2586.0,
+        "min": 2144.0,
+        "max": 2635.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "68e6b3c0eeedc9df1d8cf33c65e8bad164b24a5b633a85f432c4cf2e8c1d21ad",
+      "all_packet_and_prediction_sha_rechecked": true
+    },
+    {
+      "epoch": 9,
+      "common_gt_bev_ap": {
+        "0.3": 0.8167837285727537,
+        "0.5": 0.7720731547518314,
+        "0.7": 0.6259984584690425
+      },
+      "wire": {
+        "mean": 2391.9677790563865,
+        "median": 2361.0,
+        "p95": 2591.0,
+        "min": 2140.0,
+        "max": 2649.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "98f78e658d80aada469875e0b36ac8ba31b5583bdb1f195ee3b25d9ffce62b81",
+      "all_packet_and_prediction_sha_rechecked": true
+    }
+  ],
+  "infocom_compute_gate_passed": true
+}

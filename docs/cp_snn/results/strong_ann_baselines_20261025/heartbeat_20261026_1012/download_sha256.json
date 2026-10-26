@@ -1,0 +1,16 @@
+{
+  "archives": [
+    [
+      "heartbeat_20261026_1012_evidence.tar.gz",
+      "0586909a2e4e2f235b41a4451d907d37b16330b9d38c532c305e241a87fec655",
+      ""
+    ],
+    [
+      "scheme2_compute_smoke01_evidence.tar.gz",
+      "afb6ecf65ddb1aa6f9eab949b28d9aaa0c28dfa9438d703270813842698f6be6",
+      "scheme2_compute"
+    ]
+  ],
+  "local_index_sha_and_mean_verified": true,
+  "both_real_compute_gates_passed": true
+}

@@ -1,0 +1,29 @@
+{
+  "smoke_only": true,
+  "not_a_performance_result": true,
+  "indices": [
+    0,
+    579,
+    1158,
+    1737
+  ],
+  "ids": [
+    "000211",
+    "004276",
+    "013871",
+    "019992"
+  ],
+  "checkpoint_sha256": "0add747f31daf1c34315621990ef1b9424e2606f2cb60fa23cc3f396bf9e6f9e",
+  "config_sha256": "898ae51ed4d46fe642845e39da6794bd72953c9bf864b7ec54fe3a5d2d2f70f0",
+  "config_change": "packet_directory=None; observer holds actual packet in memory",
+  "reference_index_sha256": "92cf8bede84d755910d04b70c7ff6b8c1ef348b225b143c727189b7ac59779ed",
+  "warmup": 20,
+  "preprocessing": "paired validation is deterministic; same four CPU inputs reused, no message/model cache",
+  "scripts": {
+    "tools/strong_ann_baselines/compute_harness.py": "0b41197297e5d21bdf4b1f96ffb8f8127d2cceab24162de707f3e66f83a41346",
+    "tools/strong_ann_baselines/compute_snapshot_smoke.py": "931f822b5b83378b1a8363ec58866bf8e00cd3565befe36a00193732a4777001",
+    "models/fuse_modules/e3dsnn_snapshot_adapter.py": "f04c531f789851a94d5a8752fa901600c6a057fce69a347450b6468f16560950"
+  },
+  "parameters": 3120631,
+  "gpu_memory_fraction": 0.25
+}
