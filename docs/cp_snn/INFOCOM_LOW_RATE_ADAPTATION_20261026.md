@@ -51,3 +51,22 @@
 SNN多预算第2轮451/2339批，固定组8KiB评估继续。old_snn的0/2/3/4/6/8KiB预测均已生成1738帧，正在执行原登记full点（本轮见4帧），尚未完成总汇总；不重复启动旧实验或提前宣布最终通过。
 
 证据：[正式启动与资源准入](results/strong_ann_baselines_20261025/infocom_adaptation_launch_20261026/infocom_lowrate_adapt01.launch.json)、[实际训练协议及脚本快照SHA](results/strong_ann_baselines_20261025/infocom_adaptation_launch_20261026/infocom_lowrate_adapt01/protocol.json)、[首轮进度](results/strong_ann_baselines_20261025/infocom_adaptation_launch_20261026/infocom_lowrate_adapt01/progress.json)。
+
+
+## 2026-10-26 13:15触发：InfoCom首轮适配已完成共同GT复核
+
+正式1%适配完成第1个epoch，已进入第2轮（本轮读取1100/2339步）。共同1738帧、28622个GT下AP30/50/70为79.74066% / 74.93195% / **60.93306%**；采用共同GT CPU结果，而不是官方GT的60.95541%。官方与共同GT存在历史记录的坐标差异，不能混用两套AP。
+
+真实通信包含80 B封装，均值**2043.013809 B**、中位2044 B、P95 2205 B、最大2258 B。1738帧中843帧超过2048 B；1%是空间选择比例，不是逐帧2KiB硬上限。包与预测SHA、身份、载荷解码和形状已重新全量核验，独立CPU复算验证1738份预测及共同GT摘要；本机取回后再次验证索引SHA与逐帧字节均值。该epoch权重SHA为418d1d11c78de683fa72e658f0d218e9d38b84527f7a9912619498b2f8d2f4e8。
+
+| 工作点 | 状态 | 共同GT AP70 (%) | 平均B/帧 | P95 B | 最大B |
+|---|---|---:|---:|---:|---:|
+| InfoCom官方权重，冻结1% | 完成复核 | 56.88354 | 2176.936 | 2341 | 2411 |
+| InfoCom 1%适配，第1轮 | 中途验证，非最终模型 | 60.93306 | 2043.014 | 2205 | 2258 |
+| 方案二固定2KiB联合训练，最佳第6轮 | 10轮完成，2KiB点复核通过 | 58.85365 | 2046.886 | 2048 | 2048 |
+
+首轮适配InfoCom较自身冻结1%提高4.04952个百分点，平均通信下降约6.15%；相对方案二当前2KiB点，AP70高2.07940个百分点且平均字节略低。因此**按平均通信量—AP，此时不能宣称方案二优于适配ANN**；硬上限不同也不等于SNN已经取得可发表优势。保留此强对照，继续双方已登记训练及完整曲线。InfoCom更广的训练范围、不同骨干和训练起点仍是跨架构比较边界，不把差距归因为神经元本身。
+
+本轮不追加比例、学习率或新接收模块，不重启方案三。先完成InfoCom原10轮及最终四比例复核、方案二多预算10轮、固定组8KiB收尾；之后按完整结果选择匹配码率/计算测量和机制消融。8KiB日志已到500/1738帧，多预算SNN第2轮751/2339批；未把未完成评估记为结果。尚无统一计算优势结论。
+
+证据：[重新核验摘要](results/strong_ann_baselines_20261025/infocom_adaptation_epoch01_20261026/verification.json)、[训练历史](results/strong_ann_baselines_20261025/infocom_adaptation_epoch01_20261026/history.json)、[逐帧字节](results/strong_ann_baselines_20261025/infocom_adaptation_epoch01_20261026/epoch01/per_frame_bytes.csv)、[共同GT复算（gzip）](results/strong_ann_baselines_20261025/infocom_adaptation_epoch01_20261026/epoch01/common_gt_replay.json.gz)。原始全部预测和真实包保留在181验证目录；压缩索引解压后SHA与审计记录一致。

@@ -1,0 +1,12 @@
+[
+  {
+    "epoch": 1,
+    "ap70": 0.6093305637625216,
+    "loss": 0.7115874788467066,
+    "best": {
+      "epoch": 1,
+      "ap70": 0.6093305637625216,
+      "validation": "/data2/tzm/cp_snn_recovery_20261026/infocom_lowrate_adapt01/val_epoch01_attempt1792989813074766939"
+    }
+  }
+]

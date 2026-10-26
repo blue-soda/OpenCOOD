@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "epoch": 1,
+  "checkpoint_sha256": "418d1d11c78de683fa72e658f0d218e9d38b84527f7a9912619498b2f8d2f4e8",
+  "common_gt_bev_ap": {
+    "0.3": 0.7974065887371182,
+    "0.5": 0.7493194975181969,
+    "0.7": 0.6093305637625216
+  },
+  "wire": {
+    "mean": 2043.0138089758343,
+    "median": 2044.0,
+    "p95": 2205.0,
+    "min": 1877.0,
+    "max": 2258.0,
+    "count": 1738
+  },
+  "samples": 1738,
+  "gt": 28622,
+  "all_packets_and_predictions_rechecked": true,
+  "frames_above_2048": 843,
+  "training_complete": false
+}
