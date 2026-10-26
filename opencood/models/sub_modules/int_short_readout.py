@@ -32,7 +32,7 @@ class ShortReadoutState:
             full_stamp=full_stamp,frames=frames,scene=meta['segment'])
         cells=current.shape[-2]*current.shape[-1]
         full=cells*sum(c.weight.numel() for c in (self.readout.spatial,self.readout.tail[2][0],self.readout.tail[2][1]))
-        short=cells*sum(c.weight.numel() for c in (self.repair.net[0],self.repair.net[2],self.repair.net[4]))
+        short=cells*sum(c.weight.numel() for c in self.repair.modules() if isinstance(c,torch.nn.Conv2d))
         info=dict(readout_refresh=reason is not None,readout_refresh_reason=reason,readout_depth=frames,
             readout_write_fraction=1.,readout_executed_fraction=1. if reason else short/float(full),
             readout_macs_saved=0 if reason else full-short,readout_extra_linear_macs=0,

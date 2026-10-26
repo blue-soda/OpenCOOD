@@ -526,6 +526,7 @@ def main():
     p.add_argument('--recurrent-readout-layout',action='store_true',help='Full independent comparison of row batching and packed aligned state')
     p.add_argument('--short-readout-epochs',type=int,default=0,help='Train complete readout short recurrence, maximum budget')
     p.add_argument('--short-readout-width',type=int,choices=(32,64),default=32)
+    p.add_argument('--short-readout-kind',choices=('residual','current','current_gated'),default='residual')
     p.add_argument('--short-readout-resume',default=None)
     p.add_argument('--short-readout-diagnostic',default=None,help='Frozen repair checkpoint for offline512 train-frame history diagnosis')
     a = p.parse_args(); out = Path(a.output)

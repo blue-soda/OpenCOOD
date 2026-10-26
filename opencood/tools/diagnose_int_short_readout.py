@@ -3,6 +3,7 @@ import math
 from pathlib import Path
 import torch
 from opencood.models.sub_modules.int_light_repair import LightRepair
+from opencood.models.sub_modules.int_current_readout import current_readout_from_mature
 from opencood.models.sub_modules.int_recurrent_deep import RecurrentDeepDetector
 from opencood.models.sub_modules.int_short_readout import ShortReadoutState
 from opencood.models.sub_modules.int_readout_diagnostic import DiagnosticReadoutState, readout_error
@@ -18,7 +19,11 @@ def diagnose(a, cfg, train, baseline, out, deep_repair, checkpoint, source):
     assert contract['source']=={k:source[k] for k in ('source','memory','readout','repair','basis','data')}
     assert contract['frozen_deep_checkpoint']==checkpoint
     assert contract['deep_period']==4 and contract['readout_period']==3
-    repair=LightRepair(256,contract['width'],current_channels=96).cuda().eval()
+    if contract.get('kind','residual')=='residual':
+        repair=LightRepair(256,contract['width'],current_channels=96).cuda().eval()
+    else:
+        repair,_=current_readout_from_mature(baseline.readout,contract['width'],contract['kind']=='current_gated')
+        repair=repair.cuda().eval()
     repair.load_state_dict(saved['repair'],strict=True)
     for p in repair.parameters():p.requires_grad_(False)
     actual=RecurrentDeepDetector(baseline,deep_repair,4)

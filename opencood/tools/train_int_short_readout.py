@@ -6,6 +6,7 @@ import torch
 from opencood.models.sub_modules.int_recurrent_deep import RecurrentDeepDetector
 from opencood.models.sub_modules.int_short_readout import ShortReadoutState
 from opencood.models.sub_modules.int_light_repair import LightRepair,foreground_head_loss
+from opencood.models.sub_modules.int_current_readout import current_readout_from_mature
 from opencood.models.sub_modules.int_anchor_residual import predict
 from opencood.models.sub_modules.int_local_state import feature_distillation
 from opencood.loss.point_pillar_dir_loss import PointPillarDirLoss
@@ -24,7 +25,11 @@ def train_short_readout(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_rep
     torch.manual_seed(303)
     control=RecurrentDeepDetector(baseline,deep_repair,4)
     mode=RecurrentDeepDetector(baseline,deep_repair,4)
-    repair=LightRepair(256,a.short_readout_width,current_channels=96).cuda().eval()
+    kind=a.short_readout_kind
+    if kind=='residual':repair=LightRepair(256,a.short_readout_width,current_channels=96).cuda().eval()
+    else:
+        repair,initialization=current_readout_from_mature(mode.readout,a.short_readout_width,kind=='current_gated')
+        repair=repair.cuda().eval()
     cache=ShortReadoutState(mode.readout,repair,mode.bounds,3);mode.readout_cache=cache
     contract=dict(source={k:source[k] for k in ('source','memory','readout','repair','basis','data')},
         frozen_deep_checkpoint=checkpoint,width=a.short_readout_width,seed=303,deep_period=4,readout_period=3,
@@ -35,6 +40,11 @@ def train_short_readout(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_rep
         loss='GT labelled ordinary frames +.2 foreground head KD +.5 feature KD; only short readout updater trainable.',
         optimization='AdamW1e-4 wd1e-4 clip5; Plateau .5 patience1 threshold.0005 minlr1e-6. Min6 epochs, stale4 and lr<=2.5e-5. Maximum budget does not imply convergence.',
         purpose='Check precision of cheap complete-state path before localizing it. Width32/64 planned capacity controls; retain validated dense/local readout baseline.')
+    if kind!='residual':
+        contract.update(kind=kind,initialization=initialization,
+            architecture='Current96 ->3x3(width)/ReLU ->3x3(width) ->1x1(256)/ReLU; mature BN-folded and rank-factor initialized. '+
+            ('Bounded per-cell history blend g*old+(1-g)*fresh; g=.95sigmoid(current,old_mean,abs_difference_mean,valid)*valid.' if kind=='current_gated' else 'Current-only control; ordinary output ignores history.'),
+            purpose='Test stronger current spatial expression and bounded history reuse before localizing; complete output state, same data/loss/periods.')
     write_json(out/'short_readout_contract.json',contract)
     write_json(out/'validation_execution.json',dict(contention='User permits shared GPU training and validation. Sample other processes without waiting or exiting for sharing; any observed sharing invalidates whole evaluation latency, not AP. Hardware/query/CUDA allocation errors still propagate.',
         scope='Execution only; model/training contract and strict standalone benchmarks unchanged.'))
@@ -65,7 +75,7 @@ def train_short_readout(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_rep
     assert partial and terms
     torch.stack(terms).mean().backward()
     assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in repair.parameters())
-    assert float(repair.net[-1].weight.grad.abs().sum())>0
+    assert any(float(p.grad.abs().sum())>0 for p in repair.parameters())
     assert all(p.grad is None for module in (mode.model,mode.readout,mode.repair) for p in module.parameters())
     repair.zero_grad(set_to_none=True);cache.training_targets=False
     write_json(out/'short_readout_engineering.json',dict(status='PASSED',frames=32,partial_frames=partial,
