@@ -1,0 +1,194 @@
+[
+  {
+    "method": "infocom_adapt1pct",
+    "repeat": 0,
+    "returncode": 0,
+    "started_unix": 1793029880.4488034,
+    "finished_unix": 1793030559.949461,
+    "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_infocom_rng02/infocom_adapt1pct_repeat0",
+    "eligible_for_speed_table": true,
+    "summary_sha256": "b31c58488d9c3df78c71c8e37d3a3d94aabc6958a7db953da793bf43356a731e",
+    "scope_statistics": [
+      {
+        "scope": "ready_cpu_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.12005692539969459,
+          "median": 0.11063603544607759,
+          "p95": 0.18612271761521695
+        },
+        "peak_allocated_bytes": 1025484288,
+        "peak_reserved_bytes": 4578082816
+      },
+      {
+        "scope": "device_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.11424053921291488,
+          "median": 0.1073269103653729,
+          "p95": 0.1882429058663547
+        },
+        "peak_allocated_bytes": 1025479168,
+        "peak_reserved_bytes": 4578082816
+      }
+    ]
+  },
+  {
+    "method": "infocom_official10pct",
+    "repeat": 0,
+    "returncode": 0,
+    "started_unix": 1793030869.1592577,
+    "finished_unix": 1793031700.7852173,
+    "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_infocom_rng02/infocom_official10pct_repeat0",
+    "eligible_for_speed_table": true,
+    "summary_sha256": "6273009a09368f924e89c17f20f76ab35016a1c871d107da473e15f2dc0a9fa3",
+    "scope_statistics": [
+      {
+        "scope": "ready_cpu_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.1291919020623027,
+          "median": 0.11982080445159227,
+          "p95": 0.22350735219661136
+        },
+        "peak_allocated_bytes": 1025484800,
+        "peak_reserved_bytes": 4578082816
+      },
+      {
+        "scope": "device_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.12039575003655045,
+          "median": 0.11108500650152564,
+          "p95": 0.20478111109696326
+        },
+        "peak_allocated_bytes": 1025479168,
+        "peak_reserved_bytes": 4578082816
+      }
+    ]
+  },
+  {
+    "method": "infocom_official10pct",
+    "repeat": 1,
+    "returncode": 0,
+    "started_unix": 1793032009.7166219,
+    "finished_unix": 1793032610.3557281,
+    "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_infocom_rng02/infocom_official10pct_repeat1",
+    "eligible_for_speed_table": true,
+    "summary_sha256": "091d45b9601ac0bec016bf7b81c54bb7a96c0d50745369fb701d73fe8d2131aa",
+    "scope_statistics": [
+      {
+        "scope": "ready_cpu_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.11248617021556129,
+          "median": 0.10606314102187753,
+          "p95": 0.1955479203024878
+        },
+        "peak_allocated_bytes": 1025484800,
+        "peak_reserved_bytes": 4578082816
+      },
+      {
+        "scope": "device_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.10710471019774559,
+          "median": 0.10129943955689669,
+          "p95": 0.187789918843191
+        },
+        "peak_allocated_bytes": 1025479168,
+        "peak_reserved_bytes": 4578082816
+      }
+    ]
+  },
+  {
+    "method": "infocom_adapt1pct",
+    "repeat": 1,
+    "returncode": 0,
+    "started_unix": 1793032619.0687926,
+    "finished_unix": 1793033168.788564,
+    "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_infocom_rng02/infocom_adapt1pct_repeat1",
+    "eligible_for_speed_table": true,
+    "summary_sha256": "47f60a861da403881e545f063e9e38c62aee28fe924618b59e2c71bcc5fee577",
+    "scope_statistics": [
+      {
+        "scope": "ready_cpu_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.11765905268111965,
+          "median": 0.11556479556020349,
+          "p95": 0.19128411209676413
+        },
+        "peak_allocated_bytes": 1025484288,
+        "peak_reserved_bytes": 4578082816
+      },
+      {
+        "scope": "device_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.11230104076093994,
+          "median": 0.1110024091321975,
+          "p95": 0.18710381095297635
+        },
+        "peak_allocated_bytes": 1025479168,
+        "peak_reserved_bytes": 4578082816
+      }
+    ]
+  },
+  {
+    "method": "infocom_adapt1pct",
+    "repeat": 2,
+    "returncode": 0,
+    "started_unix": 1793033177.523341,
+    "finished_unix": 1793033728.7122405,
+    "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_infocom_rng02/infocom_adapt1pct_repeat2",
+    "eligible_for_speed_table": true,
+    "summary_sha256": "297dd2d7f8100378a0cc0af861ef33fe288567ffa7dfb1c712ad89bf216d6de8",
+    "scope_statistics": [
+      {
+        "scope": "ready_cpu_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.10748237066945876,
+          "median": 0.10439453960862011,
+          "p95": 0.17293300707824527
+        },
+        "peak_allocated_bytes": 1025484288,
+        "peak_reserved_bytes": 4578082816
+      },
+      {
+        "scope": "device_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.10284331041839323,
+          "median": 0.10259153600782156,
+          "p95": 0.1721680285176262
+        },
+        "peak_allocated_bytes": 1025479168,
+        "peak_reserved_bytes": 4578082816
+      }
+    ]
+  },
+  {
+    "method": "infocom_official10pct",
+    "repeat": 2,
+    "returncode": 0,
+    "started_unix": 1793033737.43796,
+    "finished_unix": 1793034320.9707968,
+    "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_infocom_rng02/infocom_official10pct_repeat2",
+    "eligible_for_speed_table": true,
+    "summary_sha256": "c44ba0ac79f7e6f3e8569a320c2f9670eea025e3b8feb6131d33e78c9f15aac6",
+    "scope_statistics": [
+      {
+        "scope": "ready_cpu_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.13378387609191122,
+          "median": 0.12432841048575938,
+          "p95": 0.21848151815356676
+        },
+        "peak_allocated_bytes": 1025484800,
+        "peak_reserved_bytes": 4578082816
+      },
+      {
+        "scope": "device_batch_to_cpu_boxes",
+        "seconds": {
+          "mean": 0.12750346237953636,
+          "median": 0.1253394226077944,
+          "p95": 0.22117155082523818
+        },
+        "peak_allocated_bytes": 1025479168,
+        "peak_reserved_bytes": 4578082816
+      }
+    ]
+  }
+]

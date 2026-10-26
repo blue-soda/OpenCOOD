@@ -167,3 +167,23 @@ fixed2k第9轮851/2339批，最佳仍第6轮58.85365%；多预算第1轮1201/233
 多预算组第2轮2KiB验证58.12877%/2045.772 B，现第3轮151/2339；尚未到10轮退出点，不能据前两轮关闭训练或宣布失败。继续原计划，同时完成适配ANN四比例及统一计算测量；固定组不再追加训练/预算点。
 
 证据：[四点重新核验](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/verification.json)、[完整汇总gzip](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/fixed/summary.json.gz)、[8KiB独立CPU复算](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/fixed/b8192/offline_replay.json)、[8KiB逐帧bytes](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/fixed/b8192/per_frame_bytes.csv)。原始完整预测/包仍在181，已有0/2/4KiB分阶段证据保留。
+
+
+## 2026-10-27 01:13：InfoCom六轮计时完成，SNN恢复第3轮
+
+compute64_infocom_rng02两工作点各3轮完成，没有失败、自动重试或剔除异常值。每轮64帧、两种计时边界各64次，合计768次正式调用全部与历史预测及实际包逐位相同。完整RNG重放修复验收通过；原失败仍保留。各轮边界资源快照只观察到测量进程占用GPU5，但不能据此保证全时段无干扰，服务器CPU与其他GPU仍有任务。不做跨模型速度优势推断。
+
+| InfoCom工作点 | 全量BEV AP70 | 全量平均通信 B/帧 | CPU就绪batch→CPU框 mean/P95 ms | GPU就绪batch→CPU框 mean/P95 ms |
+|---|---:|---:|---:|---:|
+| 适配1%，第8轮 | 62.87639% | 2389.707 | 115.066 / 190.460 | 109.795 / 187.932 |
+| 官方10%兼容权重 | 64.57136% | 8754.928 | 125.154 / 211.502 | 118.335 / 208.677 |
+
+AP/通信来自原1738帧完整评估；时间为共同64帧×3轮，每个边界192个样本的合并统计，含真实选择、编码、解码、对齐和检测后处理。排除磁盘读取、点云预处理、AP计算和真实网络传输，不是整车端到端时延。三轮CPU边界均值：1%为120.057/117.659/107.482ms，10%为129.192/112.486/133.784ms；不将小幅均值差异解释为确定速度收益。SNN严格计时仍缺失，CoSDH含冗余审计不纳入公平排名，当前计算优势未成立。
+
+方案二多预算训练在epoch3约batch1651后异常退出。堆栈显示多进程张量重建时resource_sharer Unix socket缺失，导致Pin memory thread exited unexpectedly；没有证据归因于模型发散或Native诊断（独立进程/不同卡）。保留训练/监督器失败状态、完整日志和epoch2 last.pt。last.pt含模型、76项优化器状态、调度器last_epoch=2、Python/NumPy/Torch/CUDA与DataLoader随机状态，SHA=6ad70e589b8139acc32a13f5b6acbffc0cda252c3b97f3dde393069645d755f6，远端和本机均备份核验。
+
+恢复入口multi248k_resume_epoch2_01/PID37674，子训练PID37817，资源检查后采用181空闲GPU5。从epoch2完整状态显式--resume，epoch3从头重跑，未保存的约1650批进度丢弃；不称中断点无损恢复。保持workers=2、pin_memory、batch2、种子、优化器、学习率、配置/数据SHA、训练目标、10轮总数和原120小时截止时间；只将TMPDIR指向本次任务独立目录以隔离进程通信文件。根因未完全证实，独立目录不是已经解决异常的保证，不自动反复重试。旧训练进程已退出，无重复训练。首个epoch3 batch已完成有限损失/梯度更新，训练继续。完成后监督器进入既有四预算最终评估；如再异常保留失败后重新判断。
+
+当前状态入口为multi248k_resume_epoch2_01/status.json和train_resume.log，原train.log保持失败日志，不能再将旧日志当作运行进度。SNN固定Native实验按上轮退出规则关闭，不继续调试替代主线；本轮无新SNN验证AP，不恢复方案三，不追加训练参数扫描。
+
+证据：[完成摘要](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/compute64_infocom_rng02/summary.json)、[合并统计和资源快照](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/infocom_compute_complete_audit.json)、[恢复协议](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/multi248k_resume_epoch2_01/protocol.json)、[原训练失败](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/multi248k_resume_epoch2_01/before_resume/train/status.json)。原始日志/全部测量和恢复脚本同目录归档。回传SHA=25d821945d5a516e534ea66597b0bc000357be7262fc6acd67278e12916aa57f。

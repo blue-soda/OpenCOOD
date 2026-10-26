@@ -1,0 +1,24 @@
+{
+  "supervisor_status": {
+    "state": "training",
+    "pid": 37817,
+    "unix": 1793034838.4157233
+  },
+  "training_progress": {
+    "state": "training",
+    "epoch": 3,
+    "epochs": 10,
+    "batch": 1,
+    "batches": 2339,
+    "loss": 0.5903007711263814,
+    "gradient_norm": 2.6240499019622803,
+    "elapsed_seconds": 11.942333167884499,
+    "stream_means": {
+      "stream_budgets": 2048.0,
+      "packet_bytes": 2042.5,
+      "stream_events": 2909.5
+    }
+  },
+  "log_tail": "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)\n  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]\n{\"state\": \"training\", \"epoch\": 3, \"epochs\": 10, \"batch\": 1, \"batches\": 2339, \"loss\": 0.5903007711263814, \"gradient_norm\": 2.6240499019622803, \"elapsed_seconds\": 11.942333167884499, \"stream_means\": {\"stream_budgets\": 2048.0, \"packet_bytes\": 2042.5, \"stream_events\": 2909.5}}\n",
+  "original_checkpoint_backup_sha256": "6ad70e589b8139acc32a13f5b6acbffc0cda252c3b97f3dde393069645d755f6"
+}

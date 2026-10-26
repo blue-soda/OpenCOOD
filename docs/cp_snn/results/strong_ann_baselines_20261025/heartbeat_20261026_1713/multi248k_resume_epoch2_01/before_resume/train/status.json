@@ -1,0 +1,4 @@
+{
+  "state": "failed",
+  "error": "Traceback (most recent call last):\n  File \"/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/train_e3dsnn_single.py\", line 562, in main\n    result = execute(args, output_dir)\n  File \"/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/train_e3dsnn_single.py\", line 432, in execute\n    for index, batch in enumerate(loader):\n  File \"/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/utils/data/dataloader.py\", line 521, in __next__\n    data = self._next_data()\n  File \"/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/utils/data/dataloader.py\", line 1186, in _next_data\n    idx, data = self._get_data()\n  File \"/data1/tzm/miniconda3/envs/opencood/lib/python3.7/site-packages/torch/utils/data/dataloader.py\", line 1147, in _get_data\n    raise RuntimeError('Pin memory thread exited unexpectedly')\nRuntimeError: Pin memory thread exited unexpectedly\n"
+}
