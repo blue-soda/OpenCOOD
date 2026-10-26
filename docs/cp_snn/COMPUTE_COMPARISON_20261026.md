@@ -155,3 +155,6 @@ SNN新增一次有界固定后端诊断，详见[预登记与退出标准](BACKE
 多预算训练第3轮1601/2339健康运行，暂无新验证AP。继续原10轮主对照、固定2KiB最终锚点保留，不恢复方案三。总目标未完成：当前SNN平均通信—AP优势尚未超过强ANN低率适配点，计算优势也尚未成立。
 
 证据：[原队列完整结果](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/compute64_suite01/summary.json)、[InfoCom修复首轮](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/compute64_infocom_rng02/results_so_far.json)、[固定后端启动](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/scheme2_backend_native01.launch.json)。回传归档SHA=38da62537c4a1f80bfc132d6d061e4900cedb68c272b2e616ebfee72ef871d97。
+
+
+本轮执行准备补记：native01在首个forward之前遇到spconv.SparseConvolution顶层导入不存在的问题，记录failure后停止，无模型数值结果。已修正为spconv.pytorch.conv显式导入，181实际导入及统一KRSC布局验证通过，本地13项测试继续通过。新目录native02由PID7428执行同一有界协议，冻结代码fb54479到compute64_source05，保留旧失败，未修改算法选项或验收阈值。见[修正后启动](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/scheme2_backend_native02.launch.json)与[准备失败记录](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/backend_preflight/failure.json)。后续仅在模型实际计算与跨进程证据完成后作结论。

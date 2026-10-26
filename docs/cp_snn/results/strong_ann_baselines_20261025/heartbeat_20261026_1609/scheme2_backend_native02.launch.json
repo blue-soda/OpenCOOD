@@ -1,0 +1,7 @@
+{
+  "pid": 7428,
+  "unix": 1793031522.9615943,
+  "script": "/data2/tzm/cp_snn_recovery_20261026/launch_backend_1609_fix.py",
+  "output": "/data2/tzm/cp_snn_recovery_20261026/scheme2_backend_native02",
+  "preflight_failure_preserved": true
+}
