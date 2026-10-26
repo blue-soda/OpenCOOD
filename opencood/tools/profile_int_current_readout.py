@@ -4,6 +4,7 @@ import time
 import numpy as np
 import torch
 from opencood.models.sub_modules.int_local_current_readout import LocalCurrentReadoutCache
+from opencood.models.sub_modules.int_packed_current_readout import PackedCurrentReadoutCache,pack_readout_state
 import opencood.models.sub_modules.int_local_current_readout as cache_module
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.train_int_anchor_residual import ConvCounter
@@ -17,11 +18,14 @@ def profile(a,cfg,train,canonical,out,costs,spatial_macs):
         mode=copy.copy(canonical)
         mode.readout_cache=LocalCurrentReadoutCache(mode.readout,canonical.readout_cache.repair,mode.bounds,canonical.readout_cache.threshold,execution,3,row_chunk_size=chunk,cache_geometry=name=='cached_geometry')
         runners[name]=mode
+    mode=copy.copy(canonical)
+    mode.readout_cache=PackedCurrentReadoutCache(mode.readout,canonical.readout_cache.repair,mode.bounds,canonical.readout_cache.threshold)
+    runners['packed']=mode
     write_json(out/'current_backend_contract.json',dict(split='train',frames=512,warmup=16,
         scope='Same canonical previous state/input/final masks. Only row32768 state advances. No independent AP or new selection.',
         model_timing='Uninstrumented synchronized model wall time; rotate/reverse order; peak incremental allocated memory. MAC engineering done in separate first8 replays.',
         phase_timing='Additional readout-only replay every8 frames. Synchronized warp/selection/compute boundaries and nested geometry, gathered first/second convolutions, scatter. Nested times are INCLUDED in compute, not additive to it. Refresh remainder includes mature convolutions. Intrusive times alter scheduling and are NOT model timing.',
-        limits='Chunk4096 versus32768, dense masked control and geometry-only fixed-grid lookup with chunk32768. No tile/threshold search. Geometry construction occurs on first use; only steady-state timing after warmup. Geometry memory explicit. Readout-only replay and all discarded states excluded from model timing.'))
+        limits='Chunk4096 versus32768, dense masked control, geometry-only lookup and separately packed state/cached metric warp with ORIGINAL neighbor construction. No tile/threshold search. Geometry construction on first use; steady-state timing after warmup. Packed adapter converts identical canonical previous values before timing to emulate persistent packed input; deployment does not run this adapter. Each candidate output-state allocation/write remains timed. Memory explicit. Discarded replay excluded.'))
     records={k:[] for k in runners};phases={k:[] for k in runners};state=None;maximum=0.;isolation=[]
     def guard(scan):
         try:evidence=sample_gpu_usage(a.gpu)
@@ -39,8 +43,11 @@ def profile(a,cfg,train,canonical,out,costs,spatial_macs):
             predictions={};states={};masks={};infos={}
             for name in names:
                 mode=runners[name]
+                prior=previous
+                if name=='packed' and previous is not None:
+                    prior=dict(previous,readout=pack_readout_state(previous['readout']))
                 torch.cuda.synchronize();before=torch.cuda.memory_allocated();torch.cuda.reset_peak_memory_stats();tick=time.perf_counter()
-                pred,new,info=mode.step(ego,previous,meta)
+                pred,new,info=mode.step(ego,prior,meta)
                 torch.cuda.synchronize();elapsed=(time.perf_counter()-tick)*1000;peak=max(0,torch.cuda.max_memory_allocated()-before)
                 predictions[name]=pred;states[name]=new;infos[name]=info;masks[name]=mode.readout_cache.last_mask.clone()
                 if index>=16:records[name].append(dict(scan=index+1,refresh=info['readout_refresh'],mean_ms=elapsed,
@@ -48,7 +55,7 @@ def profile(a,cfg,train,canonical,out,costs,spatial_macs):
                     executed_fraction=info['readout_executed_fraction'],write_fraction=info['readout_write_fraction']))
                 if index<8:
                     counter=ConvCounter(mode.model,torch.nn.ModuleList([mode.readout,mode.repair,mode.readout_cache.repair]))
-                    try:_,_,measured=mode.step(ego,previous,meta)
+                    try:_,_,measured=mode.step(ego,prior,meta)
                     finally:counter.close()
                     actual=counter.total+measured['spatial_extra_linear_macs']+measured.get('readout_extra_linear_macs',0)
                     assert actual==cost_of(costs,spatial_macs,measured,True)
@@ -60,7 +67,7 @@ def profile(a,cfg,train,canonical,out,costs,spatial_macs):
                     maximum=max(maximum,float((predictions[name][k]-predictions['row32768'][k]).abs().max()))
                     assert torch.allclose(predictions[name][k],predictions['row32768'][k],atol=1e-3,rtol=1e-3)
                 assert torch.allclose(states[name]['readout']['value'],states['row32768']['readout']['value'],atol=1e-3,rtol=1e-3)
-            for name in ('row4096','cached_geometry'):
+            for name in ('row4096','cached_geometry','packed'):
                 assert cost_of(costs,spatial_macs,infos[name],True)==cost_of(costs,spatial_macs,infos['row32768'],True)
             state=states['row32768']
             if index>=16 and index%8==0:
@@ -74,7 +81,8 @@ def profile(a,cfg,train,canonical,out,costs,spatial_macs):
                 finally:cache.step=original
                 for k in other:assert torch.equal(other[k],predictions['row32768'][k])
                 for name in names:
-                    cache=runners[name].readout_cache;timings={};originals={k:getattr(cache,k) for k in ('select_mask','selected','dense','neighborhood_plan')}
+                    cache=runners[name].readout_cache;timings={};originals={k:getattr(cache,k) for k in ('select_mask','selected','selected_into','dense','neighborhood_plan','warp') if hasattr(cache,k)}
+                    readout_previous=pack_readout_state(captured['state']) if name=='packed' else captured['state']
                     module_originals={k:getattr(cache_module,k) for k in ('warp_bev','row_lookup','prepared_conv3x3_rows','planned_conv','_write_rows')}
                     def timed(key,fn):
                         def call(*args,**kwargs):
@@ -85,14 +93,14 @@ def profile(a,cfg,train,canonical,out,costs,spatial_macs):
                     for key,fn in module_originals.items():setattr(cache_module,key,timed(key,fn))
                     try:
                         torch.cuda.synchronize();tick=time.perf_counter()
-                        output,_,info=cache.step(captured['current'],captured['state'],captured['meta'],captured['reset'])
+                        output,_,info=cache.step(captured['current'],readout_previous,captured['meta'],captured['reset'])
                         torch.cuda.synchronize();elapsed=(time.perf_counter()-tick)*1000
                     finally:
                         for key,fn in originals.items():setattr(cache,key,fn)
                         for key,fn in module_originals.items():setattr(cache_module,key,fn)
                     assert torch.allclose(output,states[name]['readout']['value'],atol=1e-3,rtol=1e-3)
-                    compute=timings.get('selected',timings.get('dense',0.))
-                    selection=timings.get('select_mask',0.);warp=timings.get('warp_bev',0.)
+                    compute=timings.get('selected_into',timings.get('selected',timings.get('dense',0.)))
+                    selection=timings.get('select_mask',0.);warp=timings.get('warp_bev',0.)+timings.get('warp',0.)
                     phases[name].append(dict(scan=index+1,refresh=info['readout_refresh'],total_ms=elapsed,
                         selection_ms=selection,compute_ms=compute,warp_ms=warp,
                         geometry_ms=timings.get('neighborhood_plan',0.)+timings.get('row_lookup',0.),

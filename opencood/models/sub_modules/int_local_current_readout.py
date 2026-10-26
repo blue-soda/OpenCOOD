@@ -51,6 +51,12 @@ class LocalCurrentReadoutCache:
         cells=mask.numel();cost=sum(m.weight.numel() for m in (self.first,self.second,self.output))
         if bool(mask.all()):return self.dense(current),cells*cost,0,cells
         if not bool(mask.any()):return old,0,0,0
+        output,target,macs,support=self.partial_rows(current,mask)
+        return _write_rows(old,target,output),macs,macs,support
+
+    def partial_rows(self,current,mask):
+        """Compute requested rows; caller owns the final complete-state write."""
+        cells=mask.numel()
         support=F.max_pool2d(mask.float(),3,1,1)>0
         middle,ids,macs=prepared_conv3x3_rows(self.first,self.weights[0],current,self.neighborhood_plan(support),self.row_chunk_size)
         middle=F.relu(middle)
@@ -60,7 +66,7 @@ class LocalCurrentReadoutCache:
         output=planned_conv(self.second,self.weights[1],middle,indices,self.row_chunk_size)
         output=F.relu(F.linear(output,self.output.weight[:,:,0,0],self.output.bias))
         macs+=target.numel()*(self.second.weight.numel()+self.output.weight.numel())
-        return _write_rows(old,target,output),macs,macs,ids.numel()
+        return output,target,macs,ids.numel()
 
     def step(self,current,state,meta,reset=False):
         if torch.is_grad_enabled() or self.repair.training:raise ValueError('Frozen inference only')
