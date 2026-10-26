@@ -217,7 +217,7 @@ def run(args, output):
         from compute_infocom_adapter import smoke
         try:
             smoke(model, dataset, wire, ids, Path(compute_reference), output, meta, args.gpu, loader,
-                  args.compute_count,args.compute_repeat)
+                  args.compute_count,args.compute_repeat,args.compute_diagnose)
         finally:
             if wire:wire.handle.remove()
         return
@@ -333,6 +333,7 @@ def main():
     parser.add_argument('--compute-smoke-reference', help='Four fixed-frame real-wire timing adapter parity gate; not an AP/performance run')
     parser.add_argument('--compute-count',type=int,choices=(4,64),default=4)
     parser.add_argument('--compute-repeat',type=int,choices=(0,1,2),default=0)
+    parser.add_argument('--compute-diagnose',action='store_true',help='Untimed repeated discrepancy export; original strict gate unchanged')
     args = parser.parse_args()
     if args.mask_ratio is not None and (not math.isfinite(args.mask_ratio) or not 0 < args.mask_ratio <= .1):
         parser.error('mask ratio must be finite and in (0,0.1]')

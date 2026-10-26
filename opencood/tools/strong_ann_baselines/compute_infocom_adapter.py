@@ -55,7 +55,7 @@ class InfoComAdapter:
         return [('road_to_vehicle_sender%d'%r['sender'],p) for r,p in self.wire.messages]
 
 
-def smoke(model,dataset,wire,ids,reference,output,meta,gpu,loader,count=4,repeat=0):
+def smoke(model,dataset,wire,ids,reference,output,meta,gpu,loader,count=4,repeat=0,diagnostic=False):
     if wire is None or len(ids)!=1738:
         raise ValueError('Need real wire and the full common ID list')
     refmeta=json.loads((reference/'summary.json').read_text())
@@ -109,6 +109,13 @@ def smoke(model,dataset,wire,ids,reference,output,meta,gpu,loader,count=4,repeat
                     fresh_inputs_for_each_repeat=False,model_or_message_cache=False)
     write(output/'compute_protocol.json',protocol)
     adapter=InfoComAdapter(model,dataset,wire,ids,prepared);results=[]
+    if diagnostic:
+        from diagnose_snapshot_compute import diagnose
+        protocol.update(diagnostic_only=True,not_a_performance_result=True)
+        write(output/'compute_protocol.json',protocol)
+        diagnose(adapter,indices,refs,reference,output)
+        write(output/'status.json',dict(finished=True,diagnostic_only=True,unique_frames=len(indices)))
+        return
     with torch.no_grad():
         for scope in protocol['scopes']:
             torch.cuda.synchronize();torch.cuda.reset_peak_memory_stats()
