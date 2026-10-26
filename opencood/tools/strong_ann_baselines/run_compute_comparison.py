@@ -14,14 +14,41 @@ def write(path,value):
     tmp.write_text(json.dumps(value,indent=2,allow_nan=False));tmp.replace(path)
 
 
+def await_resource(plan,root,deadline,method,repeat):
+    """Queue before measurement; no GPU context or interference with training."""
+    if not plan.get('wait_for_empty_gpu'):return True
+    successes=0
+    while True:
+        gpu=str(plan['physical_gpu'])
+        raw=subprocess.check_output(['nvidia-smi','-i',gpu,'--query-gpu=uuid,memory.free,utilization.gpu',
+                                     '--format=csv,noheader,nounits']).decode().strip()
+        uuid,free,util=[x.strip() for x in raw.split(',')]
+        processes=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid,pid,used_memory',
+                                          '--format=csv,noheader,nounits']).decode().splitlines()
+        occupied=[line for line in processes if line.split(',')[0].strip()==uuid]
+        ok=not occupied and int(free)>=16000 and int(util)<=20
+        row=dict(unix=time.time(),gpu=gpu,uuid=uuid,free_mib=int(free),utilization=int(util),
+                 other_compute_processes=occupied,passed=ok,method=method,repeat=repeat)
+        with (root/'resource_admission.jsonl').open('a') as f:f.write(json.dumps(row)+'\n')
+        successes=successes+1 if ok else 0
+        if successes==5:return True
+        if time.time()>=deadline:return False
+        write(root/'status.json',dict(state='waiting_for_gpu',method=method,repeat=repeat,last_resource=row,
+                                     deadline_unix=deadline,automatic_model_retry=False))
+        time.sleep(2 if ok else 300)
+
+
 def run(plan,root):
     methods=plan['methods'];names=list(methods)
     if len(names)!=4 or plan['repeats']!=3:raise ValueError('Registered four methods / three repeats only')
-    rows=[];failed=set()
+    rows=[];failed=set();deadline=time.time()+plan.get('resource_wait_seconds',21600)
     for repeat in range(3):
         order=names[repeat:]+names[:repeat]
         for name in order:
             if name in failed:continue
+            if not await_resource(plan,root,deadline,name,repeat):
+                write(root/'status.json',dict(state='resource_timeout',method=name,repeat=repeat,completed_runs=len(rows)))
+                return
             spec=methods[name];output=root/('%s_repeat%d'%(name,repeat))
             if output.exists():raise ValueError('Refuse to overwrite or automatically retry '+str(output))
             cmd=spec['command']+['--output',str(output),'--compute-count','64','--compute-repeat',str(repeat)]
