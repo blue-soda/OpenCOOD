@@ -12,7 +12,7 @@ from opencood.loss.point_pillar_dir_loss import PointPillarDirLoss
 from opencood.tools.train_int_anchor_residual import ConvCounter
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
-from opencood.tools.int_gpu_exclusivity import check_gpu_exclusive,wait_for_training_gpu
+from opencood.tools.int_gpu_exclusivity import check_gpu_exclusive,wait_for_training_gpu,sample_gpu_usage
 from opencood.utils import eval_utils
 
 
@@ -58,14 +58,17 @@ def engineering(baseline,mode,cfg,train,costs,spatial_macs):
         gradient_into_repair_only=True,teacher_not_used_in_partial_inference=True)
 
 
-def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variants=None,expected_ap=None,note=None,audit=None,wait_for_gpu=False):
+def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variants=None,expected_ap=None,note=None,audit=None,wait_for_gpu=False,share_gpu=False):
+    if wait_for_gpu and share_gpu:raise ValueError('Choose shared execution or exclusive waiting, not both')
     modes=dict(baseline=baseline);modes.update(variants if variants is not None else dict(recurrent=mode));states={k:None for k in modes}
     stats={k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}
     metrics={k:dict(time=[],macs=0,full=0,state=[],deep_write=[],short_ratio=[],readout_write=[],readout_ratio=[],readout_full=0) for k in modes};isolation=[]
     dataset,stream=loader(rows,cfg,4,303)
     def guard(scan):
         try:
-            if wait_for_gpu:
+            if share_gpu:
+                evidence=sample_gpu_usage(a.gpu)
+            elif wait_for_gpu:
                 # Pause only between complete frames. All trajectory states and
                 # AP accumulators stay intact; any wait invalidates whole-run time.
                 def waiting(event):

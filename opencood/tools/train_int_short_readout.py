@@ -13,7 +13,7 @@ from opencood.tools.train_int_anchor_residual import ConvCounter
 from opencood.tools.train_int_recurrent_deep import cost_of,evaluate
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
-from opencood.tools.int_gpu_exclusivity import wait_for_training_gpu
+from opencood.tools.int_gpu_exclusivity import sample_gpu_usage
 
 
 def atomic_save(value,path):
@@ -36,7 +36,7 @@ def train_short_readout(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_rep
         optimization='AdamW1e-4 wd1e-4 clip5; Plateau .5 patience1 threshold.0005 minlr1e-6. Min6 epochs, stale4 and lr<=2.5e-5. Maximum budget does not imply convergence.',
         purpose='Check precision of cheap complete-state path before localizing it. Width32/64 planned capacity controls; retain validated dense/local readout baseline.')
     write_json(out/'short_readout_contract.json',contract)
-    write_json(out/'validation_execution.json',dict(contention='Pause between complete frames, at most600s per guard; poll15s; preserve all histories and AP accumulators. Any contention invalidates entire evaluation latency; hardware errors and timeout fail closed.',
+    write_json(out/'validation_execution.json',dict(contention='User permits shared GPU training and validation. Sample other processes without waiting or exiting for sharing; any observed sharing invalidates whole evaluation latency, not AP. Hardware/query/CUDA allocation errors still propagate.',
         scope='Execution only; model/training contract and strict standalone benchmarks unchanged.'))
     states={'control':None,'student':None};samples=[];partial=0;maximum=0.
     _,stream=loader(train[:32],cfg,0,303)
@@ -102,10 +102,9 @@ def train_short_readout(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_rep
                     state['readout']['value']=state['readout']['value'].detach()
                 if (index+1)%200==0:
                     torch.cuda.synchronize()
-                    def waiting(event):
-                        write_json(directory/('train_wait_%06d.json'%(index+1)),event)
-                        write_json(out/'status.json',dict(status='RUNNING',phase='waiting_gpu',epoch=epoch,scans=index+1))
-                    wait_for_training_gpu(a.gpu,on_event=waiting)
+                    evidence=sample_gpu_usage(a.gpu)
+                    if not evidence['timing_valid']:
+                        write_json(directory/('train_shared_%06d.json'%(index+1)),evidence)
                     write_json(out/'status.json',dict(status='RUNNING',phase='train',epoch=epoch,scans=index+1,loss=float(np.mean(losses))))
             assert index+1==len(train) and losses and not terms
             assert all(p.grad is None for module in (mode.model,mode.readout,mode.repair) for p in module.parameters())
@@ -115,7 +114,7 @@ def train_short_readout(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_rep
             history=history,contract=contract,best=best,significant=significant,stale=stale,epoch=epoch,next_action=action)
         atomic_save(dict(snapshot('evaluate'),training_summary=dict(losses=losses,updates=updates)),out/'pending_validation.pth')
         report=evaluate(a,baseline,None,cfg,val,directory,costs,spatial_macs,epoch,
-            variants=dict(dense_recurrent=control,short_readout=mode),expected_ap={'dense_recurrent':expected},wait_for_gpu=True,
+            variants=dict(dense_recurrent=control,short_readout=mode),expected_ap={'dense_recurrent':expected},share_gpu=True,
             note='Full5794/1738 independent baseline/dense readout/short readout histories. Full readout teacher disabled in ordinary inference. Epoch0 initialization only. Conv MACsx2; all alignment included in model time.')
         ap=report['results']['short_readout']['ap70']
         if epoch:scheduler.step(ap)

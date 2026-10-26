@@ -22,7 +22,7 @@ def process_identity(pid):
     return result
 
 
-def verify_gpu_processes(gpu_rows,process_rows,index,pid):
+def verify_gpu_processes(gpu_rows,process_rows,index,pid,allow_shared=False):
     devices={}
     for row in gpu_rows.splitlines():
         if not row.strip():continue
@@ -40,8 +40,25 @@ def verify_gpu_processes(gpu_rows,process_rows,index,pid):
         if fields[0]==uuid:pids.append(int(fields[1]))
     if pid not in pids:raise RuntimeError('Benchmark PID absent from GPU query; cannot validate isolation')
     foreign=sorted(set(pids)-{pid})
-    if foreign:raise GPUContention(index,foreign)
-    return dict(gpu=index,uuid=uuid,pids=pids)
+    if foreign and not allow_shared:raise GPUContention(index,foreign)
+    result=dict(gpu=index,uuid=uuid,pids=pids)
+    if allow_shared:result.update(foreign_pids=foreign,timing_valid=not foreign)
+    return result
+
+
+def sample_gpu_usage(index):
+    """Observe shared training/validation without waiting or controlling jobs.
+
+    Sharing affects latency comparability, not permission to compute. Hardware
+    and malformed-query errors still propagate; CUDA handles actual allocation.
+    """
+    def query(fields):
+        return subprocess.check_output(['nvidia-smi','-i',str(index),fields,
+            '--format=csv,noheader,nounits'],timeout=15).decode()
+    result=verify_gpu_processes(query('--query-gpu=index,uuid'),
+        query('--query-compute-apps=gpu_uuid,pid'),index,os.getpid(),allow_shared=True)
+    result['checked_unix']=time.time()
+    return result
 
 
 def check_gpu_exclusive(index):

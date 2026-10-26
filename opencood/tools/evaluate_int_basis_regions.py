@@ -627,7 +627,11 @@ def main():
         return
     free, util = subprocess.check_output(['nvidia-smi', '-i', str(a.gpu), '--query-gpu=memory.free,utilization.gpu',
         '--format=csv,noheader,nounits']).decode().strip().split(',')
-    if int(free) < 22000 or int(util) > 5: raise RuntimeError('GPU occupied')
+    if a.short_readout_epochs:
+        # Observed process footprint about5.5GiB; leave launch headroom. Other
+        # processes and nonzero utilization are permitted by the user.
+        if int(free)<8192:raise RuntimeError('Short readout needs at least8192MiB free at launch')
+    elif int(free) < 22000 or int(util) > 5: raise RuntimeError('GPU occupied')
     out.mkdir(parents=True, exist_ok=False)
     env = dict(os.environ, PYTHONPATH=str(Path.cwd()), CUDA_VISIBLE_DEVICES=str(a.gpu), OMP_NUM_THREADS='2', MKL_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2')
     command = [sys.executable, '-m', 'opencood.tools.evaluate_int_basis_regions']+sys.argv[1:]+['--worker']

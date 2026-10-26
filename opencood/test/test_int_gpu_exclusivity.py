@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from opencood.tools.int_gpu_exclusivity import verify_gpu_processes,check_gpu_exclusive,GPUContention,wait_for_training_gpu
+from opencood.tools.int_gpu_exclusivity import verify_gpu_processes,check_gpu_exclusive,GPUContention,wait_for_training_gpu,sample_gpu_usage
 
 
 class TestGpuExclusivity(unittest.TestCase):
@@ -16,6 +16,20 @@ class TestGpuExclusivity(unittest.TestCase):
         replies=[]
         for rows in processes:replies.extend([b'1, GPU-b\n',rows.encode()])
         return patch('opencood.tools.int_gpu_exclusivity.subprocess.check_output',side_effect=replies)
+
+    @patch('opencood.tools.int_gpu_exclusivity.os.getpid',return_value=202)
+    @patch('opencood.tools.int_gpu_exclusivity.time.sleep')
+    def test_shared_observation_continues_without_waiting(self,sleep,pid):
+        with self.query(['GPU-b, 202\nGPU-b, 303']):result=sample_gpu_usage(1)
+        self.assertEqual(result['foreign_pids'],[303])
+        self.assertFalse(result['timing_valid']);sleep.assert_not_called()
+        with self.query(['GPU-b, 202']):self.assertTrue(sample_gpu_usage(1)['timing_valid'])
+
+    def test_shared_observation_still_rejects_missing_self_or_bad_query(self):
+        with self.assertRaisesRegex(RuntimeError,'absent'):
+            verify_gpu_processes('1, GPU-b','GPU-b, 303',1,202,allow_shared=True)
+        with self.assertRaisesRegex(RuntimeError,'process query unavailable'):
+            verify_gpu_processes('1, GPU-b','Unknown Error',1,202,allow_shared=True)
 
     @patch('opencood.tools.int_gpu_exclusivity.os.getpid',return_value=202)
     @patch('opencood.tools.int_gpu_exclusivity.time.sleep')

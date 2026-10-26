@@ -26,7 +26,7 @@ class Trajectory:
 
 
 class TestValidationWait(unittest.TestCase):
-    def evaluate(self, path, baseline, student, wait):
+    def evaluate(self, path, baseline, student, wait, shared=False):
         rows = [dict(supervised=False, index=i) for i in range(12)]
         samples = [dict(ego={}, meta=r) for r in rows]
         with patch.object(runner, 'loader', return_value=(None, samples)), \
@@ -35,7 +35,24 @@ class TestValidationWait(unittest.TestCase):
              patch.object(runner.eval_utils, 'calculate_ap', return_value=(.7553159775482435,)):
             return runner.evaluate(SimpleNamespace(gpu=1), baseline, None, {}, rows,
                 path, {('dense', True): 10}, 0, 14,
-                variants={'student': student}, wait_for_gpu=wait)
+                variants={'student': student}, wait_for_gpu=wait, share_gpu=shared)
+
+    def test_persistent_sharing_completes_ap_without_wait_or_exit(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory=Path(temp)/'epoch_014';directory.mkdir()
+            baseline,student=Trajectory(),Trajectory()
+            with patch.object(runner,'sample_gpu_usage',return_value=dict(timing_valid=False,foreign_pids=[99])), \
+                 patch.object(runner,'wait_for_training_gpu') as wait, \
+                 patch.object(runner,'check_gpu_exclusive') as strict:
+                report=self.evaluate(directory,baseline,student,False,shared=True)
+            wait.assert_not_called();strict.assert_not_called()
+            self.assertEqual(baseline.seen,list(range(12)))
+            self.assertEqual(student.seen,baseline.seen)
+            self.assertFalse(report['timing_valid'])
+            self.assertEqual(report['status'],'COMPLETED')
+            for result in report['results'].values():
+                self.assertIsNone(result['mean_ms']);self.assertIsNone(result['p95_ms'])
+                self.assertEqual(result['ap70'],.7553159775482435)
 
     def test_pause_keeps_every_frame_once_and_nulls_whole_run_latency(self):
         events = []
