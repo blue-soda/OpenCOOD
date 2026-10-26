@@ -2238,5 +2238,133 @@
       "status": "COMPLETED",
       "timing_valid": true
     }
+  },
+  {
+    "epoch": 35,
+    "loss": 0.22008176450459174,
+    "lr": 0.0001,
+    "stale": 0,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Full5794/1738 independent baseline/dense readout/short readout histories. Full readout teacher disabled in ordinary inference. Epoch0 initialization only. Conv MACsx2; all alignment included in model time.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 19.476022420492587,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": null,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 28.87978961225599,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        },
+        "dense_recurrent": {
+          "ap50": 0.8311569719918577,
+          "ap70": 0.7555115949963113,
+          "conv_linear_gflops": 108.5595113459275,
+          "deep_full_frames": 1531,
+          "mean_deep_write_fraction": 1.0,
+          "mean_ms": 18.285295093214053,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": null,
+          "mean_short_update_macs_ratio": 1.0,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 30.93637719284743,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        },
+        "short_readout": {
+          "ap50": 0.8175950163982639,
+          "ap70": 0.6645868721419526,
+          "conv_linear_gflops": 94.50340093225267,
+          "deep_full_frames": 1531,
+          "mean_deep_write_fraction": 1.0,
+          "mean_ms": 17.99982766341289,
+          "mean_readout_executed_fraction": 0.40143998215031895,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": 1.0,
+          "mean_state_bytes": 76406400.0,
+          "p95_ms": 30.72613012045622,
+          "readout_full_frames": 2005,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
+  },
+  {
+    "epoch": 36,
+    "loss": 0.21949172420621071,
+    "lr": 0.0001,
+    "stale": 1,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Full5794/1738 independent baseline/dense readout/short readout histories. Full readout teacher disabled in ordinary inference. Epoch0 initialization only. Conv MACsx2; all alignment included in model time.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 19.414959609485006,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": null,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 28.876999544445415,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        },
+        "dense_recurrent": {
+          "ap50": 0.8311569719918577,
+          "ap70": 0.7555115949963113,
+          "conv_linear_gflops": 108.5595113459275,
+          "deep_full_frames": 1531,
+          "mean_deep_write_fraction": 1.0,
+          "mean_ms": 18.223973931086135,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": null,
+          "mean_short_update_macs_ratio": 1.0,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 30.78592208912596,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        },
+        "short_readout": {
+          "ap50": 0.8179689715383438,
+          "ap70": 0.665004476303465,
+          "conv_linear_gflops": 94.50331130662616,
+          "deep_full_frames": 1531,
+          "mean_deep_write_fraction": 1.0,
+          "mean_ms": 17.949365599729497,
+          "mean_readout_executed_fraction": 0.40143998215031895,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": 1.0,
+          "mean_state_bytes": 76406400.0,
+          "p95_ms": 30.691618856508285,
+          "readout_full_frames": 2005,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
   }
 ]
