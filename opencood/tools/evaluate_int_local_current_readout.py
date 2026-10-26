@@ -36,6 +36,9 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
         controls='Independent mature D/full readout; trained dense current; selected local; dense-compute same masked policy. Real-weight same-input replay outside timing.',
         limitation='Transferred train calibration may be suboptimal for new readout; no threshold sweep or fabricated same-AP claim. Extra96 reference and packed weights included.')
     write_json(out/'local_current_contract.json',policy)
+    if a.current_readout_profile:
+        from opencood.tools.profile_int_current_readout import profile
+        return profile(a,cfg,train,modes['current_local'],out,costs,spatial_macs)
     def replay(ego,previous,meta,pred,state,info):
         mode=modes['current_local'];cache=mode.readout_cache;mask=cache.last_mask.clone();cache.backend='masked_dense'
         try:other,other_state,_=mode.step(ego,previous,meta)

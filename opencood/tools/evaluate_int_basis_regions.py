@@ -531,8 +531,10 @@ def main():
     p.add_argument('--short-readout-diagnostic',default=None,help='Frozen repair checkpoint for offline512 train-frame history diagnosis')
     p.add_argument('--current-readout-local',default=None,help='Frozen current-only repair checkpoint for selected local execution')
     p.add_argument('--current-readout-local-calibration',default=None,help='Existing train-only readout calibration to transfer unchanged')
+    p.add_argument('--current-readout-profile',action='store_true',help='Same-state512 train frames: row batches and separate intrusive phase timing')
     a = p.parse_args(); out = Path(a.output)
     if bool(a.current_readout_local)!=bool(a.current_readout_local_calibration):p.error('Local current readout requires checkpoint and calibration')
+    if a.current_readout_profile and not a.current_readout_local:p.error('Current readout profile requires frozen local checkpoint')
     if a.current_readout_local and (a.short_readout_epochs or a.short_readout_resume or a.short_readout_diagnostic or not a.recurrent_local_reference or a.recurrent_local_period!=4 or a.recurrent_readout_calibration):
         p.error('Local current readout requires frozen four-frame reference without other readout experiment')
     if a.short_readout_diagnostic and (a.short_readout_epochs or a.short_readout_resume or not a.recurrent_local_reference or a.recurrent_local_period!=4 or a.recurrent_readout_calibration):

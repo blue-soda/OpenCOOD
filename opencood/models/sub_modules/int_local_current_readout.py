@@ -11,10 +11,12 @@ from opencood.models.sub_modules.int_basis_spatial_state import _write_rows
 
 
 class LocalCurrentReadoutCache:
-    def __init__(self,readout,repair,bounds,threshold,backend='selected',period=3):
+    def __init__(self,readout,repair,bounds,threshold,backend='selected',period=3,row_chunk_size=32768):
         if readout.training or repair.training or repair.gated or backend not in ('selected','masked_dense'):
             raise ValueError('Frozen current-only readout and selected/masked_dense backend required')
         if period not in (1,3) or not math.isfinite(threshold) or threshold<0:raise ValueError('Invalid refresh/threshold')
+        if not isinstance(row_chunk_size,int) or row_chunk_size<1:raise ValueError('Positive row chunk size required')
+        self.row_chunk_size=row_chunk_size
         self.readout,self.repair,self.bounds,self.threshold=readout,repair,bounds,threshold
         self.backend,self.period=backend,period
         self.execution='current_local';self.max_full_age_us=250000
@@ -26,21 +28,27 @@ class LocalCurrentReadoutCache:
     def packed_weight_bytes(self):
         return sum(w.numel()*w.element_size() for w in self.weights)
 
+    def dense(self,current):
+        return self.repair.net(current)
+
+    def select_mask(self,current,reference,valid,confidence):
+        return LocalReadoutCache.select_mask(self,current,reference,valid,confidence)
+
     def selected(self,current,old,mask):
         if torch.is_grad_enabled() or self.repair.training:raise ValueError('Frozen inference only')
         if (current.shape[0]!=1 or mask.shape!=(1,1,*current.shape[-2:]) or mask.dtype!=torch.bool or
                 old.shape!=(1,self.repair.channels,*current.shape[-2:])):
             raise ValueError('Matching single-frame input, output cache and boolean mask required')
         cells=mask.numel();cost=sum(m.weight.numel() for m in (self.first,self.second,self.output))
-        if bool(mask.all()):return self.repair.net(current),cells*cost,0,cells
+        if bool(mask.all()):return self.dense(current),cells*cost,0,cells
         if not bool(mask.any()):return old,0,0,0
         support=F.max_pool2d(mask.float(),3,1,1)>0
-        middle,ids,macs=prepared_conv3x3_rows(self.first,self.weights[0],current,prepare_selected_neighborhoods(support),32768)
+        middle,ids,macs=prepared_conv3x3_rows(self.first,self.weights[0],current,prepare_selected_neighborhoods(support),self.row_chunk_size)
         middle=F.relu(middle)
         target,neighbors,_=prepare_selected_neighborhoods(mask)
         indices=row_lookup(ids,cells)[neighbors]
         assert bool(((neighbors==cells)|(indices<ids.numel())).all())
-        output=planned_conv(self.second,self.weights[1],middle,indices,32768)
+        output=planned_conv(self.second,self.weights[1],middle,indices,self.row_chunk_size)
         output=F.relu(F.linear(output,self.output.weight[:,:,0,0],self.output.bias))
         macs+=target.numel()*(self.second.weight.numel()+self.output.weight.numel())
         return _write_rows(old,target,output),macs,macs,ids.numel()
@@ -62,11 +70,11 @@ class LocalCurrentReadoutCache:
         else:
             aligned,valid=warp_bev(torch.cat((state['value'],state['reference'],state['confidence']),1),state['pose'],meta['pose'],self.bounds)
             old=aligned[:,:self.repair.channels];reference=aligned[:,self.repair.channels:-1]
-            mask=LocalReadoutCache.select_mask(self,current,reference,valid,aligned[:,-1:])
+            mask=self.select_mask(current,reference,valid,aligned[:,-1:])
             assert bool((mask|valid).all())
             if self.backend=='selected':output,executed,extra,support=self.selected(current,old,mask)
             else:
-                output=torch.where(mask,self.repair.net(current),old);support=cells
+                output=torch.where(mask,self.dense(current),old);support=cells
                 executed=cells*sum(c.weight.numel() for c in (self.first,self.second,self.output))
             reference=torch.where(mask,current,reference)
             frames=state['frames']+1;full_stamp=state['full_stamp'];uncovered=float((~valid).float().mean())
