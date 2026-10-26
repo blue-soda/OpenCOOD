@@ -1,0 +1,101 @@
+{
+  "archive": "/dev/shm/tzm_short_readout_20261026_1045.tar.gz",
+  "bytes": 1694427,
+  "sha256": "cdb641083c4b368b328fcfa7d0967b8dc591639d35c2d4a8072ba5711f1f2447",
+  "files": [
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_v1_20261026/latest.pth",
+      "bytes": 256175,
+      "sha256": "6db1d8dae41d3b8b184fd31053d9856170b6f26f12bec005becd29f99844149f",
+      "epoch": 10,
+      "next_action": "train"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_v1_20261026/pending_validation.pth",
+      "bytes": 306863,
+      "sha256": "a874022f7c750a977c95e8d5e29b38b93b7ff57b3b7abae2a4897623c0c31432",
+      "epoch": 11,
+      "next_action": "evaluate"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_v1_20261026/best.json",
+      "bytes": 257,
+      "sha256": "2a9f694409ae33059e6133b99fc87344e2c6dc0069b9435c1dc7f155876f4e1d"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_v1_20261026/history.json",
+      "bytes": 26338,
+      "sha256": "834674b237f3e82247dd62562a3c8183b8e904bc04cef6b465363149a31a11fd"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_v1_20261026/short_readout_contract.json",
+      "bytes": 3603,
+      "sha256": "c87ec6644a79b31ec4fe11d6ed4ee3d2e192af660dfb5ebed0f356a9e980aeb4"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_v1_20261026/status.json",
+      "bytes": 136,
+      "sha256": "c1fbad4244ea35cd981bab13e873260090ed5d29e8f25c2cd98f997a0993d1bd"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_v1_20261026/epoch_011/repair.pth",
+      "bytes": 85655,
+      "sha256": "b41f959f4ee84e44a0fdd02f666bb2ccf1790878d8e9cc56abd8192937ac1cec",
+      "epoch": 11,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_v1_20261026/epoch_011/gpu_exclusivity.json",
+      "bytes": 6218,
+      "sha256": "34fafe0c707a21d83f1969a6a3ab141fdc69617ef1c72dcd1246359e7a462cf4"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_v1_20261026/latest.pth",
+      "bytes": 494255,
+      "sha256": "ed769b8ea3633da22f58ff0be2ccfda9e1f455372f8336a18b011fdef95da468",
+      "epoch": 10,
+      "next_action": "train"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_v1_20261026/pending_validation.pth",
+      "bytes": 544943,
+      "sha256": "40e1009c29a91d4da4441fa6fd373ed4a35006ec75d4736385ad0c7333304f34",
+      "epoch": 11,
+      "next_action": "evaluate"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_v1_20261026/best.json",
+      "bytes": 257,
+      "sha256": "82495b00371a30c4dd270f0924bce4f737315362b0716b124cfecb6cd4f162c1"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_v1_20261026/history.json",
+      "bytes": 26336,
+      "sha256": "54fa340c89bcf347f13e922d4d384f1ebe671930f57aa9e8d00db42a25745deb"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_v1_20261026/short_readout_contract.json",
+      "bytes": 3603,
+      "sha256": "d38f00769e4a81c5abe566a0763b335a53fae8df18fc82176308d22081b0e6c3"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_v1_20261026/status.json",
+      "bytes": 136,
+      "sha256": "05b161049b94f3da7b3b6cd408a6440ff84c4932e40b79f9a0e97c49a2916c40"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_v1_20261026/epoch_011/repair.pth",
+      "bytes": 165015,
+      "sha256": "d5f225412030c65cbabf6faee5f2a6e9b79664422b80a543c0ae547c87d39a7f",
+      "epoch": 11,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_v1_20261026/epoch_011/gpu_exclusivity.json",
+      "bytes": 6441,
+      "sha256": "c63b99caac435519ab3520c7f4b5d74ce285ecf8fda6b4d1d395ed9b396d2f33"
+    }
+  ],
+  "destination": "/data1/zhh/gzc/int181_snapshot/live_backups/short_readout_20261026_1045.tar.gz",
+  "destination_sha256_verified": true
+}

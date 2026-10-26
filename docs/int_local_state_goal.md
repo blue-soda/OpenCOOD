@@ -2582,3 +2582,13 @@ recurrent_readout_layout_v1_20261026完成5794扫描/1738标注，timing_valid=t
 12epoch是当前运行预算，不是收敛条件。先让现有运行完成；若预算结束仍维持明显改善且状态健康，下一轮应从完整latest保留optimizer/scheduler继续至更高预算，不能重置训练或把预算结束包装成收敛。当前不重复启动同一模型，也不根据未完成epoch11填AP。epoch8–10报告/GPU证据/history/best已归档，40分钟路线级检查保持。
 
 最新异机恢复备份：146 /data1/zhh/gzc/int181_snapshot/live_backups/short_readout_20261026_1005.tar.gz，1692366字节，SHA256=a0acac2bf7031e057c3b9e0d0020a891bf63eaab9214b5a7ae13e56380ba4119，两端一致。包含两档完整epoch10 latest、epoch10 pending、best修正器及合同历史，所有pth可解析；latest已完成验证，恢复应从latest进入epoch11，不能重复评估旧pending。data2可用1972711424字节，当前仍可保存小检查点；没有删除其他文件或干预其他账号。无新异常或需用户操作事项。
+### 2026-10-26 10:46：epoch11验证遇其他账号GPU争用，保留断点并优先恢复宽64
+
+原short_readout_w32/w64_v1两组在epoch11验证5200/5400扫描处分别检测到GPU2 PID55047、GPU3 PID55050，连续两次检查均存在，进程证据UID1001；隔离守卫只让本研究进程退出，未操作其他进程。两轮未完成验证不生成有效AP/延迟，最后可信完整结果仍是epoch10宽32=59.56856738%、宽64=61.85141097%。原run状态保留FAILED及INVALID_TIMING证据，不改写成完成或掩盖争用。
+
+两组pending_validation均完整可解析：epoch11、next_action=evaluate、2855次优化更新，history到完整epoch10。因此epoch11训练进度没有丢失，恢复只需从头重做该epoch的完整验证，再进入epoch12，不重复epoch11训练。此时两组lr仍1e-4/stale0，最近验证每轮仍改善约0.5–0.6个百分点，未平台；将恢复运行最大预算延长至24epoch，保留optimizer/scheduler、权重和历史，继续原停止规则，而不是重置短训。
+
+资源核验181只有GPU1完全空闲，GPU0及2–7有其他计算进程。优先用GPU1恢复当前较高精度的宽64：short_readout_w64_resume1_v1_20261026，PID29800，从原宽64 pending_validation.pth恢复，先验证epoch11。宽32保持待恢复，下一轮有空闲GPU时在新目录以原宽32 pending恢复，预算24；不挤占已用GPU、不重复启动已在运行的宽64。146只读检查仍返回GPU0设备Unknown Error，与此前节点故障一致，本轮未尝试新的CUDA任务，继续仅作CPU备份存储。
+
+两组最新epoch11 pending及修正器、epoch10 latest、合同历史与争用证据已异机备份：/data1/zhh/gzc/int181_snapshot/live_backups/short_readout_20261026_1045.tar.gz，1694427字节，SHA256=cdb641083c4b368b328fcfa7d0967b8dc591639d35c2d4a8072ba5711f1f2447，两端一致。data2可用1962299392字节，约1.83GiB。保存原失败证据和新启动合同，源代码本轮未改；坚持本地main记录→push→服务器pull。当前需要等待空闲资源的是宽32，而非整个路线；40分钟路线级检查保持，异常通知说明已自主恢复的部分与仍待资源的部分。
+恢复确认：宽64新run工程通过并已进入epoch11完整验证600/5794，resume记录next_action=evaluate、源pending SHA256=40e1009c29a91d4da4441fa6fd373ed4a35006ec75d4736385ad0c7333304f34。新启动/合同/测试/工程/resume证据已归档。宽32尚未恢复运行，不将等待资源写成训练中。
