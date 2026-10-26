@@ -529,7 +529,12 @@ def main():
     p.add_argument('--short-readout-kind',choices=('residual','current','current_gated'),default='residual')
     p.add_argument('--short-readout-resume',default=None)
     p.add_argument('--short-readout-diagnostic',default=None,help='Frozen repair checkpoint for offline512 train-frame history diagnosis')
+    p.add_argument('--current-readout-local',default=None,help='Frozen current-only repair checkpoint for selected local execution')
+    p.add_argument('--current-readout-local-calibration',default=None,help='Existing train-only readout calibration to transfer unchanged')
     a = p.parse_args(); out = Path(a.output)
+    if bool(a.current_readout_local)!=bool(a.current_readout_local_calibration):p.error('Local current readout requires checkpoint and calibration')
+    if a.current_readout_local and (a.short_readout_epochs or a.short_readout_resume or a.short_readout_diagnostic or not a.recurrent_local_reference or a.recurrent_local_period!=4 or a.recurrent_readout_calibration):
+        p.error('Local current readout requires frozen four-frame reference without other readout experiment')
     if a.short_readout_diagnostic and (a.short_readout_epochs or a.short_readout_resume or not a.recurrent_local_reference or a.recurrent_local_period!=4 or a.recurrent_readout_calibration):
         p.error('Short readout diagnostic requires frozen four-frame D reference without training/composition')
     if not 0<=a.short_readout_epochs<=48:p.error('Short readout budget must be0..48')
@@ -631,7 +636,7 @@ def main():
         return
     free, util = subprocess.check_output(['nvidia-smi', '-i', str(a.gpu), '--query-gpu=memory.free,utilization.gpu',
         '--format=csv,noheader,nounits']).decode().strip().split(',')
-    if a.short_readout_epochs or a.short_readout_diagnostic:
+    if a.short_readout_epochs or a.short_readout_diagnostic or a.current_readout_local:
         # Observed process footprint about5.5GiB; leave launch headroom. Other
         # processes and nonzero utilization are permitted by the user.
         if int(free)<8192:raise RuntimeError('Short readout needs at least8192MiB free at launch')
