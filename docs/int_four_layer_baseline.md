@@ -791,3 +791,13 @@ resume2两组均在重做验证1600/5794处再次遇持续争用（宽32 GPU3 PI
 宽64继续既定36epoch预算；宽3224epoch结束时结合末轮曲线，若仍改善且未平台，保留完整optimizer/scheduler有限续至36，与宽64采用同训练预算上限。不要在其原run未结束时重复启动或中断。两档共同诊断仍以历史误差积累和单步当前信息修正不足为候选解释，尚未有证据判定哪一个是主因，不提前换模型或把局部复用效率当成精度恢复。
 
 报告、GPU证据、history/best/status已归档。146备份更新为/data1/zhh/gzc/int181_snapshot/live_backups/short_readout_20261026_1725.tar.gz，1716019字节，SHA256=8f3196bd8b686d4e4c85f999c3ab8cdbfc453afcde71400ca79222a9f1b83ef4，两端一致，所有pth可解析。宽32latest23/pending24、宽64latest27/pending28，若中断应从较新的pending继续完整验证。保留40分钟检查，本轮无需用户处理，代码未改，文档main push→181 pull。
+### 2026-10-26 18:21：宽32完成24epoch并续至36，宽64仍未平台
+
+宽32完整epoch24 AP70=63.55931615%、loss=0.24467742，较epoch23提高0.21008个百分点，lr1e-4/stale0，原run以budget_not_convergence结束。与宽64同样保留模型、optimizer/scheduler和历史，从latest进入epoch25，最大36epoch；不使用epoch24 pending重复验证，不从best重置优化器。新run short_readout_w32_shared_continue_v1_20261026，GPU3/PID15170，源latest SHA256=602559318b8df3eb8eacb7d7ccf9db380262b65fb58420f66ba164ba95620a30。共享GPU规则继续，不干预其他任务。
+
+宽64epoch28/29/30/31 AP70分别65.66166150%/65.79817058%/65.86709929%/65.98941997%，loss分别0.22502098/0.22423698/0.22345306/0.22272781；lr仍1e-4/stale0。全部新增报告均完整5794/1738、控制AP精确复现、timing_valid=true。宽64当前epoch32训练3200/8593，距成熟四帧D控制仍9.56174个百分点；持续小幅改善并不等于能最终达到75.55%。保留既定36轮观察点，不预先承诺继续延至48。
+
+下一轮应优先推进固定检查点的读出误差诊断，与剩余训练并行，区分同当前输入下“真实递推历史”与“前帧完整读出作为历史”的单步预测误差，按距完整刷新第1/2帧分别统计；教师历史只用于诊断，不属于可部署策略，不能把其计算隐去后报省算收益。若第一普通帧已严重偏离，优先检查单步修正表达/当前输入通路；若第二帧相对第一帧明显扩大而教师历史对照缓解，才有递推累积证据。当前没有该诊断结果，不把猜测当结论，也不等无限延训后才行动。
+
+新增完整结果与24epoch结束报告已归档。146备份/data1/zhh/gzc/int181_snapshot/live_backups/short_readout_20261026_1820.tar.gz，1717393字节，SHA256=bb4a6ece2655a2ecd72b509057b1ecc4f15bc2e839c7ca9b61624665c5e29068，两端一致、所有pth可解析；备份宽32latest24/pending24、宽64latest31/pending31均以latest为继续训练入口。代码未改，继续main文档push→181 pull及40分钟路线级检查。
+宽32恢复确认：233项INT测试通过（8.981秒），32扫描工程通过；resume next_epoch=25/next_action=train，源SHA一致，启动与恢复证据已归档。

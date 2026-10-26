@@ -1,6 +1,6 @@
 {
-  "ap70": 0.6334924012031966,
-  "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_shared_v1_20261026/epoch_023/repair.pth",
-  "epoch": 23,
-  "sha256": "0693647ff6f95dfb65de60cce94b74ea6fae8c96cbfe6e58bdb52039d5728d1f"
+  "ap70": 0.6355931615474589,
+  "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_shared_v1_20261026/epoch_024/repair.pth",
+  "epoch": 24,
+  "sha256": "c383030a5d3e3096de340373fb971c42efd624f0506cff96ffc46ac3a8e7e98b"
 }
