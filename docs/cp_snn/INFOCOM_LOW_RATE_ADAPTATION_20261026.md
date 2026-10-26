@@ -36,3 +36,18 @@
 当前资源：181 /data2剩2,085,552,128 B，低于6,442,450,944 B准入；146以正常枚举的GPU4 UUID新建进程仍CUDA unavailable；187虽有54GB磁盘，每卡仅1674MiB空闲，低于真实批次所需。正式训练仍未启动，需让181可用空间达到至少6GiB，或提供可用于此训练的同等级存储/算力位置。未删除他人文件，未reset GPU。现有方案二固定组第8轮601/2339、多预算第1轮901/2339继续，最佳仍58.85365%，没有新最终AP。
 
 [最终两步检查](results/strong_ann_baselines_20261025/infocom_adaptation_ready_20261026/infocom_adaptation_smoke02/smoke.json)、[具体启动计划](results/strong_ann_baselines_20261025/infocom_adaptation_ready_20261026/infocom_lowrate_launch_plan.json)、[测试与归档SHA](results/strong_ann_baselines_20261025/infocom_adaptation_ready_20261026/verification.json)。后续先检查现有输出目录和PID避免重复；空间恢复后重新GPU准入，再按计划启动同一个10轮实验，不重新选择超参数。
+
+
+## 2026-10-26 12:16触发：磁盘恢复，正式训练已启动
+
+181 /data2实测可用161,176,248,320 B（约150GiB），此前6GiB存储准入阻塞已解除，无需等待额外许可，也不再重复询问空间。未由本任务删除其他用户数据，未推断是哪项外部操作释放空间。
+
+按原先已登记的唯一1%工作点协议启动infocom_lowrate_adapt01，超时父PID6042，181 GPU6；选择空闲卡避开GPU0多预算SNN和GPU4四预算收尾。GPU6五次准入均24252MiB空闲/0%利用率，训练器内部再次检查。启动前确认输出与启动标记均不存在、/proc没有另一个正式适配进程，并核对当前训练脚本SHA等于第二次真实Adam烟雾检查的版本859fce7d3ae0189b41ffaad66806a7c0af51c37e32a9f68537e6a253242a8659。只有GPU选择由原计划4调整为6，模型、数据、种子、loss、10轮和选择规则均未改变。
+
+正式首步loss=1.2924560、task=1.2207047、KL=717.5141、裁剪前梯度范数16.3888；第100步已处理200个样本，loss=1.0799453、task=1.0799142、KL=0.31105、梯度11.2834，均有限。全训练清单打乱后的首批不同于4样本烟雾检查，不能用二者首步loss不同判断恢复失败。这不是从烟雾权重续训，正式实验重新加载同一官方源权重。无验证AP或优势结论。
+
+根目录/data2/tzm/cp_snn_recovery_20261026/infocom_lowrate_adapt01；外部启动标记为同级infocom_lowrate_adapt01.launch.json，原infocom_lowrate_launch_plan.json保留为历史准备状态。轮询时读取progress.json、failure.json及PID；status.json在正式训练结束/四比例收尾时生成，训练中缺少status.json本身不是失败。每轮保存完整可恢复last、验证和共同GT复算；十轮后四比例完整wire收尾，完成前不把训练损失当研究成果。
+
+SNN多预算第2轮451/2339批，固定组8KiB评估继续。old_snn的0/2/3/4/6/8KiB预测均已生成1738帧，正在执行原登记full点（本轮见4帧），尚未完成总汇总；不重复启动旧实验或提前宣布最终通过。
+
+证据：[正式启动与资源准入](results/strong_ann_baselines_20261025/infocom_adaptation_launch_20261026/infocom_lowrate_adapt01.launch.json)、[实际训练协议及脚本快照SHA](results/strong_ann_baselines_20261025/infocom_adaptation_launch_20261026/infocom_lowrate_adapt01/protocol.json)、[首轮进度](results/strong_ann_baselines_20261025/infocom_adaptation_launch_20261026/infocom_lowrate_adapt01/progress.json)。
