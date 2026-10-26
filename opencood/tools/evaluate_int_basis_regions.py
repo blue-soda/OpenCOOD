@@ -528,7 +528,7 @@ def main():
     p.add_argument('--short-readout-width',type=int,choices=(32,64),default=32)
     p.add_argument('--short-readout-resume',default=None)
     a = p.parse_args(); out = Path(a.output)
-    if not 0<=a.short_readout_epochs<=24:p.error('Short readout budget must be0..24')
+    if not 0<=a.short_readout_epochs<=48:p.error('Short readout budget must be0..48')
     if a.short_readout_resume and not a.short_readout_epochs:p.error('Resume requires short readout training')
     if a.short_readout_epochs and (not a.recurrent_local_reference or a.recurrent_readout_calibration or a.recurrent_local_period!=4):
         p.error('Short readout training requires frozen four-frame D reference without readout composition')
