@@ -216,7 +216,7 @@ def run(args, output):
     if compute_reference is not None:
         from compute_infocom_adapter import smoke
         try:
-            smoke(model, dataset, wire, ids, Path(compute_reference), output, meta, args.gpu)
+            smoke(model, dataset, wire, ids, Path(compute_reference), output, meta, args.gpu, loader)
         finally:
             if wire:wire.handle.remove()
         return

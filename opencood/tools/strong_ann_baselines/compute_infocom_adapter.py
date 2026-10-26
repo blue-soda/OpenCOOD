@@ -19,11 +19,14 @@ def write(path, value):
 
 
 class InfoComAdapter:
-    def __init__(self, model, dataset, wire, ids):
+    def __init__(self, model, dataset, wire, ids, prepared):
         self.model=model;self.dataset=dataset;self.wire=wire;self.ids=ids;self.frame_id=None
+        self.prepared=prepared
 
     def prepare_cpu(self, index):
-        batch=self.dataset.collate_batch_test([self.dataset[index]])
+        # Official evaluation also shuffles points. Reusing the prepared CPU
+        # batch fixes voxel membership across warmup and timed repetitions.
+        batch=self.prepared[index]
         if batch is None or int(batch['ego']['sample_idx']) != index:
             raise ValueError('Frame identity mismatch')
         return str(self.ids[index]),batch
@@ -52,7 +55,7 @@ class InfoComAdapter:
         return [('road_to_vehicle_sender%d'%r['sender'],p) for r,p in self.wire.messages]
 
 
-def smoke(model,dataset,wire,ids,reference,output,meta,gpu):
+def smoke(model,dataset,wire,ids,reference,output,meta,gpu,loader):
     if wire is None or len(ids)!=1738:
         raise ValueError('Need real wire and the full common ID list')
     refmeta=json.loads((reference/'summary.json').read_text())
@@ -92,7 +95,20 @@ def smoke(model,dataset,wire,ids,reference,output,meta,gpu):
                   retains_reference_codec_roundtrip_checks=True,model_weight_updates=False,
                   script_sha256=sha(__file__),harness_sha256=sha(Path(__file__).with_name('compute_harness.py')))
     write(output/'compute_protocol.json',protocol)
-    adapter=InfoComAdapter(model,dataset,wire,ids);results=[]
+    # Replay the official full ordered loader's preprocessing/RNG sequence,
+    # without model forwards, and retain only the four selected CPU batches.
+    # Random access would consume a different point-shuffle sequence and make
+    # exact equality with the existing full evaluation impossible.
+    prepared={}
+    for i,batch in enumerate(loader):
+        if i in indices:prepared[i]=batch
+        if i%250==0:write(output/'status.json',dict(state='preparing_reference_inputs',processed=i+1))
+        if i==indices[-1]:break
+    if set(prepared)!=set(indices):raise ValueError('Incomplete reference input replay')
+    protocol.update(preprocessing='replay full ordered loader RNG, cache only four CPU batches',
+                    fresh_inputs_for_each_repeat=False,model_or_message_cache=False)
+    write(output/'compute_protocol.json',protocol)
+    adapter=InfoComAdapter(model,dataset,wire,ids,prepared);results=[]
     with torch.no_grad():
         for scope in protocol['scopes']:
             torch.cuda.synchronize();torch.cuda.reset_peak_memory_stats()
