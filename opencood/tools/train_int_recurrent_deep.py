@@ -58,14 +58,24 @@ def engineering(baseline,mode,cfg,train,costs,spatial_macs):
         gradient_into_repair_only=True,teacher_not_used_in_partial_inference=True)
 
 
-def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variants=None,expected_ap=None,note=None,audit=None):
+def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variants=None,expected_ap=None,note=None,audit=None,wait_for_gpu=False):
     modes=dict(baseline=baseline);modes.update(variants if variants is not None else dict(recurrent=mode));states={k:None for k in modes}
     stats={k:{t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)} for k in modes}
     metrics={k:dict(time=[],macs=0,full=0,state=[],deep_write=[],short_ratio=[],readout_write=[],readout_ratio=[],readout_full=0) for k in modes};isolation=[]
     dataset,stream=loader(rows,cfg,4,303)
     def guard(scan):
         try:
-            evidence=check_gpu_exclusive(a.gpu);evidence['scan']=scan;isolation.append(evidence)
+            if wait_for_gpu:
+                # Pause only between complete frames. All trajectory states and
+                # AP accumulators stay intact; any wait invalidates whole-run time.
+                def waiting(event):
+                    write_json(directory/('validation_wait_%06d.json'%scan),event)
+                    write_json(directory.parent/'status.json',dict(status='RUNNING',
+                        phase='waiting_validation_gpu',epoch=epoch,scans=scan))
+                evidence=wait_for_training_gpu(a.gpu,on_event=waiting)
+                write_json(directory.parent/'status.json',dict(status='RUNNING',phase='validation',epoch=epoch,scans=scan))
+            else:evidence=check_gpu_exclusive(a.gpu)
+            evidence['scan']=scan;isolation.append(evidence)
             write_json(directory/'gpu_exclusivity.json',dict(status='SAMPLED_CLEAR' if all(x['timing_valid'] for x in isolation) else 'INVALID_TIMING',samples=isolation))
         except Exception as exc:
             write_json(directory/'gpu_exclusivity.json',dict(status='INVALID_TIMING',scan=scan,error=repr(exc),samples=isolation,evidence=getattr(exc,'evidence',[])))

@@ -36,6 +36,8 @@ def train_short_readout(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_rep
         optimization='AdamW1e-4 wd1e-4 clip5; Plateau .5 patience1 threshold.0005 minlr1e-6. Min6 epochs, stale4 and lr<=2.5e-5. Maximum budget does not imply convergence.',
         purpose='Check precision of cheap complete-state path before localizing it. Width32/64 planned capacity controls; retain validated dense/local readout baseline.')
     write_json(out/'short_readout_contract.json',contract)
+    write_json(out/'validation_execution.json',dict(contention='Pause between complete frames, at most600s per guard; poll15s; preserve all histories and AP accumulators. Any contention invalidates entire evaluation latency; hardware errors and timeout fail closed.',
+        scope='Execution only; model/training contract and strict standalone benchmarks unchanged.'))
     states={'control':None,'student':None};samples=[];partial=0;maximum=0.
     _,stream=loader(train[:32],cfg,0,303)
     with torch.no_grad():
@@ -113,7 +115,7 @@ def train_short_readout(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_rep
             history=history,contract=contract,best=best,significant=significant,stale=stale,epoch=epoch,next_action=action)
         atomic_save(dict(snapshot('evaluate'),training_summary=dict(losses=losses,updates=updates)),out/'pending_validation.pth')
         report=evaluate(a,baseline,None,cfg,val,directory,costs,spatial_macs,epoch,
-            variants=dict(dense_recurrent=control,short_readout=mode),expected_ap={'dense_recurrent':expected},
+            variants=dict(dense_recurrent=control,short_readout=mode),expected_ap={'dense_recurrent':expected},wait_for_gpu=True,
             note='Full5794/1738 independent baseline/dense readout/short readout histories. Full readout teacher disabled in ordinary inference. Epoch0 initialization only. Conv MACsx2; all alignment included in model time.')
         ap=report['results']['short_readout']['ap70']
         if epoch:scheduler.step(ap)
