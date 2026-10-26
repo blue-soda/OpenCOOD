@@ -193,5 +193,245 @@
     "mode": "current_geometry",
     "prediction_max_error": 1.6689300537109375e-05,
     "state_max_error": 1.52587890625e-05
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.67572021484375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.67572021484375e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.67572021484375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 4.5299530029296875e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 4.5299530029296875e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 4.5299530029296875e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 7.3909759521484375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 7.3909759521484375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 7.3909759521484375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 6.9141387939453125e-06,
+    "state_max_error": 6.198883056640625e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 6.9141387939453125e-06,
+    "state_max_error": 6.198883056640625e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 6.9141387939453125e-06,
+    "state_max_error": 6.198883056640625e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 3.0517578125e-05,
+    "state_max_error": 3.719329833984375e-05
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 3.0517578125e-05,
+    "state_max_error": 3.719329833984375e-05
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 3.0517578125e-05,
+    "state_max_error": 3.719329833984375e-05
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.9604644775390625e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.9604644775390625e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.9604644775390625e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 1.0251998901367188e-05,
+    "state_max_error": 8.702278137207031e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 1.0251998901367188e-05,
+    "state_max_error": 8.702278137207031e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 1.0251998901367188e-05,
+    "state_max_error": 8.702278137207031e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.9141387939453125e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.9141387939453125e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.9141387939453125e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 6.020069122314453e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 6.020069122314453e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 6.020069122314453e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 7.152557373046875e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 7.152557373046875e-06
+  },
+  {
+    "mode": "current_packed",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 7.152557373046875e-06
   }
 ]

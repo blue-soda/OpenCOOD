@@ -53,7 +53,7 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
         return profile(a,cfg,train,modes['current_local'],out,costs,spatial_macs)
     policy['geometry_comparison']=bool(a.current_readout_geometry or a.current_readout_period5)
     if policy['geometry_comparison']:
-        policy['geometry_policy']='Independent same-selection trajectory. Fixed H/W/device neighbor table only; memory counted separately. First-use construction included in full evaluation timing.'
+        policy['geometry_policy']='Independent same-selection trajectory. Fixed H/W/device neighbor table only; memory counted separately. Actual first use runs in the deployment path, but reported model timing excludes the first10 warmup scans, so it is not a cold-start benchmark.'
     policy['packed_comparison']=bool(a.current_readout_packed)
     if a.current_readout_packed:
         policy['packed_policy']='Independent packed Y/reference/own confidence views. Fresh owned warp allocation and selected writes; old state immutable. Cached metric coordinates; original neighbor construction. No profiler adapter in deployment. Extra geometry separately counted.'

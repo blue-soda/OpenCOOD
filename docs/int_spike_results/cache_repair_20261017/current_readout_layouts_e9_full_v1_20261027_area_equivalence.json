@@ -1,0 +1,13 @@
+{
+  "status": "PASSED",
+  "scans_per_mode": 5794,
+  "modes": [
+    "current_local",
+    "current_geometry",
+    "current_packed"
+  ],
+  "all_per_frame_fields_exact": true,
+  "source_path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_layouts_e9_full_v1_20261027/areas.json",
+  "source_sha256": "0db15717e8bc17c5452bf9b27d40e2596862f30ae481a481448decd51836bd91",
+  "note": "Raw retained on181; every per-frame core/support/refresh/executed-MAC field equals across all three independent trajectories."
+}

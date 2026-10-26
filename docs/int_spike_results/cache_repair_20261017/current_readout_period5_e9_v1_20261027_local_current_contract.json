@@ -1,0 +1,21 @@
+{
+  "calibration": {
+    "path": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/readout_fixed_calibration_v1_20261025/calibration.json",
+    "sha256": "56f8ee3afb8eb1ba0a09701cfa2fa4be66fcd2ddc34937f5dbf1e57912132e50",
+    "threshold": 0.5651477366679742
+  },
+  "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/epoch_009/repair.pth",
+  "controls": "Independent mature D/full readout; trained dense current; selected local; dense-compute same masked policy. Real-weight same-input replay outside timing.",
+  "epoch": 9,
+  "execution": "Whole completeY/reference/confidence aligned; first3x3 only core+halo1, second3x3 and final1x1 only core; first layer reads input halo2. All-core native dense fallback. Unselected alignedY retained.",
+  "geometry_comparison": true,
+  "geometry_policy": "Independent same-selection trajectory. Fixed H/W/device neighbor table only; memory counted separately. First-use construction included in full evaluation timing.",
+  "kind": "current",
+  "limitation": "Transferred train calibration may be suboptimal for new readout; no threshold sweep or fabricated same-AP claim. Extra96 reference and packed weights included.",
+  "packed_comparison": false,
+  "period5_comparison": true,
+  "period5_policy": "Add dense-current and geometry-local readout with period5/.45s, retain period3/.25s controls. Frozen epoch and train-calibrated threshold unchanged. H/FM and D4 unchanged. Current-only fresh path does not recursively consume oldY, but unselectedY may age longer. No promise of unchanged AP; no period sweep.",
+  "refresh": "Original mature full readout every3/.25s/reset, same as trained current model. D period4 unchanged.",
+  "selection": "Transfer existing512-train calibrated threshold unchanged; compare actual current96 input to own retained reference; content dilation2, own confidence>=.1 dilation4, uncovered always selected. No new fit on validation.",
+  "sha256": "5edd14cbe48d7dbdb9129ccbb9dc40544701a480d0adfda6ba3dcd251119faf8"
+}
