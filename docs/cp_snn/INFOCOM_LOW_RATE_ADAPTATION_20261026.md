@@ -84,3 +84,14 @@ SNN多预算第2轮451/2339批，固定组8KiB评估继续。old_snn的0/2/3/4/6
 第1轮到第3轮AP70升高1.14002个百分点，但平均字节也由2043.014增至2159.934，增加约5.72%；必须将二者同时报告，不能解释为同码率纯精度提升。当前适配ANN更强这一事实不改变方案二多预算训练的已登记10轮，不扩展局部调参或恢复方案三。最终曲线后再决定可证伪的机制消融和统一计算实验。
 
 证据：[本轮完整复核摘要](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/verification.json)、[训练历史](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/infocom/history.json)、[第3轮逐帧字节](results/strong_ann_baselines_20261025/heartbeat_20261026_0614/epoch03/per_frame_bytes.csv)。第2/3轮共同GT复算及完整预测索引以gzip归档，原始预测和真实包保留在181。
+
+
+## 2026-10-26 15:14触发：第4轮正常完成，未改变实验决策
+
+第4轮共同GT AP30/50/70为81.27065% / 76.74013% / 62.35982%；平均2250.719793 B，中位2226、P95 2444、最大2499、最小2054 B，1738帧均超过2048 B。这是1%空间比例工作点的中间最佳，不是2KiB硬预算结果。第3→4轮AP70增加0.28674个百分点、平均字节增加90.785 B；精度和通信同时增长，当前路线判断不变。
+
+1738预测/包SHA、包身份与解码重新全量检查；共同GT CPU复算核对1738预测和GT摘要、28622个GT。本机再次核对压缩索引解压SHA和逐帧均值。第5轮运行正常，无failure；SNN多预算第2轮1351/2339批，8KiB复核961/1738帧且新监督健康。old_snn仍原full评估，未新增完成结果。本轮无新训练臂或重复评估任务，仍按既定10轮和四比例收尾。
+
+并行登记[统一计算测量边界](COMPUTE_COMPARISON_20261026.md)：共同64固定帧、同设备/线程、三遍计时、保留必要双端和真实codec成本，先核验输出/bytes等价；尚未实现共同计时器或启动受控测量。现有SNN与ANN计时的热身、诊断冗余、包导出边界不同，不能直接合并作速度主表。
+
+证据：[第4轮复核摘要](results/strong_ann_baselines_20261025/infocom_adaptation_epoch04_20261026/verification.json)、[逐帧bytes](results/strong_ann_baselines_20261025/infocom_adaptation_epoch04_20261026/epoch04/per_frame_bytes.csv)、[训练历史](results/strong_ann_baselines_20261025/infocom_adaptation_epoch04_20261026/history.json)。本次是正常中期推进，无需用户行动；等待训练完成/实质失败再通知，不逐轮重复发送同一结论。
