@@ -1,0 +1,132 @@
+{
+  "passed": true,
+  "wire_parity": [
+    {
+      "budget": 0,
+      "bytes": [
+        0
+      ],
+      "exact": true
+    },
+    {
+      "budget": 2048,
+      "bytes": [
+        2044
+      ],
+      "exact": true
+    },
+    {
+      "budget": 4096,
+      "bytes": [
+        4095
+      ],
+      "exact": true
+    },
+    {
+      "budget": 8192,
+      "bytes": [
+        8192
+      ],
+      "exact": true
+    }
+  ],
+  "zero_equals_ego": true,
+  "source_sha256": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78",
+  "gradients": {
+    "2048": {
+      "backbone_3d.conv4.": 60.176201552152634,
+      "backbone_3d.conv_out.": 22.424634873867035,
+      "backbone_2d.": 514.4770166594535,
+      "cls_head.": 0.4933456480503082,
+      "reg_head.": 19.730852127075195,
+      "dir_head.": 0.21584321185946465,
+      "content.project.": 1.3725309371948242,
+      "content.expand.": 1.366136074066162,
+      "joint_receiver.": 1.377484291791916
+    }
+  },
+  "losses": [
+    1.0794277733241457
+  ],
+  "changed": [
+    "backbone_3d.conv4.down.1.weight",
+    "backbone_3d.conv4.down.2.weight",
+    "backbone_3d.conv4.down.2.bias",
+    "backbone_3d.conv4.blocks.0.block.1.weight",
+    "backbone_3d.conv4.blocks.0.block.2.weight",
+    "backbone_3d.conv4.blocks.0.block.2.bias",
+    "backbone_3d.conv4.blocks.0.voxel_block.1.weight",
+    "backbone_3d.conv4.blocks.0.voxel_block.2.weight",
+    "backbone_3d.conv4.blocks.0.voxel_block.2.bias",
+    "backbone_3d.conv4.blocks.0.voxel_block.4.weight",
+    "backbone_3d.conv4.blocks.0.voxel_block.5.weight",
+    "backbone_3d.conv4.blocks.0.voxel_block.5.bias",
+    "backbone_3d.conv4.blocks.1.block.1.weight",
+    "backbone_3d.conv4.blocks.1.block.2.weight",
+    "backbone_3d.conv4.blocks.1.block.2.bias",
+    "backbone_3d.conv4.blocks.1.voxel_block.1.weight",
+    "backbone_3d.conv4.blocks.1.voxel_block.2.weight",
+    "backbone_3d.conv4.blocks.1.voxel_block.2.bias",
+    "backbone_3d.conv4.blocks.1.voxel_block.4.weight",
+    "backbone_3d.conv4.blocks.1.voxel_block.5.weight",
+    "backbone_3d.conv4.blocks.1.voxel_block.5.bias",
+    "backbone_3d.conv_out.0.weight",
+    "backbone_3d.conv_out.1.weight",
+    "backbone_3d.conv_out.1.bias",
+    "backbone_2d.blocks.0.2.weight",
+    "backbone_2d.blocks.0.3.weight",
+    "backbone_2d.blocks.0.3.bias",
+    "backbone_2d.blocks.0.5.weight",
+    "backbone_2d.blocks.0.6.weight",
+    "backbone_2d.blocks.0.6.bias",
+    "backbone_2d.blocks.0.8.weight",
+    "backbone_2d.blocks.0.9.weight",
+    "backbone_2d.blocks.0.9.bias",
+    "backbone_2d.blocks.0.11.weight",
+    "backbone_2d.blocks.0.12.weight",
+    "backbone_2d.blocks.0.12.bias",
+    "backbone_2d.blocks.0.14.weight",
+    "backbone_2d.blocks.0.15.weight",
+    "backbone_2d.blocks.0.15.bias",
+    "backbone_2d.blocks.0.17.weight",
+    "backbone_2d.blocks.0.18.weight",
+    "backbone_2d.blocks.0.18.bias",
+    "backbone_2d.blocks.1.2.weight",
+    "backbone_2d.blocks.1.3.weight",
+    "backbone_2d.blocks.1.3.bias",
+    "backbone_2d.blocks.1.5.weight",
+    "backbone_2d.blocks.1.6.weight",
+    "backbone_2d.blocks.1.6.bias",
+    "backbone_2d.blocks.1.8.weight",
+    "backbone_2d.blocks.1.9.weight",
+    "backbone_2d.blocks.1.9.bias",
+    "backbone_2d.blocks.1.11.weight",
+    "backbone_2d.blocks.1.12.weight",
+    "backbone_2d.blocks.1.12.bias",
+    "backbone_2d.blocks.1.14.weight",
+    "backbone_2d.blocks.1.15.weight",
+    "backbone_2d.blocks.1.15.bias",
+    "backbone_2d.blocks.1.17.weight",
+    "backbone_2d.blocks.1.18.weight",
+    "backbone_2d.blocks.1.18.bias",
+    "backbone_2d.deblocks.0.1.weight",
+    "backbone_2d.deblocks.0.2.weight",
+    "backbone_2d.deblocks.0.2.bias",
+    "backbone_2d.deblocks.1.1.weight",
+    "backbone_2d.deblocks.1.2.weight",
+    "backbone_2d.deblocks.1.2.bias",
+    "cls_head.weight",
+    "cls_head.bias",
+    "reg_head.weight",
+    "reg_head.bias",
+    "dir_head.weight",
+    "dir_head.bias",
+    "content.project.weight",
+    "content.expand.weight",
+    "joint_receiver.current_scale",
+    "joint_receiver.local_gate.weight"
+  ],
+  "fixed_sha256": "5b69853bcbbd5353ea377355dc8c2907b797f21fe3ee87eee13ab3d0cfcd7895",
+  "peak_allocated_bytes": 745652736,
+  "note": "All audit updates discarded; training reloads pristine source"
+}

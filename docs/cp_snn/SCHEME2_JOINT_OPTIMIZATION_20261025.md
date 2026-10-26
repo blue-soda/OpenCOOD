@@ -93,3 +93,18 @@ fixed2k第9轮851/2339批，最佳仍第6轮58.85365%；多预算第1轮1201/233
 后续条件：146固定组实际完成10轮；取回并核验最终last/best、audit、完成状态、选中epoch指标及原训练配置；确认重定位配置只有数据/输出路径差异；若146最终评估失败则保留失败，再在181调用finish入口，不再次训练固定组。已有正常工作的146最终评估不重复执行。当前181仍约2GB空闲，收尾小权重及四预算包占用需重新检查；不占用尚未获准的InfoCom大检查点空间。
 
 证据：[状态及备用收尾目录](results/scheme2_joint_20261025/heartbeat_20261025_2303Z.json)。本轮无新AP、无新故障或用户动作需求，静默。
+
+
+## 2026-10-26 09:03触发：10轮结束，四预算复核迁181
+
+146 fixed2k/train/status.json确认train complete，last.pt epoch=10，冻结权重/BN摘要核验到第10轮。十轮选择的最佳仍第6轮：AP30/50/70=77.19168%/72.13967%/58.85365%，2046.885501 B。该数仍是训练期间的完整验证，不是尚未完成的最终wire/CPU复核。
+
+随后协调器启动b0新进程时，torch CUDA unknown error / CUDA required退出；与已知146新上下文初始化故障一致。保留原status失败及b0.log，不将其误写为训练失败，也未重启固定组训练。最终完整导出归档26,611,869 B，SHA 67c7b2f136220a3dd62fc5c22f85122c43844b51788e1741f2c165f1544ecd58，已取回本机并送181；last/best和每个小文件均逐一SHA验证。
+
+实现migrate_snapshot_final_eval.py（1e107e6）验证原失败原因、训练完成epoch、原last配置/manifest SHA、冻结摘要、原与新五份配置；除了data_dir/root_dir/validate_dir/test_dir/data_manifest及实际输出packet_directory主机路径外，配置逐项完全一致。原始train/val源split和cooperative/data_info SHA也验证一致，4678/1738清单保持原协议。初始source.pth仅用于原协议校验，实际评估加载最终best_ap70.pth，未混用初始权重。
+
+使用预备目录181 /data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01，GPU4五次准入均24252MiB空闲/0%利用率，磁盘约2.006GB；协调PID27255调用finish入口，仅执行0/2048/4096/8192字节的完整真实包推理、3D附加指标、独立CPU AP复算和逐包SHA/字节核验，不包含训练。b0已启动；待完成后核对2KiB结果与原第6轮验证的差异，不能由迁移成功直接宣称最终AP一致。
+
+多预算181仍第1轮1851/2339批；old_snn继续146原进程中的七预算最终评估，无重复投递。InfoCom仍等待之前请求的至少6GiB检查点存储，不因SNN小体量收尾可以运行而放宽ANN大检查点准入。
+
+证据：[原训练完成](results/scheme2_joint_20261025/completed_migration_181/original_146/fixed2k/train/status.json)、[十轮历史](results/scheme2_joint_20261025/completed_migration_181/original_146/fixed2k/train/metrics.jsonl)、[原CUDA错误](results/scheme2_joint_20261025/completed_migration_181/original_146/fixed2k/b0.log)、[迁移核验](results/scheme2_joint_20261025/completed_migration_181/recovery_181/migration.json)、[新收尾启动](results/scheme2_joint_20261025/completed_migration_181/recovery_181/finish_launch.json)。

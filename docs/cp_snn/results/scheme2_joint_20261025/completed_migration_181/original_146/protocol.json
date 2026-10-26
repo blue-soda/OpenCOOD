@@ -1,0 +1,45 @@
+{
+  "source_sha256": "c51a33f3c1d935a8528763ddbb68ccb3298475beab842a49c5a71216c56b5a78",
+  "seed": 20260929,
+  "config_hashes": {
+    "fixed2k/train.yaml": "023f02d190e17f225704b8cab203123fdbdc3691a844993ed4b7e0122df0ccab",
+    "fixed2k/b0.yaml": "337123d90f8d935f9f4d6c7db0791e92095caf1bfcca0e2972ec670270001ba1",
+    "fixed2k/b2048.yaml": "e3f8cc0440ae9f8f1d4c0d1e53c2165442c48fe04460d425469fe61e5476eda9",
+    "fixed2k/b4096.yaml": "a6f2207d673ff013dc562d26f5a0d648ead12c8521616761252165beb545f32f",
+    "fixed2k/b8192.yaml": "ee6f229cc267bdd5f88f2f946234a50acc23723827a987f708d52cb366395603",
+    "multi248k/train.yaml": "9b79876bc7510d101f55e37c93336e1a45eaf5481906df4e263921966fd4bb48",
+    "multi248k/b0.yaml": "527cb371752d7f5bc576faf893e15e1e05b8d668d62522fd1bd5f7f8ce26e1c0",
+    "multi248k/b2048.yaml": "a0fbfeec5253ae70cb66d231e7abce49317833a272d806fbd6cf27129b097b6b",
+    "multi248k/b4096.yaml": "267ccb2a60f177a03205de195dd3421aeeff90899accb83488a5d1afb0ac542f",
+    "multi248k/b8192.yaml": "1cab899b921bba2ce9d3e2eef234f87d74444bc90a5c7982e878b62201feaf5a"
+  },
+  "arms": {
+    "fixed2k": [
+      2048
+    ],
+    "multi248k": [
+      2048,
+      4096,
+      8192
+    ]
+  },
+  "epochs": 10,
+  "batch_size": 2,
+  "criterion": "Ldet(sampled budget) + 0.5 Ldet(local); no KD, no rate proxy",
+  "trainable": "3D conv4/conv_out, project, expand, local gate/current_scale, ANN BEV and continuous heads",
+  "frozen": "early 3D, all BN buffers, unused legacy fusion/order parameters",
+  "selection": "same 2048-byte validation AP70, epoch 1..10; historical source retained separately",
+  "exit": "No extension: if no >=0.5 AP point gain at 2048 bytes, close this joint-scope hypothesis",
+  "final_budgets": [
+    0,
+    2048,
+    4096,
+    8192
+  ],
+  "source_ap70": 0.5823401,
+  "dataset_hashes": {
+    "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+    "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814",
+    "data_manifest": "fcdf853f70a83006c8a9937feef1c4957f27de07b6e738912afd56f34a31453d"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "state": "standby_only",
+  "training_launched": false,
+  "evaluation_launched": false,
+  "purpose": "Same four-budget fixed2k final evaluation if 146 cannot initialize a new CUDA process",
+  "requirements": [
+    "original fixed2k completes 10 epochs",
+    "copy original last.pt/best_ap70.pth/audit.json/training completion and selected metrics with SHA verification",
+    "verify configs differ only in host data/output paths",
+    "record original finalization failure before alternate host launch",
+    "run finish only; never restart fixed training"
+  ],
+  "original_root": "/data1/zhh/gzc/diagnostics/scheme2_joint_20261025",
+  "new_root": "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01",
+  "budgets": [
+    0,
+    2048,
+    4096,
+    8192
+  ],
+  "available_bytes": 2082250752
+}

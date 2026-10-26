@@ -1,0 +1,41 @@
+{
+  "pid": 27255,
+  "command": [
+    "/data1/tzm/miniconda3/envs/opencood/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.run_e3dsnn_snapshot_joint",
+    "--root",
+    "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01",
+    "--arm",
+    "fixed2k",
+    "--mode",
+    "finish"
+  ],
+  "admission": [
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ],
+    [
+      24252,
+      0
+    ]
+  ],
+  "unix": 1792976621.8111053,
+  "gpu": "4",
+  "free_disk_bytes": 2006224896,
+  "training_restarted": false
+}

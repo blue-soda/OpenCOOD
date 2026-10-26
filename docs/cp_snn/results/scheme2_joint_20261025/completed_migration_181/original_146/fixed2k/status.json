@@ -1,0 +1,5 @@
+{
+  "state": "failed",
+  "error": "Traceback (most recent call last):\n  File \"/data1/zhh/gzc/OpenCOOD/opencood/tools/run_e3dsnn_snapshot_joint.py\", line 152, in coordinate\n    # Supervision can be handed over without restarting the trainer.\n  File \"/data1/zhh/gzc/OpenCOOD/opencood/tools/run_e3dsnn_snapshot_joint.py\", line 140, in run\n    if cpu:env['CUDA_VISIBLE_DEVICES']=''\n  File \"/data1/zhh/gzc/miniconda3/envs/opencood/lib/python3.7/subprocess.py\", line 512, in run\n    output=stdout, stderr=stderr)\nsubprocess.CalledProcessError: Command '['/data1/zhh/gzc/miniconda3/envs/opencood/bin/python', '-u', '-m', 'opencood.tools.train_e3dsnn_single', '--workers', '2', '--seed', '20260929', '--mode', 'eval', '--config', '/data1/zhh/gzc/diagnostics/scheme2_joint_20261025/fixed2k/b0.yaml', '--checkpoint', '/data1/zhh/gzc/diagnostics/scheme2_joint_20261025/fixed2k/train/best_ap70.pth', '--output', '/data1/zhh/gzc/diagnostics/scheme2_joint_20261025/fixed2k/b0', '--packet-roundtrip', '--eval-3d', '--save-predictions', '--profile']' returned non-zero exit status 1.\n",
+  "automatic_retry": false
+}

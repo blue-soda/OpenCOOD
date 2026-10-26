@@ -1,0 +1,52 @@
+{
+  "passed": true,
+  "archive_sha256": "67c7b2f136220a3dd62fc5c22f85122c43844b51788e1741f2c165f1544ecd58",
+  "checked_configs": [
+    "fixed2k/train.yaml",
+    "fixed2k/b0.yaml",
+    "fixed2k/b2048.yaml",
+    "fixed2k/b4096.yaml",
+    "fixed2k/b8192.yaml"
+  ],
+  "host_changes_only": true,
+  "training_complete_epoch": 10,
+  "training_restarted": false,
+  "original_failure_preserved": true,
+  "best_sha256": "0add747f31daf1c34315621990ef1b9424e2606f2cb60fa23cc3f396bf9e6f9e",
+  "original_selected_metrics": {
+    "samples": 1738,
+    "indexed_samples": 1738,
+    "full_split": true,
+    "predicted_boxes": 29907,
+    "gt_boxes": 28622,
+    "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+    "ap": {
+      "0.3": 0.7719168358760412,
+      "0.5": 0.7213966768772077,
+      "0.7": 0.5885365413004336
+    },
+    "feature_packets": {
+      "count": 1738,
+      "mean_bytes": 2046.885500575374,
+      "median_bytes": 2047.0,
+      "min_bytes": 2041,
+      "max_bytes": 2048,
+      "p95_bytes": 2048.0,
+      "total_bytes": 3557487,
+      "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+    },
+    "epoch": 6,
+    "train_loss": 0.9366900931004298,
+    "train_samples": 4678,
+    "seconds": 3538.531142041087,
+    "train_loss_components": {
+      "fused_detection_loss": 0.6035566961499003,
+      "ego_detection_loss": 0.6662667939010601
+    },
+    "train_stream_means": {
+      "stream_budgets": 2048.0,
+      "packet_bytes": 2046.8725951261222,
+      "stream_events": 2477.7522445489526
+    }
+  }
+}

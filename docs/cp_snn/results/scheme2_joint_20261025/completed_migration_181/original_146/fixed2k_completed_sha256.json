@@ -1,0 +1,18 @@
+{
+  "protocol.json": "9b4d59b84d3e0b28a4fbeba3ff96e40629a3ecc7fa453ca90969ce0c0f300b35",
+  "fixed2k/train.yaml": "023f02d190e17f225704b8cab203123fdbdc3691a844993ed4b7e0122df0ccab",
+  "fixed2k/b0.yaml": "337123d90f8d935f9f4d6c7db0791e92095caf1bfcca0e2972ec670270001ba1",
+  "fixed2k/b2048.yaml": "e3f8cc0440ae9f8f1d4c0d1e53c2165442c48fe04460d425469fe61e5476eda9",
+  "fixed2k/b4096.yaml": "a6f2207d673ff013dc562d26f5a0d648ead12c8521616761252165beb545f32f",
+  "fixed2k/b8192.yaml": "ee6f229cc267bdd5f88f2f946234a50acc23723827a987f708d52cb366395603",
+  "fixed2k/audit.json": "e88cc0c94de3d6b2c9ad7757908abcff215acb237e39fb7175d25dfcc0e09811",
+  "fixed2k/status.json": "e42754c1cb715af477e103cbfd259e839a1a4edc6d78bbf9cd8a1b1be935ceda",
+  "fixed2k/b0.log": "c49a705073f2c582537f3c94045e68324092c9a8dd2a277b1339d7771be5cf8a",
+  "fixed2k/train/status.json": "77834d269d6be9dcc077e6f87f2240516cd1b25b6ae4f83e216166aae497b408",
+  "fixed2k/train/last.pt": "e0e69ca0fb5df1478e7993549b0347bf680e6d5e126d96a80f5818785bc63abd",
+  "fixed2k/train/best_ap70.pth": "0add747f31daf1c34315621990ef1b9424e2606f2cb60fa23cc3f396bf9e6f9e",
+  "fixed2k/train/best_ap70_metrics.json": "617ed95ba51fafbcb930fe1c9cc73756a8fbbe3fb1d18c1f8265871bd1be89f0",
+  "fixed2k/train/fixed_state.json": "3367fd91b78ebc402ba791724af8957156c365c9394a5b89d25c5c9c0dc18a59",
+  "fixed2k/train/fixed_bn.json": "0698caf18c04ed960accbad6231b60832b033ecbbd058c6d6a24183643d135aa",
+  "fixed2k/train/metrics.jsonl": "df1d79982a682441ee469c9bd1ad5ef7153f17182d92016bd50d0802c37149db"
+}
