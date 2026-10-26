@@ -97,6 +97,11 @@ class SnapshotAdapter:
                 events=None if self.packet_roundtrip else [CountContent(counts,scales).event(k) for k in (1,2,3)]
                 _,fused=ann_readout(self,ego[i:i+1],counts,scales,contract,pose,events)
             outputs.append(self.detect_bev(fused));sizes.append(len(selected.packet));units.append(selected.record['selected_events'])
+            observer = getattr(self, '_snapshot_packet_observer', None)
+            if observer is not None:
+                if self.training or not self.packet_roundtrip:
+                    raise ValueError('Packet observer requires real wire evaluation')
+                observer(contract.receiver_frame, selected.packet)
             if self.snapshot_audit:
                 self.snapshot_records.append(dict(selected.record,packet_sha256=hashlib.sha256(selected.packet).hexdigest(),
                     frame_id=contract.receiver_frame,basis=basis))
