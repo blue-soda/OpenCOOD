@@ -1,0 +1,136 @@
+{
+  "completed": false,
+  "rows": [
+    {
+      "method": "scheme2_2k",
+      "repeat": 0,
+      "returncode": 1,
+      "started_unix": 1793022179.7995648,
+      "finished_unix": 1793022237.000234,
+      "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/scheme2_2k_repeat0",
+      "eligible_for_speed_table": true
+    },
+    {
+      "method": "infocom_adapt1pct",
+      "repeat": 0,
+      "returncode": 1,
+      "started_unix": 1793025852.678351,
+      "finished_unix": 1793026292.6061056,
+      "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/infocom_adapt1pct_repeat0",
+      "eligible_for_speed_table": true
+    },
+    {
+      "method": "infocom_official10pct",
+      "repeat": 0,
+      "returncode": 1,
+      "started_unix": 1793026301.3209918,
+      "finished_unix": 1793026923.1645255,
+      "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/infocom_official10pct_repeat0",
+      "eligible_for_speed_table": true
+    },
+    {
+      "method": "cosdh_reference",
+      "repeat": 0,
+      "returncode": 0,
+      "started_unix": 1793026931.869571,
+      "finished_unix": 1793027715.2577217,
+      "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/cosdh_reference_repeat0",
+      "eligible_for_speed_table": false,
+      "summary_sha256": "b4aa386bb0ea7df3b0bf1da26dbeef4b0897ad176d6e7384f19be2df8a022efc",
+      "scope_statistics": [
+        {
+          "scope": "ready_cpu_batch_to_cpu_boxes",
+          "seconds": {
+            "mean": 0.2034834803562262,
+            "median": 0.19237308099400252,
+            "p95": 0.3406779707176609
+          },
+          "peak_allocated_bytes": 591741440,
+          "peak_reserved_bytes": 3382706176
+        },
+        {
+          "scope": "device_batch_to_cpu_boxes",
+          "seconds": {
+            "mean": 0.18980195940457634,
+            "median": 0.17416258994489908,
+            "p95": 0.327449144644197
+          },
+          "peak_allocated_bytes": 591770112,
+          "peak_reserved_bytes": 3382706176
+        }
+      ]
+    },
+    {
+      "method": "cosdh_reference",
+      "repeat": 1,
+      "returncode": 0,
+      "started_unix": 1793028024.4886582,
+      "finished_unix": 1793028931.1075182,
+      "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/cosdh_reference_repeat1",
+      "eligible_for_speed_table": false,
+      "summary_sha256": "bb1edf1467b892e86fec19adbbe4838fd2950552bd18f30a86675f8c322c0f58",
+      "scope_statistics": [
+        {
+          "scope": "ready_cpu_batch_to_cpu_boxes",
+          "seconds": {
+            "mean": 0.2095487733167829,
+            "median": 0.19995615794323385,
+            "p95": 0.3676928935805334
+          },
+          "peak_allocated_bytes": 591741440,
+          "peak_reserved_bytes": 3382706176
+        },
+        {
+          "scope": "device_batch_to_cpu_boxes",
+          "seconds": {
+            "mean": 0.2024915702531871,
+            "median": 0.1754231385421008,
+            "p95": 0.34915768518112594
+          },
+          "peak_allocated_bytes": 591770112,
+          "peak_reserved_bytes": 3382706176
+        }
+      ]
+    },
+    {
+      "method": "cosdh_reference",
+      "repeat": 2,
+      "returncode": 0,
+      "started_unix": 1793028942.4988544,
+      "finished_unix": 1793029818.963105,
+      "output": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/cosdh_reference_repeat2",
+      "eligible_for_speed_table": false,
+      "summary_sha256": "e1f2c0c2f2250d4fb05e1410339f6d07ecc48b60dc69cc7984b257ec546d36a4",
+      "scope_statistics": [
+        {
+          "scope": "ready_cpu_batch_to_cpu_boxes",
+          "seconds": {
+            "mean": 0.20572365168482065,
+            "median": 0.1976244414690882,
+            "p95": 0.35102480362402266
+          },
+          "peak_allocated_bytes": 591741440,
+          "peak_reserved_bytes": 3382706176
+        },
+        {
+          "scope": "device_batch_to_cpu_boxes",
+          "seconds": {
+            "mean": 0.19160470668794005,
+            "median": 0.179339682450518,
+            "p95": 0.3346203216002322
+          },
+          "peak_allocated_bytes": 591770112,
+          "peak_reserved_bytes": 3382706176
+        }
+      ]
+    }
+  ],
+  "failed_methods": [
+    "infocom_adapt1pct",
+    "infocom_official10pct",
+    "scheme2_2k"
+  ],
+  "automatic_retries": false,
+  "outliers_removed": false,
+  "note": "CoSDH reference retains redundant audit work; not eligible for fair speed ranking. Inspect raw interference before claims."
+}

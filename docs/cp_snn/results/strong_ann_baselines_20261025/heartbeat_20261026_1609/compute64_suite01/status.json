@@ -1,0 +1,9 @@
+{
+  "state": "partial_failure",
+  "completed_runs": 6,
+  "failed_methods": [
+    "infocom_adapt1pct",
+    "infocom_official10pct",
+    "scheme2_2k"
+  ]
+}

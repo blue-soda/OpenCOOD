@@ -20,10 +20,10 @@ def write(p,obj):
 
 def configure_backend(model, mode):
     """Opt-in numerical diagnostic, never a change to the trained activation."""
-    import spconv.pytorch as spconv
+    from spconv.pytorch.conv import SparseConvolution
     from spconv.core import ConvAlgo
     from spconv.constants import ALL_WEIGHT_IS_KRSC
-    layers=[(name,m) for name,m in model.named_modules() if isinstance(m,spconv.SparseConvolution)]
+    layers=[(name,m) for name,m in model.named_modules() if isinstance(m,SparseConvolution)]
     before={name:str(m.algo) for name,m in layers}
     if mode=='native_deterministic':
         # Changing algorithms is safe only with the same stored KRSC layout.

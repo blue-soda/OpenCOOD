@@ -1,0 +1,29 @@
+{
+  "source_commit": "387677b",
+  "source_archive_sha256": "7d7bc8d395fe43a4f0a12824c3aef2e6c6832081ea4e476ea89b925a41325e0a",
+  "source": "/data2/tzm/cp_snn_recovery_20261026/compute64_source04",
+  "gpu": "6",
+  "counts": [
+    4,
+    64,
+    64
+  ],
+  "timeout_seconds": 1500,
+  "backend": "native_deterministic",
+  "model_update": false,
+  "automatic_retry": false,
+  "command": [
+    "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+    "-u",
+    "-m",
+    "opencood.tools.strong_ann_baselines.compute_snapshot_smoke",
+    "--config",
+    "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048.yaml",
+    "--checkpoint",
+    "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/train/best_ap70.pth",
+    "--reference",
+    "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/b2048",
+    "--gpu",
+    "6"
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "passed": false,
+  "error": "Traceback (most recent call last):\n  File \"/data2/tzm/cp_snn_recovery_20261026/compute64_source04/opencood/tools/strong_ann_baselines/compute_snapshot_smoke.py\", line 154, in <module>\n    try:execute(a)\n  File \"/data2/tzm/cp_snn_recovery_20261026/compute64_source04/opencood/tools/strong_ann_baselines/compute_snapshot_smoke.py\", line 95, in execute\n    backend=configure_backend(model,a.backend)\n  File \"/data2/tzm/cp_snn_recovery_20261026/compute64_source04/opencood/tools/strong_ann_baselines/compute_snapshot_smoke.py\", line 26, in configure_backend\n    layers=[(name,m) for name,m in model.named_modules() if isinstance(m,spconv.SparseConvolution)]\n  File \"/data2/tzm/cp_snn_recovery_20261026/compute64_source04/opencood/tools/strong_ann_baselines/compute_snapshot_smoke.py\", line 26, in <listcomp>\n    layers=[(name,m) for name,m in model.named_modules() if isinstance(m,spconv.SparseConvolution)]\nAttributeError: module 'spconv.pytorch' has no attribute 'SparseConvolution'\n",
+  "automatic_retry": false
+}

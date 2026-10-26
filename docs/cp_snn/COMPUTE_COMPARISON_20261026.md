@@ -142,3 +142,16 @@ scheme2_threshold4_01和threshold64_01均完成。该帧32757个输入体素的�
 本次有界逐层定位到此结束，不继续无限追加层级探针，不改脉冲阈值/加任意epsilon凑通过。后续优先固定执行后端和数值设置，验证同输入计数的跨运行稳定性；若稳定设置改变原输出，另存同环境参考并复核实际通信/AP，保留原历史结果，不把新参考冒充旧门通过。当前仍没有可用的SNN公平速度表，不把64帧输出一致推广成整个1738帧在任意运行环境下完全一致。InfoCom RNG修复与训练按既定队列继续。
 
 证据：[输入及量化前比较](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/threshold/comparison.json)、[四帧观测](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/threshold/scheme2_threshold4_01/diagnostic_summary.json)、[64帧观测](results/strong_ann_baselines_20261025/heartbeat_20261026_1505/threshold/scheme2_threshold64_01/diagnostic_summary.json)。原始体素均值、坐标、量化前目标值和投影张量以NPZ归档在同目录。回传SHA=a41729e06e51faa5cd9a841ed2eb10b135d1989f6ea43f4057c2164c85c98309。
+
+
+## 2026-10-27 00:09触发：CoSDH三轮完成，InfoCom修复首轮严格通过
+
+原compute64_suite01结束为partial_failure：三种旧计时入口首轮失败记录继续保留；CoSDH的3轮均通过64帧、每轮128次正式调用的预测/实际双向包逐位门，共384次。CPU就绪输入→CPU框三轮平均203.483/209.549/205.724毫秒，设备输入→CPU框189.802/202.492/191.605毫秒。该参考实现含重复审计解码/warp，所有时间仅作诊断，不能用来排名或宣称其他方法更快。原始摘要、资源记录和异常值完整保留。
+
+compute64_infocom_rng02已按依赖自动接续。完整输入+模型RNG重放修复的适配1%第0轮严格通过64帧/128次正式调用，包和预测与原全量参考逐位相同；这是针对随机平局机制的修复验证，不是重新训练或改变模型。该轮两个边界平均120.057/114.241毫秒，仅记录，尚未完成三轮及资源干扰审查。官方10%第0轮仍在执行，后续按已登记双方法3轮计划继续，不自动重试失败。
+
+SNN新增一次有界固定后端诊断，详见[预登记与退出标准](BACKEND_STABILITY_20261027.md)。代码387677b已推送main并同步181，冻结compute64_source04；13项测试本地/181通过。监督器PID5983在GPU6启动4/64/64帧三个进程，每次两遍、1500秒上限，记录全部预测/包指纹并检查跨进程一致性。只改变本次诊断的Native卷积及确定性数值设置，不改权重、Count4阈值或现有训练，不声称已经修复。尚无合格SNN公平计时结果。
+
+多预算训练第3轮1601/2339健康运行，暂无新验证AP。继续原10轮主对照、固定2KiB最终锚点保留，不恢复方案三。总目标未完成：当前SNN平均通信—AP优势尚未超过强ANN低率适配点，计算优势也尚未成立。
+
+证据：[原队列完整结果](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/compute64_suite01/summary.json)、[InfoCom修复首轮](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/compute64_infocom_rng02/results_so_far.json)、[固定后端启动](results/strong_ann_baselines_20261025/heartbeat_20261026_1609/scheme2_backend_native01.launch.json)。回传归档SHA=38da62537c4a1f80bfc132d6d061e4900cedb68c272b2e616ebfee72ef871d97。
