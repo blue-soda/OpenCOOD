@@ -1,0 +1,335 @@
+{
+  "samples": [
+    {
+      "checked_unix": 1792997159.8436964,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 0,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997178.010287,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 200,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997225.9340286,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 400,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997247.4343896,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 600,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997267.5250218,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 800,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997300.2209022,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 1000,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997323.6009257,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 1200,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997368.356765,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 1400,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997402.0446606,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 1600,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997439.4780939,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 1800,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997462.2799942,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 2000,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997477.4538803,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 2200,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997491.1054065,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 2400,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997504.738387,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 2600,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997517.9867547,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 2800,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997531.2502415,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 3000,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997544.2771504,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 3200,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997557.5421731,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 3400,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997571.0776532,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 3600,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997586.475427,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 3800,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997603.8985655,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 4000,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997626.38892,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 4200,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997647.3939173,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 4400,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997673.817663,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 4600,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997695.3205478,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 4800,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997730.1063974,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 5000,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997781.2673066,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 5200,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997799.6913717,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 5400,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997815.0730462,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 5600,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    },
+    {
+      "checked_unix": 1792997864.5214558,
+      "foreign_pids": [],
+      "gpu": 3,
+      "pids": [
+        9689
+      ],
+      "scan": 5794,
+      "timing_valid": true,
+      "uuid": "GPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f"
+    }
+  ],
+  "status": "SAMPLED_CLEAR"
+}
