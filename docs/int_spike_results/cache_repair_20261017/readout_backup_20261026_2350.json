@@ -1,0 +1,123 @@
+{
+  "archive": "/dev/shm/tzm_readout_20261026_2350.tar.gz",
+  "bytes": 6196102,
+  "sha256": "fb16beb2a3527cf7ebd0382a6910624aaed82313366cffc71237ad2accff8f1a",
+  "files": [
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/epoch_009/repair.pth",
+      "bytes": 441051,
+      "sha256": "5edd14cbe48d7dbdb9129ccbb9dc40544701a480d0adfda6ba3dcd251119faf8",
+      "epoch": 9,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/best.json",
+      "bytes": 267,
+      "sha256": "f6b9d9ca7796b9d698120ad82dd8260c1e901da75a4ae5cc321d1efa634df841"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/status.json",
+      "bytes": 44,
+      "sha256": "4b5094b069876523fc922fe95ea982b4d9e6bac75acadfdab20bebd748e921f2"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/pending_validation.pth",
+      "bytes": 1371896,
+      "sha256": "d7caaa67da606abc3de5a763259b12298e8789dea7dfbf33617538fc8f343a73",
+      "epoch": 12,
+      "next_action": "evaluate"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/contract.json",
+      "bytes": 12551,
+      "sha256": "1cc681fb0e509518798d2d93afb14155f67457183fabb2a413784886019c3404"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/epoch_011/repair.pth",
+      "bytes": 441051,
+      "sha256": "c5349db221d05e54231bf70dd54b98de58c1d2b6eb0f5546c308f632f8059403",
+      "epoch": 11,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/history.json",
+      "bytes": 30608,
+      "sha256": "8c0c3ef49d5ed800dbf9edb84cfb5cb2fdc6c944a918b37eab686595029f7f9d"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/latest.pth",
+      "bytes": 1321656,
+      "sha256": "6f8bc7bd2b8a023456e48a95ecc33c5a3ad737b9d491112a1a8af3344e7ae79a",
+      "epoch": 12,
+      "next_action": "train"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/report.json",
+      "bytes": 360,
+      "sha256": "68e6dd9385cbd3d9e27ad3a0045b7d830a7f84756d8e778e66eedbb6511ae753"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/validation_execution.json",
+      "bytes": 354,
+      "sha256": "46e1b46daee1234361cd0a5cd017c2bdd2cac5fabc535be61bd4da3d2a7cae55"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_v1_20261026/short_readout_contract.json",
+      "bytes": 4709,
+      "sha256": "dfbe4ed8077d1d38bc0ba6e9fe5c8aaf8c6c1fe3e05cc847fcab5db4d4b0dc1e"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/validation_execution.json",
+      "bytes": 354,
+      "sha256": "46e1b46daee1234361cd0a5cd017c2bdd2cac5fabc535be61bd4da3d2a7cae55"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/history.json",
+      "bytes": 30719,
+      "sha256": "d3985b2690795f8fd30538a154354bfeb43370172d1babfc6f6889ddd3de9d2b"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/pending_validation.pth",
+      "bytes": 1377638,
+      "sha256": "09b9512cacef6db47c2a8c1c56e9e6f3348509164d705cfeb340840c23b74789",
+      "epoch": 13,
+      "next_action": "evaluate"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/status.json",
+      "bytes": 83,
+      "sha256": "208fa122e7d602cccc0c84a4a0f1c2a2cbd82625665ade38baccf8717e455cc4"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/best.json",
+      "bytes": 273,
+      "sha256": "273446156a77c9351b13efa7f15cd2f6034b9e0e7fc069fdeb454b43eb875849"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/epoch_012/repair.pth",
+      "bytes": 442003,
+      "sha256": "da6993c06dc9114f9e9b80578a53eeeb1c6b73990c17760f41e5e6ee9fd62590",
+      "epoch": 12,
+      "next_action": null
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/contract.json",
+      "bytes": 12551,
+      "sha256": "1cc681fb0e509518798d2d93afb14155f67457183fabb2a413784886019c3404"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/short_readout_contract.json",
+      "bytes": 4774,
+      "sha256": "67faa1ff4fbe294ebd5d50d57cd9f6e976090babdb3d2e36cf5f73dd3b507b72"
+    },
+    {
+      "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_r64_current_gated_v1_20261026/latest.pth",
+      "bytes": 1327014,
+      "sha256": "282c114c2543b32169bb6ac353f2d1ad6ff7317189c6cbabbad7b399fd394cea",
+      "epoch": 12,
+      "next_action": "train"
+    }
+  ],
+  "destination": "/data1/zhh/gzc/int181_snapshot/live_backups/readout_20261026_2350.tar.gz",
+  "destination_sha256_verified": true
+}
