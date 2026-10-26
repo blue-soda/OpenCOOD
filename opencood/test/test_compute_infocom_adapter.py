@@ -2,6 +2,7 @@
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools/strong_ann_baselines'))
 from compute_infocom_adapter import InfoComAdapter
 
@@ -16,6 +17,14 @@ class Wire:
 
 
 class AdapterInputTests(unittest.TestCase):
+    def test_original_per_frame_rng_restored_before_inference(self):
+        wire=Wire();a=InfoComAdapter(None,None,wire,['a'],{},rng_states={'a':('cpu','cuda')})
+        with patch('compute_infocom_adapter.torch.set_rng_state') as cpu,patch('compute_infocom_adapter.torch.cuda.set_rng_state') as cuda:
+            a.reset('a');a.reset('a')
+            self.assertEqual(cpu.call_count,2);cpu.assert_called_with('cpu')
+            self.assertEqual(cuda.call_count,2);cuda.assert_called_with('cuda')
+        with self.assertRaises(KeyError):a.reset('unknown')
+
     def test_repetitions_reuse_cpu_inputs_without_message_cache(self):
         batch={'ego':{'sample_idx':579}}
         ids=['unused']*580;ids[579]='example'

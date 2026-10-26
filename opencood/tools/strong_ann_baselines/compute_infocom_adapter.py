@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import random
 from pathlib import Path
 import subprocess
 import numpy as np
@@ -19,9 +20,10 @@ def write(path, value):
 
 
 class InfoComAdapter:
-    def __init__(self, model, dataset, wire, ids, prepared):
+    def __init__(self, model, dataset, wire, ids, prepared, rng_states=None):
         self.model=model;self.dataset=dataset;self.wire=wire;self.ids=ids;self.frame_id=None
         self.prepared=prepared
+        self.rng_states=rng_states
 
     def prepare_cpu(self, index):
         # Official evaluation also shuffles points. Reusing the prepared CPU
@@ -33,6 +35,10 @@ class InfoComAdapter:
 
     def reset(self, frame_id):
         self.frame_id=frame_id;self.wire.messages=[]
+        if self.rng_states is not None:
+            cpu,cuda=self.rng_states[str(frame_id)]
+            torch.set_rng_state(cpu)
+            torch.cuda.set_rng_state(cuda)
 
     def to_device(self, batch):
         from opencood.tools import train_utils
@@ -95,20 +101,45 @@ def smoke(model,dataset,wire,ids,reference,output,meta,gpu,loader,count=4,repeat
                   retains_reference_codec_roundtrip_checks=True,model_weight_updates=False,
                   script_sha256=sha(__file__),harness_sha256=sha(Path(__file__).with_name('compute_harness.py')))
     write(output/'compute_protocol.json',protocol)
-    # Replay the official full ordered loader's preprocessing/RNG sequence,
-    # without model forwards, and retain only the four selected CPU batches.
-    # Random access would consume a different point-shuffle sequence and make
-    # exact equality with the existing full evaluation impossible.
-    prepared={}
-    for i,batch in enumerate(loader):
-        if i in indices:prepared[i]=batch
-        if i%250==0:write(output/'status.json',dict(state='preparing_reference_inputs',processed=i+1))
-        if i==indices[-1]:break
+    # Official topk_mask uses CUDA randperm for ties even in eval(). Reproduce
+    # ALL preceding forwards plus the original first-frame warmups, retaining
+    # only CPU inputs and pre-forward RNG states. No output/message is cached.
+    from opencood.tools import inference_utils, train_utils
+    prepared={};rng_states={}
+    reference_warmup=int(refmeta.get('warmup_passes',3))
+    with torch.no_grad():
+        for i,batch in enumerate(loader):
+            device_batch=train_utils.to_device(batch,torch.device('cuda'))
+            fid=str(ids[i])
+            if i==0:
+                states=(random.getstate(),np.random.get_state(),torch.get_rng_state(),torch.cuda.get_rng_state_all())
+                for _ in range(reference_warmup):
+                    wire.begin(device_batch,fid)
+                    inference_utils.inference_intermediate_fusion(device_batch,model,dataset)
+                # evaluate_infocom restores the scored pass RNG after warmup.
+                random.setstate(states[0]);np.random.set_state(states[1])
+                torch.set_rng_state(states[2]);torch.cuda.set_rng_state_all(states[3])
+            if i in indices:
+                prepared[i]=batch
+                rng_states[fid]=(torch.get_rng_state().clone(),torch.cuda.get_rng_state().clone())
+            wire.begin(device_batch,fid)
+            result=inference_utils.inference_intermediate_fusion(device_batch,model,dataset)
+            if i in indices:
+                probe=InfoComAdapter(model,dataset,wire,ids,prepared)
+                actual=fingerprint(fid,probe.to_cpu(result),probe.packets())
+                if actual!=refs[fid]:
+                    write(output/'reference_replay_mismatch.json',dict(index=i,frame_id=fid,actual=actual,expected=refs[fid]))
+                    raise ValueError('Full ordered RNG replay differs from immutable reference at '+fid)
+            if i%250==0:write(output/'status.json',dict(state='replaying_reference_rng',processed=i+1))
+            if i==indices[-1]:break
     if set(prepared)!=set(indices):raise ValueError('Incomplete reference input replay')
-    protocol.update(preprocessing='replay full ordered loader RNG, cache only selected CPU batches',
+    protocol.update(preprocessing='full ordered input and model RNG replay, including original warmups',
+                    rng_replay=dict(reference_warmup=reference_warmup,selected_states=len(rng_states),
+                                    reference_warmup_rng_restored=True,restore_before_timing=True,
+                                    reason='official stochastic top-k tie breaking'),
                     fresh_inputs_for_each_repeat=False,model_or_message_cache=False)
     write(output/'compute_protocol.json',protocol)
-    adapter=InfoComAdapter(model,dataset,wire,ids,prepared);results=[]
+    adapter=InfoComAdapter(model,dataset,wire,ids,prepared,rng_states);results=[]
     if diagnostic:
         from diagnose_snapshot_compute import diagnose
         protocol.update(diagnostic_only=True,not_a_performance_result=True)

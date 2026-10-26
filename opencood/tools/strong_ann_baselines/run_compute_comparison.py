@@ -40,7 +40,8 @@ def await_resource(plan,root,deadline,method,repeat):
 
 def run(plan,root):
     methods=plan['methods'];names=list(methods)
-    if len(names)!=4 or plan['repeats']!=3:raise ValueError('Registered four methods / three repeats only')
+    if (len(names)!=4 and set(names)!={'infocom_adapt1pct','infocom_official10pct'}) or plan['repeats']!=3:
+        raise ValueError('Registered four methods or explicit repaired InfoCom pair / three repeats only')
     rows=[];failed=set();deadline=time.time()+plan.get('resource_wait_seconds',21600)
     for repeat in range(3):
         order=names[repeat:]+names[:repeat]
@@ -75,10 +76,11 @@ def run(plan,root):
                     peak_allocated_bytes=x['peak_allocated_bytes'],peak_reserved_bytes=x['peak_reserved_bytes']) for x in result['results']]
             if code!=0:failed.add(name)
             rows.append(row);write(root/'results_so_far.json',rows)
-    write(root/'summary.json',dict(completed=len(rows)==12 and not failed,rows=rows,
+    expected=len(names)*3
+    write(root/'summary.json',dict(completed=len(rows)==expected and not failed,rows=rows,
           failed_methods=sorted(failed),automatic_retries=False,outliers_removed=False,
           note='CoSDH reference retains redundant audit work; not eligible for fair speed ranking. Inspect raw interference before claims.'))
-    write(root/'status.json',dict(state='complete' if len(rows)==12 and not failed else 'partial_failure',
+    write(root/'status.json',dict(state='complete' if len(rows)==expected and not failed else 'partial_failure',
           completed_runs=len(rows),failed_methods=sorted(failed)))
 
 
