@@ -1,0 +1,123 @@
+{
+  "error": "GPUContention('GPU 5 contention with PIDs [41082, 41537]; discard timing and stop only this benchmark')",
+  "evidence": [
+    {
+      "checked_unix": 1792992125.6789834,
+      "processes": [
+        {
+          "Name": "python",
+          "PPid": "40953",
+          "Uid": "1001\t1001\t1001\t1001",
+          "pid": 41082
+        },
+        {
+          "Name": "gaussian_cull_r",
+          "PPid": "41534",
+          "Uid": "1003\t1003\t1003\t1003",
+          "pid": 41537
+        }
+      ]
+    },
+    {
+      "checked_unix": 1792992127.2225392,
+      "processes": [
+        {
+          "Name": "python",
+          "PPid": "40953",
+          "Uid": "1001\t1001\t1001\t1001",
+          "pid": 41082
+        },
+        {
+          "Name": "gaussian_cull_r",
+          "PPid": "41534",
+          "Uid": "1003\t1003\t1003\t1003",
+          "pid": 41537
+        }
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "checked_unix": 1792991900.9054613,
+      "gpu": 5,
+      "pids": [
+        37256
+      ],
+      "scan": 0,
+      "timing_valid": true,
+      "uuid": "GPU-1fa76848-4737-2fdc-5205-5314117e890f"
+    },
+    {
+      "checked_unix": 1792991917.4430945,
+      "gpu": 5,
+      "pids": [
+        37256
+      ],
+      "scan": 200,
+      "timing_valid": true,
+      "uuid": "GPU-1fa76848-4737-2fdc-5205-5314117e890f"
+    },
+    {
+      "checked_unix": 1792991962.1218746,
+      "gpu": 5,
+      "pids": [
+        37256
+      ],
+      "scan": 400,
+      "timing_valid": true,
+      "uuid": "GPU-1fa76848-4737-2fdc-5205-5314117e890f"
+    },
+    {
+      "checked_unix": 1792991982.7893875,
+      "gpu": 5,
+      "pids": [
+        37256
+      ],
+      "scan": 600,
+      "timing_valid": true,
+      "uuid": "GPU-1fa76848-4737-2fdc-5205-5314117e890f"
+    },
+    {
+      "checked_unix": 1792992001.0595467,
+      "gpu": 5,
+      "pids": [
+        37256
+      ],
+      "scan": 800,
+      "timing_valid": true,
+      "uuid": "GPU-1fa76848-4737-2fdc-5205-5314117e890f"
+    },
+    {
+      "checked_unix": 1792992030.9203732,
+      "gpu": 5,
+      "pids": [
+        37256
+      ],
+      "scan": 1000,
+      "timing_valid": true,
+      "uuid": "GPU-1fa76848-4737-2fdc-5205-5314117e890f"
+    },
+    {
+      "checked_unix": 1792992052.721351,
+      "gpu": 5,
+      "pids": [
+        37256
+      ],
+      "scan": 1200,
+      "timing_valid": true,
+      "uuid": "GPU-1fa76848-4737-2fdc-5205-5314117e890f"
+    },
+    {
+      "checked_unix": 1792992094.2209232,
+      "gpu": 5,
+      "pids": [
+        37256
+      ],
+      "scan": 1400,
+      "timing_valid": true,
+      "uuid": "GPU-1fa76848-4737-2fdc-5205-5314117e890f"
+    }
+  ],
+  "scan": 1600,
+  "status": "INVALID_TIMING"
+}

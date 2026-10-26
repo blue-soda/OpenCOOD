@@ -1,0 +1,4 @@
+{
+  "contention": "Pause between complete frames, at most600s per guard; poll15s; preserve all histories and AP accumulators. Any contention invalidates entire evaluation latency; hardware errors and timeout fail closed.",
+  "scope": "Execution only; model/training contract and strict standalone benchmarks unchanged."
+}

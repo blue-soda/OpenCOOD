@@ -1,6 +1,4 @@
 {
-  "epoch": 14,
-  "phase": "validation",
-  "scans": 400,
-  "status": "RUNNING"
+  "error": "GPUContention('GPU 3 contention with PIDs [41080]; discard timing and stop only this benchmark')",
+  "status": "FAILED"
 }
