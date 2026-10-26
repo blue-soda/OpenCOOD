@@ -90,6 +90,13 @@ def execute(a):
                       ['tools/strong_ann_baselines/compute_harness.py','tools/strong_ann_baselines/compute_snapshot_smoke.py','models/fuse_modules/e3dsnn_snapshot_adapter.py']},
                   parameters=sum(p.numel() for p in model.parameters()),gpu_memory_fraction=.25)
     write(root/'compute_protocol.json',protocol);adapter=Adapter(model,data,prepared);results=[]
+    if a.diagnose:
+        from opencood.tools.strong_ann_baselines.diagnose_snapshot_compute import diagnose
+        protocol.update(diagnostic_only=True,not_a_performance_result=True)
+        write(root/'compute_protocol.json',protocol)
+        diagnose(adapter,indices,refs,reference,root)
+        write(root/'status.json',dict(finished=True,diagnostic_only=True,unique_frames=len(indices)))
+        return
     with torch.no_grad():
         for scope in ['ready_cpu_batch_to_cpu_boxes','device_batch_to_cpu_boxes']:
             torch.cuda.synchronize();torch.cuda.reset_peak_memory_stats()
@@ -107,6 +114,7 @@ if __name__=='__main__':
     for n in ('config','checkpoint','reference','output','gpu'):p.add_argument('--'+n,required=True)
     p.add_argument('--compute-count',type=int,choices=(4,64),default=4)
     p.add_argument('--compute-repeat',type=int,choices=(0,1,2),default=0)
+    p.add_argument('--diagnose',action='store_true',help='Two untimed passes with mismatch arrays/packets; no gate relaxation')
     a=p.parse_args();os.environ['CUDA_VISIBLE_DEVICES']=a.gpu
     root=Path(a.output);root.mkdir(parents=True,exist_ok=False)
     try:execute(a)
