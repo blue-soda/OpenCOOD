@@ -44,6 +44,10 @@ class TestLocalCurrentReadout(unittest.TestCase):
             other,other_macs,_,other_support=small.selected(current,old,mask)
             self.assertTrue(torch.allclose(actual,other,atol=2e-5,rtol=2e-5))
             self.assertEqual((macs,support),(other_macs,other_support))
+            cached=LocalCurrentReadoutCache(self.source,self.repair,self.bounds,.5,cache_geometry=True)
+            other,other_macs,_,other_support=cached.selected(current,old,mask)
+            self.assertTrue(torch.equal(actual,other))
+            self.assertEqual((macs,support),(other_macs,other_support))
 
     @torch.no_grad()
     def test_complete_state_alignment_masks_refresh_and_own_history(self):

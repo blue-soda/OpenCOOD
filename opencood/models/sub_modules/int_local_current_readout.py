@@ -8,15 +8,17 @@ from opencood.models.sub_modules.int_selected_conv import prepare_selected_neigh
 from opencood.models.sub_modules.int_row_spatial_state import row_lookup
 from opencood.models.sub_modules.int_planned_row_state import planned_conv
 from opencood.models.sub_modules.int_basis_spatial_state import _write_rows
+from opencood.models.sub_modules.int_cached_neighborhoods import CachedNeighborhoods
 
 
 class LocalCurrentReadoutCache:
-    def __init__(self,readout,repair,bounds,threshold,backend='selected',period=3,row_chunk_size=32768):
+    def __init__(self,readout,repair,bounds,threshold,backend='selected',period=3,row_chunk_size=32768,cache_geometry=False):
         if readout.training or repair.training or repair.gated or backend not in ('selected','masked_dense'):
             raise ValueError('Frozen current-only readout and selected/masked_dense backend required')
         if period not in (1,3) or not math.isfinite(threshold) or threshold<0:raise ValueError('Invalid refresh/threshold')
         if not isinstance(row_chunk_size,int) or row_chunk_size<1:raise ValueError('Positive row chunk size required')
         self.row_chunk_size=row_chunk_size
+        self.geometry=CachedNeighborhoods() if cache_geometry else None
         self.readout,self.repair,self.bounds,self.threshold=readout,repair,bounds,threshold
         self.backend,self.period=backend,period
         self.execution='current_local';self.max_full_age_us=250000
@@ -31,6 +33,13 @@ class LocalCurrentReadoutCache:
     def dense(self,current):
         return self.repair.net(current)
 
+    @property
+    def geometry_bytes(self):
+        return self.geometry.geometry_bytes if self.geometry is not None else 0
+
+    def neighborhood_plan(self,mask):
+        return self.geometry(mask) if self.geometry is not None else prepare_selected_neighborhoods(mask)
+
     def select_mask(self,current,reference,valid,confidence):
         return LocalReadoutCache.select_mask(self,current,reference,valid,confidence)
 
@@ -43,9 +52,9 @@ class LocalCurrentReadoutCache:
         if bool(mask.all()):return self.dense(current),cells*cost,0,cells
         if not bool(mask.any()):return old,0,0,0
         support=F.max_pool2d(mask.float(),3,1,1)>0
-        middle,ids,macs=prepared_conv3x3_rows(self.first,self.weights[0],current,prepare_selected_neighborhoods(support),self.row_chunk_size)
+        middle,ids,macs=prepared_conv3x3_rows(self.first,self.weights[0],current,self.neighborhood_plan(support),self.row_chunk_size)
         middle=F.relu(middle)
-        target,neighbors,_=prepare_selected_neighborhoods(mask)
+        target,neighbors,_=self.neighborhood_plan(mask)
         indices=row_lookup(ids,cells)[neighbors]
         assert bool(((neighbors==cells)|(indices<ids.numel())).all())
         output=planned_conv(self.second,self.weights[1],middle,indices,self.row_chunk_size)
