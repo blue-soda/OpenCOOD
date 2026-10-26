@@ -1,0 +1,15 @@
+{
+  "state": "training",
+  "epoch": 2,
+  "epochs": 10,
+  "batch": 151,
+  "batches": 2339,
+  "loss": 0.512605370457961,
+  "gradient_norm": 2.8865675926208496,
+  "elapsed_seconds": 1408.1927760930266,
+  "stream_means": {
+    "stream_budgets": 4258.754966887417,
+    "packet_bytes": 4251.281456953642,
+    "stream_events": 8388.837748344371
+  }
+}

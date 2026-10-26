@@ -125,3 +125,14 @@ fixed2k第9轮851/2339批，最佳仍第6轮58.85365%；多预算第1轮1201/233
 历史量化ANN紧凑参照59.40337%/2044.42 B仍更高，InfoCom低比例适配尚未训练，CoSDH/InfoCom原生高通信点精度也更高；不能将本结果称为已经打赢全部ANN。保留预登记多预算训练，待完整四预算曲线后继续匹配ANN适配、统一计算及机制消融，不追加固定组训练轮数。
 
 目前协调器已进入b4096，多预算第1轮2201/2339批；InfoCom磁盘条件未恢复，不重复催问。证据：[独立汇总和训练锚点逐值一致检查](results/scheme2_joint_20261025/fixed_anchor_verified_20261026/anchor_verified.json)、[2KiB逐帧通信CSV](results/scheme2_joint_20261025/fixed_anchor_verified_20261026/b2048/communication_frames.csv)、[2KiB CPU复算](results/scheme2_joint_20261025/fixed_anchor_verified_20261026/b2048/offline_replay.json)。完整预测/包索引以gzip保留，解压恢复原始SHA；没有下载权重或点云到Git。
+
+
+## 2026-10-26 11:12触发：4KiB出现非单调精度，8KiB继续
+
+同一固定2KiB适配best，第4KiB点已完成1738帧真实wire及独立CPU复算：AP30/50/70=78.23758%/72.85190%/57.97232%，平均4091.598964 B、P95/最大4096 B。所有预测SHA、packet SHA/身份/实际字节及硬预算检查通过，共同GT摘要一致。该结果比2KiB的58.85365%低0.88133个百分点，而AP30/50上升；不得只保留有利阈值或删除此点。
+
+当前证据表明这个固定2KiB训练的模型不具备已验证的“更多消息→更高AP70”性质。可能涉及固定预算适配后的接收分布或定位质量变化，尚未定位因果，不能直接归因于SNN固有缺陷或当作接口bug。独立回放/真实包检查已排除所检查范围内的传输不一致。预登记多预算训练正是需要完成的对照，当前保持原10轮、预算分布和损失，不临时调系数。
+
+多预算已完成第1轮，2KiB验证AP30/50/70=73.98462%/69.54647%/57.98674%，平均2045.745109 B，低于原源58.23401%；冻结摘要通过第1轮，已进入第2轮。此为中间验证，不作路线退出结论。固定组8KiB仍在执行，old_snn七预算最终评估仍运行；InfoCom空间准入条件未变。
+
+证据：[4KiB完整核验](results/scheme2_joint_20261025/fixed_4k_verified_20261026/b4096/verification.json)、[4KiB逐帧字节](results/scheme2_joint_20261025/fixed_4k_verified_20261026/b4096/communication_frames.csv)、[多预算第1轮](results/scheme2_joint_20261025/fixed_4k_verified_20261026/multi248k/best_ap70_metrics.json)。0/2/4KiB都已完成，待8KiB后再形成完整曲线；2KiB增益结论保留，适用工作点边界明确。
