@@ -1,0 +1,190 @@
+{
+  "passed": true,
+  "protocol": {
+    "smoke_only": true,
+    "not_a_performance_result": true,
+    "indices": [
+      0,
+      579,
+      1158,
+      1737
+    ],
+    "ids": [
+      "000211",
+      "004276",
+      "013871",
+      "019992"
+    ],
+    "checkpoint_sha256": "df4a06be9d0f170de60e686afdf691b3ab115e1f5185b571885fb21caf4354cf",
+    "reference_manifest_sha256": "39e25eb3ec524f353ab031c1f09b47ac426138f6599b6612f3daddc00b8b90d5",
+    "warmup": 20,
+    "scopes": [
+      "ready_cpu_batch_to_cpu_boxes",
+      "device_batch_to_cpu_boxes"
+    ],
+    "real_codec": true,
+    "packet_file_io_inside_timing": false,
+    "envelope_assembly_inside_timing": true,
+    "retains_redundant_diagnostic_decode_and_warp": true,
+    "eligible_for_main_speed_table": false,
+    "preprocessing": "full ordered RNG replay, four cached CPU batches",
+    "model_or_message_cache": false,
+    "script_sha256": "faefaf5309d55c248b37a74ab8956565fec8b132f69588c4dac5306cdaf5b4e4",
+    "wire_sha256": "b7ac04105ac11962de8912c164cb81ab4af20571f94527df1110c83e17af4a47"
+  },
+  "results": [
+    {
+      "scope": "ready_cpu_batch_to_cpu_boxes",
+      "repeat": 0,
+      "warmup_calls": 20,
+      "frames": 4,
+      "rows": [
+        {
+          "frame_id": "000211",
+          "seconds": 0.24087641900405288,
+          "scope": "ready_cpu_batch_to_cpu_boxes",
+          "total_bytes": 44625,
+          "reference_exact": true,
+          "index": 0,
+          "repeat": 0
+        },
+        {
+          "frame_id": "004276",
+          "seconds": 0.12037873012013733,
+          "scope": "ready_cpu_batch_to_cpu_boxes",
+          "total_bytes": 69443,
+          "reference_exact": true,
+          "index": 579,
+          "repeat": 0
+        },
+        {
+          "frame_id": "013871",
+          "seconds": 0.27196955983527005,
+          "scope": "ready_cpu_batch_to_cpu_boxes",
+          "total_bytes": 87350,
+          "reference_exact": true,
+          "index": 1158,
+          "repeat": 0
+        },
+        {
+          "frame_id": "019992",
+          "seconds": 0.19167183712124825,
+          "scope": "ready_cpu_batch_to_cpu_boxes",
+          "total_bytes": 87426,
+          "reference_exact": true,
+          "index": 1737,
+          "repeat": 0
+        }
+      ],
+      "seconds": {
+        "mean": 0.20622413652017713,
+        "median": 0.21627412806265056,
+        "p95": 0.26730558871058746
+      },
+      "resource_before": {
+        "gpu": "GPU-1fa76848-4737-2fdc-5205-5314117e890f, NVIDIA GeForce RTX 3090, 24576 MiB, 22082 MiB, 0 %",
+        "compute_processes": "GPU-a663a4e7-ef8c-7ebf-9e53-4ada0a77930e, 38645, 3168 MiB\nGPU-a663a4e7-ef8c-7ebf-9e53-4ada0a77930e, 35890, 2120 MiB\nGPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76, 17055, 5334 MiB\nGPU-b2981727-f739-13ea-1e14-704b1794fa22, 17544, 5350 MiB\nGPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f, 15170, 5276 MiB\nGPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b, 35890, 1728 MiB\nGPU-1fa76848-4737-2fdc-5205-5314117e890f, 38877, 2164 MiB\nGPU-6049f9bd-dd16-a915-1d4e-06ad4936822f, 35890, 1724 MiB",
+        "own_pid": 38877,
+        "cpu_load": [
+          18.82,
+          16.95,
+          16.15
+        ],
+        "torch_threads": 1
+      },
+      "resource_after": {
+        "gpu": "GPU-1fa76848-4737-2fdc-5205-5314117e890f, NVIDIA GeForce RTX 3090, 24576 MiB, 21150 MiB, 0 %",
+        "compute_processes": "GPU-a663a4e7-ef8c-7ebf-9e53-4ada0a77930e, 38645, 3168 MiB\nGPU-a663a4e7-ef8c-7ebf-9e53-4ada0a77930e, 35890, 2120 MiB\nGPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76, 17055, 5334 MiB\nGPU-b2981727-f739-13ea-1e14-704b1794fa22, 17544, 5350 MiB\nGPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f, 15170, 5276 MiB\nGPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b, 35890, 1728 MiB\nGPU-1fa76848-4737-2fdc-5205-5314117e890f, 38877, 3096 MiB\nGPU-6049f9bd-dd16-a915-1d4e-06ad4936822f, 35890, 1724 MiB",
+        "own_pid": 38877,
+        "cpu_load": [
+          18.91,
+          17.0,
+          16.17
+        ],
+        "torch_threads": 1
+      },
+      "interference_filter_applied": false,
+      "peak_allocated_bytes": 520192000,
+      "peak_reserved_bytes": 1004535808
+    },
+    {
+      "scope": "device_batch_to_cpu_boxes",
+      "repeat": 0,
+      "warmup_calls": 20,
+      "frames": 4,
+      "rows": [
+        {
+          "frame_id": "000211",
+          "seconds": 0.2412625199649483,
+          "scope": "device_batch_to_cpu_boxes",
+          "total_bytes": 44625,
+          "reference_exact": true,
+          "index": 0,
+          "repeat": 0
+        },
+        {
+          "frame_id": "004276",
+          "seconds": 0.11012967093847692,
+          "scope": "device_batch_to_cpu_boxes",
+          "total_bytes": 69443,
+          "reference_exact": true,
+          "index": 579,
+          "repeat": 0
+        },
+        {
+          "frame_id": "013871",
+          "seconds": 0.2710368698462844,
+          "scope": "device_batch_to_cpu_boxes",
+          "total_bytes": 87350,
+          "reference_exact": true,
+          "index": 1158,
+          "repeat": 0
+        },
+        {
+          "frame_id": "019992",
+          "seconds": 0.18343702889978886,
+          "scope": "device_batch_to_cpu_boxes",
+          "total_bytes": 87426,
+          "reference_exact": true,
+          "index": 1737,
+          "repeat": 0
+        }
+      ],
+      "seconds": {
+        "mean": 0.20146652241237462,
+        "median": 0.21234977443236858,
+        "p95": 0.26657071736408394
+      },
+      "resource_before": {
+        "gpu": "GPU-1fa76848-4737-2fdc-5205-5314117e890f, NVIDIA GeForce RTX 3090, 24576 MiB, 21150 MiB, 0 %",
+        "compute_processes": "GPU-a663a4e7-ef8c-7ebf-9e53-4ada0a77930e, 38645, 3168 MiB\nGPU-a663a4e7-ef8c-7ebf-9e53-4ada0a77930e, 35890, 2120 MiB\nGPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76, 17055, 5334 MiB\nGPU-b2981727-f739-13ea-1e14-704b1794fa22, 17544, 5350 MiB\nGPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f, 15170, 5276 MiB\nGPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b, 35890, 1728 MiB\nGPU-1fa76848-4737-2fdc-5205-5314117e890f, 38877, 3096 MiB\nGPU-6049f9bd-dd16-a915-1d4e-06ad4936822f, 35890, 1724 MiB",
+        "own_pid": 38877,
+        "cpu_load": [
+          18.91,
+          17.0,
+          16.17
+        ],
+        "torch_threads": 1
+      },
+      "resource_after": {
+        "gpu": "GPU-1fa76848-4737-2fdc-5205-5314117e890f, NVIDIA GeForce RTX 3090, 24576 MiB, 21150 MiB, 0 %",
+        "compute_processes": "GPU-a663a4e7-ef8c-7ebf-9e53-4ada0a77930e, 38645, 3168 MiB\nGPU-a663a4e7-ef8c-7ebf-9e53-4ada0a77930e, 35890, 2120 MiB\nGPU-59cdd0ab-e3ee-003f-ff08-09c1a8e09d76, 17055, 5334 MiB\nGPU-b2981727-f739-13ea-1e14-704b1794fa22, 17544, 5350 MiB\nGPU-be0ef3d5-2fff-9931-f2d6-0920d8243b4f, 15170, 5276 MiB\nGPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b, 35890, 1728 MiB\nGPU-1fa76848-4737-2fdc-5205-5314117e890f, 38877, 3096 MiB\nGPU-6049f9bd-dd16-a915-1d4e-06ad4936822f, 35890, 1724 MiB",
+        "own_pid": 38877,
+        "cpu_load": [
+          18.6,
+          16.97,
+          16.17
+        ],
+        "torch_threads": 1
+      },
+      "interference_filter_applied": false,
+      "peak_allocated_bytes": 520335872,
+      "peak_reserved_bytes": 1004535808
+    }
+  ],
+  "exact_reference_prediction_and_packet_content": true,
+  "unique_frames": 4,
+  "timed_calls": 8,
+  "warmup_calls": 40,
+  "no_full_AP_or_speed_claim": true
+}

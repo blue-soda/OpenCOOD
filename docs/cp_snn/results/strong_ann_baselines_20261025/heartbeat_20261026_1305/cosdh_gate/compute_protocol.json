@@ -1,0 +1,32 @@
+{
+  "smoke_only": true,
+  "not_a_performance_result": true,
+  "indices": [
+    0,
+    579,
+    1158,
+    1737
+  ],
+  "ids": [
+    "000211",
+    "004276",
+    "013871",
+    "019992"
+  ],
+  "checkpoint_sha256": "df4a06be9d0f170de60e686afdf691b3ab115e1f5185b571885fb21caf4354cf",
+  "reference_manifest_sha256": "39e25eb3ec524f353ab031c1f09b47ac426138f6599b6612f3daddc00b8b90d5",
+  "warmup": 20,
+  "scopes": [
+    "ready_cpu_batch_to_cpu_boxes",
+    "device_batch_to_cpu_boxes"
+  ],
+  "real_codec": true,
+  "packet_file_io_inside_timing": false,
+  "envelope_assembly_inside_timing": true,
+  "retains_redundant_diagnostic_decode_and_warp": true,
+  "eligible_for_main_speed_table": false,
+  "preprocessing": "full ordered RNG replay, four cached CPU batches",
+  "model_or_message_cache": false,
+  "script_sha256": "faefaf5309d55c248b37a74ab8956565fec8b132f69588c4dac5306cdaf5b4e4",
+  "wire_sha256": "b7ac04105ac11962de8912c164cb81ab4af20571f94527df1110c83e17af4a47"
+}

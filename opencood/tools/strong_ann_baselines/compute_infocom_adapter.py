@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import numpy as np
 import torch
-from compute_harness import fingerprint, run_pass, selected_indices
+from compute_harness import fingerprint, run_pass, measurement_indices, host_metadata
 
 
 def sha(path):
@@ -55,7 +55,7 @@ class InfoComAdapter:
         return [('road_to_vehicle_sender%d'%r['sender'],p) for r,p in self.wire.messages]
 
 
-def smoke(model,dataset,wire,ids,reference,output,meta,gpu,loader):
+def smoke(model,dataset,wire,ids,reference,output,meta,gpu,loader,count=4,repeat=0):
     if wire is None or len(ids)!=1738:
         raise ValueError('Need real wire and the full common ID list')
     refmeta=json.loads((reference/'summary.json').read_text())
@@ -65,7 +65,7 @@ def smoke(model,dataset,wire,ids,reference,output,meta,gpu,loader):
         if refmeta.get(key)!=meta.get(key):raise ValueError('Reference protocol differs: '+key)
     index=json.loads((reference/'predictions_index.json').read_text())
     if [x['frame_id'] for x in index]!=ids:raise ValueError('Reference ID order differs')
-    all_indices=selected_indices();indices=[all_indices[x] for x in (0,21,42,63)]
+    indices=measurement_indices(count)
     refs={}
     for i in indices:
         row=index[i];p=reference/row['file']
@@ -82,12 +82,12 @@ def smoke(model,dataset,wire,ids,reference,output,meta,gpu,loader):
     def resource():
         def query(args):
             return subprocess.check_output(['nvidia-smi']+args).decode().strip()
-        return dict(gpu=query(['-i',str(gpu),'--query-gpu=uuid,name,memory.total,memory.free,utilization.gpu',
+        return dict(gpu=query(['-i',str(gpu),'--query-gpu=uuid,name,driver_version,memory.total,memory.free,utilization.gpu',
                                '--format=csv,noheader']),
                     compute_processes=query(['--query-compute-apps=gpu_uuid,pid,used_memory','--format=csv,noheader']),
                     own_pid=os.getpid(),cpu_load=list(os.getloadavg()),
                     cpu_affinity=sorted(os.sched_getaffinity(0)),torch_threads=torch.get_num_threads())
-    protocol=dict(smoke_only=True,not_a_performance_result=True,indices=indices,ids=[ids[i] for i in indices],
+    protocol=dict(smoke_only=count==4,not_a_performance_result=count==4,repeat=repeat,host=host_metadata(),indices=indices,ids=[ids[i] for i in indices],
                   checkpoint_sha256=meta['checkpoint_sha256'],reference_summary_sha256=sha(reference/'summary.json'),
                   reference_index_sha256=sha(reference/'predictions_index.json'),warmup=20,
                   scopes=['ready_cpu_batch_to_cpu_boxes','device_batch_to_cpu_boxes'],
@@ -105,7 +105,7 @@ def smoke(model,dataset,wire,ids,reference,output,meta,gpu,loader):
         if i%250==0:write(output/'status.json',dict(state='preparing_reference_inputs',processed=i+1))
         if i==indices[-1]:break
     if set(prepared)!=set(indices):raise ValueError('Incomplete reference input replay')
-    protocol.update(preprocessing='replay full ordered loader RNG, cache only four CPU batches',
+    protocol.update(preprocessing='replay full ordered loader RNG, cache only selected CPU batches',
                     fresh_inputs_for_each_repeat=False,model_or_message_cache=False)
     write(output/'compute_protocol.json',protocol)
     adapter=InfoComAdapter(model,dataset,wire,ids,prepared);results=[]
@@ -113,12 +113,12 @@ def smoke(model,dataset,wire,ids,reference,output,meta,gpu,loader):
         for scope in protocol['scopes']:
             torch.cuda.synchronize();torch.cuda.reset_peak_memory_stats()
             result=run_pass(adapter,indices,refs,scope=scope,synchronize=torch.cuda.synchronize,
-                            resource_snapshot=resource,warmup=20)
+                            resource_snapshot=resource,warmup=20,repeat=repeat)
             result.update(peak_allocated_bytes=torch.cuda.max_memory_allocated(),
                           peak_reserved_bytes=torch.cuda.max_memory_reserved())
             results.append(result);write(output/'compute_results_so_far.json',results)
     write(output/'compute_summary.json',dict(passed=True,protocol=protocol,results=results,
-          exact_reference_prediction_and_packet_content=True,unique_frames=4,timed_calls=8,warmup_calls=40,
-          no_full_AP_or_speed_claim=True))
-    write(output/'status.json',dict(finished=True,compute_smoke_only=True,unique_frames=4))
-    print(json.dumps(dict(passed=True,compute_smoke_only=True,frames=4,timed_calls=8)),flush=True)
+          exact_reference_prediction_and_packet_content=True,unique_frames=count,timed_calls=2*count,warmup_calls=40,
+          no_full_AP_claim=True,complete_three_repeat_comparison=False))
+    write(output/'status.json',dict(finished=True,compute_smoke_only=count==4,unique_frames=count))
+    print(json.dumps(dict(passed=True,compute_smoke_only=count==4,frames=count,timed_calls=2*count)),flush=True)

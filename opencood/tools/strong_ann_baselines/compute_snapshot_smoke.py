@@ -9,7 +9,7 @@ import subprocess
 import traceback
 import numpy as np
 import torch
-from opencood.tools.strong_ann_baselines.compute_harness import fingerprint,run_pass,selected_indices
+from opencood.tools.strong_ann_baselines.compute_harness import fingerprint,run_pass,measurement_indices,host_metadata
 
 
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
@@ -61,7 +61,7 @@ def execute(a):
     if len(data)!=1738:raise ValueError('Wrong paired validation')
     model=train_utils.create_model(cfg).cuda();model.load_state_dict(torch.load(str(checkpoint),map_location='cpu'),strict=True)
     model.eval();model.requires_grad_(False);model.packet_roundtrip=True
-    all_indices=selected_indices();indices=[all_indices[i] for i in (0,21,42,63)]
+    indices=measurement_indices(a.compute_count)
     index=read(reference/'predictions/index.json')['frames']
     if [x['frame_id'] for x in index]!=list(data.data):raise ValueError('Reference IDs differ')
     packets=[json.loads(x) for x in (reference/'packets/index.jsonl').read_text().splitlines()]
@@ -77,13 +77,15 @@ def execute(a):
         prepared[i]=data.collate_batch_test([data[i]])
     def resource():
         def query(args):return subprocess.check_output(['nvidia-smi']+args).decode().strip()
-        return dict(gpu=query(['-i',a.gpu,'--query-gpu=uuid,name,memory.total,memory.free,utilization.gpu','--format=csv,noheader']),
+        return dict(gpu=query(['-i',a.gpu,'--query-gpu=uuid,name,driver_version,memory.total,memory.free,utilization.gpu','--format=csv,noheader']),
                     compute_processes=query(['--query-compute-apps=gpu_uuid,pid,used_memory','--format=csv,noheader']),
                     own_pid=os.getpid(),cpu_load=list(os.getloadavg()),cpu_affinity=sorted(os.sched_getaffinity(0)),torch_threads=torch.get_num_threads())
-    protocol=dict(smoke_only=True,not_a_performance_result=True,indices=indices,ids=[str(data.data[i]) for i in indices],
+    protocol=dict(smoke_only=a.compute_count==4,not_a_performance_result=a.compute_count==4,repeat=a.compute_repeat,
+                  host=host_metadata(),torch_version=torch.__version__,cuda_version=torch.version.cuda,
+                  indices=indices,ids=[str(data.data[i]) for i in indices],
                   checkpoint_sha256=sha(checkpoint),config_sha256=sha(a.config),config_change='packet_directory=None; observer holds actual packet in memory',
                   reference_index_sha256=sha(reference/'predictions/index.json'),warmup=20,
-                  preprocessing='paired validation is deterministic; same four CPU inputs reused, no message/model cache',
+                  preprocessing='paired validation is deterministic; same selected CPU inputs reused, no message/model cache',
                   scripts={p:sha(Path(__file__).resolve().parents[2]/p) for p in
                       ['tools/strong_ann_baselines/compute_harness.py','tools/strong_ann_baselines/compute_snapshot_smoke.py','models/fuse_modules/e3dsnn_snapshot_adapter.py']},
                   parameters=sum(p.numel() for p in model.parameters()),gpu_memory_fraction=.25)
@@ -91,17 +93,20 @@ def execute(a):
     with torch.no_grad():
         for scope in ['ready_cpu_batch_to_cpu_boxes','device_batch_to_cpu_boxes']:
             torch.cuda.synchronize();torch.cuda.reset_peak_memory_stats()
-            result=run_pass(adapter,indices,refs,scope=scope,synchronize=torch.cuda.synchronize,resource_snapshot=resource,warmup=20)
+            result=run_pass(adapter,indices,refs,scope=scope,synchronize=torch.cuda.synchronize,resource_snapshot=resource,warmup=20,repeat=a.compute_repeat)
             result.update(peak_allocated_bytes=torch.cuda.max_memory_allocated(),peak_reserved_bytes=torch.cuda.max_memory_reserved())
             results.append(result);write(root/'compute_results_so_far.json',results)
     write(root/'compute_summary.json',dict(passed=True,protocol=protocol,results=results,
-          exact_reference_prediction_and_packet_content=True,unique_frames=4,timed_calls=8,warmup_calls=40,no_full_AP_or_speed_claim=True))
-    write(root/'status.json',dict(finished=True,compute_smoke_only=True,unique_frames=4))
+          exact_reference_prediction_and_packet_content=True,unique_frames=a.compute_count,timed_calls=2*a.compute_count,warmup_calls=40,
+          no_full_AP_claim=True,complete_three_repeat_comparison=False))
+    write(root/'status.json',dict(finished=True,compute_smoke_only=a.compute_count==4,unique_frames=a.compute_count))
 
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for n in ('config','checkpoint','reference','output','gpu'):p.add_argument('--'+n,required=True)
+    p.add_argument('--compute-count',type=int,choices=(4,64),default=4)
+    p.add_argument('--compute-repeat',type=int,choices=(0,1,2),default=0)
     a=p.parse_args();os.environ['CUDA_VISIBLE_DEVICES']=a.gpu
     root=Path(a.output);root.mkdir(parents=True,exist_ok=False)
     try:execute(a)

@@ -216,7 +216,8 @@ def run(args, output):
     if compute_reference is not None:
         from compute_infocom_adapter import smoke
         try:
-            smoke(model, dataset, wire, ids, Path(compute_reference), output, meta, args.gpu, loader)
+            smoke(model, dataset, wire, ids, Path(compute_reference), output, meta, args.gpu, loader,
+                  args.compute_count,args.compute_repeat)
         finally:
             if wire:wire.handle.remove()
         return
@@ -330,13 +331,15 @@ def main():
     parser.add_argument('--wire-codec',action='store_true',help='Serialize, decode and use every non-ego latent/mask; exact FP32')
     parser.add_argument('--adaptation-protocol',help='Training protocol for an adapted canonical checkpoint; records provenance')
     parser.add_argument('--compute-smoke-reference', help='Four fixed-frame real-wire timing adapter parity gate; not an AP/performance run')
+    parser.add_argument('--compute-count',type=int,choices=(4,64),default=4)
+    parser.add_argument('--compute-repeat',type=int,choices=(0,1,2),default=0)
     args = parser.parse_args()
     if args.mask_ratio is not None and (not math.isfinite(args.mask_ratio) or not 0 < args.mask_ratio <= .1):
         parser.error('mask ratio must be finite and in (0,0.1]')
     if args.limit < 0 or ',' in args.gpu:
         parser.error('limit must be nonnegative; select exactly one GPU')
-    if args.compute_smoke_reference and not args.wire_codec:
-        parser.error('Compute smoke requires actual wire codec')
+    if args.compute_smoke_reference and (not args.wire_codec or args.limit!=0):
+        parser.error('Compute measurement requires actual wire codec and full ordered loader')
     output = Path(args.output).resolve()
     output.mkdir(parents=True, exist_ok=False)
     try:

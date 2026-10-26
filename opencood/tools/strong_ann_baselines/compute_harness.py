@@ -6,6 +6,8 @@ This module is infrastructure, not an executed model performance result.
 """
 import hashlib
 import time
+import platform
+from pathlib import Path
 import numpy as np
 
 
@@ -13,6 +15,23 @@ def selected_indices(size=1738, count=64):
     if size < count or count < 1:
         raise ValueError('Invalid common sample selection')
     return np.linspace(0, size-1, count, dtype=np.int64).tolist()
+
+
+def measurement_indices(count):
+    """Registered full measurement or its original four-point gate."""
+    indices = selected_indices()
+    if count == 64:
+        return indices
+    if count == 4:
+        return [indices[i] for i in (0, 21, 42, 63)]
+    raise ValueError('Only registered 4/64-frame selections are supported')
+
+
+def host_metadata():
+    cpuinfo = Path('/proc/cpuinfo')
+    models = sorted(set(line.split(':', 1)[1].strip() for line in cpuinfo.read_text().splitlines()
+                        if line.startswith('model name'))) if cpuinfo.exists() else [platform.processor()]
+    return dict(platform=platform.platform(),cpu_models=models,python=platform.python_version())
 
 
 def array_signature(value):
