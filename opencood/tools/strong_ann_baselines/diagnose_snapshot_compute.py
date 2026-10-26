@@ -18,14 +18,27 @@ def diagnose(adapter,indices,references,reference,output):
     # The only discrepant SNN frame identified in the preceding 64-frame audit.
     # Observe the integer encoder output and continuous sender drive; never
     # replace either tensor. This instrumentation is strictly untimed.
-    trace={};handle=None
+    trace={};handles=[];sparse_indices={}
     model=getattr(adapter,'model',None)
     if snn and model is not None:
         def sender_hook(module,inputs,result):
             if adapter.fid=='004276':
                 trace['encoder_counts']=inputs[0].detach().cpu().numpy().copy()
                 trace['projected_drive']=result.detach().cpu().numpy().copy()
-        handle=model.content.project.register_forward_hook(sender_hook)
+        def backbone_input(module,inputs):
+            if adapter.fid=='004276':
+                trace['voxel_means']=inputs[0]['voxel_features'].detach().cpu().numpy().copy()
+                trace['voxel_coordinates']=inputs[0]['voxel_coords'].detach().cpu().numpy().copy()
+        def sparse_output(module,inputs,result):
+            if adapter.fid=='004276':sparse_indices['coords']=result.indices.detach().cpu().numpy().copy()
+        def before_count(module,inputs,result):
+            if adapter.fid=='004276':
+                coords=sparse_indices['coords'];selected=np.all(coords==[0,2,16,110],axis=1)
+                trace['pre_count_target']=result.detach().cpu().numpy()[selected].copy()
+        handles=[model.content.project.register_forward_hook(sender_hook),
+                 model.backbone_3d.register_forward_pre_hook(backbone_input),
+                 model.backbone_3d.conv_out[0].register_forward_hook(sparse_output),
+                 model.backbone_3d.conv_out[1].register_forward_hook(before_count)]
     with torch.no_grad():
         for repeat in range(2):
             for index in indices:
@@ -59,5 +72,5 @@ def diagnose(adapter,indices,references,reference,output):
                  packet_mismatched_calls=sum(not r['packets_exact'] for r in rows),
                  unstable_repeat_calls=sum(r['equal_previous'] is False for r in rows),rows=rows)
     (output/'diagnostic_summary.json').write_text(json.dumps(summary,indent=2))
-    if handle is not None:handle.remove()
+    for handle in handles:handle.remove()
     return summary
