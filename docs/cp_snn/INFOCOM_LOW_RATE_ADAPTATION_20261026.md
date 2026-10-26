@@ -154,3 +154,23 @@ InfoCom正式适配完成10轮。第10轮AP70=62.77516%，按原规则选择第8
 证据：[已完成比例与独立核验](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/verification.json)、[选模记录](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/infocom/best/selection.json)、[训练历史](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/infocom/history.json)、[真实逐帧1%通信](results/strong_ann_baselines_20261025/heartbeat_20261026_1110/infocom/ratio0.01/per_frame_bytes.csv)。
 
 补充核验：最终1%全部1738帧预测框、分数、GT数组及实际包内容与选中第8轮验证逐位一致，已保存final_1pct_selection_equivalence.json。最佳net_epoch0.pth及config/selection已备份到本机baseline_repro_20261025/infocom_adapt_best_epoch8，权重SHA核对为653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a；大权重不纳入Git。
+
+
+## 2026-10-26 20:10触发：InfoCom适配最终四点完整复核
+
+正式1%空间比例适配完成10轮，按预登记第8轮最佳选模，四比例均已完成1738帧、28622共同GT的真实通信和独立CPU AP复算。逐包与预测SHA、身份、解码及每帧字节重新检查；本机回传再次核对索引SHA和平均通信。四点使用同一个导出检查点SHA=653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a。
+
+| 空间比例 | AP30 (%) | AP50 (%) | AP70 (%) | 平均 B/帧 | P95 B | 最大 B |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1% | 81.85335 | 77.24909 | 62.87639 | 2389.707 | 2586.00 | 2635 |
+| 2.5% | 81.96951 | 77.58036 | 63.37953 | 2735.560 | 3155.15 | 3235 |
+| 5% | 78.38415 | 74.22091 | 60.36248 | 3486.313 | 3773.15 | 4130 |
+| 10% | 75.06025 | 71.17756 | 58.69590 | 6119.791 | 6352.15 | 6411 |
+
+结论：1%适配后的最优曲线点在2.5%，但仍按1%指标选择第8轮，不按最终四点重新选模。相较2.5%，5%和10%的AP70分别低3.01704、4.68363个百分点；固定低通信训练后增大消息量导致退化的现象也发生在ANN。因此不能把方案二固定组的类似退化归因于SNN独有缺陷。训练预算分布不匹配是值得由现有多预算臂检验的解释，这些曲线本身并未确定唯一原因。
+
+必须同时保留InfoCom官方10%检查点64.57136%/8754.928 B与冻结低比例曲线，不能拿低预算适配模型退化后的10%点替换官方高预算结果来制造SNN优势。最终1%最小2144 B，所有帧均超过2048 B，空间比例不等于2KiB硬预算；但InfoCom第1轮60.93306%/2043.014 B已在平均通信上优于当前方案二58.85365%/2046.886 B，仍不能宣称SNN平均通信—AP占优。方案二的硬上限是可陈述属性，不足以自动推出总体Pareto优势。
+
+下一步保持原10轮多预算方案二（当前第3轮；第2轮2KiB验证58.12877%），不再给固定组或ANN追加训练。统一计算比较接入CoSDH真实包/预测等价门，并区分其审计重复解码/warp开销；4帧门不作速度结论。后续按共同64帧×3轮及明确边界测量，不用局部调参取代主对照。方案三继续暂停。
+
+证据：[全量独立复核](results/strong_ann_baselines_20261025/heartbeat_20261026_1210/verification.json)、[训练历史](results/strong_ann_baselines_20261025/heartbeat_20261026_1210/history.json)、[1%逐帧通信](results/strong_ann_baselines_20261025/heartbeat_20261026_1210/ratio0.01/per_frame_bytes.csv)、[10%逐帧通信](results/strong_ann_baselines_20261025/heartbeat_20261026_1210/ratio0.1/per_frame_bytes.csv)。归档SHA=b27b48ca4551a8db1a8b23a7bbe7c1c7103aee7ee26d4fb788b70514d982caf6。选中第8轮与最终1%所有预测/包逐位一致的证据及本机最佳权重备份仍保留。

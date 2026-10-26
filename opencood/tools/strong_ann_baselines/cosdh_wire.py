@@ -196,12 +196,18 @@ class CoSDHWire:
         filtered,keep=box_utils.mask_boxes_outside_range_numpy(pred.cpu().numpy(),pp.params['gt_range'],order=None,return_mask=True)
         return torch.from_numpy(filtered).to(pred.device),scores[keep]
 
-    def finish(self,index):
+    def packets(self):
+        """Assemble real bidirectional envelopes without disk IO or hashing."""
         assert sorted(self.parts)==[0,1,2,3] and self.request is not None
         backward=envelope(self.frame_id,0,self.pose)+self.request
         forward=envelope(self.frame_id,1,self.pose)+struct.pack('<4sI',b'CFW1',4)+b''.join(self.parts[i] for i in range(4))
+        return [('demand',backward),('response',forward)]
+
+    def finish(self,index):
+        packets=self.packets()
+        backward,forward=[blob for _,blob in packets]
         rows=[]
-        for name,packet in [('demand',backward),('response',forward)]:
+        for name,packet in packets:
             p=self.output/('%06d_%s.bin'%(index,name));p.write_bytes(packet)
             rows.append({'direction':name,'file':'wire/'+p.name,'bytes':len(packet),'sha256':hashlib.sha256(packet).hexdigest()})
         return {'packets':rows,'demand_bytes':len(backward),'response_bytes':len(forward),'total_bytes':len(backward)+len(forward),'envelope_bytes':160,'late_boxes':self.late_count,'sections':self.details,'late_section_bytes':len(self.parts[3])}

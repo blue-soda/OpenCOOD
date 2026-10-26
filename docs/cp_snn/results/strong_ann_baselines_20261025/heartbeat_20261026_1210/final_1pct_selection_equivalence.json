@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "samples": 1738,
+  "selected_epoch": 8,
+  "all_prediction_arrays_and_wire_bytes_equal_to_selected_validation": true
+}

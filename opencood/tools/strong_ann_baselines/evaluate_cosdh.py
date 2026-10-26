@@ -59,7 +59,11 @@ def main():
     parser.add_argument('--gpu', default='0', help='Single physical CUDA device index or UUID')
     parser.add_argument('--wire-codec',action='store_true',help='Audited demand/latent/late-box actual transport; diagnostic compute overhead included')
     parser.add_argument('--comm-range', type=float, default=None, help='Explicit participant range override in metres; omitted preserves official config')
+    parser.add_argument('--compute-smoke-reference', help='Immutable full-wire reference; four-frame parity gate only')
     args = parser.parse_args()
+    if args.compute_smoke_reference and (args.limit != 0 or not args.wire_codec):
+        parser.error('Compute gate requires --limit 0 --wire-codec')
+    compute_reference = Path(args.compute_smoke_reference).resolve() if args.compute_smoke_reference else None
     if args.limit < 0 or ',' in args.gpu:
         parser.error('limit must be >=0 and gpu must name one device')
     repo = Path(args.repo).resolve()
@@ -176,6 +180,11 @@ def main():
         metadata['wire_codec']='demand_sparse_latent_dependency_closure_late_boxes_v1' if args.wire_codec else None
         metadata['wire_compute_scope']='includes redundant diagnostic decode/warp, not optimized algorithmic cost' if args.wire_codec else None
         write_json(output / 'provenance.json', metadata)
+        if compute_reference:
+            from compute_cosdh_adapter import smoke
+            try:smoke(model,dataset,wire,ids,compute_reference,output,metadata,args.gpu,loader)
+            finally:wire.close()
+            return
         stat = {t: {'tp': [], 'fp': [], 'gt': 0, 'score': []} for t in (.3, .5, .7)}
         rows = []
         # Store output references, and inspect only AFTER timing to avoid finite-check synchronization overhead.

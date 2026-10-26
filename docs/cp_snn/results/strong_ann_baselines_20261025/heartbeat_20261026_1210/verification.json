@@ -1,0 +1,80 @@
+{
+  "passed": true,
+  "complete": true,
+  "epochs": 10,
+  "best_epoch": 8,
+  "points": [
+    {
+      "ratio": 0.01,
+      "ap": {
+        "0.3": 0.8185334984481274,
+        "0.5": 0.7724909129994161,
+        "0.7": 0.6287639302839104
+      },
+      "wire": {
+        "mean": 2389.707134637514,
+        "median": 2356.0,
+        "p95": 2586.0,
+        "min": 2144.0,
+        "max": 2635.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a",
+      "all_packets_and_predictions_rechecked": true
+    },
+    {
+      "ratio": 0.025,
+      "ap": {
+        "0.3": 0.8196951217485196,
+        "0.5": 0.7758035905828385,
+        "0.7": 0.6337952501335072
+      },
+      "wire": {
+        "mean": 2735.559838895282,
+        "median": 2683.0,
+        "p95": 3155.1499999999996,
+        "min": 2327.0,
+        "max": 3235.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a",
+      "all_packets_and_predictions_rechecked": true
+    },
+    {
+      "ratio": 0.05,
+      "ap": {
+        "0.3": 0.7838414689997917,
+        "0.5": 0.7422090543321486,
+        "0.7": 0.6036248322692792
+      },
+      "wire": {
+        "mean": 3486.313003452244,
+        "median": 3506.0,
+        "p95": 3773.1499999999996,
+        "min": 3198.0,
+        "max": 4130.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a",
+      "all_packets_and_predictions_rechecked": true
+    },
+    {
+      "ratio": 0.1,
+      "ap": {
+        "0.3": 0.750602513876413,
+        "0.5": 0.7117755593683708,
+        "0.7": 0.58695896442545
+      },
+      "wire": {
+        "mean": 6119.790563866513,
+        "median": 6126.0,
+        "p95": 6352.15,
+        "min": 5869.0,
+        "max": 6411.0,
+        "count": 1738
+      },
+      "checkpoint_sha256": "653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a",
+      "all_packets_and_predictions_rechecked": true
+    }
+  ]
+}
