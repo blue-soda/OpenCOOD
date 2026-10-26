@@ -1,0 +1,4 @@
+{
+  "contention": "User permits shared GPU training and validation. Sample other processes without waiting or exiting for sharing; any observed sharing invalidates whole evaluation latency, not AP. Hardware/query/CUDA allocation errors still propagate.",
+  "scope": "Execution only; model/training contract and strict standalone benchmarks unchanged."
+}
