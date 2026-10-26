@@ -92,3 +92,10 @@ CoSDH仍保留重复诊断解码/warp，本次仅作为不可用于公平速度�
 代码将原四帧门扩展为显式4/64帧选择和0/1/2重复编号，默认仍为四帧；11项相关CPU测试通过。新监督器只执行预登记四方法三轮，不选择最好重复，不自动重启失败方法。当前多预算SNN第3轮751/2339，正常运行，未新增AP；保持原训练预算及方案三暂停。下一步取回三轮原始结果、核对共同GPU/干扰和输出等价后再形成成本表。
 
 证据：[CoSDH等价门结果](results/strong_ann_baselines_20261025/heartbeat_20261026_1305/cosdh_gate/compute_summary.json)。
+
+
+启动记录补充：a84426d/c7b1c9a已推main并同步181/146。启动前GPU4–7被其他用户新任务占用，GPU5利用率约91–99%，准入拒绝，未在高争用卡上启动模型。为避免把争用延迟归因于网络，compute64_suite01/PID17280进入资源队列；当前没有新的64帧测量结果。执行快照compute64_source02固定c7b1c9a，11项测试在181通过。每300秒检查固定GPU5，无计算进程且空闲显存≥16GB、利用率≤20%的5次连续采样后开始；最多等待6小时，每方法开始前再次检查。此更严格资源要求仅用于受控成本测量，不撤销用户允许训练共享低利用率GPU的授权，也不停止任何现有训练。
+
+队列当前waiting_for_gpu，第一项scheme2_2k/repeat0；GPU UUID为GPU-1fa76848-4737-2fdc-5205-5314117e890f。快照和plan02已冻结，source01/plan01因资源拒绝未执行，保留其来源。后续读取compute64_suite01/status.json、results_so_far.json、summary.json与failure.json；若resource_timeout，只记录资源阻塞并重新核实可用卡，不能误报测量完成或自动选择更快样本。归档SHA=856a6a07b9a106b24dc0339fdd47d6484a7997b5a029e36abdb2e617a0446812。
+
+证据：[固定四方法三轮计划](results/strong_ann_baselines_20261025/heartbeat_20261026_1305/compute64_queue/compute64_plan02.json)、[队列PID](results/strong_ann_baselines_20261025/heartbeat_20261026_1305/compute64_queue/compute64_suite01.launch.json)、[资源等待状态](results/strong_ann_baselines_20261025/heartbeat_20261026_1305/compute64_queue/status.json)。

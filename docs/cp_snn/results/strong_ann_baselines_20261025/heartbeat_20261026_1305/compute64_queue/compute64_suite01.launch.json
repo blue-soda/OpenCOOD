@@ -1,0 +1,15 @@
+{
+  "pid": 17280,
+  "command": [
+    "/data2/tzm/cp_snn_recovery_20261026/ann_runtime/bin/python",
+    "/data2/tzm/cp_snn_recovery_20261026/compute64_source02/opencood/tools/strong_ann_baselines/run_compute_comparison.py",
+    "--plan",
+    "/data2/tzm/cp_snn_recovery_20261026/compute64_plan02.json",
+    "--output",
+    "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01"
+  ],
+  "source_commit": "c7b1c9ae7d5983c5d39866d7b527f0258e931be5",
+  "resource_queue": true,
+  "no_model_started_by_launcher": true,
+  "no_automatic_retry": true
+}
