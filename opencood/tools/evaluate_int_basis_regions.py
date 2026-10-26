@@ -527,7 +527,10 @@ def main():
     p.add_argument('--short-readout-epochs',type=int,default=0,help='Train complete readout short recurrence, maximum budget')
     p.add_argument('--short-readout-width',type=int,choices=(32,64),default=32)
     p.add_argument('--short-readout-resume',default=None)
+    p.add_argument('--short-readout-diagnostic',default=None,help='Frozen repair checkpoint for offline512 train-frame history diagnosis')
     a = p.parse_args(); out = Path(a.output)
+    if a.short_readout_diagnostic and (a.short_readout_epochs or a.short_readout_resume or not a.recurrent_local_reference or a.recurrent_local_period!=4 or a.recurrent_readout_calibration):
+        p.error('Short readout diagnostic requires frozen four-frame D reference without training/composition')
     if not 0<=a.short_readout_epochs<=48:p.error('Short readout budget must be0..48')
     if a.short_readout_resume and not a.short_readout_epochs:p.error('Resume requires short readout training')
     if a.short_readout_epochs and (not a.recurrent_local_reference or a.recurrent_readout_calibration or a.recurrent_local_period!=4):
@@ -627,7 +630,7 @@ def main():
         return
     free, util = subprocess.check_output(['nvidia-smi', '-i', str(a.gpu), '--query-gpu=memory.free,utilization.gpu',
         '--format=csv,noheader,nounits']).decode().strip().split(',')
-    if a.short_readout_epochs:
+    if a.short_readout_epochs or a.short_readout_diagnostic:
         # Observed process footprint about5.5GiB; leave launch headroom. Other
         # processes and nonzero utilization are permitted by the user.
         if int(free)<8192:raise RuntimeError('Short readout needs at least8192MiB free at launch')
