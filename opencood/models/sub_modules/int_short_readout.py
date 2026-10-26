@@ -9,10 +9,10 @@ from opencood.models.sub_modules.int_feature_memory import warp_bev
 
 class ShortReadoutState:
     def __init__(self,readout,repair,bounds,period=3):
-        if period not in (1,3):raise ValueError('Period1/3 supported')
+        if period not in (1,3,5):raise ValueError('Period1/3/5 supported')
         self.readout,self.repair,self.bounds,self.period=readout,repair,bounds,period
         self.execution='short';self.training_targets=False;self.packed_weight_bytes=0
-        self.max_full_age_us=250000
+        self.max_full_age_us=450000 if period==5 else 250000
 
     def step(self,current,state,meta,reset=False):
         if torch.is_grad_enabled() and not self.training_targets:raise ValueError('Gradients require training targets')

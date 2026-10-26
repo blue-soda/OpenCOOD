@@ -15,13 +15,13 @@ class LocalCurrentReadoutCache:
     def __init__(self,readout,repair,bounds,threshold,backend='selected',period=3,row_chunk_size=32768,cache_geometry=False):
         if readout.training or repair.training or repair.gated or backend not in ('selected','masked_dense'):
             raise ValueError('Frozen current-only readout and selected/masked_dense backend required')
-        if period not in (1,3) or not math.isfinite(threshold) or threshold<0:raise ValueError('Invalid refresh/threshold')
+        if period not in (1,3,5) or not math.isfinite(threshold) or threshold<0:raise ValueError('Invalid refresh/threshold')
         if not isinstance(row_chunk_size,int) or row_chunk_size<1:raise ValueError('Positive row chunk size required')
         self.row_chunk_size=row_chunk_size
         self.geometry=CachedNeighborhoods() if cache_geometry else None
         self.readout,self.repair,self.bounds,self.threshold=readout,repair,bounds,threshold
         self.backend,self.period=backend,period
-        self.execution='current_local';self.max_full_age_us=250000
+        self.execution='current_local';self.max_full_age_us=450000 if period==5 else 250000
         self.first,self.second,self.output=repair.net[0],repair.net[2],repair.net[3]
         self.weights=[m.weight.detach().permute(0,2,3,1).reshape(m.out_channels,-1).contiguous() for m in (self.first,self.second)]
         self.last_mask=None

@@ -29,9 +29,14 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
     modes['current_dense'].readout_cache=ShortReadoutState(baseline.readout,repair,baseline.bounds,3)
     for name,backend in (('current_local','selected'),('current_masked_dense','masked_dense')):
         modes[name].readout_cache=LocalCurrentReadoutCache(baseline.readout,repair,baseline.bounds,threshold,backend)
-    if a.current_readout_geometry:
+    if a.current_readout_geometry or a.current_readout_period5:
         modes['current_geometry']=RecurrentDeepDetector(baseline,deep_repair,4)
         modes['current_geometry'].readout_cache=LocalCurrentReadoutCache(baseline.readout,repair,baseline.bounds,threshold,cache_geometry=True)
+    if a.current_readout_period5:
+        modes['current_dense_period5']=RecurrentDeepDetector(baseline,deep_repair,4)
+        modes['current_dense_period5'].readout_cache=ShortReadoutState(baseline.readout,repair,baseline.bounds,5)
+        modes['current_geometry_period5']=RecurrentDeepDetector(baseline,deep_repair,4)
+        modes['current_geometry_period5'].readout_cache=LocalCurrentReadoutCache(baseline.readout,repair,baseline.bounds,threshold,period=5,cache_geometry=True)
     if a.current_readout_packed:
         modes['current_packed']=RecurrentDeepDetector(baseline,deep_repair,4)
         modes['current_packed'].readout_cache=PackedCurrentReadoutCache(baseline.readout,repair,baseline.bounds,threshold)
@@ -46,12 +51,15 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
     if a.current_readout_profile:
         from opencood.tools.profile_int_current_readout import profile
         return profile(a,cfg,train,modes['current_local'],out,costs,spatial_macs)
-    policy['geometry_comparison']=bool(a.current_readout_geometry)
-    if a.current_readout_geometry:
+    policy['geometry_comparison']=bool(a.current_readout_geometry or a.current_readout_period5)
+    if policy['geometry_comparison']:
         policy['geometry_policy']='Independent same-selection trajectory. Fixed H/W/device neighbor table only; memory counted separately. First-use construction included in full evaluation timing.'
     policy['packed_comparison']=bool(a.current_readout_packed)
     if a.current_readout_packed:
         policy['packed_policy']='Independent packed Y/reference/own confidence views. Fresh owned warp allocation and selected writes; old state immutable. Cached metric coordinates; original neighbor construction. No profiler adapter in deployment. Extra geometry separately counted.'
+    policy['period5_comparison']=bool(a.current_readout_period5)
+    if a.current_readout_period5:
+        policy['period5_policy']='Add dense-current and geometry-local readout with period5/.45s, retain period3/.25s controls. Frozen epoch and train-calibrated threshold unchanged. H/FM and D4 unchanged. Current-only fresh path does not recursively consume oldY, but unselectedY may age longer. No promise of unchanged AP; no period sweep.'
     write_json(out/'local_current_contract.json',policy)
     def replay(ego,previous,meta,pred,state,info,name='current_local'):
         mode=modes[name];cache=mode.readout_cache;mask=cache.last_mask.clone();cache.backend='masked_dense'
@@ -74,7 +82,7 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
                 finally:counter.close()
                 actual=counter.total+info['spatial_extra_linear_macs']+info.get('readout_extra_linear_macs',0)
                 assert actual==cost_of(costs,spatial_macs,info,True),(name,actual,cost_of(costs,spatial_macs,info,True))
-                if name in ('current_local','current_geometry','current_packed'):
+                if name in ('current_local','current_geometry','current_packed','current_geometry_period5'):
                     records.append(replay(ego,previous,meta,pred,states[name],info,name))
                     if name=='current_local':partial+=int(not info['readout_refresh'] and info['readout_write_fraction']<1.)
     assert partial>0
@@ -82,7 +90,7 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
         max_prediction_error=max(r['prediction_max_error'] for r in records),max_state_error=max(r['state_max_error'] for r in records)))
     audits=[];areas=[]
     def audit(name,ego,previous,meta,pred,state,info,index):
-        if name in ('current_local','current_geometry','current_packed'):
+        if name in ('current_local','current_geometry','current_packed','current_geometry_period5'):
             areas.append(dict(mode=name,scan=index+1,refresh=info['readout_refresh'],core=info['readout_write_fraction'],first_support=info['readout_first_support_fraction'],executed_macs=info['readout_executed_macs']))
             if index%200==0:
                 audits.append(replay(ego,previous,meta,pred,state,info,name));write_json(out/'local_current_replays.json',audits)

@@ -6,6 +6,7 @@ from test_int_local_readout import Readout
 from opencood.models.sub_modules.int_current_readout import current_readout_from_mature
 from opencood.models.sub_modules.int_local_current_readout import LocalCurrentReadoutCache
 from opencood.models.sub_modules.int_feature_memory import warp_bev
+from opencood.models.sub_modules.int_short_readout import ShortReadoutState
 
 
 class TestLocalCurrentReadout(unittest.TestCase):
@@ -15,6 +16,24 @@ class TestLocalCurrentReadout(unittest.TestCase):
         self.repair,_=current_readout_from_mature(self.source,8,False)
         self.bounds=[-16.,-12.,-3.,16.,12.,3.]
         self.cache=LocalCurrentReadoutCache(self.source,self.repair,self.bounds,.5)
+
+    @torch.no_grad()
+    def test_five_frame_dense_and_local_refresh_bounds(self):
+        x=torch.randn(1,16,24,32);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
+        caches=[LocalCurrentReadoutCache(self.source,self.repair,self.bounds,.5,period=5),
+                ShortReadoutState(self.source,self.repair,self.bounds,5)]
+        for cache in caches:
+            _,initial,_=cache.step(x,None,meta);initial['confidence']=torch.zeros_like(x[:,:1]);state=initial
+            for i in range(1,6):
+                _,new,info=cache.step(x,state,dict(meta,timestamp_us=100000+i*50000))
+                self.assertEqual(info['readout_refresh'],i==5)
+                new['confidence']=initial['confidence'];state=new
+            _,_,info=cache.step(x,initial,dict(meta,timestamp_us=550000))
+            self.assertEqual(info['readout_refresh_reason'],'age')
+            _,_,info=cache.step(x,initial,dict(meta,segment='new',timestamp_us=150000))
+            self.assertEqual(info['readout_refresh_reason'],'reset')
+            with self.assertRaises(ValueError):cache.step(x,initial,meta)
+        self.assertEqual(self.cache.max_full_age_us,250000)
 
     @torch.no_grad()
     def test_selected_boundaries_halo_and_measured_macs(self):

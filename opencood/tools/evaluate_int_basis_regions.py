@@ -534,11 +534,13 @@ def main():
     p.add_argument('--current-readout-profile',action='store_true',help='Same-state512 train frames: row batches and separate intrusive phase timing')
     p.add_argument('--current-readout-geometry',action='store_true',help='Add independent fixed-grid geometry reuse comparison to full local evaluation')
     p.add_argument('--current-readout-packed',action='store_true',help='Add independent packed complete-state comparison to full local evaluation')
+    p.add_argument('--current-readout-period5',action='store_true',help='Frozen current network: five-frame dense/local readout controls, no change to upstream H/D')
     a = p.parse_args(); out = Path(a.output)
     if bool(a.current_readout_local)!=bool(a.current_readout_local_calibration):p.error('Local current readout requires checkpoint and calibration')
     if a.current_readout_profile and not a.current_readout_local:p.error('Current readout profile requires frozen local checkpoint')
     if a.current_readout_geometry and (not a.current_readout_local or a.current_readout_profile):p.error('Geometry comparison requires full frozen current readout evaluation')
     if a.current_readout_packed and (not a.current_readout_local or a.current_readout_profile):p.error('Packed comparison requires full frozen current readout evaluation')
+    if a.current_readout_period5 and (not a.current_readout_local or a.current_readout_profile):p.error('Period5 comparison requires full frozen current readout evaluation')
     if a.current_readout_local and (a.short_readout_epochs or a.short_readout_resume or a.short_readout_diagnostic or not a.recurrent_local_reference or a.recurrent_local_period!=4 or a.recurrent_readout_calibration):
         p.error('Local current readout requires frozen four-frame reference without other readout experiment')
     if a.short_readout_diagnostic and (a.short_readout_epochs or a.short_readout_resume or not a.recurrent_local_reference or a.recurrent_local_period!=4 or a.recurrent_readout_calibration):
