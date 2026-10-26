@@ -1,6 +1,16 @@
 {
+  "width": 32,
+  "status": "STOPPED_FOR_POLICY_UPDATE",
+  "previous_status": {
+    "epoch": 14,
+    "phase": "validation",
+    "scans": 4400,
+    "status": "RUNNING"
+  },
+  "pid": 1865,
+  "reason": "User permits concurrent GPU execution; restart under shared policy from complete checkpoint. Only verified own worker process group stopped.",
+  "resume_path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w32_resume3_v1_20261026/pending_validation.pth",
   "epoch": 14,
-  "phase": "validation",
-  "scans": 200,
-  "status": "RUNNING"
+  "next_action": "evaluate",
+  "sha256": "51521e2b38ebb4e4814768092cc0c6ea43a72d9e9d024ae6aecf221353b3ea92"
 }

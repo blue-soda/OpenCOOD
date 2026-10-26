@@ -1,0 +1,6 @@
+{
+  "next_action": "evaluate",
+  "next_epoch": 20,
+  "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/short_readout_w64_resume3_v1_20261026/pending_validation.pth",
+  "sha256": "e676f3c8175572d052bc355132e586523079f57607588e3428c09e88e5d82416"
+}

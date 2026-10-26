@@ -1,0 +1,70 @@
+{
+  "architecture": "Current96 + aligned complete readout256 + valid1 ->1x1(width) -> depthwise3x3 ->1x1(256), residual added to old complete readout. Complete output written every frame.",
+  "deep_period": 4,
+  "epochs_max": 24,
+  "frozen_deep_checkpoint": {
+    "epoch": 5,
+    "expected_ap70": 0.7540614234380489,
+    "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/recurrent_deep_p6_181_resume2_v1_20261026/epoch_005/repair.pth",
+    "sha256": "d1f7d3f07c50891eb6f3808b488cde418254523d13acf23f9423138106bbe2ec",
+    "trained_period": 6
+  },
+  "inference": "Readout full only period3/.25s/reset; dense cheap correction on ordinary frames. Fixed four-layer H locality, low-rank FM and frozen four-frame D. No local short-readout skipping yet.",
+  "loss": "GT labelled ordinary frames +.2 foreground head KD +.5 feature KD; only short readout updater trainable.",
+  "optimization": "AdamW1e-4 wd1e-4 clip5; Plateau .5 patience1 threshold.0005 minlr1e-6. Min6 epochs, stale4 and lr<=2.5e-5. Maximum budget does not imply convergence.",
+  "purpose": "Check precision of cheap complete-state path before localizing it. Width32/64 planned capacity controls; retain validated dense/local readout baseline.",
+  "readout_period": 3,
+  "seed": 303,
+  "source": {
+    "basis": {
+      "ap70": 0.7567910702899006,
+      "cached_ap70": 0.7559544809175783,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_spatial_r96_recovery_v1_20261024/epoch_000/stage.pth",
+      "epoch": 0,
+      "sha256": "2424236f88bafb04325ec07803ba5f99614c5ab3762e951eed365725f0b3af62"
+    },
+    "data": {
+      "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+      "fm_only_epochs": 1,
+      "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+      "lr": 0.0001,
+      "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+      "min_delta": 0.001,
+      "min_epochs": 20,
+      "mode": "gru",
+      "patience": 10,
+      "seed": 303,
+      "state_policy": "whole-segment/tbptt/v1",
+      "tbptt_steps": 4
+    },
+    "memory": {
+      "ap70": 0.7567024378706645,
+      "cached_ap70": 0.7555532616222492,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_gru_r32_train_v1_20261022/epoch_011/memory.pth",
+      "epoch": 11,
+      "sha256": "1a267575ef735f203526fa3b8196334d32d9ff8a9080449c3b6206247913e5ef"
+    },
+    "readout": {
+      "ap70": 0.753534819214323,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/compact_readout_r96_v2_20261021/epoch_005/readout.pth",
+      "epoch": 5,
+      "sha256": "8bbf94e975997b2803c4a4c443fee2258589276e427dbc0a2550de6b562d7a0d"
+    },
+    "repair": {
+      "ap70": 0.7553967658970537,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/split_repair_r96_w32_v1_20261021/epoch_008/repair.pth",
+      "epoch": 8,
+      "sha256": "9f0997e23752683aa3a8fa6f5b9c9e65ddd91c7a1f2dca89e1beb7500a755fbd"
+    },
+    "source": {
+      "bev_ap70": 0.758736104616861,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+      "epoch": 17,
+      "sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8"
+    }
+  },
+  "tbptt": 2,
+  "teacher": "Original full readout on SAME current input only during training; discarded on ordinary frames, never injected into state. Own H confidence from student predictions.",
+  "trainable_parameters": 39936,
+  "width": 64
+}
