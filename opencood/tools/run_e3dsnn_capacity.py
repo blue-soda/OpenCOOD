@@ -51,6 +51,7 @@ def prepare(root,source_config,source_checkpoint):
     assert counts['c0_small']['total']==3120631 and counts['c1_wide']['total']==6556919
     write_json(root/'protocol.json',dict(source=str(source_checkpoint),source_sha256=SOURCE_SHA,source_config_sha256=sha(source_config),
        seed=SEED,primary_budget=2304,final_budgets=BUDGETS,epochs=10,counts=counts,hashes=hashes,
+       numerical_policy={'cuda_matmul_tf32':False,'cudnn_tf32':False},
        dataset_hashes={k:sha(cfg[k]) for k in ('root_dir','validate_dir','data_manifest')},
        loss='Ldet(2304)+0.5 Ldet(0); dropout .1; frozen sender/receiver/BN',
        initialization='twofold channel duplication, downstream sum preservation and zero-sum 1e-3 symmetry break',
@@ -96,6 +97,7 @@ def audit(root,arm):
     torch.nn.utils.clip_grad_norm_(model.parameters(),10.,error_if_nonfinite=True);optimizer.step()
     assert model.fixed_state_digest()==fixed
     write_json(folder/'audit.json',dict(passed=True,records=records,gradients=grads,loss=float(loss.detach()),zero_equals_ego=True,
+          cuda_matmul_tf32=torch.backends.cuda.matmul.allow_tf32,cudnn_tf32=torch.backends.cudnn.allow_tf32,
           fixed_state_unchanged=True,peak_allocated_bytes=torch.cuda.max_memory_allocated(),all_audit_updates_discarded=True))
 
 
