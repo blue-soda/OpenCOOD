@@ -1,0 +1,15 @@
+{
+  "source": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/y_only_w64_p3_resume1_v1_20261027/latest.pth",
+  "sha256": "0e5f4cc8bd5e200f3c3aca1764dcf72425c46f878bacfde4c84efbbf7131b196",
+  "epoch": 16,
+  "next_action": "train",
+  "lr": 0.0001,
+  "stale": 0,
+  "best": {
+    "ap70": 0.6857829215050375,
+    "epoch": 16,
+    "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/y_only_w64_p3_resume1_v1_20261027/epoch_016/updater.pth",
+    "sha256": "4bbe01cdac3c3ce3e537ba3eccc1ee076c92202b1e8fc7f0a8ad8c5cb17c4edb"
+  },
+  "scheduler_epoch": 16
+}

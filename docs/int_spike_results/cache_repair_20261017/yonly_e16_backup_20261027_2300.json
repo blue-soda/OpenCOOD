@@ -1,0 +1,49 @@
+{
+  "path": "/tmp/int_yonly_e16_20261027_2300.tar.gz",
+  "bytes": 5051573,
+  "sha256": "77dd78f333cc385a2013a6a036c9bb964e4fd292da2bdcf6c079e0daa7128aea",
+  "members": {
+    "y_only_w64_p3_resume1_v1_20261027/latest.pth": {
+      "bytes": 1407115,
+      "sha256": "0e5f4cc8bd5e200f3c3aca1764dcf72425c46f878bacfde4c84efbbf7131b196"
+    },
+    "y_only_w64_p3_resume1_v1_20261027/y_only_contract.json": {
+      "bytes": 3993,
+      "sha256": "7d3c3b11e9580a7b4f392e32ce574a0658eaf1a8a69d0eb674a251dbf8a90946"
+    },
+    "y_only_w64_p3_resume1_v1_20261027/best.json": {
+      "bytes": 262,
+      "sha256": "29c971e27fbd37953d51851fc48a1172d0004e3909b831f9a4a8a56f6a01b1d2"
+    },
+    "y_only_w64_p3_resume1_v1_20261027/report.json": {
+      "bytes": 370,
+      "sha256": "69c6685fb5775ef8ceba696297b35f107ca6eff814207f1a6aaddc0373e072bb"
+    },
+    "y_only_w64_p3_resume1_v1_20261027/epoch_016/updater.pth": {
+      "bytes": 467719,
+      "sha256": "4bbe01cdac3c3ce3e537ba3eccc1ee076c92202b1e8fc7f0a8ad8c5cb17c4edb"
+    },
+    "y_only_w96_p3_resume1_v1_20261027/latest.pth": {
+      "bytes": 2760779,
+      "sha256": "784d25f4b143ad93d5950b63a1fecb70673d6485179dbd244138fec69a0f9359"
+    },
+    "y_only_w96_p3_resume1_v1_20261027/y_only_contract.json": {
+      "bytes": 3993,
+      "sha256": "fb52dedab08ee0dbf3a0d7805246d50a320a5d21acc1393804bbae8d3a5e66e4"
+    },
+    "y_only_w96_p3_resume1_v1_20261027/best.json": {
+      "bytes": 262,
+      "sha256": "d3a197962d28408f397e62d92f0ed55495be5d29ce8154f976a63f17532a56fd"
+    },
+    "y_only_w96_p3_resume1_v1_20261027/report.json": {
+      "bytes": 370,
+      "sha256": "9b69bb0f21ced15ca9346c032e45bbc21a6f7cb8b6c9bae79c195deca22c8443"
+    },
+    "y_only_w96_p3_resume1_v1_20261027/epoch_016/updater.pth": {
+      "bytes": 918919,
+      "sha256": "0f0870123306d75a80e299ee071d5ac5f09027241b6ff28130d68ccbde0daa2f"
+    }
+  },
+  "destination_verified": true,
+  "destination": "/data1/zhh/gzc/int181_snapshot/live_backups/int_yonly_e16_20261027_2300.tar.gz"
+}
