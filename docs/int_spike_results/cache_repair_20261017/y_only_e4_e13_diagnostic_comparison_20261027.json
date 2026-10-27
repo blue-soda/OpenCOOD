@@ -1,0 +1,28 @@
+{
+  "status": "VERIFIED",
+  "early_sha256": "ec43b68d31040a53ddf81146c6c8edf7d8a613aeb2f3c0d19df268adf6a661ee",
+  "late_sha256": "98b04b51daddf5543764ed4235ed8702f8f1e0eea6a77ee237c99cecb2587352",
+  "target_energy_and_elements_exact": true,
+  "teacher_warp_metrics_exact": true,
+  "comparisons": {
+    "1": {
+      "old_recursive": 0.5339099445067637,
+      "new_recursive": 0.5025116898897096,
+      "new_teacher_history": 0.5025116898897096,
+      "new_own_warp_only": 0.5399612847450858,
+      "learned_error_reduction_percent": 5.880814721677519,
+      "teacher_history_error_reduction_percent": 0.0,
+      "improvement_vs_own_warp_percent": 6.935607406196908
+    },
+    "2": {
+      "old_recursive": 0.6643574227077718,
+      "new_recursive": 0.6392583332572316,
+      "new_teacher_history": 0.49653935337906613,
+      "new_own_warp_only": 0.620979560887897,
+      "learned_error_reduction_percent": 3.7779497289639585,
+      "teacher_history_error_reduction_percent": 22.325712853982726,
+      "improvement_vs_own_warp_percent": -2.9435384867094516
+    }
+  },
+  "scope": "Paired512 training-prefix conditional feature errors, not AP/generalization or deployable teacher history"
+}

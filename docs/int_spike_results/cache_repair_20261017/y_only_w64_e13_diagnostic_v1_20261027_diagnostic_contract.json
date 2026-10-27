@@ -1,0 +1,12 @@
+{
+  "causality": "Previous teacher Y is separate diagnostic buffer; never returned as student state. Current teacher only a target. Full/ordinary inference and supervised replay must match exactly on every scan.",
+  "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/y_only_w64_p3_resume1_v1_20261027/epoch_013/updater.pth",
+  "comparison": "Same current E: own recursive Y, previous full teacher Y substituted for history, own warp only, teacher warp only, own-history candidate without its gate.",
+  "epoch": 13,
+  "frames": 512,
+  "limits": "Teacher-history and candidate-only interventions are off-policy diagnostics, not attainable AP or latency/FLOPs results. Training-prefix evidence alone cannot establish generalization or causal architectural superiority.",
+  "metrics": "Pooled feature squared error/target energy and elements by depth1/2, all/teacher-confidence>=.1 foreground/uncovered. Gate sum and cell count, not frame-weighted means.",
+  "sha256": "39f6c90e07e4092d9911f2c78e1c3c51ef9682da37c19cef02c6d74fd4cb263a",
+  "split": "Fixed first512 training scans; no fitting or AP selection",
+  "width": 64
+}
