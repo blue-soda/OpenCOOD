@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/data1/tzm/miniconda3/envs/opencood/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 677, in <module>
+    if __name__ == '__main__': main()
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 656, in main
+    try: worker(a)
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_basis_regions.py", line 306, in worker
+    evaluate_readout(a,cfg,train,val,modes['selected'],out,costs,mixing+basis_cost)
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_local_readout.py", line 113, in evaluate_readout
+    compare_local(a,cfg,train,val,baseline,out,costs,spatial_macs)
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/evaluate_int_local_recurrent.py", line 28, in compare_local
+    return train_y_only(a,cfg,train,val,baseline,out,costs,spatial_macs,repair,checkpoint,source,expected)
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/train_int_y_only.py", line 139, in train_y_only
+    note='Y-only spatial state plus frozen GRU FM. Ordinary inference bypasses H/D/deblocks/mature readout. Dense small updater, NOT local execution. Hook-calibrated whole-path Conv MACx2. Model timing excludes first10 warmup scans/IO/H2D/postprocess; shared timing null.')
+  File "/data2/tzm/workspace/OpenCOOD/opencood/tools/train_int_recurrent_deep.py", line 109, in evaluate
+    metrics[name]['readout_ratio'].append(info['readout_executed_fraction'])
+KeyError: 'readout_executed_fraction'

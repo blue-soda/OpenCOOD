@@ -1,0 +1,67 @@
+{
+  "epochs_max": 16,
+  "front": "Frozen Pillar/scatter -> lowrank GRU32 (own FM state) -> mature stem first residual block ->128-channel E. No four-layer U, H, D, deblocks or mature readout on ordinary inference.",
+  "initialization": "Kaiming hidden layers, candidate weight N(0,.001), zero candidate bias, zero gate weight/bias4. Near-warp start, not transferred mature Y predictor. Bounded direct old coefficient is not a contraction proof.",
+  "kind": "y_only_spatial_v1",
+  "loss": "Labelled ordinary-frame GT +.2 foreground head KD +.5 feature KD, own two-step TBPTT.",
+  "max_age_us": 250000,
+  "optimization": "AdamW1e-4 wd1e-4 clip5; plateau factor.5 patience1 threshold.0005 min1e-6; stop min6 epochs and stale4/lr<=2.5e-5; budget is not convergence.",
+  "period": 3,
+  "refresh": "Full current dense H, deep branches, multi-scale projections and mature readout only on period/age/reset. H/D discarded after refresh. Dense reference runs full same compressed mature model every frame.",
+  "seed": 303,
+  "source": {
+    "basis": {
+      "ap70": 0.7567910702899006,
+      "cached_ap70": 0.7559544809175783,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_spatial_r96_recovery_v1_20261024/epoch_000/stage.pth",
+      "epoch": 0,
+      "sha256": "2424236f88bafb04325ec07803ba5f99614c5ab3762e951eed365725f0b3af62"
+    },
+    "data": {
+      "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+      "fm_only_epochs": 1,
+      "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+      "lr": 0.0001,
+      "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+      "min_delta": 0.001,
+      "min_epochs": 20,
+      "mode": "gru",
+      "patience": 10,
+      "seed": 303,
+      "state_policy": "whole-segment/tbptt/v1",
+      "tbptt_steps": 4
+    },
+    "memory": {
+      "ap70": 0.7567024378706645,
+      "cached_ap70": 0.7555532616222492,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_gru_r32_train_v1_20261022/epoch_011/memory.pth",
+      "epoch": 11,
+      "sha256": "1a267575ef735f203526fa3b8196334d32d9ff8a9080449c3b6206247913e5ef"
+    },
+    "readout": {
+      "ap70": 0.753534819214323,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/compact_readout_r96_v2_20261021/epoch_005/readout.pth",
+      "epoch": 5,
+      "sha256": "8bbf94e975997b2803c4a4c443fee2258589276e427dbc0a2550de6b562d7a0d"
+    },
+    "repair": {
+      "ap70": 0.7553967658970537,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/split_repair_r96_w32_v1_20261021/epoch_008/repair.pth",
+      "epoch": 8,
+      "sha256": "9f0997e23752683aa3a8fa6f5b9c9e65ddd91c7a1f2dca89e1beb7500a755fbd"
+    },
+    "source": {
+      "bev_ap70": 0.758736104616861,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+      "epoch": 17,
+      "sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8"
+    }
+  },
+  "state": "Only completeY plus pose/time/refresh metadata outside FM; no H/D/reference/confidence state. FM retained explicitly. Write every ordinary prediction back; old state immutable.",
+  "tbptt": 2,
+  "teacher": "Frozen full model on SAME current E/FM during training only; ordinary target discarded, no teacher injection into recurrent Y. Refresh target becomes state by declared policy.",
+  "trainable_parameters": 228065,
+  "update": "E128 + aligned completeY256 + valid1 ->1x1(w)/ReLU ->3x3(w)/ReLU ->3x3(w)/ReLU ->candidate1x1(256)/ReLU. Separate1x1 gate: .95sigmoid*valid; output g*old+(1-g)*candidate. Entire grid initially, local5x5 dependencies.",
+  "validation": "Full5794/1738 paired fixed HDY-line baseline, dense full refresh reference, Y-only student. Shared GPU allowed, contaminated timing null. No local skipping or claimed AP until measured.",
+  "width": 96
+}

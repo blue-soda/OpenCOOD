@@ -1,4 +1,8 @@
 import unittest
+import tempfile
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 import numpy as np
 import torch
 from torch import nn
@@ -11,6 +15,31 @@ class AddY(nn.Module):
 
 
 class TestYOnly(unittest.TestCase):
+    def test_paired_evaluator_accepts_whole_path_cost_without_readout_ratio(self):
+        from opencood.tools.train_int_recurrent_deep import evaluate
+        import opencood.tools.train_int_recurrent_deep as runner
+        class Mode:
+            def step(self,data,state,meta):
+                return {'psm':torch.ones(1)},None,dict(whole_model_macs=123,
+                    deep_partial=True,local_partial=True,spatial_refresh=False,
+                    state_bytes=4,spatial_state_bytes=0,anchor_bytes=0,readout_state_bytes=16,
+                    readout_refresh=False,readout_write_fraction=1.)
+        rows=[dict(supervised=False)]*12
+        stream=[dict(ego={},meta=dict(supervised=False)) for _ in rows]
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(runner,'loader',return_value=(None,stream)), \
+                patch.object(runner,'to_device',side_effect=lambda x,d:x), \
+                patch.object(runner,'sample_gpu_usage',return_value={'timing_valid':True}), \
+                patch.object(torch.cuda,'synchronize'), \
+                patch.object(runner.eval_utils,'calculate_ap',return_value=(.7553159775482435,)):
+            report=evaluate(SimpleNamespace(gpu=0),Mode(),None,{},rows,Path(directory),{},0,0,
+                            variants={'y_only':Mode()},share_gpu=True)
+        result=report['results']['y_only']
+        self.assertIsNone(result['mean_readout_executed_fraction'])
+        self.assertEqual(result['mean_readout_write_fraction'],1.)
+        self.assertEqual(result['conv_linear_gflops'],246/1e9)
+        self.assertEqual(result['mean_state_bytes'],20.)
+
     def test_own_recurrence_no_ordinary_full_call_and_teacher_isolation(self):
         cache=YOnlyState(AddY(),[-2,-2,-1,2,2,1],3)
         evidence=torch.ones(1,1,4,4);calls=[]
