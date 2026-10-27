@@ -1,5 +1,11 @@
 # 研究总目标与阶段退出规则（2026-10-18）
 
+2026-10-27 16:25容量训练数据加载阻塞修复：首次FP32训练进程并未推进，停在epoch0首批数据前约40分钟；两个父进程CPU累计约17秒、连续检查I/O不变，不能称正常验证。独立workers=2加载探针复现等待，原TMPDIR生成Unix socket路径111字节，直接绑定报AF_UNIX path too long；相同加载探针只改短TMPDIR，6.216秒成功得到首批。已终止两组自身进程组（无训练更新、无last.pt），完整运行证据归档各自ipc_stall01，未触碰multi248k或他人任务。
+
+修复仅把临时目录改为/data2/tzm/capipc27/c0_small、c1_wide，并在正式启动前真实绑定socket验证路径。配置/初始化SHA、模型、batch2、workers2、种子、损失、10轮、FP32及原审计容差不变；重新跑GPU审计后再进入初始验证。资源波动时每60秒检查，最多等6小时，每臂仍需连续5次空余5000MiB且利用率不超过20%；只等待资源，不重复失败的模型执行。新启动器PID34455，状态capacity2304_fp32_20261027/launch_queue.json，日志capacity2304_shortipc_queue.log；训练状态优先看两臂status.json和train/progress.json，队列文件在两臂全启动前可能保留上一条等待记录，不据其孤立推断训练是否启动。
+
+此为运行环境修复，无新AP结论。总目标仍以通信—AP逼近强ANN，参数无硬上限，保留SNN编码/IF消息。证据：[阻塞与修复探针](results/strong_ann_baselines_20261025/capacity_ipc_repair_20261027.json)、[短路径启动器](results/strong_ann_baselines_20261025/capacity_shortipc_launcher_20261027.py)。
+
 2026-10-27容量主对照已通过GPU审计并进入训练流水线：181 GPU4小模型3.121M（可训练1.298M），GPU6大模型6.557M（可训练4.734M），固定2304B硬上限、同源初始化、同十轮。关闭TF32后大模型四帧最大初始化误差降为5.722e-6，低于原容差；四帧真实消息与小模型逐位相同，direct/wire预测逐位相同，零消息等价本车，batch2梯度和冻结状态审计均通过，审计更新丢弃。峰值分配455.36/557.31MiB。当前两臂均为epoch0全量初始验证，尚无扩容后的AP或正式梯度训练结果，不把审计更新称为训练。原multi248k保持运行，最新第4轮2151/2339。
 
 流水线目录/data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027，coordinator PID16804/16805，部署代码961a3d5。初始验证后自动进入十轮训练、最佳权重0/2048/2304/4096B真实包评估和独立CPU AP复核；失败不自动重启。首次TF32审计失败及小模型初始验证中断记录完整保留，未放宽门槛。证据：[启动协议](results/strong_ann_baselines_20261025/capacity_launch_20261027.json)、[GPU通过记录](results/strong_ann_baselines_20261025/capacity_fp32_audits_20261027.json)。

@@ -77,3 +77,12 @@ CPU构造和权重审计已完成：C0总参数3,120,631；C1总参数6,556,919�
 流水线目录/data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027，coordinator PID16804/16805，部署代码961a3d5。初始验证后自动进入十轮训练、最佳权重0/2048/2304/4096B真实包评估和独立CPU AP复核；失败不自动重启。首次TF32审计失败及小模型初始验证中断记录完整保留，未放宽门槛。证据：[启动协议](results/strong_ann_baselines_20261025/capacity_launch_20261027.json)、[GPU通过记录](results/strong_ann_baselines_20261025/capacity_fp32_audits_20261027.json)。
 
 后续容量与结构由通信—AP效果决定，没有硬参数上限；不能将当前小模型、6.557M候选或消息通道数固化为限制。自动任务已设45分钟，提示“扩容逼近强ANN，循总目标”，优先检查本轮主对照和原multi组，健康无变化静默。
+
+
+## 数据加载恢复（2026-10-27）
+
+2026-10-27 16:25容量训练数据加载阻塞修复：首次FP32训练进程并未推进，停在epoch0首批数据前约40分钟；两个父进程CPU累计约17秒、连续检查I/O不变，不能称正常验证。独立workers=2加载探针复现等待，原TMPDIR生成Unix socket路径111字节，直接绑定报AF_UNIX path too long；相同加载探针只改短TMPDIR，6.216秒成功得到首批。已终止两组自身进程组（无训练更新、无last.pt），完整运行证据归档各自ipc_stall01，未触碰multi248k或他人任务。
+
+修复仅把临时目录改为/data2/tzm/capipc27/c0_small、c1_wide，并在正式启动前真实绑定socket验证路径。配置/初始化SHA、模型、batch2、workers2、种子、损失、10轮、FP32及原审计容差不变；重新跑GPU审计后再进入初始验证。资源波动时每60秒检查，最多等6小时，每臂仍需连续5次空余5000MiB且利用率不超过20%；只等待资源，不重复失败的模型执行。新启动器PID34455，状态capacity2304_fp32_20261027/launch_queue.json，日志capacity2304_shortipc_queue.log；训练状态优先看两臂status.json和train/progress.json，队列文件在两臂全启动前可能保留上一条等待记录，不据其孤立推断训练是否启动。
+
+此为运行环境修复，无新AP结论。总目标仍以通信—AP逼近强ANN，参数无硬上限，保留SNN编码/IF消息。证据：[阻塞与修复探针](results/strong_ann_baselines_20261025/capacity_ipc_repair_20261027.json)、[短路径启动器](results/strong_ann_baselines_20261025/capacity_shortipc_launcher_20261027.py)。

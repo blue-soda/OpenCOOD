@@ -1,0 +1,318 @@
+{
+  "unix": 1793089416.706608,
+  "queue": {
+    "state": "both_launched",
+    "unix": 1793089369.5308826
+  },
+  "launcher_log": "c0_small 35111\nc1_wide 35237\n",
+  "c0_small": {
+    "launch.json": {
+      "pid": 35111,
+      "gpu": 4,
+      "unix": 1793089359.0454066,
+      "commit": "961a3d51f3fced941906a27265af8cc66ed0203e",
+      "source_hashes": {
+        "opencood/models/e3dsnn_snapshot_capacity.py": "1e8edcff751ea567d46bad430aaeaabed6c5f2237f1316ea9e01eb1bae27b286",
+        "opencood/utils/e3dsnn_capacity.py": "05556048ca4bc5c8fe92f044c1c04d269a99a752a078a4c40d8da61e096f8f5b",
+        "opencood/tools/run_e3dsnn_capacity.py": "c6ea962c2e7f56dec948926cde28a4094e7b5116cb2ceffc72d87712eae6aac7",
+        "opencood/tools/train_e3dsnn_single.py": "fb37c80efd051954fba8911c4c133565027cb04557010dd3e4db85e44abcbe7f"
+      },
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.run_e3dsnn_capacity",
+        "--mode",
+        "coordinate",
+        "--root",
+        "/data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027",
+        "--arm",
+        "c0_small"
+      ],
+      "admission": [
+        {
+          "unix": 1793089348.6293786,
+          "gpu": 4,
+          "uuid": "GPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793089350.7353716,
+          "gpu": 4,
+          "uuid": "GPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793089352.8421345,
+          "gpu": 4,
+          "uuid": "GPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793089354.9467585,
+          "gpu": 4,
+          "uuid": "GPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793089357.0392075,
+          "gpu": 4,
+          "uuid": "GPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b",
+          "free_mib": 5390,
+          "utilization": 0
+        }
+      ],
+      "automatic_retry": false,
+      "tmpdir": "/data2/tzm/capipc27/c0_small",
+      "socket_bind_preflight": true
+    },
+    "status.json": {
+      "state": "running",
+      "stage": "train",
+      "unix": 1793089398.9880648
+    },
+    "train/progress.json": {
+      "state": "initial_validation",
+      "epoch": 0
+    },
+    "audit.json": {
+      "passed": true,
+      "records": [
+        {
+          "index": 0,
+          "bytes": [
+            2294
+          ],
+          "packet_sha256": [
+            "12da88a19d7896f254e3918d393b66bfe99e3ef3de306915f852196ec45f961a"
+          ],
+          "initial_max_abs": {
+            "psm": 0,
+            "rm": 0,
+            "dm": 0
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 579,
+          "bytes": [
+            2304
+          ],
+          "packet_sha256": [
+            "73b371e64e9620c855f935fa401eb50c34081b05dbeda00514cd20d480cb1456"
+          ],
+          "initial_max_abs": {
+            "psm": 0,
+            "rm": 0,
+            "dm": 0
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 1158,
+          "bytes": [
+            2304
+          ],
+          "packet_sha256": [
+            "b53e92896b35210262ed78684185b259004258e2ff4c1628d4239ccc15dc329a"
+          ],
+          "initial_max_abs": {
+            "psm": 0,
+            "rm": 0,
+            "dm": 0
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 1737,
+          "bytes": [
+            2303
+          ],
+          "packet_sha256": [
+            "0ccd31a02021c39a411b4a25de7756754d167a77fa66a2a2b382c2390bfab5cb"
+          ],
+          "initial_max_abs": {
+            "psm": 0,
+            "rm": 0,
+            "dm": 0
+          },
+          "direct_wire_exact": true
+        }
+      ],
+      "gradients": {
+        "backbone_2d.": 431.5846034437418,
+        "cls_head.": 0.4400182142853737,
+        "reg_head.": 18.53048348426819,
+        "dir_head.": 0.12277612090110779
+      },
+      "loss": 0.9792627102776701,
+      "zero_equals_ego": true,
+      "cuda_matmul_tf32": false,
+      "cudnn_tf32": false,
+      "fixed_state_unchanged": true,
+      "peak_allocated_bytes": 477477888,
+      "all_audit_updates_discarded": true
+    }
+  },
+  "c1_wide": {
+    "launch.json": {
+      "pid": 35237,
+      "gpu": 6,
+      "unix": 1793089369.5302973,
+      "commit": "961a3d51f3fced941906a27265af8cc66ed0203e",
+      "source_hashes": {
+        "opencood/models/e3dsnn_snapshot_capacity.py": "1e8edcff751ea567d46bad430aaeaabed6c5f2237f1316ea9e01eb1bae27b286",
+        "opencood/utils/e3dsnn_capacity.py": "05556048ca4bc5c8fe92f044c1c04d269a99a752a078a4c40d8da61e096f8f5b",
+        "opencood/tools/run_e3dsnn_capacity.py": "c6ea962c2e7f56dec948926cde28a4094e7b5116cb2ceffc72d87712eae6aac7",
+        "opencood/tools/train_e3dsnn_single.py": "fb37c80efd051954fba8911c4c133565027cb04557010dd3e4db85e44abcbe7f"
+      },
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.run_e3dsnn_capacity",
+        "--mode",
+        "coordinate",
+        "--root",
+        "/data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027",
+        "--arm",
+        "c1_wide"
+      ],
+      "admission": [
+        {
+          "unix": 1793089359.1489415,
+          "gpu": 6,
+          "uuid": "GPU-9c30712c-80fe-75ff-b808-dfc9b591442c",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793089361.2344167,
+          "gpu": 6,
+          "uuid": "GPU-9c30712c-80fe-75ff-b808-dfc9b591442c",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793089363.3416855,
+          "gpu": 6,
+          "uuid": "GPU-9c30712c-80fe-75ff-b808-dfc9b591442c",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793089365.4456072,
+          "gpu": 6,
+          "uuid": "GPU-9c30712c-80fe-75ff-b808-dfc9b591442c",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793089367.525479,
+          "gpu": 6,
+          "uuid": "GPU-9c30712c-80fe-75ff-b808-dfc9b591442c",
+          "free_mib": 5390,
+          "utilization": 0
+        }
+      ],
+      "automatic_retry": false,
+      "tmpdir": "/data2/tzm/capipc27/c1_wide",
+      "socket_bind_preflight": true
+    },
+    "status.json": {
+      "state": "running",
+      "stage": "train",
+      "unix": 1793089411.90705
+    },
+    "audit.json": {
+      "passed": true,
+      "records": [
+        {
+          "index": 0,
+          "bytes": [
+            2294
+          ],
+          "packet_sha256": [
+            "12da88a19d7896f254e3918d393b66bfe99e3ef3de306915f852196ec45f961a"
+          ],
+          "initial_max_abs": {
+            "psm": 0.00000476837158203125,
+            "rm": 0.0000030994415283203125,
+            "dm": 0.0000040531158447265625
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 579,
+          "bytes": [
+            2304
+          ],
+          "packet_sha256": [
+            "73b371e64e9620c855f935fa401eb50c34081b05dbeda00514cd20d480cb1456"
+          ],
+          "initial_max_abs": {
+            "psm": 0.000004291534423828125,
+            "rm": 0.000003337860107421875,
+            "dm": 0.000004291534423828125
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 1158,
+          "bytes": [
+            2304
+          ],
+          "packet_sha256": [
+            "b53e92896b35210262ed78684185b259004258e2ff4c1628d4239ccc15dc329a"
+          ],
+          "initial_max_abs": {
+            "psm": 0.000004291534423828125,
+            "rm": 0.000003337860107421875,
+            "dm": 0.0000057220458984375
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 1737,
+          "bytes": [
+            2303
+          ],
+          "packet_sha256": [
+            "0ccd31a02021c39a411b4a25de7756754d167a77fa66a2a2b382c2390bfab5cb"
+          ],
+          "initial_max_abs": {
+            "psm": 0.000003814697265625,
+            "rm": 0.0000029802322387695312,
+            "dm": 0.0000040531158447265625
+          },
+          "direct_wire_exact": true
+        }
+      ],
+      "gradients": {
+        "backbone_2d.": 731.3470856845379,
+        "cls_head.": 0.8328036069869995,
+        "reg_head.": 35.38526511192322,
+        "dir_head.": 0.2242302317172289
+      },
+      "loss": 0.9792630533708337,
+      "zero_equals_ego": true,
+      "cuda_matmul_tf32": false,
+      "cudnn_tf32": false,
+      "fixed_state_unchanged": true,
+      "peak_allocated_bytes": 584383488,
+      "all_audit_updates_discarded": true
+    }
+  },
+  "processes": [
+    "35111     1       00:57 00:00:08 14.0 /data1/tzm/miniconda3/envs/opencood/bin/python -u -m opencood.tools.run_e3dsnn_capacity --mode coordinate --root /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027 --arm c0_small",
+    "35237     1       00:47 00:00:08 17.0 /data1/tzm/miniconda3/envs/opencood/bin/python -u -m opencood.tools.run_e3dsnn_capacity --mode coordinate --root /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027 --arm c1_wide",
+    "35488 35111       00:18 00:00:00  0.0 timeout --kill-after=30 345600 /data1/tzm/miniconda3/envs/opencood/bin/python -u -m opencood.tools.train_e3dsnn_single --workers 2 --seed 20260929 --mode train --config /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c0_small/train.yaml --checkpoint /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c0_small/initial.pth --output /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c0_small/train --epochs 10 --selection-iou 0.7 --retain-initial-best",
+    "35489 35488       00:18 00:00:15 87.3 /data1/tzm/miniconda3/envs/opencood/bin/python -u -m opencood.tools.train_e3dsnn_single --workers 2 --seed 20260929 --mode train --config /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c0_small/train.yaml --checkpoint /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c0_small/initial.pth --output /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c0_small/train --epochs 10 --selection-iou 0.7 --retain-initial-best",
+    "35532 35237       00:05 00:00:00  0.2 timeout --kill-after=30 345600 /data1/tzm/miniconda3/envs/opencood/bin/python -u -m opencood.tools.train_e3dsnn_single --workers 2 --seed 20260929 --mode train --config /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c1_wide/train.yaml --checkpoint /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c1_wide/initial.pth --output /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c1_wide/train --epochs 10 --selection-iou 0.7 --retain-initial-best",
+    "35533 35532       00:05 00:00:04 94.8 /data1/tzm/miniconda3/envs/opencood/bin/python -u -m opencood.tools.train_e3dsnn_single --workers 2 --seed 20260929 --mode train --config /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c1_wide/train.yaml --checkpoint /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c1_wide/initial.pth --output /data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027/c1_wide/train --epochs 10 --selection-iou 0.7 --retain-initial-best"
+  ]
+}
