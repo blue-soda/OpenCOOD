@@ -130,10 +130,57 @@ def coordinate(root,arm):
         write_json(folder/'status.json',dict(state='failed',error=traceback.format_exc(),automatic_retry=False));raise
 
 
+def finalize_common(root,arm,reference):
+    """Explicit recovery only: keep native exports/failure, use fixed CPU GT."""
+    folder=root/arm;protocol=read(root/'protocol.json')
+    for name,digest in protocol['hashes'].items():assert sha(root/name)==digest
+    cfg=load_yaml(str(folder/'train.yaml'))
+    for key,digest in protocol['dataset_hashes'].items():assert sha(cfg[key])==digest
+    assert read(folder/'train/status.json')['state']=='complete'
+    assert read(folder/'train/fixed_state.json')['verified_through_epoch']==10
+    assert read(folder/'train/fixed_state.json')['passed']
+    assert len((folder/'train/metrics.jsonl').read_text().splitlines())==10
+    checkpoint=folder/'train/best_ap70.pth';checkpoint_sha=sha(checkpoint)
+    old=read(folder/'status.json');assert old['state']=='failed'
+    with (folder/'legacy_gt_failure.json').open('x') as f:json.dump(old,f,indent=2)
+    with (folder/'common_finalization_contract.json').open('x') as f:
+        json.dump(dict(checkpoint_sha256=checkpoint_sha,protocol_sha256=sha(root/'protocol.json'),
+            reference=str(reference),selection='Retain originally selected native-GT epoch; no reselection',
+            common_gt_sha256='77657e251057b5323a97b4b8f0820ec2e1dfa3b4b745e87c6f13902816a904ba'),f,indent=2)
+    def run(stage,command,seconds):
+        write_json(folder/'status.json',dict(state='running',stage=stage,unix=time.time()))
+        with (folder/(stage+'.log')).open('xb') as log:
+            subprocess.run(['timeout','--kill-after=30',str(seconds)]+command,cwd=str(REPO),env=os.environ.copy(),
+                stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,check=True,start_new_session=True)
+    try:
+        summary={}
+        for budget in BUDGETS:
+            name='b'+str(budget);out=folder/name
+            assert sha(checkpoint)==checkpoint_sha
+            if not (out/'evaluation.json').exists():
+                assert not out.exists(),'Partial output must be investigated, not overwritten'
+                run(name,[sys.executable,'-u','-m','opencood.tools.train_e3dsnn_single','--workers','2','--seed',str(SEED),
+                    '--mode','eval','--config',str(folder/(name+'.yaml')),'--checkpoint',str(checkpoint),'--output',str(out),
+                    '--packet-roundtrip','--eval-3d','--save-predictions','--profile'],28800)
+            manifests=list(out.glob('manifest_*.json'));assert len(manifests)==1
+            assert read(manifests[0])['checkpoint_sha256']==checkpoint_sha
+            if not (out/'offline_replay.json').exists():
+                run(name+'_replay',[sys.executable,'-m','opencood.tools.replay_e3dsnn_predictions','--evaluation-dir',str(out)],3600)
+            run(name+'_common_replay',[sys.executable,'-m','opencood.tools.replay_capacity_common_gt','--evaluation-dir',str(out),
+                '--reference',str(reference),'--budget',str(budget)],3600)
+            summary[name]=read(out/'common_gt_evaluation.json')
+        write_json(folder/'summary_common_gt.json',summary)
+        write_json(folder/'status.json',dict(state='complete',metric_reference='strong ANN fixed CPU GT',summary='summary_common_gt.json'))
+    except Exception:
+        write_json(folder/'status.json',dict(state='failed',error=traceback.format_exc(),automatic_retry=False));raise
+
+
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',choices=['prepare','audit','coordinate'],required=True);p.add_argument('--root',required=True)
+    p=argparse.ArgumentParser();p.add_argument('--mode',choices=['prepare','audit','coordinate','finalize-common'],required=True);p.add_argument('--root',required=True)
     p.add_argument('--arm',choices=['c0_small','c1_wide']);p.add_argument('--source-config');p.add_argument('--source-checkpoint')
+    p.add_argument('--common-gt-reference')
     a=p.parse_args();root=Path(a.root)
     if a.mode=='prepare':prepare(root,a.source_config,a.source_checkpoint)
     elif a.mode=='audit':audit(root,a.arm)
+    elif a.mode=='finalize-common':finalize_common(root,a.arm,Path(a.common_gt_reference))
     else:coordinate(root,a.arm)
