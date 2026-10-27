@@ -1,0 +1,31 @@
+{
+  "current_total": 3120631,
+  "current_by_module": {
+    "backbone_3d": 1722368,
+    "backbone_2d": 1293056,
+    "cls_head": 514,
+    "reg_head": 3598,
+    "dir_head": 1028,
+    "fusion_net": 74432,
+    "fusion_activation": 0,
+    "content": 8192,
+    "joint_receiver": 16385,
+    "progressive_sender": 1057
+  },
+  "backend_width_candidates": [
+    {
+      "width_multiplier": 1,
+      "total_parameters": 3120631,
+      "bev_parameters": 1293056,
+      "head_parameters": 5140
+    },
+    {
+      "width_multiplier": 2,
+      "total_parameters": 6556919,
+      "bev_parameters": 4724224,
+      "head_parameters": 10260
+    }
+  ],
+  "not_trained": true,
+  "not_a_performance_result": true
+}
