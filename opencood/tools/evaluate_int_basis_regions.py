@@ -528,6 +528,10 @@ def main():
     p.add_argument('--short-readout-width',type=int,choices=(32,64),default=32)
     p.add_argument('--short-readout-kind',choices=('residual','current','current_gated'),default='residual')
     p.add_argument('--short-readout-resume',default=None)
+    p.add_argument('--y-only-epochs',type=int,default=0,help='Y-only spatial state; no H/D on ordinary frames')
+    p.add_argument('--y-only-width',type=int,choices=(64,96),default=64)
+    p.add_argument('--y-only-period',type=int,choices=(3,5),default=3)
+    p.add_argument('--y-only-resume',default=None,help='Exact Y-only optimizer/schedule continuation')
     p.add_argument('--short-readout-train-period',type=int,choices=(3,5),default=3)
     p.add_argument('--short-readout-init',default=None,help='Weights-only warm start; fresh optimizer/schedule, distinct from exact resume')
     p.add_argument('--short-readout-diagnostic',default=None,help='Frozen repair checkpoint for offline512 train-frame history diagnosis')
@@ -538,6 +542,12 @@ def main():
     p.add_argument('--current-readout-packed',action='store_true',help='Add independent packed complete-state comparison to full local evaluation')
     p.add_argument('--current-readout-period5',action='store_true',help='Frozen current network: five-frame dense/local readout controls, no change to upstream H/D')
     a = p.parse_args(); out = Path(a.output)
+    if not 0<=a.y_only_epochs<=36:p.error('Y-only budget must be0..36')
+    if a.y_only_resume and not a.y_only_epochs:p.error('Y-only resume requires training')
+    if a.y_only_epochs and (not a.recurrent_local_reference or a.recurrent_local_period!=4 or
+            a.short_readout_epochs or a.short_readout_resume or a.short_readout_diagnostic or a.short_readout_init or
+            a.current_readout_local or a.recurrent_readout_calibration):
+        p.error('Y-only training requires frozen reference without another experiment')
     if bool(a.current_readout_local)!=bool(a.current_readout_local_calibration):p.error('Local current readout requires checkpoint and calibration')
     if a.current_readout_profile and not a.current_readout_local:p.error('Current readout profile requires frozen local checkpoint')
     if a.current_readout_geometry and (not a.current_readout_local or a.current_readout_profile):p.error('Geometry comparison requires full frozen current readout evaluation')
@@ -640,7 +650,7 @@ def main():
     if a.long_history and not a.cache_fp16:
         p.error('Long spatial history requires --cache-fp16')
     if a.worker:
-        limit=28800 if a.recurrent_deep_epochs or a.short_readout_epochs else 14400
+        limit=28800 if a.recurrent_deep_epochs or a.short_readout_epochs or a.y_only_epochs else 14400
         def expired(s, f): raise TimeoutError('Basis experiment exceeded its wall-clock budget')
         signal.signal(signal.SIGALRM, expired); signal.alarm(limit)
         try: worker(a)
@@ -649,7 +659,7 @@ def main():
         return
     free, util = subprocess.check_output(['nvidia-smi', '-i', str(a.gpu), '--query-gpu=memory.free,utilization.gpu',
         '--format=csv,noheader,nounits']).decode().strip().split(',')
-    if a.short_readout_epochs or a.short_readout_diagnostic or a.current_readout_local:
+    if a.short_readout_epochs or a.short_readout_diagnostic or a.current_readout_local or a.y_only_epochs:
         # Observed process footprint about5.5GiB; leave launch headroom. Other
         # processes and nonzero utilization are permitted by the user.
         if int(free)<8192:raise RuntimeError('Short readout needs at least8192MiB free at launch')
@@ -659,7 +669,7 @@ def main():
     command = [sys.executable, '-m', 'opencood.tools.evaluate_int_basis_regions']+sys.argv[1:]+['--worker']
     with (out/'run.log').open('x') as log:
         proc = subprocess.Popen(command, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-    write_json(out/'launch.json', dict(pid=proc.pid, gpu=a.gpu, command=command, created_unix=time.time(), timeout_seconds=28800 if a.recurrent_deep_epochs or a.short_readout_epochs else 14400,
+    write_json(out/'launch.json', dict(pid=proc.pid, gpu=a.gpu, command=command, created_unix=time.time(), timeout_seconds=28800 if a.recurrent_deep_epochs or a.short_readout_epochs or a.y_only_epochs else 14400,
         code_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()))
     print(json.dumps(dict(pid=proc.pid, output=str(out))))
 

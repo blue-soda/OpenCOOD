@@ -17,6 +17,10 @@ from opencood.utils import eval_utils
 
 
 def cost_of(costs,spatial_macs,info,recurrent):
+    if 'whole_model_macs' in info:
+        value=info['whole_model_macs']
+        assert isinstance(value,int) and value>0, 'Whole-path MACs require engineering calibration'
+        return value
     partial=info['deep_partial'] if recurrent else info['local_partial']
     value=costs[('dense',partial)]
     if not info['spatial_refresh']:value=value-spatial_macs+info['spatial_extra_linear_macs']
