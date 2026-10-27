@@ -1,0 +1,120 @@
+{
+  "c0_small": {
+    "epochs": [
+      {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 27589,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7583109045078515,
+          "0.5": 0.7118986824086387,
+          "0.7": 0.5839458750265613
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2302.5310701956273,
+          "median_bytes": 2303,
+          "min_bytes": 2289,
+          "max_bytes": 2304,
+          "p95_bytes": 2304,
+          "total_bytes": 4001799,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 1,
+        "train_loss": 0.9443918658617195,
+        "train_samples": 4678,
+        "seconds": 5240.407962488942,
+        "train_loss_components": {
+          "fused_detection_loss": 0.607698799328297,
+          "ego_detection_loss": 0.6733861330668477
+        },
+        "train_stream_means": {
+          "stream_budgets": 2304,
+          "packet_bytes": 2302.5042753313382,
+          "stream_events": 3086.0309961522016
+        }
+      }
+    ],
+    "metrics_sha256": "f124a52a4d1dcd8e6aee6305adce7cf39b0cbd3df1d31a6f7ad41e2fa6a5a750",
+    "fixed_state.json": {
+      "initial_sha256": "9fc353dffe7810641087d6afcfb294624837c9c984561b59184ec6b5972e74a6",
+      "current_sha256": "9fc353dffe7810641087d6afcfb294624837c9c984561b59184ec6b5972e74a6",
+      "verified_through_epoch": 1,
+      "passed": true
+    },
+    "fixed_bn.json": {
+      "initial_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+      "current_sha256": "296f8bb61e69fdc754d93f2dc464874528df18f0db5cb781b90d5d87865c407d",
+      "verified_through_epoch": 1,
+      "passed": true
+    },
+    "frozen_encoder.json": {
+      "initial_sha256": "b68866748e9fe9b7733f4cb768dbf3d158f5218c08212a9ea23c3f2b28694a00",
+      "current_sha256": "b68866748e9fe9b7733f4cb768dbf3d158f5218c08212a9ea23c3f2b28694a00",
+      "verified_through_epoch": 1,
+      "passed": true
+    }
+  },
+  "c1_wide": {
+    "epochs": [
+      {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 26711,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7501197214413006,
+          "0.5": 0.7055567058281059,
+          "0.7": 0.5787433888483201
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2302.5310701956273,
+          "median_bytes": 2303,
+          "min_bytes": 2289,
+          "max_bytes": 2304,
+          "p95_bytes": 2304,
+          "total_bytes": 4001799,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 1,
+        "train_loss": 0.9529018363352553,
+        "train_samples": 4678,
+        "seconds": 5283.003655462991,
+        "train_loss_components": {
+          "fused_detection_loss": 0.6131425197676544,
+          "ego_detection_loss": 0.6795186331352074
+        },
+        "train_stream_means": {
+          "stream_budgets": 2304,
+          "packet_bytes": 2302.5042753313382,
+          "stream_events": 3086.0309961522016
+        }
+      }
+    ],
+    "metrics_sha256": "a7bf5ffaad78c9e035e030d69c53d15ed9e80d976057a984cdd643f8e530bb5a",
+    "fixed_state.json": {
+      "initial_sha256": "1f71afc8c9c62254cd9082d6601594987c8e167173438226263fd93db99f4f15",
+      "current_sha256": "1f71afc8c9c62254cd9082d6601594987c8e167173438226263fd93db99f4f15",
+      "verified_through_epoch": 1,
+      "passed": true
+    },
+    "fixed_bn.json": {
+      "initial_sha256": "b791d2217b0935fe50146676be680fa9cecbe5e2320f8c20644a5e816fcf6e98",
+      "current_sha256": "b791d2217b0935fe50146676be680fa9cecbe5e2320f8c20644a5e816fcf6e98",
+      "verified_through_epoch": 1,
+      "passed": true
+    },
+    "frozen_encoder.json": {
+      "initial_sha256": "b68866748e9fe9b7733f4cb768dbf3d158f5218c08212a9ea23c3f2b28694a00",
+      "current_sha256": "b68866748e9fe9b7733f4cb768dbf3d158f5218c08212a9ea23c3f2b28694a00",
+      "verified_through_epoch": 1,
+      "passed": true
+    }
+  }
+}
