@@ -187,3 +187,10 @@ AP/通信来自原1738帧完整评估；时间为共同64帧×3轮，每个边�
 当前状态入口为multi248k_resume_epoch2_01/status.json和train_resume.log，原train.log保持失败日志，不能再将旧日志当作运行进度。SNN固定Native实验按上轮退出规则关闭，不继续调试替代主线；本轮无新SNN验证AP，不恢复方案三，不追加训练参数扫描。
 
 证据：[完成摘要](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/compute64_infocom_rng02/summary.json)、[合并统计和资源快照](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/infocom_compute_complete_audit.json)、[恢复协议](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/multi248k_resume_epoch2_01/protocol.json)、[原训练失败](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/multi248k_resume_epoch2_01/before_resume/train/status.json)。原始日志/全部测量和恢复脚本同目录归档。回传SHA=25d821945d5a516e534ea66597b0bc000357be7262fc6acd67278e12916aa57f。
+
+
+## 2026-10-27 14:20健康进度（不新增实验）
+
+本轮VPN未连接，已按既有授权恢复，181访问正常。恢复训练已完整完成第3轮：1738帧、28622 GT，2KiB验证BEV AP30/50/70=74.09196%/69.73616%/58.11838%，平均2045.93153 B、P95/最大2048 B；未超过第2轮AP70=58.12877%。当前第4轮1751/2339，无新增异常，原训练截止尚余约84.64小时，保留原10轮、配置与退出条件，不因中间轮次未改善追加训练/调参。独立TMPDIR恢复后已运行超过一整轮，但不据此声称原IPC异常根因得到证明。InfoCom与CoSDH复核结论不变，SNN公平计时限制仍保留。例行健康推进，无需用户操作。
+
+证据：[状态和完整历史验证](results/strong_ann_baselines_20261025/heartbeat_20261027_0620.json)。
