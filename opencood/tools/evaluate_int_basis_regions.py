@@ -532,6 +532,7 @@ def main():
     p.add_argument('--y-only-width',type=int,choices=(64,96),default=64)
     p.add_argument('--y-only-period',type=int,choices=(3,5),default=3)
     p.add_argument('--y-only-resume',default=None,help='Exact Y-only optimizer/schedule continuation')
+    p.add_argument('--y-only-diagnostic',default=None,help='Frozen Y-only checkpoint for512 training scans; no AP')
     p.add_argument('--short-readout-train-period',type=int,choices=(3,5),default=3)
     p.add_argument('--short-readout-init',default=None,help='Weights-only warm start; fresh optimizer/schedule, distinct from exact resume')
     p.add_argument('--short-readout-diagnostic',default=None,help='Frozen repair checkpoint for offline512 train-frame history diagnosis')
@@ -544,10 +545,11 @@ def main():
     a = p.parse_args(); out = Path(a.output)
     if not 0<=a.y_only_epochs<=36:p.error('Y-only budget must be0..36')
     if a.y_only_resume and not a.y_only_epochs:p.error('Y-only resume requires training')
-    if a.y_only_epochs and (not a.recurrent_local_reference or a.recurrent_local_period!=4 or
+    if a.y_only_diagnostic and a.y_only_epochs:p.error('Y-only diagnostic cannot train or resume')
+    if (a.y_only_epochs or a.y_only_diagnostic) and (not a.recurrent_local_reference or a.recurrent_local_period!=4 or
             a.short_readout_epochs or a.short_readout_resume or a.short_readout_diagnostic or a.short_readout_init or
             a.current_readout_local or a.recurrent_readout_calibration):
-        p.error('Y-only training requires frozen reference without another experiment')
+        p.error('Y-only experiment requires frozen reference without another experiment')
     if bool(a.current_readout_local)!=bool(a.current_readout_local_calibration):p.error('Local current readout requires checkpoint and calibration')
     if a.current_readout_profile and not a.current_readout_local:p.error('Current readout profile requires frozen local checkpoint')
     if a.current_readout_geometry and (not a.current_readout_local or a.current_readout_profile):p.error('Geometry comparison requires full frozen current readout evaluation')
@@ -659,7 +661,7 @@ def main():
         return
     free, util = subprocess.check_output(['nvidia-smi', '-i', str(a.gpu), '--query-gpu=memory.free,utilization.gpu',
         '--format=csv,noheader,nounits']).decode().strip().split(',')
-    if a.short_readout_epochs or a.short_readout_diagnostic or a.current_readout_local or a.y_only_epochs:
+    if a.short_readout_epochs or a.short_readout_diagnostic or a.current_readout_local or a.y_only_epochs or a.y_only_diagnostic:
         # Observed process footprint about5.5GiB; leave launch headroom. Other
         # processes and nonzero utilization are permitted by the user.
         if int(free)<8192:raise RuntimeError('Short readout needs at least8192MiB free at launch')

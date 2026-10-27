@@ -15,6 +15,22 @@ class AddY(nn.Module):
 
 
 class TestYOnly(unittest.TestCase):
+    def test_diagnostic_separates_history_without_changing_inputs(self):
+        from opencood.tools.diagnose_int_y_only import observe_update
+        torch.manual_seed(303);net=YOnlyUpdater(3,4,8).eval()
+        evidence=torch.randn(1,3,7,9);old=torch.rand(1,4,7,9)
+        teacher=old+2.;saved=old.clone();valid=torch.ones(1,1,7,9,dtype=torch.bool)
+        valid[:,:,:,0]=False
+        result,gate=observe_update(net,evidence,old,teacher,valid)
+        self.assertTrue(torch.equal(result['recursive'],net(evidence,old,valid)))
+        self.assertTrue(torch.equal(result['teacher_history'],net(evidence,teacher,valid)))
+        self.assertTrue(torch.equal(result['own_warp_only'],saved))
+        self.assertTrue(torch.equal(result['teacher_warp_only'],teacher))
+        self.assertTrue(torch.equal(old,saved))
+        self.assertEqual(float(gate[:,:,:,0].abs().sum()),0.)
+        self.assertTrue(torch.equal(result['recursive'][:,:,:,0],result['candidate_only'][:,:,:,0]))
+        self.assertTrue(all(p.grad is None for p in net.parameters()))
+
     def test_paired_evaluator_accepts_whole_path_cost_without_readout_ratio(self):
         from opencood.tools.train_int_recurrent_deep import evaluate
         import opencood.tools.train_int_recurrent_deep as runner
