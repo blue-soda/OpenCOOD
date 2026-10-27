@@ -43,11 +43,11 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
     if a.current_readout_packed:
         modes['current_packed']=RecurrentDeepDetector(baseline,deep_repair,4)
         modes['current_packed'].readout_cache=PackedCurrentReadoutCache(baseline.readout,repair,baseline.bounds,threshold)
-    policy=dict(checkpoint=str(path),sha256=digest(path),epoch=saved['epoch'],kind='current',
+    policy=dict(checkpoint=str(path),sha256=digest(path),epoch=saved['epoch'],kind='current',trained_readout_period=trained_period,
         calibration=dict(path=str(calibration_path),sha256=digest(calibration_path),threshold=threshold),
         selection='Transfer existing512-train calibrated threshold unchanged; compare actual current96 input to own retained reference; content dilation2, own confidence>=.1 dilation4, uncovered always selected. No new fit on validation.',
         execution='Whole completeY/reference/confidence aligned; first3x3 only core+halo1, second3x3 and final1x1 only core; first layer reads input halo2. All-core native dense fallback. Unselected alignedY retained.',
-        refresh='Original mature full readout every3/.25s/reset, same as trained current model. D period4 unchanged.',
+        refresh='Base controls use original mature full readout every3/.25s/reset; optional period5 controls every5/.45s/reset. Training period recorded separately. D period4 unchanged.',
         controls='Independent mature D/full readout; trained dense current; selected local; dense-compute same masked policy. Real-weight same-input replay outside timing.',
         limitation='Transferred train calibration may be suboptimal for new readout; no threshold sweep or fabricated same-AP claim. Extra96 reference and packed weights included.')
     write_json(out/'local_current_contract.json',policy)
