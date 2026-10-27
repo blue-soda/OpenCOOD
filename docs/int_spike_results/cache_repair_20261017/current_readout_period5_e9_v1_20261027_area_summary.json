@@ -1,0 +1,24 @@
+{
+  "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/current_readout_period5_e9_v1_20261027/areas.json",
+  "sha256": "9a7d752b4030f9b512c5fdad9104ba1aefe43560e0d0ef7a7b8079b60cae91f8",
+  "modes": {
+    "current_geometry": {
+      "scans": 5794,
+      "ordinary": 3789,
+      "core_mean": 0.36161374167398336,
+      "support_mean": 0.43112518694466584
+    },
+    "current_geometry_period5": {
+      "scans": 5794,
+      "ordinary": 4547,
+      "core_mean": 0.43156180900939617,
+      "support_mean": 0.5072060943723583
+    },
+    "current_local": {
+      "scans": 5794,
+      "ordinary": 3789,
+      "core_mean": 0.36161374167398336,
+      "support_mean": 0.43112518694466584
+    }
+  }
+}

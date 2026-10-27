@@ -528,6 +528,8 @@ def main():
     p.add_argument('--short-readout-width',type=int,choices=(32,64),default=32)
     p.add_argument('--short-readout-kind',choices=('residual','current','current_gated'),default='residual')
     p.add_argument('--short-readout-resume',default=None)
+    p.add_argument('--short-readout-train-period',type=int,choices=(3,5),default=3)
+    p.add_argument('--short-readout-init',default=None,help='Weights-only warm start; fresh optimizer/schedule, distinct from exact resume')
     p.add_argument('--short-readout-diagnostic',default=None,help='Frozen repair checkpoint for offline512 train-frame history diagnosis')
     p.add_argument('--current-readout-local',default=None,help='Frozen current-only repair checkpoint for selected local execution')
     p.add_argument('--current-readout-local-calibration',default=None,help='Existing train-only readout calibration to transfer unchanged')
@@ -547,6 +549,9 @@ def main():
         p.error('Short readout diagnostic requires frozen four-frame D reference without training/composition')
     if not 0<=a.short_readout_epochs<=48:p.error('Short readout budget must be0..48')
     if a.short_readout_resume and not a.short_readout_epochs:p.error('Resume requires short readout training')
+    if (a.short_readout_init or a.short_readout_train_period!=3) and (not a.short_readout_epochs or a.short_readout_kind!='current'):
+        p.error('Period adaptation requires current-only short readout training')
+    if a.short_readout_init and a.short_readout_resume:p.error('Weights-only initialization cannot be combined with exact resume')
     if a.short_readout_epochs and (not a.recurrent_local_reference or a.recurrent_readout_calibration or a.recurrent_local_period!=4):
         p.error('Short readout training requires frozen four-frame D reference without readout composition')
     if a.recurrent_readout_calibration and not a.recurrent_local_reference:

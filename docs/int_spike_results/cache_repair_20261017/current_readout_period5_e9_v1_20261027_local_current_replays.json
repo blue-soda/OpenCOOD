@@ -1,0 +1,437 @@
+[
+  {
+    "mode": "current_local",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 7.62939453125e-06,
+    "state_max_error": 6.198883056640625e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 7.62939453125e-06,
+    "state_max_error": 6.198883056640625e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.67572021484375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.67572021484375e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 6.67572021484375e-06,
+    "state_max_error": 6.9141387939453125e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 6.67572021484375e-06,
+    "state_max_error": 6.9141387939453125e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 6.67572021484375e-06,
+    "state_max_error": 6.9141387939453125e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 2.0503997802734375e-05,
+    "state_max_error": 1.6689300537109375e-05
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 2.0503997802734375e-05,
+    "state_max_error": 1.6689300537109375e-05
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 2.002716064453125e-05,
+    "state_max_error": 2.09808349609375e-05
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 5.245208740234375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 4.76837158203125e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 4.76837158203125e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 7.152557373046875e-06,
+    "state_max_error": 7.62939453125e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.245208740234375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.245208740234375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 6.67572021484375e-06,
+    "state_max_error": 4.76837158203125e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 7.62939453125e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 7.62939453125e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.67572021484375e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 1.52587890625e-05,
+    "state_max_error": 1.2874603271484375e-05
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 1.52587890625e-05,
+    "state_max_error": 1.2874603271484375e-05
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 1.6689300537109375e-05,
+    "state_max_error": 1.52587890625e-05
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 1.6689300537109375e-05,
+    "state_max_error": 1.52587890625e-05
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 1.71661376953125e-05,
+    "state_max_error": 1.33514404296875e-05
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.67572021484375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.67572021484375e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.67572021484375e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.245208740234375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.125999450683594e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 4.5299530029296875e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 4.5299530029296875e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 7.3909759521484375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 7.3909759521484375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 7.3909759521484375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 6.9141387939453125e-06,
+    "state_max_error": 6.198883056640625e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 6.9141387939453125e-06,
+    "state_max_error": 6.198883056640625e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 2.5987625122070312e-05,
+    "state_max_error": 2.5272369384765625e-05
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 3.0517578125e-05,
+    "state_max_error": 3.719329833984375e-05
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 3.0517578125e-05,
+    "state_max_error": 3.719329833984375e-05
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.9604644775390625e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.9604644775390625e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.9604644775390625e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 8.58306884765625e-06,
+    "state_max_error": 9.5367431640625e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 1.0251998901367188e-05,
+    "state_max_error": 8.702278137207031e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 1.0251998901367188e-05,
+    "state_max_error": 8.702278137207031e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 5.7220458984375e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 8.58306884765625e-06,
+    "state_max_error": 8.106231689453125e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.9141387939453125e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 5.7220458984375e-06,
+    "state_max_error": 6.9141387939453125e-06
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 6.020069122314453e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 6.020069122314453e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 5.9604644775390625e-06,
+    "state_max_error": 4.76837158203125e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 7.62939453125e-06,
+    "state_max_error": 6.67572021484375e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  {
+    "mode": "current_local",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 7.152557373046875e-06
+  },
+  {
+    "mode": "current_geometry",
+    "prediction_max_error": 6.198883056640625e-06,
+    "state_max_error": 7.152557373046875e-06
+  },
+  {
+    "mode": "current_geometry_period5",
+    "prediction_max_error": 0.0,
+    "state_max_error": 0.0
+  }
+]

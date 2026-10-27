@@ -15,6 +15,7 @@ from opencood.tools.train_int_recurrent_deep import cost_of,evaluate
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
 from opencood.tools.int_gpu_exclusivity import sample_gpu_usage
+from opencood.tools.int_readout_warm_start import load_warm_start
 
 
 def atomic_save(value,path):
@@ -30,9 +31,10 @@ def train_short_readout(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_rep
     else:
         repair,initialization=current_readout_from_mature(mode.readout,a.short_readout_width,kind=='current_gated')
         repair=repair.cuda().eval()
-    cache=ShortReadoutState(mode.readout,repair,mode.bounds,3);mode.readout_cache=cache
+    period=a.short_readout_train_period
+    cache=ShortReadoutState(mode.readout,repair,mode.bounds,period);mode.readout_cache=cache
     contract=dict(source={k:source[k] for k in ('source','memory','readout','repair','basis','data')},
-        frozen_deep_checkpoint=checkpoint,width=a.short_readout_width,seed=303,deep_period=4,readout_period=3,
+        frozen_deep_checkpoint=checkpoint,width=a.short_readout_width,seed=303,deep_period=4,readout_period=period,
         epochs_max=a.short_readout_epochs,tbptt=2,trainable_parameters=sum(p.numel() for p in repair.parameters()),
         architecture='Current96 + aligned complete readout256 + valid1 ->1x1(width) -> depthwise3x3 ->1x1(256), residual added to old complete readout. Complete output written every frame.',
         inference='Readout full only period3/.25s/reset; dense cheap correction on ordinary frames. Fixed four-layer H locality, low-rank FM and frozen four-frame D. No local short-readout skipping yet.',
@@ -45,6 +47,11 @@ def train_short_readout(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_rep
             architecture='Current96 ->3x3(width)/ReLU ->3x3(width) ->1x1(256)/ReLU; mature BN-folded and rank-factor initialized. '+
             ('Bounded per-cell history blend g*old+(1-g)*fresh; g=.95sigmoid(current,old_mean,abs_difference_mean,valid)*valid.' if kind=='current_gated' else 'Current-only control; ordinary output ignores history.'),
             purpose='Test stronger current spatial expression and bounded history reuse before localizing; complete output state, same data/loss/periods.')
+    if period!=3:
+        contract['inference']=contract['inference'].replace('period3/.25s','period5/.45s')
+    if a.short_readout_init:
+        contract['warm_start']=load_warm_start(repair,a.short_readout_init,contract)
+        contract['purpose']='Matched period3/period5 adaptation from the same frozen current checkpoint; fresh identical optimizer, unchanged loss/data/upstream models. Full epoch0 validation precedes updates.'
     write_json(out/'short_readout_contract.json',contract)
     write_json(out/'validation_execution.json',dict(contention='User permits shared GPU training and validation. Sample other processes without waiting or exiting for sharing; any observed sharing invalidates whole evaluation latency, not AP. Hardware/query/CUDA allocation errors still propagate.',
         scope='Execution only; model/training contract and strict standalone benchmarks unchanged.'))

@@ -18,6 +18,9 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
     assert contract['kind']=='current' and contract['frozen_deep_checkpoint']==checkpoint
     assert contract['source']=={k:source[k] for k in ('source','memory','readout','repair','basis','data')}
     trained=json.loads((path.parent/'report.json').read_text());assert trained['scans']==5794 and trained['labels']==1738
+    trained_period=contract['readout_period']
+    assert trained_period in (3,5)
+    assert trained_period==3 or a.current_readout_period5, 'Period5-trained checkpoint requires period5 controls'
     calibration_path=Path(a.current_readout_local_calibration);cal=json.loads(calibration_path.read_text())
     assert cal['status']=='COMPLETED' and cal['split']=='train' and cal['scans']==512 and cal['fit']['status']=='FITTED'
     assert cal['identity']=={k:source[k] for k in cal['identity']}
@@ -96,7 +99,7 @@ def compare(a,cfg,train,val,baseline,out,costs,spatial_macs,deep_repair,checkpoi
                 audits.append(replay(ego,previous,meta,pred,state,info,name));write_json(out/'local_current_replays.json',audits)
     directory=out/'full';directory.mkdir()
     report=evaluate(a,baseline,None,cfg,val,directory,costs,spatial_macs,'local_current',variants=modes,
-        expected_ap={'dense_recurrent':expected,'current_dense':trained['results']['short_readout']['ap70']},audit=audit,share_gpu=True,
+        expected_ap={'dense_recurrent':expected,('current_dense' if trained_period==3 else 'current_dense_period5'):trained['results']['short_readout']['ap70']},audit=audit,share_gpu=True,
         note='Frozen current checkpoint; completeY local reuse. Conv/functional MACsx2; full own trajectories and selection/warp/index costs included. Shared GPU allowed; affected whole latency null.')
     report['local_current_contract']=policy;report['same_input_replays']=len(audits)
     write_json(out/'areas.json',areas);write_json(out/'report.json',report);write_json(out/'status.json',dict(status='COMPLETED',scans=len(val)))
