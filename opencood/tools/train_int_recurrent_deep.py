@@ -106,7 +106,10 @@ def evaluate(a,baseline,mode,cfg,rows,directory,costs,spatial_macs,epoch,variant
                 metrics[name]['state'].append(info['state_bytes']+info['spatial_state_bytes']+info['anchor_bytes']+info.get('readout_state_bytes',0))
                 if 'readout_write_fraction' in info:
                     metrics[name]['readout_write'].append(info['readout_write_fraction'])
-                    metrics[name]['readout_ratio'].append(info['readout_executed_fraction'])
+                    # Y-only replaces the whole H/D/readout suffix, so a
+                    # readout-only denominator is not meaningful for that mode.
+                    if info.get('readout_executed_fraction') is not None:
+                        metrics[name]['readout_ratio'].append(info['readout_executed_fraction'])
                     metrics[name]['readout_full']+=int(info['readout_refresh'])
                 if 'deep_write_fraction' in info:metrics[name]['deep_write'].append(info['deep_write_fraction'])
                 if 'deep_short_macs_ratio' in info:metrics[name]['short_ratio'].append(info['deep_short_macs_ratio'])
