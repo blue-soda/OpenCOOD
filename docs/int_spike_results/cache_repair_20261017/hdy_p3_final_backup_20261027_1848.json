@@ -1,0 +1,33 @@
+{
+  "path": "/tmp/int_hdy_p3_final_20261027_1848.tar.gz",
+  "bytes": 1631107,
+  "sha256": "d31f0c458fd49b826e42a4a8f6116d547dfc0521bc3eb4e873a7f65e2610b76f",
+  "members": {
+    "current_readout_adapt_p3_e9_v1_20261027/latest.pth": {
+      "bytes": 1320184,
+      "sha256": "1c747502f9ca22bdd3d31d6a945181ce6f79cb19ef2d3ffac4f5246a503dee39"
+    },
+    "current_readout_adapt_p3_e9_v1_20261027/short_readout_contract.json": {
+      "bytes": 5164,
+      "sha256": "abbdbc85c3c252674f9334c3e31b15c00ec03dde58853eb644920f3747998568"
+    },
+    "current_readout_adapt_p3_e9_v1_20261027/best.json": {
+      "bytes": 265,
+      "sha256": "7f75058e3041d5f94301b62c7fd00bad91e3d46fee2ed32cf0538ff82c18e148"
+    },
+    "current_readout_adapt_p3_e9_v1_20261027/history.json": {
+      "bytes": 20796,
+      "sha256": "c399043454eb59b2ea5ea229f46cf925a43af1537f9166da36a16b482d05ef49"
+    },
+    "current_readout_adapt_p3_e9_v1_20261027/report.json": {
+      "bytes": 357,
+      "sha256": "bafbd0fa0ef5e98932db6d6c256928994a4f3237fb4e028538d9e450c1347629"
+    },
+    "current_readout_adapt_p3_e9_v1_20261027/epoch_000/repair.pth": {
+      "bytes": 441499,
+      "sha256": "2f72dc644626ba7b934ecc67eae7f373af895e4d7e643b25a8a781b6a400366f"
+    }
+  },
+  "destination_verified": true,
+  "destination": "/data1/zhh/gzc/int181_snapshot/live_backups/int_hdy_p3_final_20261027_1848.tar.gz"
+}
