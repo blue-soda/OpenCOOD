@@ -53,7 +53,10 @@ def widen_backend(model, seed=20260929):
         raise ValueError('Prepare widened checkpoints on CPU before moving to CUDA')
     with torch.random.fork_rng(devices=[]):
         generator=torch.Generator().manual_seed(seed)
-        bev=copy.deepcopy(model.backbone_2d)
+        # Legacy AttributeConfig.__getattr__ raises KeyError for __deepcopy__.
+        # Forward uses the built modules; retain the configuration as plain data.
+        old_config=model.backbone_2d.model_cfg
+        bev=copy.deepcopy(model.backbone_2d,{id(old_config):copy.deepcopy(dict(old_config))})
         old_outputs=[]
         for i,block in enumerate(bev.blocks):
             first=True

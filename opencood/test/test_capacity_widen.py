@@ -5,6 +5,10 @@ from torch import nn
 from opencood.utils.e3dsnn_capacity import widen_backend
 
 
+class StrictConfig(dict):
+    __getattr__=dict.__getitem__
+
+
 class DummyBEV(nn.Module):
     def __init__(self):
         super().__init__();self.num_bev_features=6
@@ -22,7 +26,9 @@ class CapacityTest(unittest.TestCase):
     def test_preserves_function_rng_and_breaks_gradient_symmetry(self):
         torch.manual_seed(17);model=nn.Module();model.backbone_2d=DummyBEV()
         model.cls_head=nn.Conv2d(6,2,1);model.reg_head=nn.Conv2d(6,14,1);model.dir_head=nn.Conv2d(6,4,1)
-        model.eval();small=copy.deepcopy(model);rng=torch.get_rng_state().clone();widen_backend(model)
+        model.eval();small=copy.deepcopy(model)
+        model.backbone_2d.model_cfg=StrictConfig(model.backbone_2d.model_cfg)
+        rng=torch.get_rng_state().clone();widen_backend(model)
         self.assertTrue(torch.equal(rng,torch.get_rng_state()))
         model.eval();x=torch.randn(2,5,10,12)
         a=small.backbone_2d(x);b=model.backbone_2d(x)
