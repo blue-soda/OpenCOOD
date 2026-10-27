@@ -64,5 +64,71 @@
       "status": "COMPLETED",
       "timing_valid": false
     }
+  },
+  {
+    "epoch": 1,
+    "loss": 0.5108885849451181,
+    "lr": 0.0001,
+    "stale": 0,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Y-only spatial state plus frozen GRU FM. Ordinary inference bypasses H/D/deblocks/mature readout. Dense small updater, NOT local execution. Hook-calibrated whole-path Conv MACx2. Model timing excludes first10 warmup scans/IO/H2D/postprocess; shared timing null.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_deep_write_fraction": null,
+          "mean_ms": null,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": null,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": null,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        },
+        "y_full": {
+          "ap50": 0.8332770078200933,
+          "ap70": 0.7567910702899006,
+          "conv_linear_gflops": 216.2184192,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": null,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 52012800.0,
+          "p95_ms": null,
+          "readout_full_frames": 5794,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "whole_path_full_frames": 5794
+        },
+        "y_only": {
+          "ap50": 0.7166852008674834,
+          "ap70": 0.46894701721202786,
+          "conv_linear_gflops": 103.97151580697273,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": null,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 52012800.0,
+          "p95_ms": null,
+          "readout_full_frames": 2005,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "whole_path_full_frames": 2005
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": false
+    }
   }
 ]

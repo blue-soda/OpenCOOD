@@ -1,0 +1,57 @@
+{
+  "path": "/tmp/int_y_only_20261027_1645.tar.gz",
+  "bytes": 5064225,
+  "sha256": "7be0b0026462af817844c7fd934d8a70203458bcacff19dfeed648d11c00aed7",
+  "members": {
+    "y_only_w64_p3_resume1_v1_20261027/latest.pth": {
+      "bytes": 1398603,
+      "sha256": "3d4bc3ffb43b6eacb527fcfea5fc77b524c27e3de1bdc96fe3eee1a0e669ce1a"
+    },
+    "y_only_w64_p3_resume1_v1_20261027/y_only_contract.json": {
+      "bytes": 3993,
+      "sha256": "7d3c3b11e9580a7b4f392e32ce574a0658eaf1a8a69d0eb674a251dbf8a90946"
+    },
+    "y_only_w64_p3_resume1_v1_20261027/y_only_engineering.json": {
+      "bytes": 498,
+      "sha256": "d40c7476bc55b1a08edeaa3d3429b76c1f4c41a9ed0ff083f63980b70312def8"
+    },
+    "y_only_w64_p3_resume1_v1_20261027/resume.json": {
+      "bytes": 252,
+      "sha256": "60a26cbf5428d397d46b86a6d5bc6bb92111d1ad899a0cd71a5aed87001d5b49"
+    },
+    "y_only_w64_p3_resume1_v1_20261027/best.json": {
+      "bytes": 261,
+      "sha256": "a8fc48415956c38ff90e7f921ea6255dfa3a9883ef631c518fdf12f535cc334b"
+    },
+    "y_only_w64_p3_resume1_v1_20261027/epoch_001/updater.pth": {
+      "bytes": 467719,
+      "sha256": "0177dec6b322a4c68e84105bb905c8b0f22277ea2810cb5e18883a3785484c8e"
+    },
+    "y_only_w96_p3_resume1_v1_20261027/latest.pth": {
+      "bytes": 2752203,
+      "sha256": "736ee231e0df6890e493214410a1c9433cb2f67d62a4703db3b16d80466296b4"
+    },
+    "y_only_w96_p3_resume1_v1_20261027/y_only_contract.json": {
+      "bytes": 3993,
+      "sha256": "fb52dedab08ee0dbf3a0d7805246d50a320a5d21acc1393804bbae8d3a5e66e4"
+    },
+    "y_only_w96_p3_resume1_v1_20261027/y_only_engineering.json": {
+      "bytes": 498,
+      "sha256": "50414e180541377ada925e273be3262836ef578594ed906fc7aedafcbd8424a1"
+    },
+    "y_only_w96_p3_resume1_v1_20261027/resume.json": {
+      "bytes": 252,
+      "sha256": "3dbdaed2fe08108120c2f60a45fee50795877604efabc66b428efd5f46071483"
+    },
+    "y_only_w96_p3_resume1_v1_20261027/best.json": {
+      "bytes": 262,
+      "sha256": "6b940da3b3d4f40dc0732b769b7b6ad6fe5775a80f935be3fe45fc4bfd3948e4"
+    },
+    "y_only_w96_p3_resume1_v1_20261027/epoch_001/updater.pth": {
+      "bytes": 918919,
+      "sha256": "8ed72ef38822ba26b642d5fd294786cada509c22965d18de6b9edb2994e6f9aa"
+    }
+  },
+  "destination_verified": true,
+  "destination": "/data1/zhh/gzc/int181_snapshot/live_backups/int_y_only_20261027_1645.tar.gz"
+}
