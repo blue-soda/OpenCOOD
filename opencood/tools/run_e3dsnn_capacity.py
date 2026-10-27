@@ -142,11 +142,15 @@ def finalize_common(root,arm,reference):
     assert len((folder/'train/metrics.jsonl').read_text().splitlines())==10
     checkpoint=folder/'train/best_ap70.pth';checkpoint_sha=sha(checkpoint)
     old=read(folder/'status.json');assert old['state']=='failed'
-    with (folder/'legacy_gt_failure.json').open('x') as f:json.dump(old,f,indent=2)
-    with (folder/'common_finalization_contract.json').open('x') as f:
-        json.dump(dict(checkpoint_sha256=checkpoint_sha,protocol_sha256=sha(root/'protocol.json'),
+    if not (folder/'legacy_gt_failure.json').exists():
+        with (folder/'legacy_gt_failure.json').open('x') as f:json.dump(old,f,indent=2)
+    contract=dict(checkpoint_sha256=checkpoint_sha,protocol_sha256=sha(root/'protocol.json'),
             reference=str(reference),selection='Retain originally selected native-GT epoch; no reselection',
-            common_gt_sha256='77657e251057b5323a97b4b8f0820ec2e1dfa3b4b745e87c6f13902816a904ba'),f,indent=2)
+            common_gt_sha256='77657e251057b5323a97b4b8f0820ec2e1dfa3b4b745e87c6f13902816a904ba')
+    if (folder/'common_finalization_contract.json').exists():
+        assert read(folder/'common_finalization_contract.json')==contract
+    else:
+        with (folder/'common_finalization_contract.json').open('x') as f:json.dump(contract,f,indent=2)
     def run(stage,command,seconds):
         write_json(folder/'status.json',dict(state='running',stage=stage,unix=time.time()))
         with (folder/(stage+'.log')).open('xb') as log:
