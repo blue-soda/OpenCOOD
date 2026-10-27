@@ -23,6 +23,9 @@ def compare_local(a,cfg,train,val,baseline,out,costs,spatial_macs):
     for p in repair.parameters():p.requires_grad_(False)
     period=a.recurrent_local_period
     expected=report['results']['trained6_period%d'%period]['ap70']
+    if a.z_only_epochs:
+        from opencood.tools.train_int_z_only import train_z_only
+        return train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source)
     if a.y_only_diagnostic:
         from opencood.tools.diagnose_int_y_only import diagnose
         return diagnose(a,cfg,train,baseline,out,source)
