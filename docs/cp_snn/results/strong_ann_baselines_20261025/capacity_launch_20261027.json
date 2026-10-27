@@ -1,0 +1,198 @@
+{
+  "protocol": {
+    "source": "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/train/best_ap70.pth",
+    "source_sha256": "0add747f31daf1c34315621990ef1b9424e2606f2cb60fa23cc3f396bf9e6f9e",
+    "source_config_sha256": "898ae51ed4d46fe642845e39da6794bd72953c9bf864b7ec54fe3a5d2d2f70f0",
+    "seed": 20260929,
+    "primary_budget": 2304,
+    "final_budgets": [
+      0,
+      2048,
+      2304,
+      4096
+    ],
+    "epochs": 10,
+    "counts": {
+      "c0_small": {
+        "total": 3120631,
+        "trainable": 1298196
+      },
+      "c1_wide": {
+        "total": 6556919,
+        "trainable": 4734484
+      }
+    },
+    "hashes": {
+      "c0_small/train.yaml": "621ac9e418e2289b54bcc8e9803f6fb9396ddb4caf910da2a760eeb6646aff40",
+      "c0_small/b0.yaml": "5a8b6431d74470d811447156ea321f2fbab4a830a358f9a1cb4428da69813773",
+      "c0_small/b2048.yaml": "4643cc0fae8f1622610910bafe91603b22a465020b228f13b5f36c6a15297b93",
+      "c0_small/b2304.yaml": "7c998be376d73c0467fd84d72694b4bf143f4281820089a73d20f7097b0a0c38",
+      "c0_small/b4096.yaml": "dfa63475e7447456daef0896e66c9a4ecb50c08333c3ca279f51454276bc0936",
+      "c0_small/initial.pth": "8984d2304d2d905ed1e48b0565dd252f03b1c17cb7ceefc233e8ea76b09fbeed",
+      "c1_wide/train.yaml": "a7746cc7f03f0a5f2ee09b81aa8094024b5ce779b22308b5002e029a965b0b54",
+      "c1_wide/b0.yaml": "ce71cfc569b26b97c4072a3fed1379b08f594cec5102cc5e00eebab75d4a80fb",
+      "c1_wide/b2048.yaml": "fa3af2fee65a31aedf3abe4929016030a66631f3fccff814d58bd022f013f54e",
+      "c1_wide/b2304.yaml": "8668897dfd6e4daa432006a8fae881ae74918444f07d33447076d2ed8e9862e9",
+      "c1_wide/b4096.yaml": "37851dcfa4029978e6ce398bf82ec32c4492f68d121ee9eed9872a8f05af6fb8",
+      "c1_wide/initial.pth": "ee23c9a54143fe3cd9073ba91ad94f3f3c19d12cc98eb986f679c93124c9adb1"
+    },
+    "numerical_policy": {
+      "cuda_matmul_tf32": false,
+      "cudnn_tf32": false
+    },
+    "dataset_hashes": {
+      "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+      "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814",
+      "data_manifest": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356"
+    },
+    "loss": "Ldet(2304)+0.5 Ldet(0); dropout .1; frozen sender/receiver/BN",
+    "initialization": "twofold channel duplication, downstream sum preservation and zero-sum 1e-3 symmetry break",
+    "no_hard_parameter_ceiling": true,
+    "priority": "AP versus actual bytes; larger models or architecture changes allowed after evidence",
+    "selection": "best full validation AP70 at 2304 bytes including inherited epoch0",
+    "gpu_memory_fraction": 0.14,
+    "training_timeout_seconds": 345600,
+    "evaluation_timeout_seconds": 28800
+  },
+  "old_wide_status": {
+    "state": "failed",
+    "error": "Traceback (most recent call last):\n  File \"/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/run_e3dsnn_capacity.py\", line 113, in coordinate\n    run('audit',[sys.executable,'-u','-m',__spec__.name,'--mode','audit','--root',str(root),'--arm',arm],1800)\n  File \"/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/run_e3dsnn_capacity.py\", line 111, in run\n    stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,check=True,start_new_session=True)\n  File \"/data1/tzm/miniconda3/envs/opencood/lib/python3.7/subprocess.py\", line 512, in run\n    output=stdout, stderr=stderr)\nsubprocess.CalledProcessError: Command '['timeout', '--kill-after=30', '1800', '/data1/tzm/miniconda3/envs/opencood/bin/python', '-u', '-m', 'opencood.tools.run_e3dsnn_capacity', '--mode', 'audit', '--root', '/data2/tzm/cp_snn_recovery_20261026/capacity2304_20261027', '--arm', 'c1_wide']' returned non-zero exit status 1.\n",
+    "automatic_retry": false
+  },
+  "old_small_interrupted": {
+    "reason": "Matched FP32 re-audit after wide initialization failed; preserve attempt",
+    "unix": 1793086403.4848082,
+    "coordinator": 4964,
+    "training_group": 5586
+  },
+  "old_small_progress": {
+    "state": "initial_validation",
+    "epoch": 0
+  },
+  "launches": {
+    "c0_small": {
+      "pid": 16804,
+      "gpu": 4,
+      "unix": 1793086638.2191591,
+      "commit": "961a3d51f3fced941906a27265af8cc66ed0203e",
+      "source_hashes": {
+        "opencood/models/e3dsnn_snapshot_capacity.py": "1e8edcff751ea567d46bad430aaeaabed6c5f2237f1316ea9e01eb1bae27b286",
+        "opencood/utils/e3dsnn_capacity.py": "05556048ca4bc5c8fe92f044c1c04d269a99a752a078a4c40d8da61e096f8f5b",
+        "opencood/tools/run_e3dsnn_capacity.py": "c6ea962c2e7f56dec948926cde28a4094e7b5116cb2ceffc72d87712eae6aac7",
+        "opencood/tools/train_e3dsnn_single.py": "fb37c80efd051954fba8911c4c133565027cb04557010dd3e4db85e44abcbe7f"
+      },
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.run_e3dsnn_capacity",
+        "--mode",
+        "coordinate",
+        "--root",
+        "/data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027",
+        "--arm",
+        "c0_small"
+      ],
+      "admission": [
+        {
+          "unix": 1793086627.7921298,
+          "gpu": 4,
+          "uuid": "GPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793086629.899791,
+          "gpu": 4,
+          "uuid": "GPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793086632.0114315,
+          "gpu": 4,
+          "uuid": "GPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793086634.0980504,
+          "gpu": 4,
+          "uuid": "GPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793086636.1992483,
+          "gpu": 4,
+          "uuid": "GPU-6be59609-4c03-0da1-f6cf-f41e0f49a33b",
+          "free_mib": 5390,
+          "utilization": 0
+        }
+      ],
+      "automatic_retry": false
+    },
+    "c1_wide": {
+      "pid": 16805,
+      "gpu": 6,
+      "unix": 1793086638.2208378,
+      "commit": "961a3d51f3fced941906a27265af8cc66ed0203e",
+      "source_hashes": {
+        "opencood/models/e3dsnn_snapshot_capacity.py": "1e8edcff751ea567d46bad430aaeaabed6c5f2237f1316ea9e01eb1bae27b286",
+        "opencood/utils/e3dsnn_capacity.py": "05556048ca4bc5c8fe92f044c1c04d269a99a752a078a4c40d8da61e096f8f5b",
+        "opencood/tools/run_e3dsnn_capacity.py": "c6ea962c2e7f56dec948926cde28a4094e7b5116cb2ceffc72d87712eae6aac7",
+        "opencood/tools/train_e3dsnn_single.py": "fb37c80efd051954fba8911c4c133565027cb04557010dd3e4db85e44abcbe7f"
+      },
+      "command": [
+        "/data1/tzm/miniconda3/envs/opencood/bin/python",
+        "-u",
+        "-m",
+        "opencood.tools.run_e3dsnn_capacity",
+        "--mode",
+        "coordinate",
+        "--root",
+        "/data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027",
+        "--arm",
+        "c1_wide"
+      ],
+      "admission": [
+        {
+          "unix": 1793086627.792158,
+          "gpu": 6,
+          "uuid": "GPU-9c30712c-80fe-75ff-b808-dfc9b591442c",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793086629.8998072,
+          "gpu": 6,
+          "uuid": "GPU-9c30712c-80fe-75ff-b808-dfc9b591442c",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793086632.0114436,
+          "gpu": 6,
+          "uuid": "GPU-9c30712c-80fe-75ff-b808-dfc9b591442c",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793086634.0980816,
+          "gpu": 6,
+          "uuid": "GPU-9c30712c-80fe-75ff-b808-dfc9b591442c",
+          "free_mib": 5390,
+          "utilization": 0
+        },
+        {
+          "unix": 1793086636.1992726,
+          "gpu": 6,
+          "uuid": "GPU-9c30712c-80fe-75ff-b808-dfc9b591442c",
+          "free_mib": 5390,
+          "utilization": 0
+        }
+      ],
+      "automatic_retry": false
+    }
+  }
+}

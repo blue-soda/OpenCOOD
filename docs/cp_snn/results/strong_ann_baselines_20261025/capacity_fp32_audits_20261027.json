@@ -1,0 +1,195 @@
+{
+  "c0_small": {
+    "audit.json": {
+      "passed": true,
+      "records": [
+        {
+          "index": 0,
+          "bytes": [
+            2294
+          ],
+          "packet_sha256": [
+            "12da88a19d7896f254e3918d393b66bfe99e3ef3de306915f852196ec45f961a"
+          ],
+          "initial_max_abs": {
+            "psm": 0,
+            "rm": 0,
+            "dm": 0
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 579,
+          "bytes": [
+            2304
+          ],
+          "packet_sha256": [
+            "73b371e64e9620c855f935fa401eb50c34081b05dbeda00514cd20d480cb1456"
+          ],
+          "initial_max_abs": {
+            "psm": 0,
+            "rm": 0,
+            "dm": 0
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 1158,
+          "bytes": [
+            2304
+          ],
+          "packet_sha256": [
+            "b53e92896b35210262ed78684185b259004258e2ff4c1628d4239ccc15dc329a"
+          ],
+          "initial_max_abs": {
+            "psm": 0,
+            "rm": 0,
+            "dm": 0
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 1737,
+          "bytes": [
+            2303
+          ],
+          "packet_sha256": [
+            "0ccd31a02021c39a411b4a25de7756754d167a77fa66a2a2b382c2390bfab5cb"
+          ],
+          "initial_max_abs": {
+            "psm": 0,
+            "rm": 0,
+            "dm": 0
+          },
+          "direct_wire_exact": true
+        }
+      ],
+      "gradients": {
+        "backbone_2d.": 431.58460350334644,
+        "cls_head.": 0.4400182142853737,
+        "reg_head.": 18.53048348426819,
+        "dir_head.": 0.12277612090110779
+      },
+      "loss": 0.9792627102776701,
+      "zero_equals_ego": true,
+      "cuda_matmul_tf32": false,
+      "cudnn_tf32": false,
+      "fixed_state_unchanged": true,
+      "peak_allocated_bytes": 477477888,
+      "all_audit_updates_discarded": true
+    },
+    "status.json": {
+      "state": "running",
+      "stage": "train",
+      "unix": 1793086685.2346156
+    },
+    "train/progress.json": {
+      "state": "initial_validation",
+      "epoch": 0
+    }
+  },
+  "c1_wide": {
+    "audit.json": {
+      "passed": true,
+      "records": [
+        {
+          "index": 0,
+          "bytes": [
+            2294
+          ],
+          "packet_sha256": [
+            "12da88a19d7896f254e3918d393b66bfe99e3ef3de306915f852196ec45f961a"
+          ],
+          "initial_max_abs": {
+            "psm": 0.00000476837158203125,
+            "rm": 0.0000030994415283203125,
+            "dm": 0.0000040531158447265625
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 579,
+          "bytes": [
+            2304
+          ],
+          "packet_sha256": [
+            "73b371e64e9620c855f935fa401eb50c34081b05dbeda00514cd20d480cb1456"
+          ],
+          "initial_max_abs": {
+            "psm": 0.000004291534423828125,
+            "rm": 0.000003337860107421875,
+            "dm": 0.000004291534423828125
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 1158,
+          "bytes": [
+            2304
+          ],
+          "packet_sha256": [
+            "b53e92896b35210262ed78684185b259004258e2ff4c1628d4239ccc15dc329a"
+          ],
+          "initial_max_abs": {
+            "psm": 0.000004291534423828125,
+            "rm": 0.000003337860107421875,
+            "dm": 0.0000057220458984375
+          },
+          "direct_wire_exact": true
+        },
+        {
+          "index": 1737,
+          "bytes": [
+            2303
+          ],
+          "packet_sha256": [
+            "0ccd31a02021c39a411b4a25de7756754d167a77fa66a2a2b382c2390bfab5cb"
+          ],
+          "initial_max_abs": {
+            "psm": 0.000003814697265625,
+            "rm": 0.0000029802322387695312,
+            "dm": 0.0000040531158447265625
+          },
+          "direct_wire_exact": true
+        }
+      ],
+      "gradients": {
+        "backbone_2d.": 731.3470858037472,
+        "cls_head.": 0.8328036665916443,
+        "reg_head.": 35.38526511192322,
+        "dir_head.": 0.2242302317172289
+      },
+      "loss": 0.9792630533708337,
+      "zero_equals_ego": true,
+      "cuda_matmul_tf32": false,
+      "cudnn_tf32": false,
+      "fixed_state_unchanged": true,
+      "peak_allocated_bytes": 584383488,
+      "all_audit_updates_discarded": true
+    },
+    "status.json": {
+      "state": "running",
+      "stage": "train",
+      "unix": 1793086685.0558805
+    },
+    "train/progress.json": {
+      "state": "initial_validation",
+      "epoch": 0
+    }
+  },
+  "multi_progress": {
+    "state": "training",
+    "epoch": 4,
+    "epochs": 10,
+    "batch": 2151,
+    "batches": 2339,
+    "loss": 1.3835771268279402,
+    "gradient_norm": 4.380458354949951,
+    "elapsed_seconds": 23956.13994441484,
+    "stream_means": {
+      "stream_budgets": 4676.790330079033,
+      "packet_bytes": 4657.732450023245,
+      "stream_events": 9267.55230125523
+    }
+  }
+}
