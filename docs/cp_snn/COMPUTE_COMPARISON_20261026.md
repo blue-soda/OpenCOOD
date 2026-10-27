@@ -187,3 +187,17 @@ AP/通信来自原1738帧完整评估；时间为共同64帧×3轮，每个边�
 当前状态入口为multi248k_resume_epoch2_01/status.json和train_resume.log，原train.log保持失败日志，不能再将旧日志当作运行进度。SNN固定Native实验按上轮退出规则关闭，不继续调试替代主线；本轮无新SNN验证AP，不恢复方案三，不追加训练参数扫描。
 
 证据：[完成摘要](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/compute64_infocom_rng02/summary.json)、[合并统计和资源快照](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/infocom_compute_complete_audit.json)、[恢复协议](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/multi248k_resume_epoch2_01/protocol.json)、[原训练失败](results/strong_ann_baselines_20261025/heartbeat_20261026_1713/multi248k_resume_epoch2_01/before_resume/train/status.json)。原始日志/全部测量和恢复脚本同目录归档。回传SHA=25d821945d5a516e534ea66597b0bc000357be7262fc6acd67278e12916aa57f。
+
+## 2026-10-27：三种实际复现模型的参数量核对
+
+统一按实例化模型的 sum(p.numel() for p in model.parameters()) 统计，包含冻结参数、不含BN运行统计等buffer，不是本轮可训练参数数，也不是checkpoint文件大小。单个共享权重模型统计一次，不按参与车辆数重复相加。来源为已实际评估、严格加载权重的实例记录。
+
+| 模型 | 总参数量 | 百万参数M | 相对方案二 |
+|---|---:|---:|---:|
+| 当前方案二（SNN编码/脉冲消息＋ANN检测后端） | 3,120,631 | 3.121 | 1.00× |
+| CoSDH官方复现配置 | 8,932,150 | 8.932 | 2.86× |
+| InfoCom当前复现配置（官方兼容/低率适配同结构） | 119,853,951 | 119.854 | 38.41× |
+
+方案二当前联合微调可训练参数为2,122,645，不能拿该数与其他方法总参数量比较。InfoCom的ib_communication模块占106,952,427参数，其余模块合计12,901,524；大参数量主要来自通信模块。此表反映当前完整实例化架构，未按推理路径裁剪未使用分支，不能直接当作最小部署参数量或归因于SNN激活本身。参数量优势可陈述，但不等于FLOPs、延迟或能耗优势，也不能抵消已观察到的AP差距。
+
+证据：[实际实例记录的参数计数与来源SHA](results/strong_ann_baselines_20261025/parameter_comparison_20261027.json)。

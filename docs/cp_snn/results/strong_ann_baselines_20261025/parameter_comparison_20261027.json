@@ -1,0 +1,40 @@
+{
+  "infocom": {
+    "total_parameters": 119853951,
+    "source": "/data2/tzm/cp_snn_recovery_20261026/compute64_infocom_rng02/infocom_adapt1pct_repeat0/metadata.json",
+    "source_sha256": "d9aade980bf565d72304f34eb104edc9a723f7a7279e8ae1dc9c445125a4c03a",
+    "checkpoint_sha256": "653ef3e3fdb10464a51882fbb8c12df2d477195306e6ceea4620d8a5b846f05a",
+    "count_definition": "sum(p.numel() for p in model.parameters()); includes frozen parameters, excludes buffers",
+    "parameters_by_top_module": {
+      "ib_communication": 106952427,
+      "pillar_vfe": 768,
+      "scatter": 0,
+      "backbone": 11420544,
+      "fusion_net": 0,
+      "shrink_conv": 1475072,
+      "cls_head": 514,
+      "reg_head": 3598,
+      "dir_head": 1028
+    },
+    "relative_to_scheme2": 38.406960323088505
+  },
+  "cosdh": {
+    "total_parameters": 8932150,
+    "source": "/data2/tzm/cp_snn_recovery_20261026/compute64_suite01/cosdh_reference_repeat0/provenance.json",
+    "source_sha256": "7bdd0c22a9d9994862daa9eaf2885890dfdcf137acf8a4c39087c11c18905c2a",
+    "checkpoint_sha256": "df4a06be9d0f170de60e686afdf691b3ab115e1f5185b571885fb21caf4354cf",
+    "count_definition": "sum(p.numel() for p in model.parameters()); includes frozen parameters, excludes buffers",
+    "parameters_by_top_module": null,
+    "relative_to_scheme2": 2.8622897099977536
+  },
+  "scheme2": {
+    "total_parameters": 3120631,
+    "source": "/data2/tzm/cp_snn_recovery_20261026/scheme2_compute_smoke01/compute_protocol.json",
+    "source_sha256": "0651bea78a5b02ac9082e9753743bffecbe9712c0a0ae47fa85fddee65c65799",
+    "checkpoint_sha256": "0add747f31daf1c34315621990ef1b9424e2606f2cb60fa23cc3f396bf9e6f9e",
+    "count_definition": "sum(p.numel() for p in model.parameters()); includes frozen parameters, excludes buffers",
+    "parameters_by_top_module": null,
+    "relative_to_scheme2": 1.0,
+    "adaptation_trainable_parameters": 2122645
+  }
+}
