@@ -1,0 +1,119 @@
+{
+  "observed_unix": 1793124738.4386907,
+  "scope": "Training validation; final wire and CPU replay pending",
+  "arms": {
+    "c0_small": {
+      "metrics": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 29966,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7747849333824253,
+          "0.5": 0.7243523136339648,
+          "0.7": 0.5901485771909016
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2302.5310701956273,
+          "median_bytes": 2303,
+          "min_bytes": 2289,
+          "max_bytes": 2304,
+          "p95_bytes": 2304,
+          "total_bytes": 4001799,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 6,
+        "train_loss": 0.913053613204362,
+        "train_samples": 4678,
+        "seconds": 4883.829717381857,
+        "train_loss_components": {
+          "fused_detection_loss": 0.5863161386219004,
+          "ego_detection_loss": 0.6534749491649194
+        },
+        "train_stream_means": {
+          "stream_budgets": 2304,
+          "packet_bytes": 2302.4410004275333,
+          "stream_events": 3087.021162890124
+        }
+      },
+      "fixed_state": {
+        "initial_sha256": "9fc353dffe7810641087d6afcfb294624837c9c984561b59184ec6b5972e74a6",
+        "current_sha256": "9fc353dffe7810641087d6afcfb294624837c9c984561b59184ec6b5972e74a6",
+        "verified_through_epoch": 6,
+        "passed": true
+      },
+      "progress": {
+        "state": "validating",
+        "epoch": 7
+      },
+      "best_epoch": 6
+    },
+    "c1_wide": {
+      "metrics": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 29323,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7725929807132654,
+          "0.5": 0.7239527180466538,
+          "0.7": 0.590793517008737
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2302.5310701956273,
+          "median_bytes": 2303,
+          "min_bytes": 2289,
+          "max_bytes": 2304,
+          "p95_bytes": 2304,
+          "total_bytes": 4001799,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 6,
+        "train_loss": 0.92206264912243,
+        "train_samples": 4678,
+        "seconds": 4895.354992718203,
+        "train_loss_components": {
+          "fused_detection_loss": 0.5919439519792684,
+          "ego_detection_loss": 0.6602373942863267
+        },
+        "train_stream_means": {
+          "stream_budgets": 2304,
+          "packet_bytes": 2302.4410004275333,
+          "stream_events": 3087.021162890124
+        }
+      },
+      "fixed_state": {
+        "initial_sha256": "1f71afc8c9c62254cd9082d6601594987c8e167173438226263fd93db99f4f15",
+        "current_sha256": "1f71afc8c9c62254cd9082d6601594987c8e167173438226263fd93db99f4f15",
+        "verified_through_epoch": 6,
+        "passed": true
+      },
+      "progress": {
+        "state": "validating",
+        "epoch": 7
+      },
+      "best_epoch": 6
+    }
+  },
+  "multi_progress": {
+    "state": "training",
+    "epoch": 6,
+    "epochs": 10,
+    "batch": 551,
+    "batches": 2339,
+    "loss": 0.7962780773183717,
+    "gradient_norm": 2.6629204750061035,
+    "elapsed_seconds": 6393.700898183044,
+    "stream_means": {
+      "stream_budgets": 4872.827586206897,
+      "packet_bytes": 4848.665154264972,
+      "stream_events": 9583.50453720508
+    }
+  }
+}
