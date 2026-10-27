@@ -1,6 +1,8 @@
 # 研究总目标与阶段退出规则（2026-10-18）
 
-2026-10-27 16:25容量训练数据加载阻塞修复：首次FP32训练进程并未推进，停在epoch0首批数据前约40分钟；两个父进程CPU累计约17秒、连续检查I/O不变，不能称正常验证。独立workers=2加载探针复现等待，原TMPDIR生成Unix socket路径111字节，直接绑定报AF_UNIX path too long；相同加载探针只改短TMPDIR，6.216秒成功得到首批。已终止两组自身进程组（无训练更新、无last.pt），完整运行证据归档各自ipc_stall01，未触碰multi248k或他人任务。
+2026-10-27短TMPDIR恢复已生效：两组再次通过全部GPU审计并启动初始验证，coordinator PID35111/35237，训练进程35489/35533，仍为GPU4/6；launch_queue.json为both_launched。已出现真实模型forward日志，父进程CPU累计47/34秒且I/O计数增长，区别于修复前40分钟只累计17秒且I/O不变的阻塞。尚未完成epoch0验证，尚无新AP，不提前称完成训练。下一次检查两臂train/progress.json、initial_metrics.json及后续每轮best，继续原十轮和最终四预算；原multi组第4轮验证中。证据：[短路径重启记录](results/strong_ann_baselines_20261025/capacity_shortipc_relaunch_20261027.json)。
+
+2026-10-27容量训练数据加载阻塞修复：首次FP32训练进程并未推进，停在epoch0首批数据前约40分钟；两个父进程CPU累计约17秒、连续检查I/O不变，不能称正常验证。独立workers=2加载探针复现等待，原TMPDIR生成Unix socket路径111字节，直接绑定报AF_UNIX path too long；相同加载探针只改短TMPDIR，6.216秒成功得到首批。已终止两组自身进程组（无训练更新、无last.pt），完整运行证据归档各自ipc_stall01，未触碰multi248k或他人任务。
 
 修复仅把临时目录改为/data2/tzm/capipc27/c0_small、c1_wide，并在正式启动前真实绑定socket验证路径。配置/初始化SHA、模型、batch2、workers2、种子、损失、10轮、FP32及原审计容差不变；重新跑GPU审计后再进入初始验证。资源波动时每60秒检查，最多等6小时，每臂仍需连续5次空余5000MiB且利用率不超过20%；只等待资源，不重复失败的模型执行。新启动器PID34455，状态capacity2304_fp32_20261027/launch_queue.json，日志capacity2304_shortipc_queue.log；训练状态优先看两臂status.json和train/progress.json，队列文件在两臂全启动前可能保留上一条等待记录，不据其孤立推断训练是否启动。
 
