@@ -1582,5 +1582,203 @@
       "status": "COMPLETED",
       "timing_valid": true
     }
+  },
+  {
+    "epoch": 24,
+    "loss": 0.20172640911168305,
+    "lr": 5e-05,
+    "stale": 1,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Y-only spatial state plus frozen GRU FM. Ordinary inference bypasses H/D/deblocks/mature readout. Dense small updater, NOT local execution. Hook-calibrated whole-path Conv MACx2. Model timing excludes first10 warmup scans/IO/H2D/postprocess; shared timing null.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 19.619319514481912,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": null,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 28.479904285632074,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        },
+        "y_full": {
+          "ap50": 0.8332770078200933,
+          "ap70": 0.7567910702899006,
+          "conv_linear_gflops": 216.2184192,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 27.168267810555243,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 52012800.0,
+          "p95_ms": 29.0846049785614,
+          "readout_full_frames": 5794,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "whole_path_full_frames": 5794
+        },
+        "y_only": {
+          "ap50": 0.8168322718694816,
+          "ap70": 0.6924145497049984,
+          "conv_linear_gflops": 103.97151580697273,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 15.245966125572071,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 52012800.0,
+          "p95_ms": 27.88781481795013,
+          "readout_full_frames": 2005,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "whole_path_full_frames": 2005
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
+  },
+  {
+    "epoch": 25,
+    "loss": 0.20031835792631447,
+    "lr": 5e-05,
+    "stale": 0,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Y-only spatial state plus frozen GRU FM. Ordinary inference bypasses H/D/deblocks/mature readout. Dense small updater, NOT local execution. Hook-calibrated whole-path Conv MACx2. Model timing excludes first10 warmup scans/IO/H2D/postprocess; shared timing null.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 19.614657715370655,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": null,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 28.522632969543338,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        },
+        "y_full": {
+          "ap50": 0.8332770078200933,
+          "ap70": 0.7567910702899006,
+          "conv_linear_gflops": 216.2184192,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 27.183775068920898,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 52012800.0,
+          "p95_ms": 29.110680718440562,
+          "readout_full_frames": 5794,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "whole_path_full_frames": 5794
+        },
+        "y_only": {
+          "ap50": 0.8173225226864056,
+          "ap70": 0.6932038423920828,
+          "conv_linear_gflops": 103.97151580697273,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 15.259170212543326,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 52012800.0,
+          "p95_ms": 27.88993825670331,
+          "readout_full_frames": 2005,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "whole_path_full_frames": 2005
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
+  },
+  {
+    "epoch": 26,
+    "loss": 0.19900219724408005,
+    "lr": 5e-05,
+    "stale": 0,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Y-only spatial state plus frozen GRU FM. Ordinary inference bypasses H/D/deblocks/mature readout. Dense small updater, NOT local execution. Hook-calibrated whole-path Conv MACx2. Model timing excludes first10 warmup scans/IO/H2D/postprocess; shared timing null.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 19.557200053807883,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": null,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 28.552618518006057,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        },
+        "y_full": {
+          "ap50": 0.8332770078200933,
+          "ap70": 0.7567910702899006,
+          "conv_linear_gflops": 216.2184192,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 27.180668183252664,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 52012800.0,
+          "p95_ms": 29.09434597240761,
+          "readout_full_frames": 5794,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "whole_path_full_frames": 5794
+        },
+        "y_only": {
+          "ap50": 0.8174173758406711,
+          "ap70": 0.6948833903965308,
+          "conv_linear_gflops": 103.97151580697273,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 15.228645966380556,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 52012800.0,
+          "p95_ms": 27.905420656315982,
+          "readout_full_frames": 2005,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "whole_path_full_frames": 2005
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
   }
 ]
