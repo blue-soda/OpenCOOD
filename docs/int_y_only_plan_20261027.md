@@ -3,20 +3,20 @@
 2026-10-27用户确认：保留[H/D/Y验证架构](int_hdy_reference_20261027.md)，快速推进简化版。目标是将感知时序复用集中到检测头前完整Y，减少多层依赖、对齐和缓存管理；先恢复整图短更新精度，再执行变化区域重算。
 
 <!-- Y_ONLY_CURRENT_BEGIN -->
-## 当前状态（2026-10-28 03:56）
+## 当前状态（2026-10-28 04:23）
 
 | 方案 | 最近完成轮次 | 最佳AP70 | 序列计算量 | lr / stale | 当前运行 |
 |---|---:|---:|---:|---|---|
 | 逐帧完整刷新参照 | 固定冻结权重 | 75.67910703% | 216.21842G | — | 每轮复现 |
-| Y-only宽64 | 32 | 70.49275075%（e32） | 100.25688G | 5e-5 / 0 | resume3，GPU1/PID42709，最多36轮 |
-| Y-only宽96 | 32 | 70.33379131%（e31） | 103.97152G | 2.5e-5 / 1 | resume3，GPU3/PID42795，最多36轮 |
+| Y-only宽64 | 33 | 70.52325443%（e33） | 100.25688G | 5e-5 / 1 | resume3，e34验证，GPU1 |
+| Y-only宽96 | 33 | 70.33379131%（e31） | 103.97152G | 1.25e-5 / 2 | resume3，e34验证，GPU3 |
 
-32轮报告均为budget_not_convergence。宽64最后一轮再升0.07179个百分点，宽96 e32为70.29655146%，单轮轻微下降不满足stale4规则。两组仍距完整刷新参照5.19/5.35个百分点，不能替代HDY。利用原空闲GPU各追加最多4轮至36，从epoch32 latest完整恢复优化器/scheduler/history；宽96恢复e32最新状态，绝不将e31 best与e32优化器拼接。继续原平台判据，不把预算到期称为收敛，也不新增宽度扫描。两条resume.json均确认next_epoch=33，实际已进入e33训练600扫描，损失有限。
+此前32轮报告均为budget_not_convergence，已完整恢复至e33。宽64 e33比e32增0.03050个百分点，虽刷新绝对best，但未达到0.05个百分点显著改善门槛，stale=1；宽96 e33为70.32129053%，未超过e31 best，stale=2，调度器已将lr降至1.25e-5。两组均未满足stale4平台规则，继续既定最多36轮，不自动追加宽度或更长预算。最新精度仍明显低于完整刷新75.6791%，不能替代保留HDY。
 
 主线已转为[读出前Z缓存与可训练读出](int_z_cache_plan_20261028.md)。本次保留Y对照只需原GPU1/3，不影响Z或其他账号进程。两条e32完整恢复点及best、Z两条早期恢复点已打包备份到146：18,288,510字节，SHA da074ae5ceed0f60dd74e438735185b8b84f6c3c1f772a3ecd2bf9fc385ae63f，来源/中转/目的地一致。当前30分钟检查覆盖Z早期结果和Y有限续训终点。
 
-- [宽64截至32轮完整曲线](int_spike_results/cache_repair_20261017/y_only_w64_p3_resume2_v1_20261027_history.json)
-- [宽96截至32轮完整曲线](int_spike_results/cache_repair_20261017/y_only_w96_p3_resume2_v1_20261027_history.json)
+- [宽64完整续训曲线](int_spike_results/cache_repair_20261017/y_only_w64_p3_resume3_v1_20261028_history.json)
+- [宽96完整续训曲线](int_spike_results/cache_repair_20261017/y_only_w96_p3_resume3_v1_20261028_history.json)
 - [四条恢复点备份清单](int_spike_results/cache_repair_20261017/yz_cache_backup_20261028_0355.json)
 - [早晚期诊断配对核验](int_spike_results/cache_repair_20261017/y_only_e4_e13_diagnostic_comparison_20261027.json)
 
