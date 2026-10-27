@@ -1,0 +1,172 @@
+{
+  "small_b0_replay": {
+    "passed": true,
+    "samples": 1738,
+    "gt_boxes": 28622,
+    "full_split": true,
+    "common_gt_sha256": "77657e251057b5323a97b4b8f0820ec2e1dfa3b4b745e87c6f13902816a904ba",
+    "ap": {
+      "0.3": 0.7203503321023151,
+      "0.5": 0.6793094294147386,
+      "0.7": 0.5774917021406938
+    },
+    "ap_3d": {
+      "0.3": 0.7069201356130365,
+      "0.5": 0.6333773483280163,
+      "0.7": 0.40681392813716655
+    },
+    "original_ap": {
+      "0.3": 0.7203503321023151,
+      "0.5": 0.6793094294147386,
+      "0.7": 0.5774917021406938
+    },
+    "original_ap_3d": {
+      "0.3": 0.7069201356130365,
+      "0.5": 0.6333773483280163,
+      "0.7": 0.40681392813716655
+    },
+    "feature_packets": {
+      "count": 1738,
+      "mean_bytes": 0,
+      "median_bytes": 0,
+      "min_bytes": 0,
+      "max_bytes": 0,
+      "p95_bytes": 0,
+      "total_bytes": 0,
+      "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+    },
+    "prediction_index_sha256": "fca3da2c82d89d924d2ada7b2c51bc8a5405596377be29b733ba77f2f50dbec3",
+    "packet_index_sha256": "33e889b887bef672edfb80c3d5b4a0d9f5ea8f968c440e5f6a91521d87d6a801",
+    "reference_manifest_sha256": "91231936a1a6c03bd74f22026e46f8982c7d807d010895a82e822d3be9abfd92",
+    "reference": "/data2/tzm/cp_snn_recovery_20261026/ann_evidence",
+    "unchanged_predictions": true,
+    "all_prediction_and_packet_hashes_verified": true
+  },
+  "full_replay_sha256": "0740371018c15c7a15b7c230f884ba42427d8348c886aa6ad228ccaf452ac97a",
+  "gt_permutation_only_frames": 32,
+  "launcher_log": "c0_small 4213\nc1_wide 4306\nold_fixed2k_cpu 4308\n",
+  "arms": {
+    "c0_small": {
+      "status.json": {
+        "state": "running",
+        "stage": "b0_common_replay",
+        "unix": 1793142014.4174984
+      },
+      "common_finalizer_launch.json": {
+        "pid": 4213,
+        "gpu": 4,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.run_e3dsnn_capacity",
+          "--mode",
+          "finalize-common",
+          "--root",
+          "/data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027",
+          "--arm",
+          "c0_small",
+          "--common-gt-reference",
+          "/data2/tzm/cp_snn_recovery_20261026/ann_evidence"
+        ],
+        "admission": [
+          {
+            "unix": 1793141996.8617194,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793141998.919627,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793142000.978293,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793142003.0450537,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793142005.1042714,
+            "free_mib": 24252,
+            "util": 0
+          }
+        ],
+        "unix": 1793142007.1091576,
+        "commit": "c028d38ab85842fdea8176ca533ee3f66838ff6f"
+      },
+      "common_finalization_contract.json": {
+        "checkpoint_sha256": "4db321de01abc06abd839e86071ae49abf08c00f23d80ccad67b8b691f771443",
+        "protocol_sha256": "2a77b759d3c90be54566401f5152770af47b868d4396370a034a0c06fa5d708e",
+        "reference": "/data2/tzm/cp_snn_recovery_20261026/ann_evidence",
+        "selection": "Retain originally selected native-GT epoch; no reselection",
+        "common_gt_sha256": "77657e251057b5323a97b4b8f0820ec2e1dfa3b4b745e87c6f13902816a904ba"
+      }
+    },
+    "c1_wide": {
+      "status.json": {
+        "state": "running",
+        "stage": "b0_common_replay",
+        "unix": 1793142024.830809
+      },
+      "common_finalizer_launch.json": {
+        "pid": 4306,
+        "gpu": 6,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.run_e3dsnn_capacity",
+          "--mode",
+          "finalize-common",
+          "--root",
+          "/data2/tzm/cp_snn_recovery_20261026/capacity2304_fp32_20261027",
+          "--arm",
+          "c1_wide",
+          "--common-gt-reference",
+          "/data2/tzm/cp_snn_recovery_20261026/ann_evidence"
+        ],
+        "admission": [
+          {
+            "unix": 1793142007.1725845,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793142009.2120645,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793142011.2775667,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793142013.3360362,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793142015.3764231,
+            "free_mib": 24252,
+            "util": 0
+          }
+        ],
+        "unix": 1793142017.3820305,
+        "commit": "c028d38ab85842fdea8176ca533ee3f66838ff6f"
+      },
+      "common_finalization_contract.json": {
+        "checkpoint_sha256": "4a8be093b769240822bf84d22d24bcd328ebae5120dca0954e2ddeb373fbf093",
+        "protocol_sha256": "2a77b759d3c90be54566401f5152770af47b868d4396370a034a0c06fa5d708e",
+        "reference": "/data2/tzm/cp_snn_recovery_20261026/ann_evidence",
+        "selection": "Retain originally selected native-GT epoch; no reselection",
+        "common_gt_sha256": "77657e251057b5323a97b4b8f0820ec2e1dfa3b4b745e87c6f13902816a904ba"
+      }
+    }
+  }
+}

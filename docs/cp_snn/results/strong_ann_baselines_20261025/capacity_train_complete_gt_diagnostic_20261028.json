@@ -1,0 +1,211 @@
+{
+  "observed_unix": 1793141453.6780283,
+  "scope": "Ten epochs complete; native validation and failed legacy GT gate preserved; common CPU GT finalization pending",
+  "arms": {
+    "c0_small": {
+      "epoch10": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 28966,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7682169712823967,
+          "0.5": 0.7206586785566018,
+          "0.7": 0.5881229888297277
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2302.5310701956273,
+          "median_bytes": 2303,
+          "min_bytes": 2289,
+          "max_bytes": 2304,
+          "p95_bytes": 2304,
+          "total_bytes": 4001799,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 10,
+        "train_loss": 0.9327171646493285,
+        "train_samples": 4678,
+        "seconds": 4860.381905555958,
+        "train_loss_components": {
+          "fused_detection_loss": 0.5994339472763334,
+          "ego_detection_loss": 0.6665664347459908
+        },
+        "train_stream_means": {
+          "stream_budgets": 2304,
+          "packet_bytes": 2302.4046601111586,
+          "stream_events": 3087.0010688328343
+        }
+      },
+      "best": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 29966,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7747849333824253,
+          "0.5": 0.7243523136339648,
+          "0.7": 0.5901485771909016
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2302.5310701956273,
+          "median_bytes": 2303,
+          "min_bytes": 2289,
+          "max_bytes": 2304,
+          "p95_bytes": 2304,
+          "total_bytes": 4001799,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 6,
+        "train_loss": 0.913053613204362,
+        "train_samples": 4678,
+        "seconds": 4883.829717381857,
+        "train_loss_components": {
+          "fused_detection_loss": 0.5863161386219004,
+          "ego_detection_loss": 0.6534749491649194
+        },
+        "train_stream_means": {
+          "stream_budgets": 2304,
+          "packet_bytes": 2302.4410004275333,
+          "stream_events": 3087.021162890124
+        }
+      },
+      "fixed_state": {
+        "initial_sha256": "9fc353dffe7810641087d6afcfb294624837c9c984561b59184ec6b5972e74a6",
+        "current_sha256": "9fc353dffe7810641087d6afcfb294624837c9c984561b59184ec6b5972e74a6",
+        "verified_through_epoch": 10,
+        "passed": true
+      },
+      "train_status": {
+        "state": "complete",
+        "mode": "train",
+        "finished_unix": 1793140290.2846155
+      },
+      "legacy_finalizer_failure": {
+        "state": "failed",
+        "error": "Traceback (most recent call last):\n  File \"/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/run_e3dsnn_capacity.py\", line 127, in coordinate\n    result[name]=verify_budget(folder,budget)\n  File \"/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/supervise_e3dsnn_snapshot_eval.py\", line 44, in verify_budget\n    result = evaluation(out)\n  File \"/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/launch_e3dsnn_hybrid_round.py\", line 79, in evaluation\n    assert digest.hexdigest() == '54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee'\nAssertionError\n",
+        "automatic_retry": false
+      }
+    },
+    "c1_wide": {
+      "epoch10": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 28968,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7687431174121364,
+          "0.5": 0.7210722666649547,
+          "0.7": 0.5894842056662907
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2302.5310701956273,
+          "median_bytes": 2303,
+          "min_bytes": 2289,
+          "max_bytes": 2304,
+          "p95_bytes": 2304,
+          "total_bytes": 4001799,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 10,
+        "train_loss": 0.9300321273653976,
+        "train_samples": 4678,
+        "seconds": 4894.864631279139,
+        "train_loss_components": {
+          "fused_detection_loss": 0.5974862872848886,
+          "ego_detection_loss": 0.6650916801610189
+        },
+        "train_stream_means": {
+          "stream_budgets": 2304,
+          "packet_bytes": 2302.4046601111586,
+          "stream_events": 3087.0010688328343
+        }
+      },
+      "best": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 29323,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7725929807132654,
+          "0.5": 0.7239527180466538,
+          "0.7": 0.590793517008737
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2302.5310701956273,
+          "median_bytes": 2303,
+          "min_bytes": 2289,
+          "max_bytes": 2304,
+          "p95_bytes": 2304,
+          "total_bytes": 4001799,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 6,
+        "train_loss": 0.92206264912243,
+        "train_samples": 4678,
+        "seconds": 4895.354992718203,
+        "train_loss_components": {
+          "fused_detection_loss": 0.5919439519792684,
+          "ego_detection_loss": 0.6602373942863267
+        },
+        "train_stream_means": {
+          "stream_budgets": 2304,
+          "packet_bytes": 2302.4410004275333,
+          "stream_events": 3087.021162890124
+        }
+      },
+      "fixed_state": {
+        "initial_sha256": "1f71afc8c9c62254cd9082d6601594987c8e167173438226263fd93db99f4f15",
+        "current_sha256": "1f71afc8c9c62254cd9082d6601594987c8e167173438226263fd93db99f4f15",
+        "verified_through_epoch": 10,
+        "passed": true
+      },
+      "train_status": {
+        "state": "complete",
+        "mode": "train",
+        "finished_unix": 1793140628.578502
+      },
+      "legacy_finalizer_failure": {
+        "state": "failed",
+        "error": "Traceback (most recent call last):\n  File \"/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/run_e3dsnn_capacity.py\", line 127, in coordinate\n    result[name]=verify_budget(folder,budget)\n  File \"/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/supervise_e3dsnn_snapshot_eval.py\", line 44, in verify_budget\n    result = evaluation(out)\n  File \"/data2/tzm/cp_snn_recovery_20261026/OpenCOOD/opencood/tools/launch_e3dsnn_hybrid_round.py\", line 79, in evaluation\n    assert digest.hexdigest() == '54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee'\nAssertionError\n",
+        "automatic_retry": false
+      }
+    }
+  },
+  "gt_diagnostic": {
+    "legacy_ordered_sha256": "54be972f1d9a41bcbf41b8dc234f35db81a7c43ef5ca6958768a7bda27f980ee",
+    "new_native_ordered_sha256": "68ee250fd733f281d2ce542f5efe51b580838b535c08e18eac241cfdb511c9f1",
+    "strong_ann_cpu_ordered_sha256": "77657e251057b5323a97b4b8f0820ec2e1dfa3b4b745e87c6f13902816a904ba",
+    "new_vs_ann": {
+      "order_only_frames": 32,
+      "geometry_mismatch_frames": 0,
+      "max_matched_xyz_m": 0
+    },
+    "old_fixed2k_vs_ann": {
+      "order_only_frames": 29,
+      "geometry_mismatch_frames": 1668,
+      "max_matched_xyz_m": 0.03125
+    },
+    "gpu_toggle_probe": {
+      "indices": [
+        0,
+        579
+      ],
+      "tf32_true_equals_legacy": true,
+      "tf32_false_equals_new": true,
+      "all_max_abs_errors": 0
+    },
+    "selection": "Original native-GT best epoch6 retained in both arms; no posthoc reselection"
+  }
+}

@@ -127,3 +127,19 @@ CPU构造和权重审计已完成：C0总参数3,120,631；C1总参数6,556,919�
 
 
 2026-10-28 05:16核查：容量组第9轮AP70小/大模型=58.79302%/58.90491%，C1-C0=+0.11190个百分点；平均通信均2302.531B，最大2304B，共同1738帧/28622 GT，冻结状态检查通过。当前小模型第10/10轮训练251/2339批，大模型第10/10轮训练1/2339批；最佳检查点轮次分别为6/6。原multi组第6/10轮训练1501/2339批。仍无可确认的容量收益或强ANN优势，继续原十轮及最终四预算真实包/CPU AP复核，不临时修改主对照。总目标为通信—AP逼近强ANN，参数无硬上限；90分钟检查、健康无变化静默。证据：[第9轮指标](results/strong_ann_baselines_20261025/capacity_epoch9_20261027.json)。
+
+
+## 训练完成及共同GT复核修复（2026-10-28）
+
+2026-10-28容量两臂10轮训练完成，冻结状态检查通过第10轮，原预登记native-GT最佳均为第6轮：小/大AP70=59.01486%/59.07935%，仅+0.06449个百分点，未达到首轮0.5pp容量效应门槛，更未接近强ANN低率62.87639%。第10轮为58.81230%/58.94842%。暂不追加宽度搜索或宣布最终容量结论，先完成0/2048/2304/4096B全量共同GT复核。
+
+最终b0 GPU推理和原GT CPU AP重放均已完成，但旧评估器固定GT哈希门失败，两臂自动停止且保留失败。查明旧SNN GPU/TF32的GT角点与强ANN固定CPU GT在1668帧存在几何数值差，匹配后最大0.03125m；新容量组关闭TF32后，GT几何与强ANN CPU GT逐值一致，仅32帧框次序不同。真实帧0/579只切换torch.backends.cuda.matmul.allow_tf32，True分别逐值重现旧GT、False逐值重现新GT，差均0，支持精度设置为原因，非数据集变更。旧ordered GT摘要54be972f…，新native摘要68ee250f…，强ANN固定CPU摘要77657e25…；不替换旧断言、不把近似匹配当通过。
+
+修复方式：保留原prediction NPZ、GT、evaluation.json、offline_replay.json、checkpoint与失败记录，新增common_gt_evaluation.json，使用InfoCom/CoSDH相同的固定CPU GT重新算BEV与3D AP。逐帧验证原预测/真实包SHA、身份、bytes预算及固定GT文件SHA，固定完整GT摘要77657e251057b5323a97b4b8f0820ec2e1dfa3b4b745e87c6f13902816a904ba。旧fixed2k关键2KiB点也重算以修正历史横向口径；后续multi最终结果同样需要此步骤。保留native-GT选定的第6轮，不根据共同GT后验重选；训练内AP作为原口径历史，跨方法比较改用固定CPU GT复核。
+
+新重放器首次调用3D累积接口参数数目错误，已显式修复并归档common_replay_api_failure01，未产生有效共同GT结果、未改变预测或放宽检查。模型/GPU推理代码不变，代码c028d38已main推送并经bundle SHA核验部署181。当前先以小模型b0全1738帧CPU重算验证修复，再恢复余下预算；单预算8小时、CPU重放1小时、失败停止保持。暂无新增可报告通信—AP优势，性能计时不据共享GPU单次profile声称公平计算优势。证据：[训练完成与GT诊断](results/strong_ann_baselines_20261025/capacity_train_complete_gt_diagnostic_20261028.json)。
+
+
+共同GT恢复已通过全量CPU验证：小模型b0的1738帧预测/空消息逐包SHA、身份、28622固定GT及摘要全部通过，BEV AP30/50/70=72.03503%/67.93094%/57.74917%，与native-GT AP一致；32帧GT次序差未影响本工作点AP。未改任何预测或原始评估文件。修复接口后的两臂finalizer PID4213/4306运行，旧fixed2k 2KiB CPU复算PID4308运行，根目录与检查点不变。两臂当前b0_common_replay阶段，随后按原协议执行2048/2304/4096B并逐帧复核。仅小模型零通信共同GT结果已验证，不把训练内最佳59.015%/59.079%称为全部最终复核完成。
+
+重要口径修正：此前“历史SNN与强ANN共同GT完全一致”的描述不成立（旧SNN GPU TF32角点存在数值差），原指标完整保留并注明legacy GT；强ANN固定CPU GT及其AP不变。主要跨方法表待关键SNN点的共同CPU GT复算后更新，不能把旧AP直接混入新表。已训练两臂仍保留原native-GT选模的第6轮，明确披露选择口径，不后验改选轮次。代码c028d38、原失败、3D调用修复失败及全量通过证据均保留。下一轮优先查两臂status.json、summary_common_gt.json和fixed2k的common_gt_evaluation.json；这批评估完成后再决定是否转SNN编码/消息表征优化，不继续盲扫BEV宽度。证据：[全量CPU通过与恢复启动](results/strong_ann_baselines_20261025/capacity_common_gt_recovery_launch_20261028.json)。
