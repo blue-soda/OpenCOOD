@@ -1,0 +1,6 @@
+{
+  "next_action": "train",
+  "next_epoch": 33,
+  "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/y_only_w64_p3_resume2_v1_20261027/latest.pth",
+  "sha256": "94567a56a66fdc3ab3728f94a5f1f99f437944cc280defedc5bb83b5e6327c3e"
+}

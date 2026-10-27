@@ -1,0 +1,13 @@
+{
+  "cost_scope": "Actual Conv/ConvTranspose hooks, same established MACx2 convention; excludes nonconv arithmetic and Pillar pointwise Linear as in existing baseline.",
+  "frames": 32,
+  "full_conv_macs": 108109209600,
+  "full_vs_native_prediction_max_error": 7.62939453125e-06,
+  "gradient_only_updater": true,
+  "only_fm_and_y_persist": true,
+  "ordinary_conv_macs": 19447142400,
+  "ordinary_frames": 21,
+  "ordinary_h_d_readout_calls": 0,
+  "status": "PASSED",
+  "teacher_on_off_exact": true
+}
