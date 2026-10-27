@@ -45,7 +45,7 @@ def replay(folder,reference,budget):
             differences.append(dict(frame_id=fid,max_matched_xyz=float(cost[ii,jj].max()) if len(gt) else 0.))
         for t in stat:
             eval_utils.caluclate_tp_fp(torch.from_numpy(boxes),torch.from_numpy(scores),torch.from_numpy(gt),stat,t)
-            eval_3d_utils.calculate_tp_fp_3d(torch.from_numpy(boxes),torch.from_numpy(scores),torch.from_numpy(gt),stat3,t)
+        eval_3d_utils.calculate_tp_fp_3d(torch.from_numpy(boxes),torch.from_numpy(scores),torch.from_numpy(gt),stat3)
         total_gt+=len(gt);comm.append(dict(frame_id=fid,bytes=size))
     assert digest.hexdigest()==GT_SHA and total_gt==28622
     assert sum(x['bytes'] for x in comm)==e['feature_packets']['total_bytes']
