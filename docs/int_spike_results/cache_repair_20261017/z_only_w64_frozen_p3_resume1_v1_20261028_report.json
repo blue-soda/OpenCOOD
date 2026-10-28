@@ -1,0 +1,11 @@
+{
+  "best": {
+    "ap70": 0.7436034700697026,
+    "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/z_only_w64_frozen_p3_resume1_v1_20261028/epoch_022/updater.pth",
+    "epoch": 22,
+    "sha256": "b47d17d061d4f431978a55c2657fc34edd78aba75afacd33d10c1fc7c25df0b1"
+  },
+  "epochs": 24,
+  "status": "COMPLETED",
+  "stop_reason": "budget_not_convergence"
+}

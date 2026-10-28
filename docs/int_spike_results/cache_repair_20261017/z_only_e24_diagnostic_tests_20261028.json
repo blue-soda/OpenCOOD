@@ -1,0 +1,14 @@
+{
+  "joint": {
+    "tests": 256,
+    "seconds": 9.407,
+    "status": "PASSED",
+    "log_sha256": "ef98fbb863099954f5bbf90c90ab2914409acf7f768c02c9abce4234aa9a3eab"
+  },
+  "frozen": {
+    "tests": 256,
+    "seconds": 9.156,
+    "status": "PASSED",
+    "log_sha256": "cd7b40183785c3a59ea6eee85312ba81d0db5aae8856828d069f5a7416c0ddac"
+  }
+}

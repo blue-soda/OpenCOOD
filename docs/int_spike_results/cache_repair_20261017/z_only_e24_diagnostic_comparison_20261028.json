@@ -1,0 +1,58 @@
+{
+  "status": "COMPLETED",
+  "same_epoch": 24,
+  "same_fixed_prefix_scans": 512,
+  "target_energies_and_counts_exact": true,
+  "teacher_warp_metrics_exact": true,
+  "rows": [
+    {
+      "arm": "joint",
+      "age": 1,
+      "z_recursive": 0.525677510770021,
+      "z_teacher_history": 0.525677510770021,
+      "z_warp": 0.7532070439181257,
+      "y_fixed": 0.3010749630130877,
+      "y_adapted": 0.3129295721203397,
+      "reader_full_drift": 0.18669594277034063,
+      "history_intervention_relative_improvement": 0.0,
+      "update_vs_warp_relative_improvement": 0.30208099484109086
+    },
+    {
+      "arm": "joint",
+      "age": 2,
+      "z_recursive": 0.5499606770819638,
+      "z_teacher_history": 0.5244778475135619,
+      "z_warp": 0.7256801680279831,
+      "y_fixed": 0.358297683537956,
+      "y_adapted": 0.35228645762153243,
+      "reader_full_drift": 0.1874709852256791,
+      "history_intervention_relative_improvement": 0.04633573022640691,
+      "update_vs_warp_relative_improvement": 0.2421445406500944
+    },
+    {
+      "arm": "frozen",
+      "age": 1,
+      "z_recursive": 0.5183517670297882,
+      "z_teacher_history": 0.5183517670297882,
+      "z_warp": 0.7532070439181257,
+      "y_fixed": 0.28231937517728406,
+      "y_adapted": 0.28231937517728406,
+      "reader_full_drift": 0.0,
+      "history_intervention_relative_improvement": 0.0,
+      "update_vs_warp_relative_improvement": 0.3118070639204835
+    },
+    {
+      "arm": "frozen",
+      "age": 2,
+      "z_recursive": 0.5411556635272496,
+      "z_teacher_history": 0.5169469034132252,
+      "z_warp": 0.7229140472207528,
+      "y_fixed": 0.33362981606590725,
+      "y_adapted": 0.33362981606590725,
+      "reader_full_drift": 0.0,
+      "history_intervention_relative_improvement": 0.044735298446720195,
+      "update_vs_warp_relative_improvement": 0.2514246118086574
+    }
+  ],
+  "note": "Foreground relative RMSE on training prefix; not AP or proof of architecture capacity limits."
+}
