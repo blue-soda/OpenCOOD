@@ -47,7 +47,11 @@ def prepare(root, config, checkpoint):
         model = E3dsnnSnapshotFrontend(args)
         missing, extra = model.load_state_dict(source, strict=False)
         new = {k for k in model.state_dict() if k not in source}
-        assert set(missing) == new and not extra
+        # Torch 1.10 BN loading synthesizes legacy num_batches_tracked buffers
+        # and omits them from missing_keys; no learned tensor may be omitted.
+        auto_counters = {k for k in new if k.endswith('.num_batches_tracked')}
+        assert set(missing) == new - auto_counters and not extra
+        assert all(model.state_dict()[k].item() == 0 for k in auto_counters)
         assert all(k.startswith(tuple('backbone_3d.conv%d.blocks.%d.' % (s, i)
                          for s in (3, 4) for i in (2, 3))) for k in new)
         assert bool(new) == bool(depth)
