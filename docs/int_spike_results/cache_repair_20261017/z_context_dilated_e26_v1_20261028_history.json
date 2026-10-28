@@ -138,5 +138,215 @@
       "status": "COMPLETED",
       "timing_valid": true
     }
+  },
+  {
+    "epoch": 2,
+    "loss": 0.3264177050188791,
+    "lrs": [
+      2.5e-05
+    ],
+    "stale": 0,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Signed Z before mature spatial reader; ordinary H/D/projections skipped, reader dense every frame. Independent teacher and histories. Joint readout has fixed BN statistics. No local execution yet; Conv MACsx2; shared timing null.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 19.808575052522926,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": null,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 28.521643776912242,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        },
+        "z_full_fixed": {
+          "ap50": 0.8332770078200933,
+          "ap70": 0.7567910702899006,
+          "conv_linear_gflops": 216.2184192,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 27.215556579184387,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 35884800.0,
+          "p95_ms": 29.0903533459641,
+          "reader_dense_frames": 5794,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "z_full_frames": 5794
+        },
+        "z_only": {
+          "ap50": 0.8209245555711486,
+          "ap70": 0.7126694329378328,
+          "conv_linear_gflops": 114.97197812247153,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 16.806375975635245,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 35884800.0,
+          "p95_ms": 27.977990277577188,
+          "reader_dense_frames": 5794,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "z_full_frames": 2005
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
+  },
+  {
+    "epoch": 3,
+    "loss": 0.3154881448146265,
+    "lrs": [
+      2.5e-05
+    ],
+    "stale": 0,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Signed Z before mature spatial reader; ordinary H/D/projections skipped, reader dense every frame. Independent teacher and histories. Joint readout has fixed BN statistics. No local execution yet; Conv MACsx2; shared timing null.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 19.788041962120673,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": null,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 28.58323680702597,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        },
+        "z_full_fixed": {
+          "ap50": 0.8332770078200933,
+          "ap70": 0.7567910702899006,
+          "conv_linear_gflops": 216.2184192,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 27.212227881711524,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 35884800.0,
+          "p95_ms": 29.068751004524525,
+          "reader_dense_frames": 5794,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "z_full_frames": 5794
+        },
+        "z_only": {
+          "ap50": 0.822047637567779,
+          "ap70": 0.7206342356084108,
+          "conv_linear_gflops": 114.97197812247153,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 16.787110821261518,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 35884800.0,
+          "p95_ms": 27.99529448384419,
+          "reader_dense_frames": 5794,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "z_full_frames": 2005
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
+  },
+  {
+    "epoch": 4,
+    "loss": 0.3088328877934859,
+    "lrs": [
+      2.5e-05
+    ],
+    "stale": 0,
+    "updates": 2855,
+    "validation": {
+      "labels": 1738,
+      "note": "Signed Z before mature spatial reader; ordinary H/D/projections skipped, reader dense every frame. Independent teacher and histories. Joint readout has fixed BN statistics. No local execution yet; Conv MACsx2; shared timing null.",
+      "results": {
+        "baseline": {
+          "ap50": 0.8327608934021072,
+          "ap70": 0.7553159775482435,
+          "conv_linear_gflops": 119.43160285006559,
+          "deep_full_frames": 2005,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 19.792697733880974,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": null,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 50500800.0,
+          "p95_ms": 28.48692142870277,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0
+        },
+        "z_full_fixed": {
+          "ap50": 0.8332770078200933,
+          "ap70": 0.7567910702899006,
+          "conv_linear_gflops": 216.2184192,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 27.216843044852908,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 35884800.0,
+          "p95_ms": 29.123425495345145,
+          "reader_dense_frames": 5794,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "z_full_frames": 5794
+        },
+        "z_only": {
+          "ap50": 0.8232158206007567,
+          "ap70": 0.7255328867906791,
+          "conv_linear_gflops": 114.97197812247153,
+          "deep_full_frames": null,
+          "mean_deep_write_fraction": null,
+          "mean_ms": 16.786068697103502,
+          "mean_readout_executed_fraction": null,
+          "mean_readout_write_fraction": 1.0,
+          "mean_short_update_macs_ratio": null,
+          "mean_state_bytes": 35884800.0,
+          "p95_ms": 27.952786616515368,
+          "reader_dense_frames": 5794,
+          "readout_full_frames": null,
+          "readout_geometry_bytes": 0,
+          "readout_packed_weight_bytes": 0,
+          "z_full_frames": 2005
+        }
+      },
+      "scans": 5794,
+      "status": "COMPLETED",
+      "timing_valid": true
+    }
   }
 ]
