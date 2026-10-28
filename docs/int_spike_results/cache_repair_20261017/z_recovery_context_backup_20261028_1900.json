@@ -1,0 +1,54 @@
+{
+  "path": "/tmp/int_z_recovery_context_20261028_1900.tar.gz",
+  "bytes": 9824568,
+  "sha256": "8644ce475ce451c6a42bf2db06bd7073286921bea05ab863731f6d82b5f376d3",
+  "members": {
+    "z_joint_e33_fixed_recovery_v1_20261028/latest.pth": {
+      "bytes": 3036062,
+      "sha256": "da0bc79380ce166bb38cba1974a3fd80707350354995af58e57a5fe5b14852d2"
+    },
+    "z_joint_e33_fixed_recovery_v1_20261028/best.json": {
+      "bytes": 266,
+      "sha256": "df14d25eb2affc78554f8d7fdea0af8f8f6db1942c81e6996021a1fa1ba8f148"
+    },
+    "z_joint_e33_fixed_recovery_v1_20261028/z_only_contract.json": {
+      "bytes": 4309,
+      "sha256": "a301c79f4f99b89fa8ab29fe676c1fc7d83b538939d75b889c316b51591602fe"
+    },
+    "z_joint_e33_fixed_recovery_v1_20261028/epoch_003/updater.pth": {
+      "bytes": 2268250,
+      "sha256": "ce6420f3e4b477d3994c0632fb6a20ff20ad62a6879f5680584c9124fed186a2"
+    },
+    "z_context_dilated_e26_resume1_v1_20261028/latest.pth": {
+      "bytes": 3043614,
+      "sha256": "4a8ab862a13d7340f84decb9ac8b1469f8940a27b96ab7eaf727c046113621fa"
+    },
+    "z_context_dilated_e26_resume1_v1_20261028/best.json": {
+      "bytes": 270,
+      "sha256": "0bff74489fe6aca34a242b3a3a806e14b3902007b7e12406892f2871e826d1e2"
+    },
+    "z_context_dilated_e26_resume1_v1_20261028/z_only_contract.json": {
+      "bytes": 4222,
+      "sha256": "a1c23994f63e07510330cf4a46fb6df91d26d5538ba0304b409225b16eca6960"
+    },
+    "z_context_dilated_e26_resume1_v1_20261028/epoch_015/updater.pth": {
+      "bytes": 2268186,
+      "sha256": "29bc7293871dc57125582ed95a58b9e471ec2bc5316504abfba293012da2ea84"
+    }
+  },
+  "checkpoints": {
+    "z_joint_e33_fixed_recovery_v1_20261028": {
+      "epoch": 4,
+      "next_action": "train",
+      "stale": 3
+    },
+    "z_context_dilated_e26_resume1_v1_20261028": {
+      "epoch": 15,
+      "next_action": "train",
+      "stale": 0
+    }
+  },
+  "destination_verified": true,
+  "destination": "mindspore-146:/data1/zhh/gzc/int181_snapshot/live_backups/int_z_recovery_context_20261028_1900.tar.gz",
+  "verification": "Source, local intermediary and destination SHA256 identical; checked 2026-10-28 19:05 +08:00."
+}
