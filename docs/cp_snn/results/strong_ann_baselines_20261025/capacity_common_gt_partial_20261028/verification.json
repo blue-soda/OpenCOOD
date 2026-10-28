@@ -1,0 +1,246 @@
+{
+  "scope": "Seven completed workpoints; 4096B still running, not a complete sweep",
+  "archive_sha256": "e7467e0c955995b8b53e9c1ea553887b4d379eeab0e30f3a1b928619a6a56129",
+  "verification_scope": "Local metadata/index/byte consistency; raw prediction and packet files remain on server and were fully SHA verified there",
+  "points": {
+    "c0_small/b0": {
+      "ap": {
+        "0.3": 0.7203503321023151,
+        "0.5": 0.6793094294147386,
+        "0.7": 0.5774917021406938
+      },
+      "ap_3d": {
+        "0.3": 0.7069201356130365,
+        "0.5": 0.6333773483280163,
+        "0.7": 0.40681392813716655
+      },
+      "original_ap": {
+        "0.3": 0.7203503321023151,
+        "0.5": 0.6793094294147386,
+        "0.7": 0.5774917021406938
+      },
+      "feature_packets": {
+        "count": 1738,
+        "mean_bytes": 0.0,
+        "median_bytes": 0.0,
+        "min_bytes": 0,
+        "max_bytes": 0,
+        "p95_bytes": 0.0,
+        "total_bytes": 0,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "checkpoint_sha256": "4db321de01abc06abd839e86071ae49abf08c00f23d80ccad67b8b691f771443",
+      "report_sha256": "0740371018c15c7a15b7c230f884ba42427d8348c886aa6ad228ccaf452ac97a",
+      "local_checks_passed": true
+    },
+    "c0_small/b2048": {
+      "ap": {
+        "0.3": 0.7714725860608962,
+        "0.5": 0.7216882350331689,
+        "0.7": 0.5907658259732633
+      },
+      "ap_3d": {
+        "0.3": 0.7566056085225091,
+        "0.5": 0.6619024024968545,
+        "0.7": 0.406263452350814
+      },
+      "original_ap": {
+        "0.3": 0.7714725860608962,
+        "0.5": 0.7216882350331689,
+        "0.7": 0.5907658259732633
+      },
+      "feature_packets": {
+        "count": 1738,
+        "mean_bytes": 2046.886075949367,
+        "median_bytes": 2047.0,
+        "min_bytes": 2041,
+        "max_bytes": 2048,
+        "p95_bytes": 2048.0,
+        "total_bytes": 3557488,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "checkpoint_sha256": "4db321de01abc06abd839e86071ae49abf08c00f23d80ccad67b8b691f771443",
+      "report_sha256": "ffe13521953e4c71b0d00f9ee97808764011e2d5ff9c7432fd6c0974b1524ee1",
+      "local_checks_passed": true
+    },
+    "c0_small/b2304": {
+      "ap": {
+        "0.3": 0.7747849333824253,
+        "0.5": 0.7243523136339648,
+        "0.7": 0.5901485771909016
+      },
+      "ap_3d": {
+        "0.3": 0.7591694353941943,
+        "0.5": 0.6644126804043274,
+        "0.7": 0.40468427592365314
+      },
+      "original_ap": {
+        "0.3": 0.7747849333824253,
+        "0.5": 0.7243523136339648,
+        "0.7": 0.5901485771909016
+      },
+      "feature_packets": {
+        "count": 1738,
+        "mean_bytes": 2302.5310701956273,
+        "median_bytes": 2303.0,
+        "min_bytes": 2289,
+        "max_bytes": 2304,
+        "p95_bytes": 2304.0,
+        "total_bytes": 4001799,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "checkpoint_sha256": "4db321de01abc06abd839e86071ae49abf08c00f23d80ccad67b8b691f771443",
+      "report_sha256": "2dd53b92a7fbd067fa8c270a84e7fc03a8f02fd388c14feddb086405f5f380d0",
+      "local_checks_passed": true
+    },
+    "c1_wide/b0": {
+      "ap": {
+        "0.3": 0.7174607469573537,
+        "0.5": 0.6780330491390714,
+        "0.7": 0.5763930773431699
+      },
+      "ap_3d": {
+        "0.3": 0.704147407695846,
+        "0.5": 0.6322233788117617,
+        "0.7": 0.4074705270366906
+      },
+      "original_ap": {
+        "0.3": 0.7174607469573537,
+        "0.5": 0.6780330491390714,
+        "0.7": 0.5763930773431699
+      },
+      "feature_packets": {
+        "count": 1738,
+        "mean_bytes": 0.0,
+        "median_bytes": 0.0,
+        "min_bytes": 0,
+        "max_bytes": 0,
+        "p95_bytes": 0.0,
+        "total_bytes": 0,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "checkpoint_sha256": "4a8be093b769240822bf84d22d24bcd328ebae5120dca0954e2ddeb373fbf093",
+      "report_sha256": "9aceb45f38c75dc697afd880ce83860ee20be6ef1b2fced64997e36a4ee59e09",
+      "local_checks_passed": true
+    },
+    "c1_wide/b2048": {
+      "ap": {
+        "0.3": 0.7691246280151035,
+        "0.5": 0.7202606197725832,
+        "0.7": 0.5902275273392774
+      },
+      "ap_3d": {
+        "0.3": 0.7546275002712386,
+        "0.5": 0.6610412908936785,
+        "0.7": 0.4075232106506097
+      },
+      "original_ap": {
+        "0.3": 0.7691246280151035,
+        "0.5": 0.7202606197725832,
+        "0.7": 0.5902275273392774
+      },
+      "feature_packets": {
+        "count": 1738,
+        "mean_bytes": 2046.885500575374,
+        "median_bytes": 2047.0,
+        "min_bytes": 2041,
+        "max_bytes": 2048,
+        "p95_bytes": 2048.0,
+        "total_bytes": 3557487,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "checkpoint_sha256": "4a8be093b769240822bf84d22d24bcd328ebae5120dca0954e2ddeb373fbf093",
+      "report_sha256": "059c49958f39acc45528a3f7f4d364a3ef773a7b23e15f2089aad0a7898ca4d1",
+      "local_checks_passed": true
+    },
+    "c1_wide/b2304": {
+      "ap": {
+        "0.3": 0.7725929807132654,
+        "0.5": 0.7239527180466538,
+        "0.7": 0.590793517008737
+      },
+      "ap_3d": {
+        "0.3": 0.7577020216772904,
+        "0.5": 0.6633704637402741,
+        "0.7": 0.40608644247616454
+      },
+      "original_ap": {
+        "0.3": 0.7725929807132654,
+        "0.5": 0.7239527180466538,
+        "0.7": 0.590793517008737
+      },
+      "feature_packets": {
+        "count": 1738,
+        "mean_bytes": 2302.5310701956273,
+        "median_bytes": 2303.0,
+        "min_bytes": 2289,
+        "max_bytes": 2304,
+        "p95_bytes": 2304.0,
+        "total_bytes": 4001799,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "checkpoint_sha256": "4a8be093b769240822bf84d22d24bcd328ebae5120dca0954e2ddeb373fbf093",
+      "report_sha256": "f8d452b8fde43bd8666cfcb9f975719f1d8d6d6b131c62c205281d25dcacdc5a",
+      "local_checks_passed": true
+    },
+    "old_fixed2k/b2048": {
+      "ap": {
+        "0.3": 0.772077589665298,
+        "0.5": 0.7215847111054516,
+        "0.7": 0.5891632785924981
+      },
+      "ap_3d": {
+        "0.3": 0.7571105437806755,
+        "0.5": 0.6614424758364101,
+        "0.7": 0.4053270937042664
+      },
+      "original_ap": {
+        "0.3": 0.7719168358760412,
+        "0.5": 0.7213966768772077,
+        "0.7": 0.5885365413004336
+      },
+      "feature_packets": {
+        "count": 1738,
+        "mean_bytes": 2046.885500575374,
+        "median_bytes": 2047.0,
+        "min_bytes": 2041,
+        "max_bytes": 2048,
+        "p95_bytes": 2048.0,
+        "total_bytes": 3557487,
+        "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+      },
+      "checkpoint_sha256": "0add747f31daf1c34315621990ef1b9424e2606f2cb60fa23cc3f396bf9e6f9e",
+      "report_sha256": "3d6bb91a1d52f0dbb8cbb8d28da326a17889344855750fa3e6b59c488b9fb00d",
+      "local_checks_passed": true
+    }
+  },
+  "packet_comparison": {
+    "b0_different_frames": 0,
+    "b2304_different_frames": 0,
+    "b2048_different_frames": 3,
+    "b2048_examples": [
+      {
+        "frame_id": "004276",
+        "bytes": [
+          2046,
+          2047
+        ]
+      },
+      {
+        "frame_id": "011557",
+        "bytes": [
+          2048,
+          2047
+        ]
+      },
+      {
+        "frame_id": "019037",
+        "bytes": [
+          2046,
+          2045
+        ]
+      }
+    ],
+    "note": "Do not claim bit-identical messages at every budget; primary 2304B messages are identical."
+  }
+}
