@@ -115,6 +115,27 @@ class TestZDiagnosis(unittest.TestCase):
 
 
 class TestZContext(unittest.TestCase):
+    def test_channel_gate_preserves_warm_function_and_can_separate_channels(self):
+        torch.manual_seed(31)
+        plain=ZOnlyUpdater(4);channel=ZOnlyUpdater(4,gate_mode='channel')
+        with torch.no_grad():plain.gate.weight.normal_(0,.1);plain.gate.bias.fill_(.5)
+        channel.load_warm_weights(plain.state_dict())
+        e=torch.randn(1,128,7,9);old=torch.randn(1,96,7,9)
+        valid=torch.ones(1,1,7,9,dtype=torch.bool);valid[:,:,:,0]=False
+        reference=plain(e,old,valid);baseline=channel(e,old,valid)
+        self.assertTrue(torch.allclose(reference,baseline,atol=1e-6,rtol=1e-6))
+        self.assertEqual(sum(p.numel() for p in channel.parameters())-sum(p.numel() for p in plain.parameters()),95*5)
+        with torch.no_grad():channel.gate.bias[0].add_(2.)
+        changed=channel(e,old,valid)
+        self.assertFalse(torch.equal(changed[:,:1,:,1:],baseline[:,:1,:,1:]))
+        self.assertTrue(torch.equal(changed[:,1:],baseline[:,1:]))
+        self.assertTrue(torch.equal(changed[:,:,:,0],baseline[:,:,:,0]))
+        changed.square().mean().backward()
+        self.assertTrue(all(p.grad is not None and torch.isfinite(p.grad).all() for p in channel.parameters()))
+        clone=ZOnlyUpdater(4,gate_mode='channel');clone.load_state_dict(channel.state_dict(),strict=True)
+        self.assertTrue(torch.equal(changed,clone(e,old,valid)))
+        with self.assertRaises(ValueError):ZOnlyUpdater(gate_mode='bad')
+
     def test_equal_parameters_with_larger_bounded_neighborhood(self):
         plain=ZOnlyUpdater(4);wide=ZOnlyUpdater(4,'dilated')
         with torch.no_grad():

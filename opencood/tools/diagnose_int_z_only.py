@@ -34,17 +34,17 @@ def diagnose(a,cfg,train,baseline,out,source):
     contract=saved['contract']
     assert contract['kind']=='z_only_spatial_v1' and contract['period']==3
     assert contract['source']=={k:source[k] for k in ('source','memory','readout','repair','basis','data')}
-    updater=ZOnlyUpdater(width=contract['width'],context=contract.get('context','plain')).cuda().eval()
+    updater=ZOnlyUpdater(width=contract['width'],context=contract.get('context','plain'),gate_mode=contract.get('gate_mode','spatial')).cuda().eval()
     updater.load_state_dict(saved['updater'],strict=True)
     for p in updater.parameters():p.requires_grad_(False)
     reader=make_reader(baseline.readout,False).cuda().eval()
     reader.load_state_dict(saved['reader'],strict=True)
     mode=ZOnlyDetector(baseline,updater,reader,3)
     write_json(out/'diagnostic_contract.json',dict(checkpoint=str(path),sha256=digest(path),epoch=saved['epoch'],
-        width=contract['width'],reader=contract['reader'],frames=512,split='Fixed first512 training scans; no fitting or AP selection',
+        width=contract['width'],reader=contract['reader'],gate_channels=updater.gate.out_channels,frames=512,split='Fixed first512 training scans; no fitting or AP selection',
         comparison='Same E and signed Z: own recursion, previous full teacher Z history, own/teacher warp only, signed candidate only. Cross fixed/adapted readers on the SAME own Z and complete current Z.',
         causality='Previous teacher Z is separate diagnostic buffer; never returned as student state. Current fixed teacher only a target. Full/ordinary inference and supervised replay must match exactly on every scan.',
-        metrics='Pooled feature squared error/target energy and elements by depth1/2, all/teacher-confidence>=.1 foreground/uncovered. Gate sum and cell count, not frame-weighted means. Reader Y errors use the independent fixed full-Z reader as target; crossed reader outputs are never written into state.',
+        metrics='Pooled feature squared error/target energy and elements by depth1/2, all/teacher-confidence>=.1 foreground/uncovered. Gate sum/count over selected gate entries (spatial cells times gate channels), not frame-weighted means. Reader Y errors use the independent fixed full-Z reader as target; crossed reader outputs are never written into state.',
         limits='Teacher-history and candidate-only interventions are off-policy diagnostics, not attainable AP or latency/FLOPs results. Training-prefix evidence alone cannot establish generalization or causal architectural superiority.'))
     state=None;previous_target=None;totals={};counts={};gate_totals={};refresh=0
     _,stream=loader(train[:512],cfg,4,303)
@@ -90,7 +90,7 @@ def diagnose(a,cfg,train,baseline,out,source):
                         error=readout_error(value,info['y_target'],mask)
                         total=totals.setdefault(key,{k:0. for k in error})
                         for k,v in error.items():total[k]+=v
-                    selected=torch.ones_like(valid) if mask is None else mask
+                    selected=(torch.ones_like(valid) if mask is None else mask).expand_as(gate)
                     total=gate_totals.setdefault(depth+'/'+region,dict(gate_sum=0.,cells=0))
                     total['gate_sum']+=float(gate.masked_select(selected).sum());total['cells']+=int(selected.sum())
             previous_target=dict(value=target,pose=meta['pose'],stamp=int(meta['timestamp_us']),scene=meta['segment'])

@@ -7,14 +7,25 @@ from opencood.models.sub_modules.int_anchor_residual import predict
 
 
 class ZOnlyUpdater(YOnlyUpdater):
-    def __init__(self,width=64,context='plain'):
+    def __init__(self,width=64,context='plain',gate_mode='spatial'):
         if context not in ('plain','dilated'):raise ValueError('Unknown Z context')
+        if gate_mode not in ('spatial','channel'):raise ValueError('Unknown Z gate')
         super().__init__(128,96,width)
-        self.context=context
+        self.context,self.gate_mode=context,gate_mode
+        if gate_mode=='channel':
+            self.gate=nn.Conv2d(width,96,1)
+            nn.init.zeros_(self.gate.weight);nn.init.constant_(self.gate.bias,4.)
         if context=='dilated':
             # Preserve weights/parameter count; enlarge the last hidden layer's neighborhood.
             self.features[4].dilation=(2,2)
             self.features[4].padding=(2,2)
+
+    def load_warm_weights(self,weights):
+        weights=dict(weights)
+        if self.gate_mode=='channel' and weights['gate.weight'].shape[0]==1:
+            weights['gate.weight']=weights['gate.weight'].repeat(96,1,1,1)
+            weights['gate.bias']=weights['gate.bias'].repeat(96)
+        self.load_state_dict(weights,strict=True)
 
     def forward(self,evidence,old,valid):
         hidden=self.features(torch.cat((evidence,old,valid.to(old.dtype)),1))

@@ -1,0 +1,13 @@
+{
+  "causality": "Previous teacher Z is separate diagnostic buffer; never returned as student state. Current fixed teacher only a target. Full/ordinary inference and supervised replay must match exactly on every scan.",
+  "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/z_joint_e33_fixed_recovery_v1_20261028/epoch_003/updater.pth",
+  "comparison": "Same E and signed Z: own recursion, previous full teacher Z history, own/teacher warp only, signed candidate only. Cross fixed/adapted readers on the SAME own Z and complete current Z.",
+  "epoch": 3,
+  "frames": 512,
+  "limits": "Teacher-history and candidate-only interventions are off-policy diagnostics, not attainable AP or latency/FLOPs results. Training-prefix evidence alone cannot establish generalization or causal architectural superiority.",
+  "metrics": "Pooled feature squared error/target energy and elements by depth1/2, all/teacher-confidence>=.1 foreground/uncovered. Gate sum and cell count, not frame-weighted means. Reader Y errors use the independent fixed full-Z reader as target; crossed reader outputs are never written into state.",
+  "reader": "frozen",
+  "sha256": "ce6420f3e4b477d3994c0632fb6a20ff20ad62a6879f5680584c9124fed186a2",
+  "split": "Fixed first512 training scans; no fitting or AP selection",
+  "width": 64
+}

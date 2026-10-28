@@ -1,4 +1,6 @@
 """Train signed Z recurrence with an optional trainable mature spatial reader."""
+import json
+from pathlib import Path
 import numpy as np
 import torch
 from opencood.models.sub_modules.int_z_only import ZOnlyUpdater,ZOnlyDetector,make_reader
@@ -18,7 +20,7 @@ def load_fixed_reader_start(updater,reader,fixed_reader,initial,source):
     original=initial['contract']
     assert original['kind']=='z_only_spatial_v1' and original['reader'] in ('frozen','joint')
     assert original['source']==source and original['width']==64 and original['period']==3
-    updater.load_state_dict(initial['updater'],strict=True)
+    updater.load_warm_weights(initial['updater'])
     if original['reader']=='frozen':reader.load_state_dict(initial['reader'],strict=True)
     else:reader.load_state_dict(fixed_reader.state_dict(),strict=True)
     assert all(torch.equal(v,fixed_reader.state_dict()[k]) for k,v in reader.state_dict().items())
@@ -85,6 +87,7 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
     torch.manual_seed(303)
     joint=a.z_only_reader=='joint'
     context=getattr(a,'z_only_context','plain')
+    gate_mode=getattr(a,'z_only_gate','spatial')
     init_path=getattr(a,'z_only_init',None)
     saved_resume=torch.load(a.z_only_resume,map_location='cpu') if a.z_only_resume else None
     warm=None
@@ -93,8 +96,12 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
         warm=dict(path=str(init_path),sha256=digest(init_path),epoch=initial['epoch'])
         if initial['contract']['reader']=='joint':
             warm.update(source_reader='joint',reader_initialization='fixed_mature_not_checkpoint')
+        if gate_mode=='channel':
+            assert initial['contract']['context']=='plain' and initial['contract']['reader']=='frozen'
+            with open(Path(init_path).parent/'report.json') as stream:initial_report=json.load(stream)
+            warm['initial_ap70']=initial_report['results']['z_only']['ap70']
     elif saved_resume is not None:warm=saved_resume['contract'].get('weights_only_init')
-    updater=ZOnlyUpdater(64,context).cuda().eval()
+    updater=ZOnlyUpdater(64,context,gate_mode).cuda().eval()
     reader=make_reader(baseline.readout,joint).cuda()
     fixed_reader=make_reader(baseline.readout,False).cuda()
     mode=ZOnlyDetector(baseline,updater,reader,3)
@@ -120,6 +127,11 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
             initialization='Declared checkpoint weights only; fresh optimizer/scheduler and epoch0. Exact resume retains this original initialization provenance.',
             optimizer='Fresh AdamW updater2.5e-5 wd1e-4 clip5; reader frozen. Same plateau factor.5/patience1/absolute.0005/min1e-6, stop min6/stale4/lr<=2.5e-5.')
         assert not joint and warm is not None
+    if gate_mode=='channel':
+        assert not joint and warm is not None and context=='plain'
+        contract.update(gate_mode='channel',
+            update='E128+oldZ96+valid -> unchanged width64 two3x3 candidate trunk; per-channel96 gates instead of one scalar per pixel. g=.95sigmoid*valid, same convex blend. Radius2; 6175 extra parameters and measured gate MACs; no local execution.',
+            initialization='Weights-only warm start; repeat scalar gate weights/bias across96 channels, preserve initial function within numerical tolerance. Fresh optimizer, fixed mature reader.')
     if init_path:
         load_fixed_reader_start(updater,reader,fixed_reader,initial,contract['source'])
         write_json(out/'initialization.json',dict(warm,context=context,optimizer_reset=True,epoch_reset=True))
@@ -174,8 +186,10 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
         atomic_save(dict(snapshot('evaluate'),training_summary=dict(losses=losses,updates=updates)),out/'pending_validation.pth')
         variants=dict(z_full_fixed=full,z_only=mode)
         if joint:variants['z_full_adapted']=adapted
+        expected={'z_full_fixed':.7567910702899006}
+        if epoch==0 and gate_mode=='channel':expected['z_only']=warm['initial_ap70']
         report=evaluate(a,baseline,None,cfg,val,directory,costs,spatial_macs,epoch,variants=variants,
-            expected_ap={'z_full_fixed':.7567910702899006},share_gpu=True,
+            expected_ap=expected,share_gpu=True,
             note='Signed Z before mature spatial reader; ordinary H/D/projections skipped, reader dense every frame. Independent teacher and histories. Joint readout has fixed BN statistics. No local execution yet; Conv MACsx2; shared timing null.')
         for name in variants:
             result=report['results'][name];result['z_full_frames']=result['deep_full_frames'];result['deep_full_frames']=None

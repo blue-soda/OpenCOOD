@@ -31,7 +31,7 @@ def audit_readers(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
     assert contract['source']=={k:source[k] for k in ('source','memory','readout','repair','basis','data')}
     original=json.loads((path.parent/'report.json').read_text())
     assert original['status']=='COMPLETED' and original['scans']==5794 and original['labels']==1738
-    updater=ZOnlyUpdater(contract['width'],contract.get('context','plain')).cuda().eval()
+    updater=ZOnlyUpdater(contract['width'],contract.get('context','plain'),contract.get('gate_mode','spatial')).cuda().eval()
     updater.load_state_dict(saved['updater'],strict=True)
     adapted=make_reader(baseline.readout,False).cuda();adapted.load_state_dict(saved['reader'],strict=True)
     fixed=make_reader(baseline.readout,False).cuda()
