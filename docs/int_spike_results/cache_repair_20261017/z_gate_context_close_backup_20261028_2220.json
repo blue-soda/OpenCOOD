@@ -1,0 +1,53 @@
+{
+  "path": "/tmp/int_z_gate_context_close_20261028_2220.tar.gz",
+  "bytes": 9918345,
+  "sha256": "5ec8e05cd94c20c8fb7de7b289d5462e6860fe47e6a8187a24f03702b3daddeb",
+  "members": {
+    "z_gate_channel_e3_v1_20261028/latest.pth": {
+      "bytes": 3112094,
+      "sha256": "7b1b4c758e480cc061f802e0dd15d0273319de7585f387cf6dc70965528aaa93"
+    },
+    "z_gate_channel_e3_v1_20261028/best.json": {
+      "bytes": 246,
+      "sha256": "510e45eb19ee4ecce79ea7820a4370dc95e6de0bf5b7a07d2a8e6920a4a0ca12"
+    },
+    "z_gate_channel_e3_v1_20261028/z_only_contract.json": {
+      "bytes": 4068,
+      "sha256": "c8228e3f4a322bbb5ad9889fe2fefcce03688529096579db53d3fbbe4f040db5"
+    },
+    "z_gate_channel_e3_v1_20261028/epoch_004/updater.pth": {
+      "bytes": 2293082,
+      "sha256": "47a6b1a5ce2d235885ade4c0a189fd6e5a1d35d1cc58def391d5b18202fef579"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/latest.pth": {
+      "bytes": 3050718,
+      "sha256": "685eec89a1f7c0df95e00df0fe72a793c0be2aee9ccc27e26d96f9eb68fe3f19"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/best.json": {
+      "bytes": 259,
+      "sha256": "3b3a7af0e53b710f123580712990bcfefc872479463671dbb54e71e15be50200"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/z_only_contract.json": {
+      "bytes": 3891,
+      "sha256": "e933325eebfd68766aea28090fde3eae3ea0391a2dd387a4e96422d6cb673630"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/epoch_024/updater.pth": {
+      "bytes": 2268186,
+      "sha256": "2c1cb5c1a0c76e629ef80d71e61d6b92ea802dc45b1c10bbe35329679ea06b8f"
+    }
+  },
+  "checkpoints": {
+    "z_gate_channel_e3_v1_20261028": {
+      "epoch": 7,
+      "next_action": "train",
+      "stale": 4
+    },
+    "z_context_dilated_e26_resume2_v1_20261028": {
+      "epoch": 25,
+      "next_action": "train",
+      "stale": 3
+    }
+  },
+  "destination_verified": true,
+  "destination": "mindspore-146:/data1/zhh/gzc/int181_snapshot/live_backups/int_z_gate_context_close_20261028_2220.tar.gz"
+}

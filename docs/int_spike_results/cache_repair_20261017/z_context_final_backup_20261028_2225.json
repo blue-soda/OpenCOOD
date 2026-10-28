@@ -1,0 +1,34 @@
+{
+  "path": "/tmp/int_z_context_final_20261028_2225.tar.gz",
+  "bytes": 4920509,
+  "sha256": "e8566c6a6cf78a93bec64c20e22cddecf8d5e82ded699324b4107c09e349087f",
+  "members": {
+    "z_context_dilated_e26_resume2_v1_20261028/latest.pth": {
+      "bytes": 3051294,
+      "sha256": "281f57efe1d86fd46bbc683ab0ce66c2f14c1020b8bc4366cc9f3e3f5d1e1cf4"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/best.json": {
+      "bytes": 270,
+      "sha256": "4027b9df576aac70076585e53f9743e5f9347a755f9f12689f740624be532a13"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/z_only_contract.json": {
+      "bytes": 4222,
+      "sha256": "10daafc0d0810675b0cd3b3327d2766cb10deb001c2f56275549ad89af9342bb"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/report.json": {
+      "bytes": 363,
+      "sha256": "bae7f18ff35bfc9cbfa883d0a14cc0b37076622c96f2311ddeb384c94a981bb6"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/history.json": {
+      "bytes": 68904,
+      "sha256": "abe170306ff3137ecf83b4f12aaed85aa6438526cd8043f77e0d1658d8121538"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/epoch_026/updater.pth": {
+      "bytes": 2268186,
+      "sha256": "49279c3537ab0016c63a49f475c34a906ba496181e30ed9d3d5f9dc8d0dc4ffe"
+    }
+  },
+  "destination_verified": true,
+  "destination": "mindspore-146:/data1/zhh/gzc/int181_snapshot/live_backups/int_z_context_final_20261028_2225.tar.gz",
+  "verification": "Source, local intermediary and destination SHA256 identical; final e26 latest and best checkpoint."
+}

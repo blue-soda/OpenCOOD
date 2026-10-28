@@ -1,0 +1,1 @@
+{"status": "PASSED", "epoch": 0, "next_action": "evaluate", "updater_reader_identical_to_source": true, "adapter_output_projection_zero": true, "optimizer_contains_only_three_adapter_tensors": true, "scheduler_saved": true, "adapter_parameters": 3168}

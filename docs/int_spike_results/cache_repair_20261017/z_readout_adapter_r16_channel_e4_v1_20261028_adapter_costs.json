@@ -1,0 +1,10 @@
+{
+  "with_adapter": {
+    "false": 30928665600,
+    "true": 108109209600
+  },
+  "without_adapter": {
+    "false": 30851251200,
+    "true": 108109209600
+  }
+}

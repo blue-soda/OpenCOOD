@@ -1,0 +1,9 @@
+{
+  "context": "plain",
+  "epoch": 4,
+  "epoch_reset": true,
+  "initial_ap70": 0.7500829440203655,
+  "optimizer_reset": true,
+  "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/z_gate_channel_e3_v1_20261028/epoch_004/updater.pth",
+  "sha256": "47a6b1a5ce2d235885ade4c0a189fd6e5a1d35d1cc58def391d5b18202fef579"
+}

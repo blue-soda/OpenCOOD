@@ -1,0 +1,34 @@
+{
+  "status": "COMPLETED",
+  "source_sha256": "ce6420f3e4b477d3994c0632fb6a20ff20ad62a6879f5680584c9124fed186a2",
+  "initial_ap70": 0.7494204639799356,
+  "spatial": {
+    "best": {
+      "ap70": 0.7494312349617808,
+      "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/z_gate_spatial_e3_v1_20261028/epoch_003/updater.pth",
+      "epoch": 3,
+      "sha256": "27d1a2018a7854d0b34450230de9b81a6b78ec85ffb0349f120ed17890d79c0e"
+    },
+    "epochs": 6,
+    "status": "COMPLETED",
+    "stop_reason": "plateau"
+  },
+  "channel": {
+    "best": {
+      "ap70": 0.7500829440203655,
+      "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/z_gate_channel_e3_v1_20261028/epoch_004/updater.pth",
+      "epoch": 4,
+      "sha256": "47a6b1a5ce2d235885ade4c0a189fd6e5a1d35d1cc58def391d5b18202fef579"
+    },
+    "epochs": 7,
+    "status": "COMPLETED",
+    "stop_reason": "plateau"
+  },
+  "channel_minus_spatial_best_pp": 0.0651709058584693,
+  "channel_minus_initial_pp": 0.06624800404299025,
+  "gap_to_full_fixed_pp": 0.6708126269535097,
+  "extra_parameters": 6175,
+  "extra_gflops": 0.20039193096306462,
+  "mean_state_bytes": 35884800.0,
+  "interpretation": "Small positive single-seed result; different best epochs, no statistical-significance or latency claim. Full Z reference and HDY reference remain stronger overall."
+}
