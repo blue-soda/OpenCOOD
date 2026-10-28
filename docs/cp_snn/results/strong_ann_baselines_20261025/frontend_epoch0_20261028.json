@@ -1,0 +1,112 @@
+{
+  "observed_unix": 1793168598.9288347,
+  "arms": {
+    "f0_base": {
+      "status.json": {
+        "state": "running",
+        "stage": "train",
+        "unix": 1793163901.1806002
+      },
+      "train/initial_metrics.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 30217,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7754212141339497,
+          "0.5": 0.724305582480651,
+          "0.7": 0.5888344667116696
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2302.5322209436135,
+          "median_bytes": 2303.0,
+          "min_bytes": 2289,
+          "max_bytes": 2304,
+          "p95_bytes": 2304.0,
+          "total_bytes": 4001801,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 0
+      },
+      "train/progress.json": {
+        "state": "training",
+        "epoch": 1,
+        "epochs": 10,
+        "batch": 2201,
+        "batches": 2339,
+        "loss": 0.7608896143835351,
+        "gradient_norm": 3.9759607315063477,
+        "elapsed_seconds": 3304.6119532638695,
+        "stream_means": {
+          "stream_budgets": 2304.0,
+          "packet_bytes": 2302.4563834620626,
+          "stream_events": 2988.8162199000453
+        }
+      }
+    },
+    "f1_deep": {
+      "status.json": {
+        "state": "running",
+        "stage": "train",
+        "unix": 1793163913.4972322
+      },
+      "train/initial_metrics.json": {
+        "samples": 1738,
+        "indexed_samples": 1738,
+        "full_split": true,
+        "predicted_boxes": 30217,
+        "gt_boxes": 28622,
+        "metric": "BEV AP; paired vehicle/infrastructure, cooperative world GT projected to vehicle; no injected delay",
+        "ap": {
+          "0.3": 0.7754211915852145,
+          "0.5": 0.724305573378952,
+          "0.7": 0.5888346509058513
+        },
+        "feature_packets": {
+          "count": 1738,
+          "mean_bytes": 2302.5310701956273,
+          "median_bytes": 2303.0,
+          "min_bytes": 2289,
+          "max_bytes": 2304,
+          "p95_bytes": 2304.0,
+          "total_bytes": 4001799,
+          "scope": "serialized road feature payload and metadata; excludes network framing/retransmission"
+        },
+        "epoch": 0
+      },
+      "train/progress.json": {
+        "state": "training",
+        "epoch": 1,
+        "epochs": 10,
+        "batch": 2101,
+        "batches": 2339,
+        "loss": 0.6812511970732844,
+        "gradient_norm": 6.9814453125,
+        "elapsed_seconds": 3244.0606030400377,
+        "stream_means": {
+          "stream_budgets": 2304.0,
+          "packet_bytes": 2302.4507377439313,
+          "stream_events": 2999.285340314136
+        }
+      }
+    }
+  },
+  "multi_progress": {
+    "state": "training",
+    "epoch": 7,
+    "epochs": 10,
+    "batch": 1901,
+    "batches": 2339,
+    "loss": 0.9708901506553016,
+    "gradient_norm": 6.4722700119018555,
+    "elapsed_seconds": 22149.712611129973,
+    "stream_means": {
+      "stream_budgets": 4775.793792740663,
+      "packet_bytes": 4761.008679642294,
+      "stream_events": 9480.347974750131
+    }
+  }
+}
