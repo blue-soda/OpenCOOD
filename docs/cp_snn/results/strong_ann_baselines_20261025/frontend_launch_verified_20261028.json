@@ -1,0 +1,482 @@
+{
+  "observed_unix": 1793163951.497813,
+  "root": "/data2/tzm/cp_snn_recovery_20261026/frontend2304_ready_20261028",
+  "protocol": {
+    "source_sha256": "0add747f31daf1c34315621990ef1b9424e2606f2cb60fa23cc3f396bf9e6f9e",
+    "source": "/data2/tzm/cp_snn_recovery_20261026/fixed2k_final_standby01/fixed2k/train/best_ap70.pth",
+    "source_config_sha256": "76b8584eb72ca875cc1dea8186f3a96307c0bbca6ade6701f30e9a7b353aa298",
+    "hashes": {
+      "f0_base/train.yaml": "7f1ed55d46a71f52092ff6793f64246365250dce3222c1b1c36fe272221df02f",
+      "f0_base/b0.yaml": "4ff4ceca9fdf7c29fa373eee4367ab49687d3fd9fcafec08ef2c3b06618b8613",
+      "f0_base/b2048.yaml": "b379d52186861c9184208118ed7daa31ffd8986800ea5a08af2268b89499eebb",
+      "f0_base/b2304.yaml": "19432451ab6b71a1d00cce91414575fd7f9b927081b354c47cbab6ca65b4e53b",
+      "f0_base/b4096.yaml": "2d68e7255d375395ce4f1e246bc0c10a7bd299ce637816aa022f07240856b381",
+      "f0_base/initial.pth": "8984d2304d2d905ed1e48b0565dd252f03b1c17cb7ceefc233e8ea76b09fbeed",
+      "f1_deep/train.yaml": "d9404d445904bb2ad792d4ead4a4c53b78b47c6b2796286ca25ea9c5de23a380",
+      "f1_deep/b0.yaml": "bb06ef886a43d3a352c0ec1d1523c602246922232bfe55fc7eb6d9dcf599cfae",
+      "f1_deep/b2048.yaml": "d5791c73a47a00cb3367cdd8fd4e1848eb63b07ed8b622db79aa68866a68dad2",
+      "f1_deep/b2304.yaml": "b006e054820d95a88934b85caf2ae95b76509357d5d77b8a6b33c0394f390f79",
+      "f1_deep/b4096.yaml": "7346dd37b62f8509d41c571ad23d763a54864835252bc187193ff243c4a34897",
+      "f1_deep/initial.pth": "70616f8c0f97175b2efbfe23e1fcd9c76de6bc6193479daf1efa703726d0b94c"
+    },
+    "counts": {
+      "f0_base": {
+        "total": 3120631,
+        "trainable": 3045141,
+        "additional_state_keys": []
+      },
+      "f1_deep": {
+        "total": 4449271,
+        "trainable": 4373781,
+        "additional_state_keys": [
+          "backbone_3d.conv3.blocks.2.block.1.weight",
+          "backbone_3d.conv3.blocks.2.block.2.bias",
+          "backbone_3d.conv3.blocks.2.block.2.num_batches_tracked",
+          "backbone_3d.conv3.blocks.2.block.2.running_mean",
+          "backbone_3d.conv3.blocks.2.block.2.running_var",
+          "backbone_3d.conv3.blocks.2.block.2.weight",
+          "backbone_3d.conv3.blocks.2.voxel_block.1.weight",
+          "backbone_3d.conv3.blocks.2.voxel_block.2.bias",
+          "backbone_3d.conv3.blocks.2.voxel_block.2.num_batches_tracked",
+          "backbone_3d.conv3.blocks.2.voxel_block.2.running_mean",
+          "backbone_3d.conv3.blocks.2.voxel_block.2.running_var",
+          "backbone_3d.conv3.blocks.2.voxel_block.2.weight",
+          "backbone_3d.conv3.blocks.2.voxel_block.4.weight",
+          "backbone_3d.conv3.blocks.2.voxel_block.5.bias",
+          "backbone_3d.conv3.blocks.2.voxel_block.5.num_batches_tracked",
+          "backbone_3d.conv3.blocks.2.voxel_block.5.running_mean",
+          "backbone_3d.conv3.blocks.2.voxel_block.5.running_var",
+          "backbone_3d.conv3.blocks.2.voxel_block.5.weight",
+          "backbone_3d.conv3.blocks.3.block.1.weight",
+          "backbone_3d.conv3.blocks.3.block.2.bias",
+          "backbone_3d.conv3.blocks.3.block.2.num_batches_tracked",
+          "backbone_3d.conv3.blocks.3.block.2.running_mean",
+          "backbone_3d.conv3.blocks.3.block.2.running_var",
+          "backbone_3d.conv3.blocks.3.block.2.weight",
+          "backbone_3d.conv3.blocks.3.voxel_block.1.weight",
+          "backbone_3d.conv3.blocks.3.voxel_block.2.bias",
+          "backbone_3d.conv3.blocks.3.voxel_block.2.num_batches_tracked",
+          "backbone_3d.conv3.blocks.3.voxel_block.2.running_mean",
+          "backbone_3d.conv3.blocks.3.voxel_block.2.running_var",
+          "backbone_3d.conv3.blocks.3.voxel_block.2.weight",
+          "backbone_3d.conv3.blocks.3.voxel_block.4.weight",
+          "backbone_3d.conv3.blocks.3.voxel_block.5.bias",
+          "backbone_3d.conv3.blocks.3.voxel_block.5.num_batches_tracked",
+          "backbone_3d.conv3.blocks.3.voxel_block.5.running_mean",
+          "backbone_3d.conv3.blocks.3.voxel_block.5.running_var",
+          "backbone_3d.conv3.blocks.3.voxel_block.5.weight",
+          "backbone_3d.conv4.blocks.2.block.1.weight",
+          "backbone_3d.conv4.blocks.2.block.2.bias",
+          "backbone_3d.conv4.blocks.2.block.2.num_batches_tracked",
+          "backbone_3d.conv4.blocks.2.block.2.running_mean",
+          "backbone_3d.conv4.blocks.2.block.2.running_var",
+          "backbone_3d.conv4.blocks.2.block.2.weight",
+          "backbone_3d.conv4.blocks.2.voxel_block.1.weight",
+          "backbone_3d.conv4.blocks.2.voxel_block.2.bias",
+          "backbone_3d.conv4.blocks.2.voxel_block.2.num_batches_tracked",
+          "backbone_3d.conv4.blocks.2.voxel_block.2.running_mean",
+          "backbone_3d.conv4.blocks.2.voxel_block.2.running_var",
+          "backbone_3d.conv4.blocks.2.voxel_block.2.weight",
+          "backbone_3d.conv4.blocks.2.voxel_block.4.weight",
+          "backbone_3d.conv4.blocks.2.voxel_block.5.bias",
+          "backbone_3d.conv4.blocks.2.voxel_block.5.num_batches_tracked",
+          "backbone_3d.conv4.blocks.2.voxel_block.5.running_mean",
+          "backbone_3d.conv4.blocks.2.voxel_block.5.running_var",
+          "backbone_3d.conv4.blocks.2.voxel_block.5.weight",
+          "backbone_3d.conv4.blocks.3.block.1.weight",
+          "backbone_3d.conv4.blocks.3.block.2.bias",
+          "backbone_3d.conv4.blocks.3.block.2.num_batches_tracked",
+          "backbone_3d.conv4.blocks.3.block.2.running_mean",
+          "backbone_3d.conv4.blocks.3.block.2.running_var",
+          "backbone_3d.conv4.blocks.3.block.2.weight",
+          "backbone_3d.conv4.blocks.3.voxel_block.1.weight",
+          "backbone_3d.conv4.blocks.3.voxel_block.2.bias",
+          "backbone_3d.conv4.blocks.3.voxel_block.2.num_batches_tracked",
+          "backbone_3d.conv4.blocks.3.voxel_block.2.running_mean",
+          "backbone_3d.conv4.blocks.3.voxel_block.2.running_var",
+          "backbone_3d.conv4.blocks.3.voxel_block.2.weight",
+          "backbone_3d.conv4.blocks.3.voxel_block.4.weight",
+          "backbone_3d.conv4.blocks.3.voxel_block.5.bias",
+          "backbone_3d.conv4.blocks.3.voxel_block.5.num_batches_tracked",
+          "backbone_3d.conv4.blocks.3.voxel_block.5.running_mean",
+          "backbone_3d.conv4.blocks.3.voxel_block.5.running_var",
+          "backbone_3d.conv4.blocks.3.voxel_block.5.weight"
+        ]
+      }
+    },
+    "seed": 20260929,
+    "dataset_hashes": {
+      "root_dir": "805f09b1bd0b80cde81aa3e01983afa21f7796712db7c534ed0335c7842438aa",
+      "validate_dir": "f6805e26aec6af0f994395ad8c74105e65c88770bc7261bd7e995e30d47e2814",
+      "data_manifest": "091aaedd7a75d2c517b658f192e33c44900c10fb3cc763a8ee8e6192b7de5356"
+    },
+    "primary_budget": 2304,
+    "final_budgets": [
+      0,
+      2048,
+      2304,
+      4096
+    ],
+    "epochs": 10,
+    "loss": "Ldet(2304)+0.5 Ldet(0); dropout .1; all 3D trainable, BN statistics frozen",
+    "numerical_policy": {
+      "cuda_matmul_tf32": false,
+      "cudnn_tf32": false
+    },
+    "selection": "full 2304B AP70 including epoch0; common CPU GT final replay",
+    "training_timeout_seconds": 345600,
+    "evaluation_timeout_seconds": 28800,
+    "gpu_memory_fraction": 0.25,
+    "initialization": "identity residual branches via zero final BN affine",
+    "no_hard_parameter_ceiling": true
+  },
+  "arms": {
+    "f0_base": {
+      "audit.json": {
+        "passed": true,
+        "records": [
+          {
+            "index": 0,
+            "bytes": 2294,
+            "max_abs": {
+              "psm": 0.0,
+              "rm": 0.0,
+              "dm": 0.0
+            },
+            "decoded_content_equal": true,
+            "compressed_payload_equal": true,
+            "direct_wire_exact": true,
+            "packet_sha256": "12da88a19d7896f254e3918d393b66bfe99e3ef3de306915f852196ec45f961a",
+            "reference_packet_sha256": "12da88a19d7896f254e3918d393b66bfe99e3ef3de306915f852196ec45f961a"
+          },
+          {
+            "index": 579,
+            "bytes": 2304,
+            "max_abs": {
+              "psm": 0.0,
+              "rm": 0.0,
+              "dm": 0.0
+            },
+            "decoded_content_equal": true,
+            "compressed_payload_equal": true,
+            "direct_wire_exact": true,
+            "packet_sha256": "73b371e64e9620c855f935fa401eb50c34081b05dbeda00514cd20d480cb1456",
+            "reference_packet_sha256": "73b371e64e9620c855f935fa401eb50c34081b05dbeda00514cd20d480cb1456"
+          },
+          {
+            "index": 1158,
+            "bytes": 2304,
+            "max_abs": {
+              "psm": 0.0,
+              "rm": 0.0,
+              "dm": 0.0
+            },
+            "decoded_content_equal": true,
+            "compressed_payload_equal": true,
+            "direct_wire_exact": true,
+            "packet_sha256": "b53e92896b35210262ed78684185b259004258e2ff4c1628d4239ccc15dc329a",
+            "reference_packet_sha256": "b53e92896b35210262ed78684185b259004258e2ff4c1628d4239ccc15dc329a"
+          },
+          {
+            "index": 1737,
+            "bytes": 2303,
+            "max_abs": {
+              "psm": 0.0,
+              "rm": 0.0,
+              "dm": 0.0
+            },
+            "decoded_content_equal": true,
+            "compressed_payload_equal": true,
+            "direct_wire_exact": true,
+            "packet_sha256": "0ccd31a02021c39a411b4a25de7756754d167a77fa66a2a2b382c2390bfab5cb",
+            "reference_packet_sha256": "0ccd31a02021c39a411b4a25de7756754d167a77fa66a2a2b382c2390bfab5cb"
+          }
+        ],
+        "gradient_steps": [
+          {
+            "loss": 0.9792627102776701,
+            "gradients": {
+              "backbone_3d.conv_input.": 3.2644302248954773,
+              "backbone_3d.conv1.": 2.139666724950075,
+              "backbone_3d.conv2.": 12.468474560882896,
+              "backbone_3d.conv3.": 90.51754003018141,
+              "backbone_3d.conv4.": 45.78226266708225,
+              "backbone_3d.conv_out.": 18.057983338832855,
+              "content.project.": 0.7650564312934875,
+              "content.expand.": 1.0418291091918945,
+              "joint_receiver.": 1.2882506400346756,
+              "backbone_2d.": 431.5846035629511,
+              "cls_head.": 0.4400182142853737,
+              "reg_head.": 18.53048348426819,
+              "dir_head.": 0.12277612090110779
+            }
+          },
+          {
+            "loss": 0.9387841113507964,
+            "gradients": {
+              "backbone_3d.conv_input.": 2.5199327701702714,
+              "backbone_3d.conv1.": 1.7418409874662757,
+              "backbone_3d.conv2.": 10.512035840656608,
+              "backbone_3d.conv3.": 77.45487073808908,
+              "backbone_3d.conv4.": 41.79238254390657,
+              "backbone_3d.conv_out.": 16.23954752087593,
+              "content.project.": 0.6058816909790039,
+              "content.expand.": 0.7689933776855469,
+              "joint_receiver.": 0.9234829768538475,
+              "backbone_2d.": 393.34272312000394,
+              "cls_head.": 0.4088280461728573,
+              "reg_head.": 17.414698243141174,
+              "dir_head.": 0.12323045171797276
+            }
+          }
+        ],
+        "zero_equals_ego": true,
+        "frozen_state_unchanged": true,
+        "optimizer_coverage": true,
+        "peak_allocated_bytes": 1670089728,
+        "all_audit_updates_discarded": true
+      },
+      "status.json": {
+        "state": "running",
+        "stage": "train",
+        "unix": 1793163901.1806002
+      },
+      "frontend_coordinator_launch.json": {
+        "pid": 29791,
+        "gpu": 4,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.run_e3dsnn_frontend",
+          "--mode",
+          "coordinate",
+          "--root",
+          "/data2/tzm/cp_snn_recovery_20261026/frontend2304_ready_20261028",
+          "--arm",
+          "f0_base",
+          "--common-gt-reference",
+          "/data2/tzm/cp_snn_recovery_20261026/ann_evidence"
+        ],
+        "admission": [
+          {
+            "unix": 1793163850.5787032,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793163852.6360009,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793163854.692338,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793163856.752286,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793163858.7893908,
+            "free_mib": 24252,
+            "util": 0
+          }
+        ],
+        "unix": 1793163860.7941952,
+        "commit": "257d9ca876a16118090312764a61efa4bb97918c"
+      },
+      "train/progress.json": {
+        "state": "initial_validation",
+        "epoch": 0
+      }
+    },
+    "f1_deep": {
+      "audit.json": {
+        "passed": true,
+        "records": [
+          {
+            "index": 0,
+            "bytes": 2294,
+            "max_abs": {
+              "psm": 0.0,
+              "rm": 0.0,
+              "dm": 0.0
+            },
+            "decoded_content_equal": true,
+            "compressed_payload_equal": true,
+            "direct_wire_exact": true,
+            "packet_sha256": "5c61af0b9244c73315aed3796a185c15f4ab16824a49e43fbeda7c2448685daa",
+            "reference_packet_sha256": "12da88a19d7896f254e3918d393b66bfe99e3ef3de306915f852196ec45f961a"
+          },
+          {
+            "index": 579,
+            "bytes": 2304,
+            "max_abs": {
+              "psm": 0.0,
+              "rm": 0.0,
+              "dm": 0.0
+            },
+            "decoded_content_equal": true,
+            "compressed_payload_equal": true,
+            "direct_wire_exact": true,
+            "packet_sha256": "dd2c093769902d950d20e7f6809f495de70971fbf7f3e4ffbc30726f9c52cf2c",
+            "reference_packet_sha256": "73b371e64e9620c855f935fa401eb50c34081b05dbeda00514cd20d480cb1456"
+          },
+          {
+            "index": 1158,
+            "bytes": 2304,
+            "max_abs": {
+              "psm": 0.0,
+              "rm": 0.0,
+              "dm": 0.0
+            },
+            "decoded_content_equal": true,
+            "compressed_payload_equal": true,
+            "direct_wire_exact": true,
+            "packet_sha256": "6e5805a2f7b0e2f2dbcb72372a3f7ecd8ea51014c1aae4dadb0bdf51cec17963",
+            "reference_packet_sha256": "b53e92896b35210262ed78684185b259004258e2ff4c1628d4239ccc15dc329a"
+          },
+          {
+            "index": 1737,
+            "bytes": 2303,
+            "max_abs": {
+              "psm": 0.0,
+              "rm": 0.0,
+              "dm": 0.0
+            },
+            "decoded_content_equal": true,
+            "compressed_payload_equal": true,
+            "direct_wire_exact": true,
+            "packet_sha256": "44241e97d80307380e642e8978f4978e64c915dddf5ef1867b468ceb308742e0",
+            "reference_packet_sha256": "0ccd31a02021c39a411b4a25de7756754d167a77fa66a2a2b382c2390bfab5cb"
+          }
+        ],
+        "gradient_steps": [
+          {
+            "loss": 0.9792627102776701,
+            "gradients": {
+              "backbone_3d.conv_input.": 3.2644303385168314,
+              "backbone_3d.conv1.": 2.139666721224785,
+              "backbone_3d.conv2.": 12.46847399044782,
+              "backbone_3d.conv3.": 91.07489989465103,
+              "backbone_3d.conv4.": 46.3348322333768,
+              "backbone_3d.conv_out.": 18.057983338832855,
+              "content.project.": 0.7650564312934875,
+              "content.expand.": 1.0418291091918945,
+              "joint_receiver.": 1.2882505357265472,
+              "backbone_2d.": 431.584607437253,
+              "cls_head.": 0.4400182142853737,
+              "reg_head.": 18.53048348426819,
+              "dir_head.": 0.12277611345052719,
+              "backbone_3d.conv3.blocks.2.": 0.2770475377328694,
+              "backbone_3d.conv3.blocks.3.": 0.28031247574836016,
+              "backbone_3d.conv4.blocks.2.": 0.2765754507854581,
+              "backbone_3d.conv4.blocks.3.": 0.27599399723112583
+            }
+          },
+          {
+            "loss": 0.9380034255951369,
+            "gradients": {
+              "backbone_3d.conv_input.": 2.439371630549431,
+              "backbone_3d.conv1.": 1.6917730355635285,
+              "backbone_3d.conv2.": 10.205693170893937,
+              "backbone_3d.conv3.": 76.1443055820001,
+              "backbone_3d.conv4.": 41.623587176325316,
+              "backbone_3d.conv_out.": 16.003026202321053,
+              "content.project.": 0.5548664331436157,
+              "content.expand.": 0.755648136138916,
+              "joint_receiver.": 0.8819811791181564,
+              "backbone_2d.": 383.17963303253055,
+              "cls_head.": 0.4089757204055786,
+              "reg_head.": 17.422529220581055,
+              "dir_head.": 0.12006226181983948,
+              "backbone_3d.conv3.blocks.2.": 0.20722524167214829,
+              "backbone_3d.conv3.blocks.3.": 0.212352497371171,
+              "backbone_3d.conv4.blocks.2.": 0.22422409287662504,
+              "backbone_3d.conv4.blocks.3.": 0.22578721368728338
+            }
+          }
+        ],
+        "zero_equals_ego": true,
+        "frozen_state_unchanged": true,
+        "optimizer_coverage": true,
+        "peak_allocated_bytes": 2100872192,
+        "all_audit_updates_discarded": true
+      },
+      "status.json": {
+        "state": "running",
+        "stage": "train",
+        "unix": 1793163913.4972322
+      },
+      "frontend_coordinator_launch.json": {
+        "pid": 29823,
+        "gpu": 6,
+        "command": [
+          "/data1/tzm/miniconda3/envs/opencood/bin/python",
+          "-u",
+          "-m",
+          "opencood.tools.run_e3dsnn_frontend",
+          "--mode",
+          "coordinate",
+          "--root",
+          "/data2/tzm/cp_snn_recovery_20261026/frontend2304_ready_20261028",
+          "--arm",
+          "f1_deep",
+          "--common-gt-reference",
+          "/data2/tzm/cp_snn_recovery_20261026/ann_evidence"
+        ],
+        "admission": [
+          {
+            "unix": 1793163860.8569477,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793163862.9148445,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793163864.9721725,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793163867.028271,
+            "free_mib": 24252,
+            "util": 0
+          },
+          {
+            "unix": 1793163869.0643954,
+            "free_mib": 24252,
+            "util": 0
+          }
+        ],
+        "unix": 1793163871.0688114,
+        "commit": "257d9ca876a16118090312764a61efa4bb97918c"
+      },
+      "train/progress.json": {
+        "state": "initial_validation",
+        "epoch": 0
+      }
+    }
+  },
+  "multi_progress": {
+    "state": "training",
+    "epoch": 7,
+    "epochs": 10,
+    "batch": 1501,
+    "batches": 2339,
+    "loss": 0.7552853160296498,
+    "gradient_norm": 4.155770778656006,
+    "elapsed_seconds": 17495.41761502484,
+    "stream_means": {
+      "stream_budgets": 4761.838774150567,
+      "packet_bytes": 4746.952698201199,
+      "stream_events": 9446.927381745503
+    }
+  }
+}
