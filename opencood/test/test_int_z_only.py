@@ -82,3 +82,33 @@ class TestZOnly(unittest.TestCase):
         pred['rm'].square().mean().backward()
         self.assertTrue(any(float(p.grad.abs().sum())>0 for p in mode.updater.parameters()))
         self.assertTrue(all(p.grad is None for p in mode.reader.parameters()))
+
+
+class TestZDiagnosis(unittest.TestCase):
+    def test_signed_counterfactuals_do_not_change_history(self):
+        from opencood.tools.diagnose_int_z_only import observe_update
+        torch.manual_seed(6);net=ZOnlyUpdater(4)
+        with torch.no_grad():net.candidate.weight.zero_();net.candidate.bias.fill_(-2.)
+        e=torch.randn(1,128,7,9);old=torch.randn(1,96,7,9);teacher=old+1
+        valid=torch.ones(1,1,7,9,dtype=torch.bool);valid[:,:,:,0]=False
+        snapshot=old.clone();before={k:v.clone() for k,v in net.state_dict().items()}
+        values,gate=observe_update(net,e,old,teacher,valid)
+        self.assertTrue(torch.equal(values['recursive'],net(e,old,valid)))
+        self.assertTrue(torch.equal(values['candidate_only'],torch.full_like(old,-2.)))
+        self.assertTrue(torch.equal(values['recursive'][:,:,:,0],torch.full_like(old[:,:,:,0],-2.)))
+        self.assertTrue(torch.equal(old,snapshot))
+        self.assertTrue(all(torch.equal(before[k],v) for k,v in net.state_dict().items()))
+        self.assertFalse(torch.equal(values['recursive'],values['teacher_history']))
+
+    def test_crossed_reader_diagnoses_drift_without_changing_z(self):
+        from opencood.tools.diagnose_int_z_only import observe_readers
+        torch.manual_seed(7);mode=TinyDetector(False)
+        z=torch.randn(1,96,7,9);target=z+1;snapshot=z.clone()
+        original=observe_readers(mode,z,target)
+        self.assertTrue(torch.equal(original['fixed_on_own'],original['adapted_on_own']))
+        with torch.no_grad():mode.reader[0].bias.add_(2.)
+        changed=observe_readers(mode,z,target)
+        self.assertTrue(torch.equal(changed['fixed_on_own'],original['fixed_on_own']))
+        self.assertFalse(torch.equal(changed['adapted_on_own'],original['adapted_on_own']))
+        self.assertFalse(torch.equal(changed['adapted_on_full'],original['adapted_on_full']))
+        self.assertTrue(torch.equal(z,snapshot))
