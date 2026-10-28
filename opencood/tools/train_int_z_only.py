@@ -73,7 +73,15 @@ def engineering(mode,full,cfg,train):
 def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
     torch.manual_seed(303)
     joint=a.z_only_reader=='joint'
-    updater=ZOnlyUpdater(64).cuda().eval()
+    context=getattr(a,'z_only_context','plain')
+    init_path=getattr(a,'z_only_init',None)
+    saved_resume=torch.load(a.z_only_resume,map_location='cpu') if a.z_only_resume else None
+    warm=None
+    if init_path:
+        initial=torch.load(init_path,map_location='cpu')
+        warm=dict(path=str(init_path),sha256=digest(init_path),epoch=initial['epoch'])
+    elif saved_resume is not None:warm=saved_resume['contract'].get('weights_only_init')
+    updater=ZOnlyUpdater(64,context).cuda().eval()
     reader=make_reader(baseline.readout,joint).cuda()
     fixed_reader=make_reader(baseline.readout,False).cuda()
     mode=ZOnlyDetector(baseline,updater,reader,3)
@@ -93,10 +101,25 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
         loss='Ordinary: labelled GT +.2 foreground head KD +.5 signedZ feature KD. Joint reader also receives labelled GT +.2 head KD on full refresh to preserve full-path accuracy. No Y feature KD.',
         optimizer='AdamW updater1e-4, joint reader1e-5, wd1e-4 clip5. Plateau factor.5 patience1 absolute.0005 min1e-6. Stop min6/stale4/updater lr<=2.5e-5.',
         validation='Full5794/1738 fixed H control, frozen full Z+reader control, own Z recurrence; joint adds full current Z+adapted reader. Shared GPU timing null. Branch Conv MACsx2 measured; nonconv/Pillar pointwise Linear omitted consistently.')
+    if context!='plain' or warm is not None:
+        contract.update(context=context,weights_only_init=warm,
+            update='Same Z gate and signed candidate; two hidden3x3 layers use dilation1/'+('2' if context=='dilated' else '1')+'; radius'+('3' if context=='dilated' else '2')+'. Equal kernel parameters and nominal MACs; no local execution.',
+            initialization='Declared checkpoint weights only; fresh optimizer/scheduler and epoch0. Exact resume retains this original initialization provenance.',
+            optimizer='Fresh AdamW updater2.5e-5 wd1e-4 clip5; reader frozen. Same plateau factor.5/patience1/absolute.0005/min1e-6, stop min6/stale4/lr<=2.5e-5.')
+        assert not joint and warm is not None
+    if init_path:
+        original=initial['contract']
+        assert original['kind']=='z_only_spatial_v1' and original['reader']=='frozen'
+        assert original['source']==contract['source'] and original['width']==64 and original['period']==3
+        updater.load_state_dict(initial['updater'],strict=True)
+        reader.load_state_dict(initial['reader'],strict=True)
+        # Both arms keep the same mature fixed reader, not an adapted teacher.
+        assert all(torch.equal(v,fixed_reader.state_dict()[k]) for k,v in reader.state_dict().items())
+        write_json(out/'initialization.json',dict(warm,context=context,optimizer_reset=True,epoch_reset=True))
     write_json(out/'z_only_contract.json',contract)
     write_json(out/'z_only_engineering.json',engineering(mode,full,cfg,train))
     adapted.execution_costs=full.execution_costs
-    groups=[dict(params=list(updater.parameters()),lr=1e-4)]
+    groups=[dict(params=list(updater.parameters()),lr=2.5e-5 if warm is not None else 1e-4)]
     if joint:groups.append(dict(params=list(reader.parameters()),lr=1e-5))
     parameters=[p for group in groups for p in group['params']]
     optimizer=torch.optim.AdamW(groups,weight_decay=1e-4)
@@ -104,7 +127,7 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
     criterion=PointPillarDirLoss(cfg['loss']['args']).cuda()
     history=[];best=None;significant=-1.;stale=0;start=0;pending=None
     if a.z_only_resume:
-        saved=torch.load(a.z_only_resume,map_location='cpu')
+        saved=saved_resume
         assert dict(saved['contract'],epochs_max=a.z_only_epochs)==contract
         updater.load_state_dict(saved['updater'],strict=True);reader.load_state_dict(saved['reader'],strict=True)
         optimizer.load_state_dict(saved['optimizer']);scheduler.load_state_dict(saved['scheduler'])

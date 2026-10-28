@@ -7,8 +7,14 @@ from opencood.models.sub_modules.int_anchor_residual import predict
 
 
 class ZOnlyUpdater(YOnlyUpdater):
-    def __init__(self,width=64):
+    def __init__(self,width=64,context='plain'):
+        if context not in ('plain','dilated'):raise ValueError('Unknown Z context')
         super().__init__(128,96,width)
+        self.context=context
+        if context=='dilated':
+            # Preserve weights/parameter count; enlarge the last hidden layer's neighborhood.
+            self.features[4].dilation=(2,2)
+            self.features[4].padding=(2,2)
 
     def forward(self,evidence,old,valid):
         hidden=self.features(torch.cat((evidence,old,valid.to(old.dtype)),1))

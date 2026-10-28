@@ -112,3 +112,23 @@ class TestZDiagnosis(unittest.TestCase):
         self.assertFalse(torch.equal(changed['adapted_on_own'],original['adapted_on_own']))
         self.assertFalse(torch.equal(changed['adapted_on_full'],original['adapted_on_full']))
         self.assertTrue(torch.equal(z,snapshot))
+
+
+class TestZContext(unittest.TestCase):
+    def test_equal_parameters_with_larger_bounded_neighborhood(self):
+        plain=ZOnlyUpdater(4);wide=ZOnlyUpdater(4,'dilated')
+        with torch.no_grad():
+            for p in plain.parameters():p.fill_(.01)
+        wide.load_state_dict(plain.state_dict(),strict=True)
+        self.assertEqual(sum(p.numel() for p in plain.parameters()),sum(p.numel() for p in wide.parameters()))
+        self.assertEqual(plain.state_dict().keys(),wide.state_dict().keys())
+        e=torch.ones(1,128,11,11);old=torch.zeros(1,96,11,11);valid=torch.zeros(1,1,11,11,dtype=torch.bool)
+        near=e.clone();near[:,:,2,5]+=1
+        far=e.clone();far[:,:,1,5]+=1
+        self.assertTrue(torch.equal(plain(e,old,valid)[:,:,5,5],plain(near,old,valid)[:,:,5,5]))
+        self.assertFalse(torch.equal(wide(e,old,valid)[:,:,5,5],wide(near,old,valid)[:,:,5,5]))
+        self.assertTrue(torch.equal(wide(e,old,valid)[:,:,5,5],wide(far,old,valid)[:,:,5,5]))
+        self.assertEqual(wide(e,old,valid).shape,old.shape)
+        wide(e,old,valid).sum().backward()
+        self.assertTrue(all(p.grad is not None and torch.isfinite(p.grad).all() for p in wide.parameters()))
+        with self.assertRaises(ValueError):ZOnlyUpdater(4,'unknown')

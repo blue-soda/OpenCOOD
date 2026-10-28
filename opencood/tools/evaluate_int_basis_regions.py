@@ -537,6 +537,8 @@ def main():
     p.add_argument('--z-only-reader',choices=('frozen','joint'),default='joint')
     p.add_argument('--z-only-resume',default=None,help='Exact Z updater/reader/optimizer continuation')
     p.add_argument('--z-only-diagnostic',default=None,help='Frozen Z history/reader diagnosis on512 training scans; no AP')
+    p.add_argument('--z-only-context',choices=('plain','dilated'),default='plain')
+    p.add_argument('--z-only-init',default=None,help='Weights-only Z warm start with fresh2.5e-5 optimizer; not exact resume')
     p.add_argument('--short-readout-train-period',type=int,choices=(3,5),default=3)
     p.add_argument('--short-readout-init',default=None,help='Weights-only warm start; fresh optimizer/schedule, distinct from exact resume')
     p.add_argument('--short-readout-diagnostic',default=None,help='Frozen repair checkpoint for offline512 train-frame history diagnosis')
@@ -549,6 +551,8 @@ def main():
     a = p.parse_args(); out = Path(a.output)
     if not 0<=a.z_only_epochs<=48:p.error('Z-only budget must be0..48')
     if a.z_only_resume and not a.z_only_epochs:p.error('Z-only resume requires training')
+    if a.z_only_init and (not a.z_only_epochs or a.z_only_resume or a.z_only_reader!='frozen'):p.error('Z warm start requires frozen-reader training without resume')
+    if a.z_only_context!='plain' and (not a.z_only_epochs or not (a.z_only_init or a.z_only_resume)):p.error('Dilated Z requires declared warm start or exact resume')
     if a.z_only_diagnostic and a.z_only_epochs:p.error('Z-only diagnostic cannot train or resume')
     if (a.z_only_epochs or a.z_only_diagnostic) and (not a.recurrent_local_reference or a.recurrent_local_period!=4 or
             a.y_only_epochs or a.y_only_resume or a.y_only_diagnostic or a.short_readout_epochs or

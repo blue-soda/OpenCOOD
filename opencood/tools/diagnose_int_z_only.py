@@ -34,7 +34,7 @@ def diagnose(a,cfg,train,baseline,out,source):
     contract=saved['contract']
     assert contract['kind']=='z_only_spatial_v1' and contract['period']==3
     assert contract['source']=={k:source[k] for k in ('source','memory','readout','repair','basis','data')}
-    updater=ZOnlyUpdater(width=contract['width']).cuda().eval()
+    updater=ZOnlyUpdater(width=contract['width'],context=contract.get('context','plain')).cuda().eval()
     updater.load_state_dict(saved['updater'],strict=True)
     for p in updater.parameters():p.requires_grad_(False)
     reader=make_reader(baseline.readout,False).cuda().eval()
