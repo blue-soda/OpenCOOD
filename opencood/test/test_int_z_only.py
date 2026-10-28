@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import numpy as np
 import torch
 from torch import nn
-from opencood.models.sub_modules.int_z_only import ZOnlyUpdater,ZOnlyDetector,make_reader
+from opencood.models.sub_modules.int_z_only import ZOnlyUpdater,ZOnlyDetector,ZReadoutAdapter,make_reader
 from opencood.models.sub_modules.int_y_only import YOnlyState
 
 
@@ -30,6 +30,34 @@ class TinyDetector(ZOnlyDetector):
 
 
 class TestZOnly(unittest.TestCase):
+    def test_adapter_identity_refresh_bypass_and_cache_isolation(self):
+        torch.manual_seed(32);mode=TinyDetector(False)
+        for p in mode.updater.parameters():p.requires_grad_(False)
+        mode.adapter=ZReadoutAdapter(16)
+        self.assertEqual(sum(p.numel() for p in mode.adapter.parameters()),3168)
+        value=torch.randn(1,96,7,9)
+        self.assertTrue(torch.equal(mode.adapter(value),value))
+        e=torch.randn(1,128,7,9);meta=dict(segment='s',timestamp_us=1,pose=np.eye(4))
+        calls=[];hook=mode.adapter.register_forward_hook(lambda m,x,y:calls.append(1))
+        _,state,_=mode.step(e,None,meta,supervise=True)
+        self.assertEqual(calls,[])
+        old=state['z']['value'].clone();meta=dict(meta,timestamp_us=50001)
+        with torch.no_grad():base,base_state,_=mode.step(e,state,meta)
+        with torch.no_grad():mode.adapter.up.bias.fill_(.25)
+        pred,new,info=mode.step(e,state,meta,supervise=True)
+        self.assertTrue(torch.equal(base_state['z']['value'],new['z']['value']))
+        self.assertTrue(torch.equal(state['z']['value'],old))
+        self.assertTrue(torch.equal(info['z_readout_student'],new['z']['value']+.25))
+        self.assertFalse(torch.equal(base['rm'],pred['rm']))
+        pred['rm'].square().mean().backward()
+        self.assertTrue(all(p.grad is not None and torch.isfinite(p.grad).all() for p in mode.adapter.parameters()))
+        self.assertTrue(all(p.grad is None for m in (mode.updater,mode.reader,mode.model,mode.readout) for p in m.parameters()))
+        calls.clear()
+        with torch.no_grad():mode.step(e,new,dict(meta,timestamp_us=400001))
+        self.assertEqual(calls,[]);hook.remove()
+        restored=ZReadoutAdapter(16);restored.load_state_dict(mode.adapter.state_dict(),strict=True)
+        self.assertTrue(torch.equal(mode.adapter(value),restored(value)))
+
     def test_signed_candidate_and_local_dependencies(self):
         net=ZOnlyUpdater(4)
         with torch.no_grad():net.candidate.weight.zero_();net.candidate.bias.fill_(-2.)

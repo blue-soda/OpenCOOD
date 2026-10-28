@@ -41,10 +41,23 @@ def make_reader(readout,trainable=False):
     return reader
 
 
+class ZReadoutAdapter(nn.Module):
+    """Pointwise low-rank residual calibration; never a recurrent state."""
+    def __init__(self,rank=16):
+        super().__init__()
+        if not 1<=rank<=96:raise ValueError('Invalid Z adapter rank')
+        self.down=nn.Conv2d(96,rank,1,bias=False)
+        self.up=nn.Conv2d(rank,96,1)
+        nn.init.zeros_(self.up.weight);nn.init.zeros_(self.up.bias)
+
+    def forward(self,z):
+        return z+self.up(self.down(z))
+
+
 class ZOnlyDetector(YOnlyDetector):
-    def __init__(self,baseline,updater,reader,period=3):
+    def __init__(self,baseline,updater,reader,period=3,adapter=None):
         super().__init__(baseline,updater,period)
-        self.reader=reader
+        self.reader,self.adapter=reader,adapter
 
     @torch.no_grad()
     def full_from_evidence(self,evidence):
@@ -63,9 +76,11 @@ class ZOnlyDetector(YOnlyDetector):
         evidence,fm,info=self.front(data,state,meta)
         z,new,details=self.cache.step(evidence,None if state is None else state['z'],meta,
             lambda:self.full_from_evidence(evidence),bool(info['reset']),supervise)
-        value=self.reader(z);pred=predict(self.model,value);refresh=details['y_refresh']
+        refresh=details['y_refresh'];adapter=getattr(self,'adapter',None)
+        readout_z=adapter(z) if adapter is not None and not refresh else z
+        value=self.reader(readout_z);pred=predict(self.model,value)
         info.update({k.replace('y_','z_',1):v for k,v in details.items()})
-        if supervise:info.update(y_student=value,y_target=self.teacher_y(info['z_target']))
+        if supervise:info.update(y_student=value,y_target=self.teacher_y(info['z_target']),z_readout_student=readout_z)
         info.update(whole_model_macs=self.execution_costs.get(refresh),deep_partial=not refresh,
             spatial_refresh=refresh,spatial_extra_linear_macs=0,spatial_state_bytes=0,
             anchor_bytes=0,readout_state_bytes=z.numel()*z.element_size(),

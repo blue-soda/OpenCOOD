@@ -32,6 +32,7 @@ def observe_readers(mode, own, target):
 def diagnose(a,cfg,train,baseline,out,source):
     path=Path(a.z_only_diagnostic);saved=torch.load(str(path),map_location='cpu')
     contract=saved['contract']
+    assert not contract.get('adapter_rank',0),'Adapter readout diagnosis requires an explicit adapter-aware protocol'
     assert contract['kind']=='z_only_spatial_v1' and contract['period']==3
     assert contract['source']=={k:source[k] for k in ('source','memory','readout','repair','basis','data')}
     updater=ZOnlyUpdater(width=contract['width'],context=contract.get('context','plain'),gate_mode=contract.get('gate_mode','spatial')).cuda().eval()

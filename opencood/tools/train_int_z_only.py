@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import numpy as np
 import torch
-from opencood.models.sub_modules.int_z_only import ZOnlyUpdater,ZOnlyDetector,make_reader
+from opencood.models.sub_modules.int_z_only import ZOnlyUpdater,ZOnlyDetector,ZReadoutAdapter,make_reader
 from opencood.models.sub_modules.int_anchor_residual import predict
 from opencood.models.sub_modules.int_light_repair import foreground_head_loss
 from opencood.models.sub_modules.int_local_state import feature_distillation
@@ -19,6 +19,7 @@ def load_fixed_reader_start(updater,reader,fixed_reader,initial,source):
     """Keep a joint-trained updater, but explicitly restore the mature reader."""
     original=initial['contract']
     assert original['kind']=='z_only_spatial_v1' and original['reader'] in ('frozen','joint')
+    assert not original.get('adapter_rank',0),'Adapter checkpoints require exact resume'
     assert original['source']==source and original['width']==64 and original['period']==3
     updater.load_warm_weights(initial['updater'])
     if original['reader']=='frozen':reader.load_state_dict(initial['reader'],strict=True)
@@ -28,6 +29,11 @@ def load_fixed_reader_start(updater,reader,fixed_reader,initial,source):
 
 def engineering(mode,full,cfg,train):
     state=full_state=native_state=None;samples=[];ordinary=0;maximum=0.;costs={}
+    extra=[] if mode.adapter is None else [mode.adapter]
+    unadapted=None
+    if mode.adapter is not None:
+        import copy
+        unadapted=copy.copy(mode);unadapted.adapter=None
     watched=[*(m for m in mode.stage.blocks.modules() if isinstance(m,torch.nn.Conv2d)),
         mode.model.backbone.resnet.layer1,mode.model.backbone.resnet.layer2,
         *mode.model.backbone.deblocks,mode.readout.current,mode.readout.history]
@@ -40,7 +46,7 @@ def engineering(mode,full,cfg,train):
             previous=state;called=[];reads=[]
             hooks=[m.register_forward_hook(lambda m,x,y:called.append(1)) for m in watched]
             hooks.append(mode.reader.register_forward_hook(lambda m,x,y:reads.append(1)))
-            counter=ConvCounter(mode.model,torch.nn.ModuleList([mode.readout,mode.updater,mode.reader]))
+            counter=ConvCounter(mode.model,torch.nn.ModuleList([mode.readout,mode.updater,mode.reader]+extra))
             try:pred,state,info=mode.step(ego,previous,meta)
             finally:
                 counter.close()
@@ -54,6 +60,10 @@ def engineering(mode,full,cfg,train):
             other,replayed,_=mode.step(ego,previous,meta,supervise=True)
             assert all(torch.equal(pred[k],other[k]) for k in pred)
             assert torch.equal(state['z']['value'],replayed['z']['value'])
+            if unadapted is not None:
+                plain,plain_state,_=unadapted.step(ego,previous,meta)
+                assert torch.equal(state['z']['value'],plain_state['z']['value'])
+                if refresh:assert all(torch.equal(pred[k],plain[k]) for k in pred)
             fc=ConvCounter(full.model,torch.nn.ModuleList([full.readout,full.reader]))
             try:reference,full_state,_=full.step(ego,full_state,meta)
             finally:fc.close()
@@ -69,7 +79,7 @@ def engineering(mode,full,cfg,train):
         pred,state,info=mode.step(ego,state,meta,supervise=True)
         if not info['z_refresh']:terms.append(pred['rm'].square().mean())
     torch.stack(terms).mean().backward()
-    for module in (mode.updater,mode.reader):
+    for module in [mode.updater,mode.reader]+extra:
         params=[p for p in module.parameters() if p.requires_grad]
         if params:
             assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params)
@@ -77,10 +87,15 @@ def engineering(mode,full,cfg,train):
     assert all(p.grad is None for m in (mode.model,mode.readout,full.reader) for p in m.parameters())
     assert all(torch.equal(buffers[k],v) for k,v in mode.reader.named_buffers())
     mode.updater.zero_grad(set_to_none=True);mode.reader.zero_grad(set_to_none=True)
-    return dict(status='PASSED',frames=32,ordinary_frames=ordinary,ordinary_h_d_projection_calls=0,
+    if mode.adapter is not None:
+        mode.adapter.zero_grad(set_to_none=True)
+        assert all(p.grad is None for p in mode.updater.parameters())
+    report=dict(status='PASSED',frames=32,ordinary_frames=ordinary,ordinary_h_d_projection_calls=0,
         reader_every_frame=True,teacher_on_off_exact=True,only_fm_z_persist=True,
         gradients_only_requested_modules=True,reader_bn_statistics_fixed=True,
         full_vs_native_max_error=maximum,full_conv_macs=costs[True],ordinary_conv_macs=costs[False])
+    if mode.adapter is not None:report.update(adapter_only_training=True,adapter_never_writes_z=True,full_refresh_bypass=True)
+    return report
 
 
 def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
@@ -88,6 +103,7 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
     joint=a.z_only_reader=='joint'
     context=getattr(a,'z_only_context','plain')
     gate_mode=getattr(a,'z_only_gate','spatial')
+    adapter_rank=getattr(a,'z_only_adapter_rank',0)
     init_path=getattr(a,'z_only_init',None)
     saved_resume=torch.load(a.z_only_resume,map_location='cpu') if a.z_only_resume else None
     warm=None
@@ -96,17 +112,21 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
         warm=dict(path=str(init_path),sha256=digest(init_path),epoch=initial['epoch'])
         if initial['contract']['reader']=='joint':
             warm.update(source_reader='joint',reader_initialization='fixed_mature_not_checkpoint')
-        if gate_mode=='channel':
-            assert initial['contract']['context']=='plain' and initial['contract']['reader']=='frozen'
+        if gate_mode=='channel' or adapter_rank:
+            assert initial['contract'].get('context','plain')=='plain' and initial['contract']['reader']=='frozen'
             with open(Path(init_path).parent/'report.json') as stream:initial_report=json.load(stream)
             warm['initial_ap70']=initial_report['results']['z_only']['ap70']
     elif saved_resume is not None:warm=saved_resume['contract'].get('weights_only_init')
     updater=ZOnlyUpdater(64,context,gate_mode).cuda().eval()
     reader=make_reader(baseline.readout,joint).cuda()
     fixed_reader=make_reader(baseline.readout,False).cuda()
-    mode=ZOnlyDetector(baseline,updater,reader,3)
+    adapter=ZReadoutAdapter(adapter_rank).cuda().eval() if adapter_rank else None
+    if adapter is not None:
+        for p in updater.parameters():p.requires_grad_(False)
+    mode=ZOnlyDetector(baseline,updater,reader,3,adapter)
     full=ZOnlyDetector(baseline,updater,fixed_reader,1)
     adapted=ZOnlyDetector(baseline,updater,reader,1)
+    unadapted=ZOnlyDetector(baseline,updater,fixed_reader,3)
     contract=dict(kind='z_only_spatial_v1',reader=a.z_only_reader,width=64,period=3,max_age_us=250000,
         seed=303,tbptt=2,epochs_max=a.z_only_epochs,
         source={k:source[k] for k in ('source','memory','readout','repair','basis','data')},
@@ -134,11 +154,32 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
             initialization='Weights-only warm start; repeat scalar gate weights/bias across96 channels, preserve initial function within numerical tolerance. Fresh optimizer, fixed mature reader.')
     if init_path:
         load_fixed_reader_start(updater,reader,fixed_reader,initial,contract['source'])
+        if adapter_rank:assert initial['contract'].get('gate_mode','spatial')==gate_mode
         write_json(out/'initialization.json',dict(warm,context=context,optimizer_reset=True,epoch_reset=True))
+    if adapter_rank:
+        assert not joint and warm is not None and context=='plain'
+        contract.update(adapter_rank=adapter_rank,adapter_parameters=sum(p.numel() for p in adapter.parameters()),
+            trainable='Only pointwise rank16 Z readout adapter; updater, mature reader, heads, front and teacher frozen.',
+            initialization='Frozen declared updater/reader checkpoint; zero-output up projection gives identity adapter. Applied only on ordinary frames; calibrated tensor never enters Z cache.',
+            loss='Ordinary labelled GT +.2 foreground head KD +.5 calibrated-Z feature KD. No loss or adapter on full refresh.',
+            optimizer='Fresh AdamW adapter1e-4 wd1e-4 clip5; same scheduler and min6/stale4/lr<=2.5e-5 stop.',
+            adapter_state='Readout-only Z + Conv1x1(rank->96)(Conv1x1(96->rank)(Z)); no activation, full refresh bypass, cache remains uncalibrated Z.')
     write_json(out/'z_only_contract.json',contract)
     write_json(out/'z_only_engineering.json',engineering(mode,full,cfg,train))
     adapted.execution_costs=full.execution_costs
-    groups=[dict(params=list(updater.parameters()),lr=2.5e-5 if warm is not None else 1e-4)]
+    if adapter_rank:
+        # Calibrate the fixed control independently; include no adapter MACs.
+        _,probe_stream=loader(train[:32],cfg,0,303);probe_state=None;control_costs={}
+        with torch.no_grad():
+            for sample in probe_stream:
+                counter=ConvCounter(mode.model,torch.nn.ModuleList([mode.readout,updater,fixed_reader]))
+                try:_,probe_state,info=unadapted.step(to_device(sample['ego'],torch.device('cuda')),probe_state,sample['meta'])
+                finally:counter.close()
+                control_costs[info['z_refresh']]=counter.total
+                if set(control_costs)=={True,False}:break
+        assert set(control_costs)=={True,False};unadapted.execution_costs=control_costs
+        write_json(out/'adapter_costs.json',dict(with_adapter=mode.execution_costs,without_adapter=control_costs))
+    groups=[dict(params=list(adapter.parameters()),lr=1e-4)] if adapter_rank else [dict(params=list(updater.parameters()),lr=2.5e-5 if warm is not None else 1e-4)]
     if joint:groups.append(dict(params=list(reader.parameters()),lr=1e-5))
     parameters=[p for group in groups for p in group['params']]
     optimizer=torch.optim.AdamW(groups,weight_decay=1e-4)
@@ -149,12 +190,14 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
         saved=saved_resume
         assert dict(saved['contract'],epochs_max=a.z_only_epochs)==contract
         updater.load_state_dict(saved['updater'],strict=True);reader.load_state_dict(saved['reader'],strict=True)
+        if adapter_rank:adapter.load_state_dict(saved['adapter'],strict=True)
         optimizer.load_state_dict(saved['optimizer']);scheduler.load_state_dict(saved['scheduler'])
         history=saved['history'];best=saved['best'];significant=saved['significant'];stale=saved['stale']
         start=saved['epoch'] if saved['next_action']=='evaluate' else saved['epoch']+1
         pending=saved.get('training_summary') if saved['next_action']=='evaluate' else None
         assert start<=a.z_only_epochs
         write_json(out/'resume.json',dict(path=a.z_only_resume,sha256=digest(a.z_only_resume),next_epoch=start,next_action=saved['next_action']))
+    frozen_updater={k:v.clone() for k,v in updater.state_dict().items()} if adapter_rank else None
     for epoch in range(start,a.z_only_epochs+1):
         directory=out/('epoch_%03d'%epoch);directory.mkdir();losses=[];updates=0
         if pending is not None:losses=pending['losses'];updates=pending['updates'];pending=None
@@ -167,7 +210,7 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
                 if joint or not info['z_refresh']:
                     with torch.no_grad():teacher=predict(mode.model,info['y_target'])
                     loss=.2*foreground_head_loss(pred,teacher)
-                    if not info['z_refresh']:loss=loss+.5*feature_distillation(info['z_student'],info['z_target'],teacher)
+                    if not info['z_refresh']:loss=loss+.5*feature_distillation(info['z_readout_student'] if adapter_rank else info['z_student'],info['z_target'],teacher)
                     if sample['meta']['supervised']:loss=loss+criterion(pred,ego['label_dict'])
                     assert torch.isfinite(loss);terms.append(loss);losses.append(float(loss.detach()))
                 if len(terms)>=2 or info['z_refresh'] or index+1==len(train):
@@ -179,15 +222,20 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
                 if (index+1)%200==0:write_json(out/'status.json',dict(status='RUNNING',phase='train',epoch=epoch,scans=index+1,loss=float(np.mean(losses))))
             assert index+1==len(train) and losses and not terms
             assert all(p.grad is None for m in (mode.model,mode.readout,fixed_reader) for p in m.parameters())
+            if adapter_rank:
+                assert all(p.grad is None for p in updater.parameters())
+                assert all(torch.equal(v,frozen_updater[k]) for k,v in updater.state_dict().items())
         path=directory/'updater.pth'
-        atomic_save(dict(updater=updater.state_dict(),reader=reader.state_dict(),contract=contract,epoch=epoch),path)
+        extra_weights={'adapter':adapter.state_dict()} if adapter_rank else {}
+        atomic_save(dict(updater=updater.state_dict(),reader=reader.state_dict(),contract=contract,epoch=epoch,**extra_weights),path)
         def snapshot(action):return dict(updater=updater.state_dict(),reader=reader.state_dict(),optimizer=optimizer.state_dict(),
-            scheduler=scheduler.state_dict(),history=history,contract=contract,best=best,significant=significant,stale=stale,epoch=epoch,next_action=action)
+            scheduler=scheduler.state_dict(),history=history,contract=contract,best=best,significant=significant,stale=stale,epoch=epoch,next_action=action,**extra_weights)
         atomic_save(dict(snapshot('evaluate'),training_summary=dict(losses=losses,updates=updates)),out/'pending_validation.pth')
         variants=dict(z_full_fixed=full,z_only=mode)
         if joint:variants['z_full_adapted']=adapted
         expected={'z_full_fixed':.7567910702899006}
-        if epoch==0 and gate_mode=='channel':expected['z_only']=warm['initial_ap70']
+        if adapter_rank:variants['z_unadapted']=unadapted;expected['z_unadapted']=warm['initial_ap70']
+        if epoch==0 and (gate_mode=='channel' or adapter_rank):expected['z_only']=warm['initial_ap70']
         report=evaluate(a,baseline,None,cfg,val,directory,costs,spatial_macs,epoch,variants=variants,
             expected_ap=expected,share_gpu=True,
             note='Signed Z before mature spatial reader; ordinary H/D/projections skipped, reader dense every frame. Independent teacher and histories. Joint readout has fixed BN statistics. No local execution yet; Conv MACsx2; shared timing null.')
