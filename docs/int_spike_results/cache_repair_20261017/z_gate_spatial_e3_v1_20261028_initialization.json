@@ -1,0 +1,8 @@
+{
+  "context": "plain",
+  "epoch": 3,
+  "epoch_reset": true,
+  "optimizer_reset": true,
+  "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/z_joint_e33_fixed_recovery_v1_20261028/epoch_003/updater.pth",
+  "sha256": "ce6420f3e4b477d3994c0632fb6a20ff20ad62a6879f5680584c9124fed186a2"
+}

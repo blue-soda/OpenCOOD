@@ -1,0 +1,46 @@
+{
+  "status": "PASSED",
+  "scans": 512,
+  "target_energy_elements_and_teacher_warp_exact": true,
+  "actual_trajectory_exact": true,
+  "teacher_never_written": true,
+  "rows": [
+    {
+      "reference": "z_only_joint_e24_diagnostic_v1_20261028",
+      "depth": "1",
+      "reference_z": 0.525677510770021,
+      "recovery_z": 0.5067381753978668,
+      "recovery_teacher_history": 0.5067381753978668,
+      "reference_y": 0.3010749630130877,
+      "recovery_y": 0.27588734564575257
+    },
+    {
+      "reference": "z_only_joint_e24_diagnostic_v1_20261028",
+      "depth": "2",
+      "reference_z": 0.5499606770819638,
+      "recovery_z": 0.5269998953642075,
+      "recovery_teacher_history": 0.5057868946951164,
+      "reference_y": 0.358297683537956,
+      "recovery_y": 0.3255096454049296
+    },
+    {
+      "reference": "z_only_frozen_e24_diagnostic_v1_20261028",
+      "depth": "1",
+      "reference_z": 0.5183517670297882,
+      "recovery_z": 0.5067381753978668,
+      "recovery_teacher_history": 0.5067381753978668,
+      "reference_y": 0.28231937517728406,
+      "recovery_y": 0.27588734564575257
+    },
+    {
+      "reference": "z_only_frozen_e24_diagnostic_v1_20261028",
+      "depth": "2",
+      "reference_z": 0.5411556635272496,
+      "recovery_z": 0.5269998953642075,
+      "recovery_teacher_history": 0.5057868946951164,
+      "reference_y": 0.33362981606590725,
+      "recovery_y": 0.3255096454049296
+    }
+  ],
+  "limitation": "Fixed training prefix, different checkpoints/training histories; feature diagnostic, not AP or matched-budget superiority."
+}

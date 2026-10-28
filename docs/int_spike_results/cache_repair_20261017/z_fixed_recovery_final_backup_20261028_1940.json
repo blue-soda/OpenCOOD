@@ -1,0 +1,34 @@
+{
+  "path": "/tmp/int_z_fixed_recovery_final_20261028_1940.tar.gz",
+  "bytes": 4913263,
+  "sha256": "3aeeef887802964785d9da7c8b18cd25f332f32c4ee8588f4822a5832e1bf9e3",
+  "members": {
+    "z_joint_e33_fixed_recovery_v1_20261028/latest.pth": {
+      "bytes": 3037342,
+      "sha256": "8cebf6405c01f4eb4377e382fcc3ee5fa29cea7dcc048ff8743a50bc2546c1f7"
+    },
+    "z_joint_e33_fixed_recovery_v1_20261028/best.json": {
+      "bytes": 266,
+      "sha256": "df14d25eb2affc78554f8d7fdea0af8f8f6db1942c81e6996021a1fa1ba8f148"
+    },
+    "z_joint_e33_fixed_recovery_v1_20261028/z_only_contract.json": {
+      "bytes": 4309,
+      "sha256": "a301c79f4f99b89fa8ab29fe676c1fc7d83b538939d75b889c316b51591602fe"
+    },
+    "z_joint_e33_fixed_recovery_v1_20261028/report.json": {
+      "bytes": 358,
+      "sha256": "ce8a56c3e036ff52fe3959e9f43ecd15148c904bbe00ee28a0d3c3b0eb341461"
+    },
+    "z_joint_e33_fixed_recovery_v1_20261028/history.json": {
+      "bytes": 17850,
+      "sha256": "cf30dc6bb9930455cd5390c02e019963571277280afc21306d9c5823d699ef77"
+    },
+    "z_joint_e33_fixed_recovery_v1_20261028/epoch_003/updater.pth": {
+      "bytes": 2268250,
+      "sha256": "ce6420f3e4b477d3994c0632fb6a20ff20ad62a6879f5680584c9124fed186a2"
+    }
+  },
+  "destination_verified": true,
+  "destination": "mindspore-146:/data1/zhh/gzc/int181_snapshot/live_backups/int_z_fixed_recovery_final_20261028_1940.tar.gz",
+  "verification": "Source, local intermediary and destination SHA256 identical; checked 2026-10-28 19:42 +08:00."
+}
