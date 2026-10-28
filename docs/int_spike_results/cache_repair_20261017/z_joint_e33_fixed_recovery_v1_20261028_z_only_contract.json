@@ -1,0 +1,77 @@
+{
+  "context": "plain",
+  "epochs_max": 12,
+  "initialization": "Declared checkpoint weights only; fresh optimizer/scheduler and epoch0. Exact resume retains this original initialization provenance.",
+  "kind": "z_only_spatial_v1",
+  "loss": "Ordinary: labelled GT +.2 foreground head KD +.5 signedZ feature KD. Joint reader also receives labelled GT +.2 head KD on full refresh to preserve full-path accuracy. No Y feature KD.",
+  "max_age_us": 250000,
+  "optimizer": "Fresh AdamW updater2.5e-5 wd1e-4 clip5; reader frozen. Same plateau factor.5/patience1/absolute.0005/min1e-6, stop min6/stale4/lr<=2.5e-5.",
+  "period": 3,
+  "reader": "frozen",
+  "reader_parameters": 468480,
+  "reader_trainable_parameters": 0,
+  "seed": 303,
+  "source": {
+    "basis": {
+      "ap70": 0.7567910702899006,
+      "cached_ap70": 0.7559544809175783,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_spatial_r96_recovery_v1_20261024/epoch_000/stage.pth",
+      "epoch": 0,
+      "sha256": "2424236f88bafb04325ec07803ba5f99614c5ab3762e951eed365725f0b3af62"
+    },
+    "data": {
+      "config_sha256": "7fd74ab750101d14d1b5de4b35a2b90c7a82999a7392747259ed2db5897440cb",
+      "fm_only_epochs": 1,
+      "initialization_sha256": "c5fdef2fcc2914a09bb527cee6723730e70850056e3115f3197122e69431efb9",
+      "lr": 0.0001,
+      "manifest_sha256": "184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738",
+      "min_delta": 0.001,
+      "min_epochs": 20,
+      "mode": "gru",
+      "patience": 10,
+      "seed": 303,
+      "state_policy": "whole-segment/tbptt/v1",
+      "tbptt_steps": 4
+    },
+    "memory": {
+      "ap70": 0.7567024378706645,
+      "cached_ap70": 0.7555532616222492,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/projected_gru_r32_train_v1_20261022/epoch_011/memory.pth",
+      "epoch": 11,
+      "sha256": "1a267575ef735f203526fa3b8196334d32d9ff8a9080449c3b6206247913e5ef"
+    },
+    "readout": {
+      "ap70": 0.753534819214323,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/compact_readout_r96_v2_20261021/epoch_005/readout.pth",
+      "epoch": 5,
+      "sha256": "8bbf94e975997b2803c4a4c443fee2258589276e427dbc0a2550de6b562d7a0d"
+    },
+    "repair": {
+      "ap70": 0.7553967658970537,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_cache_repair_20261017/split_repair_r96_w32_v1_20261021/epoch_008/repair.pth",
+      "epoch": 8,
+      "sha256": "9f0997e23752683aa3a8fa6f5b9c9e65ddd91c7a1f2dca89e1beb7500a755fbd"
+    },
+    "source": {
+      "bev_ap70": 0.758736104616861,
+      "checkpoint": "/data1/tzm/workspace/diagnostics/int_spiking_gru_20261016/full_gru/epoch_017/trained.pth",
+      "epoch": 17,
+      "sha256": "c7bbee9b4fdefc031a61b240d6c504665d66c0c788610bb36c97d34118f8a6b8"
+    }
+  },
+  "state": "Signed Z96 = frozen shallow projection plus frozen deep projection BEFORE first spatial readout convolution; only FM/Z persist. Own recurrence; ego nearest alignment, period3/.25s.",
+  "tbptt": 2,
+  "teacher": "Fixed complete Z from same E/FM; fixed reader and heads produce targets. Ordinary teacher output discarded, never written to student Z. Full refresh writes fixed Z by declared policy.",
+  "trainable": "Updater plus separate mature spatial reader when joint; frozen reader control differs only in reader trainability. Frozen BN running statistics, trainable reader affine in joint. Pillar/FM/stem/H/deep/projections/heads and independent teacher fixed.",
+  "update": "Same Z gate and signed candidate; two hidden3x3 layers use dilation1/1; radius2. Equal kernel parameters and nominal MACs; no local execution.",
+  "updater_parameters": 94625,
+  "validation": "Full5794/1738 fixed H control, frozen full Z+reader control, own Z recurrence; joint adds full current Z+adapted reader. Shared GPU timing null. Branch Conv MACsx2 measured; nonconv/Pillar pointwise Linear omitted consistently.",
+  "weights_only_init": {
+    "epoch": 33,
+    "path": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/z_only_w64_joint_p3_resume3_v1_20261028/epoch_033/updater.pth",
+    "reader_initialization": "fixed_mature_not_checkpoint",
+    "sha256": "2e26f4e636c674f557f3017147fad6c24007e09cd5a9c4582d7d3029e7629045",
+    "source_reader": "joint"
+  },
+  "width": 64
+}
