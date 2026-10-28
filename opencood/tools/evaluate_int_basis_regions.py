@@ -539,7 +539,7 @@ def main():
     p.add_argument('--z-only-diagnostic',default=None,help='Frozen Z history/reader diagnosis on512 training scans; no AP')
     p.add_argument('--z-only-reader-audit',default=None,help='Frozen joint checkpoint: same-Z readout exchange on full validation')
     p.add_argument('--z-only-context',choices=('plain','dilated'),default='plain')
-    p.add_argument('--z-only-init',default=None,help='Weights-only Z warm start with fresh2.5e-5 optimizer; not exact resume')
+    p.add_argument('--z-only-init',default=None,help='Weights-only Z warm start with fresh2.5e-5 optimizer and fixed mature reader (also for joint source); not exact resume')
     p.add_argument('--short-readout-train-period',type=int,choices=(3,5),default=3)
     p.add_argument('--short-readout-init',default=None,help='Weights-only warm start; fresh optimizer/schedule, distinct from exact resume')
     p.add_argument('--short-readout-diagnostic',default=None,help='Frozen repair checkpoint for offline512 train-frame history diagnosis')

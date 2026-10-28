@@ -13,6 +13,17 @@ from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
 
 
+def load_fixed_reader_start(updater,reader,fixed_reader,initial,source):
+    """Keep a joint-trained updater, but explicitly restore the mature reader."""
+    original=initial['contract']
+    assert original['kind']=='z_only_spatial_v1' and original['reader'] in ('frozen','joint')
+    assert original['source']==source and original['width']==64 and original['period']==3
+    updater.load_state_dict(initial['updater'],strict=True)
+    if original['reader']=='frozen':reader.load_state_dict(initial['reader'],strict=True)
+    else:reader.load_state_dict(fixed_reader.state_dict(),strict=True)
+    assert all(torch.equal(v,fixed_reader.state_dict()[k]) for k,v in reader.state_dict().items())
+
+
 def engineering(mode,full,cfg,train):
     state=full_state=native_state=None;samples=[];ordinary=0;maximum=0.;costs={}
     watched=[*(m for m in mode.stage.blocks.modules() if isinstance(m,torch.nn.Conv2d)),
@@ -80,6 +91,8 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
     if init_path:
         initial=torch.load(init_path,map_location='cpu')
         warm=dict(path=str(init_path),sha256=digest(init_path),epoch=initial['epoch'])
+        if initial['contract']['reader']=='joint':
+            warm.update(source_reader='joint',reader_initialization='fixed_mature_not_checkpoint')
     elif saved_resume is not None:warm=saved_resume['contract'].get('weights_only_init')
     updater=ZOnlyUpdater(64,context).cuda().eval()
     reader=make_reader(baseline.readout,joint).cuda()
@@ -108,13 +121,7 @@ def train_z_only(a,cfg,train,val,baseline,out,costs,spatial_macs,source):
             optimizer='Fresh AdamW updater2.5e-5 wd1e-4 clip5; reader frozen. Same plateau factor.5/patience1/absolute.0005/min1e-6, stop min6/stale4/lr<=2.5e-5.')
         assert not joint and warm is not None
     if init_path:
-        original=initial['contract']
-        assert original['kind']=='z_only_spatial_v1' and original['reader']=='frozen'
-        assert original['source']==contract['source'] and original['width']==64 and original['period']==3
-        updater.load_state_dict(initial['updater'],strict=True)
-        reader.load_state_dict(initial['reader'],strict=True)
-        # Both arms keep the same mature fixed reader, not an adapted teacher.
-        assert all(torch.equal(v,fixed_reader.state_dict()[k]) for k,v in reader.state_dict().items())
+        load_fixed_reader_start(updater,reader,fixed_reader,initial,contract['source'])
         write_json(out/'initialization.json',dict(warm,context=context,optimizer_reset=True,epoch_reset=True))
     write_json(out/'z_only_contract.json',contract)
     write_json(out/'z_only_engineering.json',engineering(mode,full,cfg,train))

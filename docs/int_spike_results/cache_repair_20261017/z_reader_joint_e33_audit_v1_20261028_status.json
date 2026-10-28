@@ -1,6 +1,5 @@
 {
-  "epoch": 33,
-  "phase": "validation",
-  "scans": 1200,
-  "status": "RUNNING"
+  "same_z_scans": 5794,
+  "scans": 5794,
+  "status": "COMPLETED"
 }

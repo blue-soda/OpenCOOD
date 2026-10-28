@@ -135,6 +135,23 @@ class TestZContext(unittest.TestCase):
 
 
 class TestZReaderAudit(unittest.TestCase):
+    def test_joint_warm_start_restores_reader_but_preserves_updater(self):
+        from opencood.tools.train_int_z_only import load_fixed_reader_start
+        source=ZOnlyUpdater(4);updater=ZOnlyUpdater(4)
+        fixed=nn.Conv2d(96,4,1);reader=nn.Conv2d(96,4,1)
+        adapted={k:v.clone()+2 for k,v in fixed.state_dict().items()}
+        contract=dict(kind='z_only_spatial_v1',reader='joint',source={'test':1},width=64,period=3)
+        initial=dict(contract=contract,updater=source.state_dict(),reader=adapted)
+        load_fixed_reader_start(updater,reader,fixed,initial,{'test':1})
+        self.assertTrue(all(torch.equal(v,source.state_dict()[k]) for k,v in updater.state_dict().items()))
+        self.assertTrue(all(torch.equal(v,fixed.state_dict()[k]) for k,v in reader.state_dict().items()))
+        self.assertTrue(all(torch.equal(v,fixed.state_dict()[k]+2) for k,v in adapted.items()))
+        contract['reader']='frozen'
+        with self.assertRaises(AssertionError):load_fixed_reader_start(updater,reader,fixed,initial,{'test':1})
+        initial['reader']=fixed.state_dict()
+        load_fixed_reader_start(updater,reader,fixed,initial,{'test':1})
+        with self.assertRaises(AssertionError):load_fixed_reader_start(updater,reader,fixed,initial,{'test':2})
+
     def test_rotated_pairs_and_state_difference_detection(self):
         from opencood.tools.audit_int_z_reader import SameZStateAudit
         audit=SameZStateAudit();value=torch.randn(1,96,3,4)
