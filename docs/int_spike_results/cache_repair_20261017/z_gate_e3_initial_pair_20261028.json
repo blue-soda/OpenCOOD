@@ -1,0 +1,13 @@
+{
+  "status": "PASSED",
+  "scans": 5794,
+  "labels": 1738,
+  "source_sha256": "ce6420f3e4b477d3994c0632fb6a20ff20ad62a6879f5680584c9124fed186a2",
+  "initial_ap50_ap70_and_controls_exact": true,
+  "ap70": 0.7494204639799356,
+  "spatial_gflops": 114.97197812247153,
+  "channel_gflops": 115.17237005343459,
+  "extra_gflops": 0.20039193096306462,
+  "state_bytes": 35884800.0,
+  "limitation": "Initialization verification only, not trained gate superiority. Different GPUs; no comparative latency claim."
+}
