@@ -1,0 +1,11 @@
+{
+  "best": {
+    "ap70": 0.7494312349617808,
+    "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/z_gate_spatial_e3_v1_20261028/epoch_003/updater.pth",
+    "epoch": 3,
+    "sha256": "27d1a2018a7854d0b34450230de9b81a6b78ec85ffb0349f120ed17890d79c0e"
+  },
+  "epochs": 6,
+  "status": "COMPLETED",
+  "stop_reason": "plateau"
+}

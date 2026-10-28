@@ -1,0 +1,75 @@
+{
+  "path": "/tmp/int_z_gates_context_20261028_2140.tar.gz",
+  "bytes": 14827178,
+  "sha256": "12015fe110d3af8739cfadf8f81f89d0e5488e057a9fc11bc038ec1423658626",
+  "members": {
+    "z_gate_spatial_e3_v1_20261028/latest.pth": {
+      "bytes": 3037214,
+      "sha256": "f7daa039166a8ea7dd31b0cf04d02978c2c6ff5a54d5d7085d3cb3c75b213418"
+    },
+    "z_gate_spatial_e3_v1_20261028/best.json": {
+      "bytes": 246,
+      "sha256": "5e398f0636fbb60cd4f81bd0c2f805d49edbd91480d26bfa06cb730fd1827832"
+    },
+    "z_gate_spatial_e3_v1_20261028/z_only_contract.json": {
+      "bytes": 3886,
+      "sha256": "45d144253ef8363bf1c0ba6ef5ee1a4561b89b0cfc35b227388c4dff10f25954"
+    },
+    "z_gate_spatial_e3_v1_20261028/epoch_003/updater.pth": {
+      "bytes": 2268186,
+      "sha256": "27d1a2018a7854d0b34450230de9b81a6b78ec85ffb0349f120ed17890d79c0e"
+    },
+    "z_gate_channel_e3_v1_20261028/latest.pth": {
+      "bytes": 3111454,
+      "sha256": "9d4f647e8ccda8443e6378a5ce4dc2c45bd1592bf40449a912e6c31bb63dac31"
+    },
+    "z_gate_channel_e3_v1_20261028/best.json": {
+      "bytes": 246,
+      "sha256": "510e45eb19ee4ecce79ea7820a4370dc95e6de0bf5b7a07d2a8e6920a4a0ca12"
+    },
+    "z_gate_channel_e3_v1_20261028/z_only_contract.json": {
+      "bytes": 4068,
+      "sha256": "c8228e3f4a322bbb5ad9889fe2fefcce03688529096579db53d3fbbe4f040db5"
+    },
+    "z_gate_channel_e3_v1_20261028/epoch_004/updater.pth": {
+      "bytes": 2293082,
+      "sha256": "47a6b1a5ce2d235885ade4c0a189fd6e5a1d35d1cc58def391d5b18202fef579"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/latest.pth": {
+      "bytes": 3049438,
+      "sha256": "563fadeee8446122ad428e11082454d99b603b8667db95928ae08f1d0e2ef7e1"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/best.json": {
+      "bytes": 259,
+      "sha256": "5601d50934d000601762a78557a0fb4f18b979e43b8ed779aacd31f8aa9a2b4d"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/z_only_contract.json": {
+      "bytes": 3891,
+      "sha256": "e933325eebfd68766aea28090fde3eae3ea0391a2dd387a4e96422d6cb673630"
+    },
+    "z_context_dilated_e26_resume2_v1_20261028/epoch_023/updater.pth": {
+      "bytes": 2268186,
+      "sha256": "5f4b3ddcdf24695dbc55ff79de573d3b87466bfc36ad78e00bad48bbcf43d2dc"
+    }
+  },
+  "checkpoints": {
+    "z_gate_spatial_e3_v1_20261028": {
+      "epoch": 6,
+      "next_action": "train",
+      "stale": 6
+    },
+    "z_gate_channel_e3_v1_20261028": {
+      "epoch": 6,
+      "next_action": "train",
+      "stale": 3
+    },
+    "z_context_dilated_e26_resume2_v1_20261028": {
+      "epoch": 23,
+      "next_action": "train",
+      "stale": 1
+    }
+  },
+  "destination_verified": true,
+  "destination": "mindspore-146:/data1/zhh/gzc/int181_snapshot/live_backups/int_z_gates_context_20261028_2140.tar.gz",
+  "verification": "Source, local intermediary and destination SHA256 identical. Best/contract metadata serialized from captured latest checkpoints."
+}
