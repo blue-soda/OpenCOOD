@@ -537,6 +537,7 @@ def main():
     p.add_argument('--z-only-reader',choices=('frozen','joint'),default='joint')
     p.add_argument('--z-only-resume',default=None,help='Exact Z updater/reader/optimizer continuation')
     p.add_argument('--z-only-diagnostic',default=None,help='Frozen Z history/reader diagnosis on512 training scans; no AP')
+    p.add_argument('--z-only-reader-audit',default=None,help='Frozen joint checkpoint: same-Z readout exchange on full validation')
     p.add_argument('--z-only-context',choices=('plain','dilated'),default='plain')
     p.add_argument('--z-only-init',default=None,help='Weights-only Z warm start with fresh2.5e-5 optimizer; not exact resume')
     p.add_argument('--short-readout-train-period',type=int,choices=(3,5),default=3)
@@ -553,8 +554,8 @@ def main():
     if a.z_only_resume and not a.z_only_epochs:p.error('Z-only resume requires training')
     if a.z_only_init and (not a.z_only_epochs or a.z_only_resume or a.z_only_reader!='frozen'):p.error('Z warm start requires frozen-reader training without resume')
     if a.z_only_context!='plain' and (not a.z_only_epochs or not (a.z_only_init or a.z_only_resume)):p.error('Dilated Z requires declared warm start or exact resume')
-    if a.z_only_diagnostic and a.z_only_epochs:p.error('Z-only diagnostic cannot train or resume')
-    if (a.z_only_epochs or a.z_only_diagnostic) and (not a.recurrent_local_reference or a.recurrent_local_period!=4 or
+    if sum(bool(x) for x in (a.z_only_epochs,a.z_only_diagnostic,a.z_only_reader_audit))>1:p.error('Choose exactly one Z training, diagnostic or reader audit')
+    if (a.z_only_epochs or a.z_only_diagnostic or a.z_only_reader_audit) and (not a.recurrent_local_reference or a.recurrent_local_period!=4 or
             a.y_only_epochs or a.y_only_resume or a.y_only_diagnostic or a.short_readout_epochs or
             a.short_readout_resume or a.short_readout_diagnostic or a.short_readout_init or
             a.current_readout_local or a.recurrent_readout_calibration):
@@ -677,7 +678,7 @@ def main():
         return
     free, util = subprocess.check_output(['nvidia-smi', '-i', str(a.gpu), '--query-gpu=memory.free,utilization.gpu',
         '--format=csv,noheader,nounits']).decode().strip().split(',')
-    if a.short_readout_epochs or a.short_readout_diagnostic or a.current_readout_local or a.y_only_epochs or a.y_only_diagnostic or a.z_only_epochs or a.z_only_diagnostic:
+    if a.short_readout_epochs or a.short_readout_diagnostic or a.current_readout_local or a.y_only_epochs or a.y_only_diagnostic or a.z_only_epochs or a.z_only_diagnostic or a.z_only_reader_audit:
         # Observed process footprint about5.5GiB; leave launch headroom. Other
         # processes and nonzero utilization are permitted by the user.
         if int(free)<8192:raise RuntimeError('Short readout needs at least8192MiB free at launch')

@@ -132,3 +132,18 @@ class TestZContext(unittest.TestCase):
         wide(e,old,valid).sum().backward()
         self.assertTrue(all(p.grad is not None and torch.isfinite(p.grad).all() for p in wide.parameters()))
         with self.assertRaises(ValueError):ZOnlyUpdater(4,'unknown')
+
+
+class TestZReaderAudit(unittest.TestCase):
+    def test_rotated_pairs_and_state_difference_detection(self):
+        from opencood.tools.audit_int_z_reader import SameZStateAudit
+        audit=SameZStateAudit();value=torch.randn(1,96,3,4)
+        state={'z':{'value':value}};info={'z_refresh':False}
+        for index,names in enumerate([('z_actual','z_swapped'),('z_swapped','z_actual')]):
+            for name in names:audit(name,None,None,None,None,state,info,index)
+        self.assertEqual(audit.pairs,2);self.assertIsNone(audit.pending)
+        audit('z_full_fixed',None,None,None,None,state,info,2)
+        self.assertIsNone(audit.pending)
+        audit('z_actual',None,None,None,None,state,info,2)
+        changed={'z':{'value':value+1}}
+        with self.assertRaises(AssertionError):audit('z_swapped',None,None,None,None,changed,info,2)
