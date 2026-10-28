@@ -1,0 +1,14 @@
+{
+  "frames": 32,
+  "full_conv_macs": 108109209600,
+  "full_vs_native_max_error": 7.62939453125e-06,
+  "gradients_only_requested_modules": true,
+  "only_fm_z_persist": true,
+  "ordinary_conv_macs": 30698035200,
+  "ordinary_frames": 21,
+  "ordinary_h_d_projection_calls": 0,
+  "reader_bn_statistics_fixed": true,
+  "reader_every_frame": true,
+  "status": "PASSED",
+  "teacher_on_off_exact": true
+}
