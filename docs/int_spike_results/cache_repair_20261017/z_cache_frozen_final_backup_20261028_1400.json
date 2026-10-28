@@ -1,0 +1,53 @@
+{
+  "path": "/tmp/int_z_cache_frozen_final_20261028_1400.tar.gz",
+  "bytes": 13305720,
+  "sha256": "ec3e07863978242be2ea26862cdfc7be2586584301c4b880ee31fa4a4dc99a8d",
+  "members": {
+    "z_only_w64_joint_p3_resume2_v1_20261028/best.json": {
+      "bytes": 268,
+      "sha256": "6075e90ca2448b00cfbdfedcfd4859dd5b442ef66ae91c059f58c895f7c2ebf1"
+    },
+    "z_only_w64_joint_p3_resume2_v1_20261028/latest.pth": {
+      "bytes": 6807528,
+      "sha256": "518dbcb0ace467d838af817315896bb44b373bf5d102b6cfd1f48037d429cdcc"
+    },
+    "z_only_w64_joint_p3_resume2_v1_20261028/z_only_contract.json": {
+      "bytes": 3965,
+      "sha256": "2a13757cd76500db69844201476a0b809c1f3f90fedc2c9ec3a0081caf2e3910"
+    },
+    "z_only_w64_joint_p3_resume2_v1_20261028/epoch_026/updater.pth": {
+      "bytes": 2267866,
+      "sha256": "52f4e20b1f08585d4af6755970a88edd661a9e572b34c6891d344deec8bc7af8"
+    },
+    "z_only_w64_frozen_p3_resume2_v1_20261028/best.json": {
+      "bytes": 269,
+      "sha256": "d970477c1afae2f7c86181229ad0e252f807f5b1d29515e2317c5cb17b9f3793"
+    },
+    "z_only_w64_frozen_p3_resume2_v1_20261028/latest.pth": {
+      "bytes": 3051038,
+      "sha256": "5840b34238eab3936b28a3860ddaa5228d516bd8ac55773a88b7341c05f146c7"
+    },
+    "z_only_w64_frozen_p3_resume2_v1_20261028/z_only_contract.json": {
+      "bytes": 3961,
+      "sha256": "3d7d4ca2f76f14de17297722270a8050c3579f0f75b2c648357b38f0bb92fb93"
+    },
+    "z_only_w64_frozen_p3_resume2_v1_20261028/epoch_026/updater.pth": {
+      "bytes": 2267866,
+      "sha256": "c63b0bcac1bb83619e9c6fee56d842b5c0a53c2187d23543ec6ba07459443a03"
+    }
+  },
+  "checkpoints": {
+    "z_only_w64_joint_p3_resume2_v1_20261028": {
+      "epoch": 26,
+      "next_action": "train",
+      "stale": 1
+    },
+    "z_only_w64_frozen_p3_resume2_v1_20261028": {
+      "epoch": 26,
+      "next_action": "train",
+      "stale": 4
+    }
+  },
+  "destination_verified": true,
+  "destination": "/data1/zhh/gzc/int181_snapshot/live_backups/int_z_cache_frozen_final_20261028_1400.tar.gz"
+}

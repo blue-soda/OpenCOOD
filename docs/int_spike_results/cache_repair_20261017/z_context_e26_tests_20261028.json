@@ -1,0 +1,14 @@
+{
+  "plain": {
+    "tests": 257,
+    "seconds": 8.622,
+    "status": "PASSED",
+    "log_sha256": "12ec9034e16ce4d62262946b5f0665b9868d9c21578b7a63a637fca11fc97f5a"
+  },
+  "dilated": {
+    "tests": 257,
+    "seconds": 8.256,
+    "status": "PASSED",
+    "log_sha256": "f1c5334d0c543e9029974f870cc2e6dec7347e9430644db47a2eabbb99dabf89"
+  }
+}
