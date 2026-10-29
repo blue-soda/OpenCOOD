@@ -1,0 +1,14 @@
+{
+  "f0_base": {
+    "path": "C:\\Workspace\\OpenCOOD\\baseline_repro_20261025\\frontend_final_20261029\\f0_base_best_ap70.pth",
+    "bytes": 12597689,
+    "sha256": "be320dc564bf98d66e76e8f034e0d50647a01888459f4c76665a88a05c1e3841",
+    "matches_server_and_evaluation_manifest": true
+  },
+  "f1_deep": {
+    "path": "C:\\Workspace\\OpenCOOD\\baseline_repro_20261025\\frontend_final_20261029\\f1_deep_best_ap70.pth",
+    "bytes": 17945705,
+    "sha256": "1793ec959cd7dfdc364391312f099c003fccc89fda4b4d9246367d63f4d8c066",
+    "matches_server_and_evaluation_manifest": true
+  }
+}
