@@ -1,0 +1,17 @@
+{
+  "status": "COMPLETED",
+  "stop_reason": "plateau",
+  "epochs": 6,
+  "all_epochs_fixed_controls_exact": true,
+  "scans": 5794,
+  "labels": 1738,
+  "initial_ap70": 0.7500829440203655,
+  "best_trained_epoch": 1,
+  "best_trained_ap70": 0.7490910654455364,
+  "last_ap70": 0.7481095308520592,
+  "best_trained_minus_fixed_pp": -0.09918785748290748,
+  "gflops": 115.27362071328962,
+  "extra_gflops": 0.10125065985502602,
+  "trainable_parameters": 3168,
+  "decision": "Do not adopt: all six trained checkpoints below unchanged fixed control; global best is untrained identity e0. This does not rule out other spatial correction architectures."
+}

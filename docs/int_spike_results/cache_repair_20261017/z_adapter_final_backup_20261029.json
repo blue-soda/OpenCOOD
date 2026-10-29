@@ -1,0 +1,39 @@
+{
+  "path": "/tmp/int_z_adapter_final_20261029.tar.gz",
+  "bytes": 6446759,
+  "sha256": "2b61882554ec65e96f52634e0b53795a1a0aac62f6b018d683f485e49783dc7d",
+  "members": {
+    "z_readout_adapter_r16_channel_e4_v1_20261028/latest.pth": {
+      "bytes": 2341119,
+      "sha256": "eef9938a9fcdc5c06aaf083ca206299d2512c2166219eedf2d16d02347c23c01"
+    },
+    "z_readout_adapter_r16_channel_e4_v1_20261028/best.json": {
+      "bytes": 272,
+      "sha256": "31de9227f09e0ab2fadde43ffbb2bd77a4f45abcf152acbba668be704c288255"
+    },
+    "z_readout_adapter_r16_channel_e4_v1_20261028/z_only_contract.json": {
+      "bytes": 4311,
+      "sha256": "f9ae6dfbb946b0abd20c95f0d59644bfa431c7d00c385edf39b18057f83fd874"
+    },
+    "z_readout_adapter_r16_channel_e4_v1_20261028/report.json": {
+      "bytes": 364,
+      "sha256": "093687580b057e1cfbbbcc45cd303a77d591fdc9dc82688a155ab06a54d68d86"
+    },
+    "z_readout_adapter_r16_channel_e4_v1_20261028/history.json": {
+      "bytes": 22767,
+      "sha256": "45107db904c793c574dd14c3ae69c1466a3dd176b7c4c1a116619b5c73210ebd"
+    },
+    "z_readout_adapter_r16_channel_e4_v1_20261028/epoch_000/updater.pth": {
+      "bytes": 2306577,
+      "sha256": "e288e354938cb2e5d5359a89e95705a187ddabee5525da6e89669b628c9a8f79"
+    },
+    "z_readout_adapter_r16_channel_e4_v1_20261028/epoch_001/updater.pth": {
+      "bytes": 2306577,
+      "sha256": "984439c4565124b894a4253f58903ab8494395639cf1d0fac8d4efe196ae948d"
+    }
+  },
+  "best_trained_epoch": 1,
+  "destination_verified": true,
+  "destination": "mindspore-146:/data1/zhh/gzc/int181_snapshot/live_backups/int_z_adapter_final_20261029.tar.gz",
+  "verification": "Source, local intermediary and destination SHA256 identical. Includes e6 latest, e0 global best and e1 best trained weights. Upload succeeded after authorized VPN check and retry."
+}

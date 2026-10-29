@@ -1,0 +1,11 @@
+{
+  "best": {
+    "ap70": 0.7500829440203655,
+    "checkpoint": "/data2/tzm/workspace/diagnostics/int_cache_repair_20261017/z_readout_adapter_r16_channel_e4_v1_20261028/epoch_000/updater.pth",
+    "epoch": 0,
+    "sha256": "e288e354938cb2e5d5359a89e95705a187ddabee5525da6e89669b628c9a8f79"
+  },
+  "epochs": 6,
+  "status": "COMPLETED",
+  "stop_reason": "plateau"
+}
