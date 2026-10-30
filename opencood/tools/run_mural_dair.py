@@ -112,9 +112,14 @@ def evaluate(model, dataset, args, output):
             if scans%400==0:print('EVAL',output.name,scans,flush=True)
     counter.close()
     result=dict(scans=scans,labels=labels,full_flow=scans==len(dataset),results=[])
+    result['ap_valid']=labels>0 and all(s[.7]['gt']>0 for s in stats)
+    if len(set(s[.7]['gt'] for s in stats))!=1:raise ValueError('Resolution-dependent GT count')
+    if result['full_flow'] and len(dataset.rows)==5794 and (labels!=1738 or stats[0][.7]['gt']!=22971):
+        raise ValueError('Frozen validation coverage mismatch')
     for k,s in enumerate(stats):
         result['results'].append(dict(resolution=k,grid=dataset.configs[k]['model']['args']['point_pillar_scatter']['grid_size'],
-            ap50=eval_utils.calculate_ap(s,.5)[0],ap70=eval_utils.calculate_ap(s,.7)[0],gt=s[.7]['gt'],
+            ap50=eval_utils.calculate_ap(s,.5)[0] if result['ap_valid'] else None,
+            ap70=eval_utils.calculate_ap(s,.7)[0] if result['ap_valid'] else None,gt=s[.7]['gt'],
             conv_linear_gflops=float(np.mean(costs[k])),mean_ms=float(np.mean(times[k])) if times[k] else None,
             p95_ms=float(np.percentile(times[k],95)) if times[k] else None))
     result['timing_scope']='Model only; CUDA synchronized; excludes IO, history alignment, voxelization, H2D, postprocess; no end-to-end claim'
@@ -191,7 +196,7 @@ def main():
         saved=dict(model=model.state_dict(),optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),epoch=epoch,history=history,
                    rng_python=random.getstate(),rng_numpy=np.random.get_state(),rng_torch=torch.get_rng_state(),rng_cuda=torch.cuda.get_rng_state_all())
         torch.save(saved,str(out/'latest.tmp'));os.replace(str(out/'latest.tmp'),str(out/'latest.pth'))
-        if evaluation['results'][0]['ap70']>=max(h['evaluation']['results'][0]['ap70'] for h in history):
+        if evaluation['ap_valid'] and evaluation['results'][0]['ap70']>=max(h['evaluation']['results'][0]['ap70'] for h in history if h['evaluation']['ap_valid']):
             torch.save(dict(model=model.state_dict(),epoch=epoch,contract=contract),str(out/'best.tmp'));os.replace(str(out/'best.tmp'),str(out/'best.pth'))
         write(out/'history.json',history)
     write(out/'status.json',dict(status='COMPLETED',epochs=args.epochs,stop_reason='epoch_budget_not_convergence'))
