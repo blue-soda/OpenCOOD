@@ -83,7 +83,10 @@ def launch(protocol_path, gpu):
         readings.append(dict(free_mib=free, utilization=util))
         time.sleep(2)
     assert os.statvfs(str(root)).f_bavail * os.statvfs(str(root)).f_frsize >= 5 * 1024**3
-    env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu), PYTHONPATH=protocol['repo'],
+    extra_paths = protocol.get('dependency_paths', [])
+    assert all(Path(p).is_absolute() and Path(p).is_dir() for p in extra_paths)
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu),
+        PYTHONPATH=os.pathsep.join([protocol['repo']] + extra_paths),
         OMP_NUM_THREADS='1', MKL_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1',
         NUMPY_MADVISE_HUGEPAGE='0', OPENCOOD_CUDA_MEMORY_FRACTION='.6')
     # Short IPC path avoids Unix-domain socket path limits with DataLoader.
