@@ -59,13 +59,19 @@ def engineering(student,teacher,cfg,rows,out):
         for hook in hooks:hook.remove()
         for hook in cost_hooks:hook.remove()
     assert not any('backbone' in name or 'feature_memory' in name for name,_ in student.named_modules())
-    weight_hash=hashlib.sha256()
+    weight_hash=hashlib.sha256();shared_hash=hashlib.sha256()
     for name,value in sorted(student.core.state_dict().items()):
         weight_hash.update(name.encode());weight_hash.update(value.detach().cpu().contiguous().numpy().tobytes())
+        if not name.startswith('observation.'):
+            shared_hash.update(name.encode());shared_hash.update(value.detach().cpu().contiguous().numpy().tobytes())
     report=dict(status='PASSED',frames=records,original_spatial_calls=calls,
                 variant=student.variant,memory_policy=student.memory_policy,core_state_sha256=weight_hash.hexdigest(),
                 current_branch_normalized=bool(False),
                 trainable_parameters=sum(p.numel() for p in student.parameters() if p.requires_grad),
+                shared_non_observation_sha256=shared_hash.hexdigest(),
+                observation_blocks=len(student.core.observation) if isinstance(student.core.observation,torch.nn.Sequential) else 1,
+                trainable_by_component={name:sum(p.numel() for p in module.parameters() if p.requires_grad)
+                                        for name,module in student.core.named_children()},
                 core_conv_macs=conv_macs,core_conv_macs_total=sum(conv_macs.values()),
                 cost_scope='One real frame, core Conv2d only; excludes Pillar, warp, normalization, activation, interpolation and data movement; not measured latency.',
                 state_bytes=info['state_bytes'],update_radius=2,
