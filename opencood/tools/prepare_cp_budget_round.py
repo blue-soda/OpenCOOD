@@ -61,10 +61,9 @@ def prepare(a):
         cfg['lr_scheduler'].update(step_size=[4, 5], gamma=.1)
         train_config = root / 'train.yaml'
         train_config.write_text(yaml.safe_dump(cfg))
-        jobs = [job('smoke', 'opencood.tools.train_e3dsnn_single',
-            ['--mode', 'overfit', '--steps', 2, '--config', train_config,
-             '--checkpoint', frozen, '--output', root / 'smoke', '--workers', 0,
-             '--seed', 20260929], 3600, [root / 'smoke/status.json']),
+        jobs = [job('smoke', 'opencood.tools.audit_cp_frontend_budget',
+            ['--config', train_config, '--checkpoint', frozen,
+             '--output', root / 'audit.json'], 3600, [root / 'audit.json']),
             job('train', 'opencood.tools.train_e3dsnn_single',
             ['--mode', 'train', '--config', train_config, '--checkpoint', frozen,
              '--output', root / 'train', '--epochs', 6, '--workers', 2,
