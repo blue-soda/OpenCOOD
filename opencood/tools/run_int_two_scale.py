@@ -188,6 +188,8 @@ def worker(a):
         assert saved['contract']['version']=='two_scale_dense_v1'
         assert saved['contract'].get('memory_policy','recurrent')==a.memory_policy
         student.load_state_dict(saved['model'],strict=True)
+        # Keep checkpoint identity separate from the inference-only intervention.
+        student.memory_policy=a.evaluation_memory_policy or a.memory_policy
         evaluation_rows=train_rows if a.evaluation_split=='train' else val
         provenance['split']=a.evaluation_split
         write_json(out/'provenance.json',provenance)
@@ -198,6 +200,10 @@ def worker(a):
         else:
             report=validate(a,student,teacher,cfg,evaluation_rows,out)
         report.update(checkpoint=a.checkpoint,checkpoint_sha256=digest(Path(a.checkpoint)))
+        report.update(training_memory_policy=a.memory_policy,
+                      evaluation_memory_policy=student.memory_policy)
+        if student.memory_policy != a.memory_policy:
+            report['caveats'].append('Memory policy is an inference-only intervention on this exact checkpoint; not a separately trained baseline.')
         write_json(out/'report.json',report)
         write_json(out/'status.json',dict(status='COMPLETED'))
         return
@@ -279,6 +285,8 @@ def main():
     p.add_argument('--checkpoint');p.add_argument('--resume');p.add_argument('--worker',action='store_true')
     p.add_argument('--variant',choices=['two_scale_v1'],default='two_scale_v1')
     p.add_argument('--memory-policy',choices=['recurrent','reset'],default='recurrent')
+    p.add_argument('--evaluation-memory-policy',choices=['recurrent','reset'],
+                   help='Override only full checkpoint evaluation; --memory-policy must still match its training contract')
     p.add_argument('--evaluation-split',choices=['val','train'],default='val',
                    help='Train is a fixed-checkpoint fit diagnostic only; never used for training-time model selection')
     p.add_argument('--engineering-only',action='store_true')
@@ -286,6 +294,8 @@ def main():
     a=p.parse_args();out=Path(a.output)
     if a.epochs<5 or (a.checkpoint and a.resume):p.error('At least five epochs; evaluation and resume are exclusive')
     if a.diagnostic and not a.checkpoint:p.error('Diagnostic requires an immutable checkpoint')
+    if a.evaluation_memory_policy and (not a.checkpoint or a.resume or a.diagnostic or a.engineering_only):
+        p.error('Evaluation memory override requires full --checkpoint evaluation only')
     if a.evaluation_split=='train' and (not a.checkpoint or a.diagnostic):
         p.error('Training-split evaluation requires --checkpoint and cannot combine with --diagnostic')
     if a.variant=='v1' and a.memory_policy!='recurrent':p.error('Reset-policy training is a v2 control')

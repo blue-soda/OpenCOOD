@@ -49,5 +49,25 @@ class TwoScaleTests(unittest.TestCase):
         _,detached,_=model.step_spatial(x,None,meta,True)
         self.assertTrue(all(detached[k].grad_fn is None for k in ('value','coarse')))
 
+    def test_reset_intervention_ignores_both_nonzero_states_without_changing_weights(self):
+        torch.manual_seed(303)
+        model=self.model()
+        nn.init.constant_(model.core.fine_update.history.weight,.01)
+        nn.init.constant_(model.core.coarse_update.history.weight,.01)
+        x=torch.randn(1,64,16,20)
+        meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
+        _,state,_=model.step_spatial(x,None,meta)
+        state=dict(state,value=torch.ones_like(state['value']),coarse=torch.ones_like(state['coarse']))
+        meta=dict(meta,timestamp_us=200000)
+        expected,_,_=model.step_spatial(x,None,meta)
+        recurrent,_,_=model.step_spatial(x,state,meta)
+        before={k:v.clone() for k,v in model.state_dict().items()}
+        model.memory_policy='reset'
+        actual,_,info=model.step_spatial(x,state,meta)
+        self.assertEqual(info['reset'],'explicit')
+        self.assertTrue(all(torch.equal(actual[k],expected[k]) for k in actual))
+        self.assertTrue(any(not torch.equal(recurrent[k],expected[k]) for k in recurrent))
+        self.assertTrue(all(torch.equal(v,model.state_dict()[k]) for k,v in before.items()))
+
 
 if __name__=='__main__':unittest.main()
