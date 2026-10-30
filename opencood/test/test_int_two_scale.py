@@ -13,12 +13,39 @@ def block(ci, co, stride):
 
 
 class TwoScaleTests(unittest.TestCase):
-    def model(self, policy='recurrent'):
+    def model(self, policy='recurrent', architecture='two_scale_v1'):
         teacher=SimpleNamespace(pillar_vfe=nn.Identity(),scatter=nn.Identity(),use_dir=False,
             cls_head=nn.Conv2d(256,2,1),reg_head=nn.Conv2d(256,14,1),
-            backbone=SimpleNamespace(resnet=SimpleNamespace(layer0=nn.Sequential(block(64,128,2)),
+            backbone=SimpleNamespace(resnet=SimpleNamespace(layer0=nn.Sequential(block(64,128,2),BasicBlock(128,128),BasicBlock(128,128)),
                 layer1=nn.Sequential(block(128,256,2),BasicBlock(256,256)))))
-        return TwoScaleDetector(teacher,{'model':{'args':{'lidar_range':[-4,-4,-1,4,4,1]}}},policy)
+        return TwoScaleDetector(teacher,{'model':{'args':{'lidar_range':[-4,-4,-1,4,4,1]}}},policy,architecture)
+
+    def test_encoder_depth_pair_preserves_shared_initialization_and_state_contract(self):
+        torch.manual_seed(303)
+        shallow=self.model(architecture='two_scale_narrow')
+        torch.manual_seed(303)
+        full=self.model(architecture='two_scale_full')
+        self.assertEqual(len(full.core.observation),3)
+        self.assertIsInstance(shallow.core.observation,BasicBlock)
+        self.assertNotEqual(shallow.version,full.version)
+        common={k:v for k,v in shallow.state_dict().items() if not k.startswith('core.observation.')}
+        self.assertTrue(all(torch.equal(v,full.state_dict()[k]) for k,v in common.items()))
+        self.assertTrue(all(torch.equal(v,full.core.observation[0].state_dict()[k])
+                            for k,v in shallow.core.observation.state_dict().items()))
+        x=torch.randn(1,64,16,20);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
+        for model in (shallow,full):
+            model.train()
+            self.assertTrue(all(not m.training for m in model.modules() if isinstance(m,nn.BatchNorm2d)))
+            pred,state,_=model.step_spatial(x,None,meta,False)
+            self.assertEqual(pred['psm'].shape,(1,2,8,10))
+            self.assertEqual(state['coarse'].shape,(1,256,4,5))
+            _,later,_=model.step_spatial(x,state,dict(meta,timestamp_us=200000),False)
+            reset=copy.deepcopy(model);reset.memory_policy='reset'
+            expected,_,_=reset.step_spatial(x,state,dict(meta,timestamp_us=200000),False)
+            actual,_,_=model.step_spatial(x,state,dict(meta,timestamp_us=200000),False)
+            self.assertTrue(all(torch.equal(actual[k],expected[k]) for k in actual))
+            actual['psm'].square().mean().backward()
+            self.assertGreater(float(model.core.readout.projection.weight.grad.abs().sum()),0)
 
     def test_initial_policy_equivalence_and_state_ownership(self):
         torch.manual_seed(303)

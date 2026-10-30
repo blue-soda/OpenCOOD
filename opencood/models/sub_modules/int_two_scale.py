@@ -26,16 +26,34 @@ class StateUpdate(nn.Module):
         return F.relu(x + self.residual(x))
 
 
-class TwoScaleCore(nn.Module):
-    def __init__(self, teacher):
+class BottleneckReadout(nn.Module):
+    """Pointwise fusion with a zero-initialized spatial residual."""
+    def __init__(self):
         super().__init__()
-        self.observation = copy.deepcopy(teacher.backbone.resnet.layer0[0])
+        self.projection = nn.Conv2d(256, 256, 1)
+        self.residual = nn.Sequential(nn.Conv2d(256, 64, 1), nn.ReLU(),
+            nn.Conv2d(64, 64, 3, padding=1), nn.ReLU(),
+            nn.Conv2d(64, 64, 3, padding=1), nn.ReLU(), nn.Conv2d(64, 256, 1))
+        nn.init.zeros_(self.residual[-1].weight)
+        nn.init.zeros_(self.residual[-1].bias)
+
+    def forward(self, x):
+        x = F.relu(self.projection(x))
+        return F.relu(x + self.residual(x))
+
+
+class TwoScaleCore(nn.Module):
+    def __init__(self, teacher, architecture='two_scale_v1'):
+        super().__init__()
+        source = teacher.backbone.resnet.layer0
+        self.observation = copy.deepcopy(source if architecture == 'two_scale_full' else source[0])
         self.coarse_encoder = copy.deepcopy(nn.Sequential(*list(teacher.backbone.resnet.layer1)[:2]))
         self.fine_update = StateUpdate(128)
         self.coarse_update = StateUpdate(256)
         self.coarse_projection = nn.Conv2d(256, 128, 1)
-        self.readout = nn.Sequential(nn.Conv2d(256, 128, 3, padding=1), nn.ReLU(),
+        self.readout = (nn.Sequential(nn.Conv2d(256, 128, 3, padding=1), nn.ReLU(),
                                      nn.Conv2d(128, 256, 3, padding=1), nn.ReLU())
+                        if architecture == 'two_scale_v1' else BottleneckReadout())
         self.cls_head = copy.deepcopy(teacher.cls_head)
         self.reg_head = copy.deepcopy(teacher.reg_head)
         self.dir_head = copy.deepcopy(teacher.dir_head) if teacher.use_dir else None
@@ -44,15 +62,20 @@ class TwoScaleCore(nn.Module):
 class TwoScaleDetector(nn.Module):
     version = 'two_scale_dense_v1'
 
-    def __init__(self, teacher, config, memory_policy='recurrent'):
+    def __init__(self, teacher, config, memory_policy='recurrent', architecture='two_scale_v1'):
         super().__init__()
         if memory_policy not in ('reset', 'recurrent'): raise ValueError(memory_policy)
+        versions = dict(two_scale_v1='two_scale_dense_v1',
+                        two_scale_narrow='two_scale_narrow_reader_v1',
+                        two_scale_full='two_scale_full_encoder_v1')
+        if architecture not in versions: raise ValueError(architecture)
+        self.version = versions[architecture]
         self.memory_policy = memory_policy
         self.variant = self.version
         self.bounds = config['model']['args']['lidar_range']
         self.pillar_vfe = copy.deepcopy(teacher.pillar_vfe)
         self.scatter = copy.deepcopy(teacher.scatter)
-        self.core = TwoScaleCore(teacher)
+        self.core = TwoScaleCore(teacher, architecture)
         for p in self.parameters(): p.requires_grad_(True)
         for p in self.pillar_vfe.parameters(): p.requires_grad_(False)
         self.train(False)

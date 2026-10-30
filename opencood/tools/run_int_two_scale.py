@@ -179,13 +179,13 @@ def worker(a):
     write_json(out/'provenance.json',provenance)
     runtime=json.loads((Path(a.root)/'full_gru'/'effective_runtime.json').read_text())['arguments']
     train_rows=relocate_tree(json.loads(Path(artifact_path(runtime['manifest'])).read_text())['train'])
-    torch.manual_seed(303);np.random.seed(303);random.seed(303);student=TwoScaleDetector(teacher,cfg,a.memory_policy).cuda()
+    torch.manual_seed(303);np.random.seed(303);random.seed(303);student=TwoScaleDetector(teacher,cfg,a.memory_policy,a.variant).cuda()
     a.engineering=str(out/'engineering.json')
     if a.checkpoint:
         saved=torch.load(a.checkpoint,map_location='cpu')
         assert saved['contract']['teacher_sha256']==provenance['checkpoint']['sha256']
         assert saved['contract']['data_contract']==provenance['contract']
-        assert saved['contract']['version']=='two_scale_dense_v1'
+        assert saved['contract']['version']==student.version
         assert saved['contract'].get('memory_policy','recurrent')==a.memory_policy
         student.load_state_dict(saved['model'],strict=True)
         # Keep checkpoint identity separate from the inference-only intervention.
@@ -228,6 +228,10 @@ def worker(a):
     contract.update(version='two_scale_dense_v1', memory_policy=a.memory_policy, initial_lr=.0003,
         architecture='Mature first128 block; two coarse256 residual blocks at original stride; fine128/coarse256 explicit states; bottleneck history updates; spatial256 readout. No FM/teacher in inference.',
         future_sparse='Not implemented; dense controls first', normalization='Frozen BN statistics, trainable affine')
+    if a.variant != 'two_scale_v1':
+        contract.update(version=student.version,
+            architecture=('Full mature fine encoder' if a.variant=='two_scale_full' else 'First mature fine block')+
+                '; two coarse256 residual blocks at original stride; fine128/coarse256 explicit states; unchanged bottleneck history updates; pointwise256 fusion plus radius2 width64 residual reader; no FM/teacher in inference.')
     optimizer=torch.optim.AdamW(student.core.parameters(),lr=.0003,weight_decay=.0001)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=2,
         threshold=.001,threshold_mode='abs',min_lr=1e-5)
@@ -283,7 +287,7 @@ def main():
     p.add_argument('--root',required=True);p.add_argument('--output',required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--epochs',type=int,default=12)
     p.add_argument('--checkpoint');p.add_argument('--resume');p.add_argument('--worker',action='store_true')
-    p.add_argument('--variant',choices=['two_scale_v1'],default='two_scale_v1')
+    p.add_argument('--variant',choices=['two_scale_v1','two_scale_narrow','two_scale_full'],default='two_scale_v1')
     p.add_argument('--memory-policy',choices=['recurrent','reset'],default='recurrent')
     p.add_argument('--evaluation-memory-policy',choices=['recurrent','reset'],
                    help='Override only full checkpoint evaluation; --memory-policy must still match its training contract')
