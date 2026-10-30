@@ -13,10 +13,13 @@ from opencood.tools.run_registered_research import sha
 
 
 def prepare(a):
-    root=Path(a.root); root.mkdir(parents=True, exist_ok=False)
     source=Path(a.checkpoint); assert sha(source)==F0_SHA
     cfg=yaml.safe_load(Path(a.config).read_text())
     assert cfg['model']['core_method']=='e3dsnn_snapshot_frontend'
+    manifest=json.loads(Path(a.manifest).read_text())
+    assert manifest['data_root']==a.data_root, 'Audit the destination data root before registering'
+    assert [manifest['splits'][s]['valid_count'] for s in ('train','val')]==[4678,1738]
+    root=Path(a.root); root.mkdir(parents=True, exist_ok=False)
     cfg['data_dir']=a.data_root
     for k,f in [('root_dir','train.json'),('validate_dir','val.json'),('test_dir','val.json')]:
         cfg[k]=str(Path(a.data_root)/f)
