@@ -25,7 +25,7 @@ def run(a):
     torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     cfg=load_yaml(a.config);val=build_dataset(cfg,train=False);train=build_dataset(cfg,train=True)
     model=train_utils.create_model(cfg).cuda();initial=torch.load(a.checkpoint,map_location='cpu')
-    model.load_state_dict(initial,strict=True);model.eval();report={'frames':[],'steps':[]}
+    model.load_state_dict(initial,strict=True);model.eval();model.packet_roundtrip=True;report={'frames':[],'steps':[]}
     for index in (0,1):
         sample=train_utils.to_device(val.collate_batch_test([val[index]]),torch.device('cuda'))
         records=[]
@@ -40,6 +40,7 @@ def run(a):
         report['frames'].append(dict(index=index,packet_sha256=records[1][1],bytes=records[1][2],reference_seconds=records[0][3],native_seconds=records[1][3],exact=True))
         print(json.dumps(report['frames'][-1]),flush=True)
     model._snapshot_packet_observer=None
+    model.packet_roundtrip=False
     before=(torch.get_rng_state(),np.random.get_state(),random.getstate(),torch.cuda.get_rng_state_all())
     validate(model,val,2,limit=1)
     after=torch.get_rng_state();torch.set_rng_state(before[0]);torch.empty((),dtype=torch.int64).random_()

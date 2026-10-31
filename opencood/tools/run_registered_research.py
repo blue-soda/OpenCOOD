@@ -29,6 +29,41 @@ def write(path, value):
     temporary.replace(path)
 
 
+def progress_signature(directory):
+    """Observe completed batches/frames, not PID liveness or log modification time."""
+    directory = Path(directory)
+    path = directory / 'progress.json'
+    progress = json.loads(path.read_text()) if path.exists() else {}
+    signature = {k: progress.get(k) for k in ('state', 'epoch', 'batch')}
+    if progress.get('state') in ('validating', 'initial_validation'):
+        frame = directory / 'validation_progress.json'
+        if frame.exists():
+            signature['samples'] = json.loads(frame.read_text()).get('samples')
+    if progress.get('state') == 'awaiting_initial_selection':
+        frame = directory / 'initial_eval/validation_progress.json'
+        if frame.exists(): signature['initial_samples'] = json.loads(frame.read_text()).get('samples')
+    return signature
+
+
+def wait_for_job(child, job, root):
+    watch = job.get('progress_watch')
+    if not watch: return child.wait(timeout=job['timeout_seconds'])
+    started = changed = time.monotonic()
+    previous = None
+    while True:
+        try: return child.wait(timeout=30)
+        except subprocess.TimeoutExpired: pass
+        current = progress_signature(watch['directory'])
+        if current != previous: changed = time.monotonic(); previous = current
+        idle = time.monotonic() - changed
+        write(root / 'progress_monitor.json', dict(unix=time.time(), pid=child.pid,
+            signature=current, no_progress_seconds=idle, stall_timeout_seconds=watch['timeout_seconds']))
+        if idle > watch['timeout_seconds'] or time.monotonic()-started > job['timeout_seconds']:
+            write(root / 'progress_alert.json', dict(reason='No completed batch/frame progress or job deadline',
+                signature=current, no_progress_seconds=idle, unix=time.time(), automatic_retry=False))
+            raise subprocess.TimeoutExpired(child.args, watch['timeout_seconds'])
+
+
 def coordinate(protocol_path):
     root = protocol_path.parent
     protocol = json.loads(protocol_path.read_text())
@@ -47,7 +82,7 @@ def coordinate(protocol_path):
                     start_new_session=True)
                 write(root / 'child.json', dict(pid=child.pid, command=command, stage=job['name']))
                 try:
-                    code = child.wait(timeout=job['timeout_seconds'])
+                    code = wait_for_job(child, job, root)
                 except subprocess.TimeoutExpired:
                     os.killpg(child.pid, signal.SIGTERM)
                     try:

@@ -22,12 +22,12 @@ def launch(args, output):
         '--mode', 'eval', '--config', args.config, '--checkpoint', args.checkpoint,
         '--output', str(root), '--workers', str(args.workers), '--seed', str(args.seed)]
     child = subprocess.Popen(command, env=env, stdin=subprocess.DEVNULL,
-        stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        stdout=log, stderr=subprocess.STDOUT)
     def cleanup():
         if child.poll() is None:
-            os.killpg(child.pid, signal.SIGTERM)
+            child.terminate()
             try: child.wait(timeout=15)
-            except subprocess.TimeoutExpired: os.killpg(child.pid, signal.SIGKILL)
+            except subprocess.TimeoutExpired: child.kill()
         log.close()
     atexit.register(cleanup)
     signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))

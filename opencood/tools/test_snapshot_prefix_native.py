@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import time
+import subprocess
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -85,6 +86,28 @@ class NativePrefixTest(unittest.TestCase):
             self.assertEqual(torch.load(str(root/'best.pth'))['weight'].item(),3.)
             self.assertEqual(torch.load(str(root/'best_ap50.pth'))['weight'].item(),9.)
             with self.assertRaises(AssertionError):collect(handle,str(checkpoint),dict(manifest,config_sha256='wrong'))
+
+    def test_progress_tracks_frames_and_batches(self):
+        from opencood.tools.run_registered_research import progress_signature
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            (root/'progress.json').write_text(json.dumps(dict(state='validating',epoch=0)))
+            (root/'validation_progress.json').write_text(json.dumps(dict(samples=25,unix=1)))
+            first=progress_signature(root)
+            (root/'validation_progress.json').write_text(json.dumps(dict(samples=25,unix=2)))
+            self.assertEqual(first,progress_signature(root))
+            (root/'validation_progress.json').write_text(json.dumps(dict(samples=26,unix=3)))
+            self.assertNotEqual(first,progress_signature(root))
+
+    def test_stall_timeout_requires_real_progress(self):
+        from opencood.tools.run_registered_research import wait_for_job
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            child=SimpleNamespace(pid=123,args=['test'],wait=lambda timeout: (_ for _ in ()).throw(subprocess.TimeoutExpired(['test'],timeout)))
+            job=dict(timeout_seconds=9999,progress_watch=dict(directory=str(root),timeout_seconds=900))
+            with patch('opencood.tools.run_registered_research.time.monotonic',side_effect=[0,1,1,2,1002]):
+                with self.assertRaises(subprocess.TimeoutExpired):wait_for_job(child,job,root)
+            self.assertTrue((root/'progress_alert.json').exists())
 
 
 if __name__ == '__main__': unittest.main()
