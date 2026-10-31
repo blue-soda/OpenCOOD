@@ -44,10 +44,11 @@ def worker(a):
     assert saved['contract']['version']==model.version
     model.load_state_dict(saved['model'],strict=True)
     wrapper=BlockCachedPyramidDetector if a.granularity=='block' else CachedPyramidDetector
-    full=wrapper(model,fraction=1)
-    sparse=wrapper(model,fraction=.1,tile=4,allow_fallback=False)
-    masked=wrapper(model,fraction=.1,tile=4,allow_fallback=False,execution='masked_dense')
-    coalesced=wrapper(model,fraction=.1,tile=4,execution='coalesced')
+    options=dict(force_full_blocks=list(range(9)) if a.policy=='late_only' else []) if a.granularity=='block' else {}
+    full=wrapper(model,fraction=1,**options)
+    sparse=wrapper(model,fraction=.1,tile=4,allow_fallback=False,**options)
+    masked=wrapper(model,fraction=.1,tile=4,allow_fallback=False,execution='masked_dense',**options)
+    coalesced=wrapper(model,fraction=.1,tile=4,execution='coalesced',**options)
     base_state=full_state=partial_state=None;records=[]
     _,stream=loader(rows[:a.frames],cfg,2,303)
     with torch.no_grad():
@@ -83,7 +84,7 @@ def worker(a):
                 coalesced_prediction_max_error=max(float((merged[k]-reference[k]).abs().max()) for k in merged)))
             partial_state=next_state
     report=dict(status='PASSED',checkpoint=a.checkpoint,checkpoint_sha256=digest(Path(a.checkpoint)),records=records,
-        granularity=a.granularity,scope='%d real frames engineering only; no full-validation AP or latency claim'%a.frames,
+        granularity=a.granularity,policy=a.policy,scope='%d real frames engineering only; no full-validation AP or latency claim'%a.frames,
         limitations=['Pillar/selector/warp/deblocks/readout/heads remain dense; this is stage-cache execution, not whole-network caching.',
                      'Convolution FLOPs include executed halos and duplicated crop work; exclude nonconvolution overhead.',
                      'Partial mode matches same-mask dense intervention, not ordinary full-update predictions.',
@@ -95,7 +96,9 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--root',required=True);p.add_argument('--output',required=True)
     p.add_argument('--checkpoint',required=True);p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true')
     p.add_argument('--granularity',choices=['stage','block'],default='stage');p.add_argument('--frames',type=int,default=8)
+    p.add_argument('--policy',choices=['independent','late_only'],default='independent')
     a=p.parse_args();out=Path(a.output)
+    if a.policy=='late_only' and a.granularity!='block':p.error('Late-only policy requires block granularity')
     if not 8<=a.frames<=64:p.error('Engineering budget: 8 to 64 frames')
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('1h engineering budget')));signal.alarm(3600)

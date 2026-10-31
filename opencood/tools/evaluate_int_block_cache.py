@@ -50,6 +50,7 @@ def worker(a):
     out=Path(a.output);write_json(out/'status.json',dict(status='RUNNING',phase='setup'))
     gate=json.loads(Path(a.engineering).read_text())
     assert gate['status']=='PASSED' and gate['granularity']=='block'
+    assert gate.get('policy','independent')==a.policy
     assert gate['checkpoint_sha256']==digest(Path(a.checkpoint))
     assert len(gate['records'])>=32 and all(x['full_refresh_exact'] for x in gate['records'])
     for key,value in dict(mode='gru',stage='pilot',content_calibration=None,periodic_last=0,
@@ -60,9 +61,10 @@ def worker(a):
     assert saved['contract']['data_contract']==provenance['contract']
     assert saved['contract']['version']==base.version
     base.load_state_dict(saved['model'],strict=True)
-    model=BlockCachedPyramidDetector(base,fraction=.1,tile=4,max_cache_age=.5,execution='coalesced')
+    forced=list(range(9)) if a.policy=='late_only' else []
+    model=BlockCachedPyramidDetector(base,fraction=.1,tile=4,max_cache_age=.5,execution='coalesced',force_full_blocks=forced)
     write_json(out/'policy.json',dict(checkpoint_sha256=gate['checkpoint_sha256'],fraction=.1,tile=4,max_cache_age=.5,
-        execution='coalesced',cache_units=15,trained=False,calibrated=False,
+        execution='coalesced',cache_units=15,policy=a.policy,force_full_blocks=forced,trained=False,calibrated=False,
         selection='Per-block input relative change ranking plus mandatory coverage/age; fixed before full validation',
         caveat='Engineering used validation prefix; full validation is exploratory, not independent test or final acceptance'))
     measured=MeasuredCache(model);a.stage='full'
@@ -70,7 +72,7 @@ def worker(a):
     try:report=evaluate(a,teacher,cfg,rows,out,measured)
     finally:measured.close()
     n=len(measured.records);dense=gate['records'][0]['full_core_flops']
-    report.update(scope='Frozen R051 per-block cache full validation',checkpoint_sha256=gate['checkpoint_sha256'],
+    report.update(scope='Frozen R051 per-block cache full validation',policy=a.policy,force_full_blocks=forced,checkpoint_sha256=gate['checkpoint_sha256'],
         timing_valid=False,core_conv_flops_mean=sum(x['core'] for x in measured.records)/n,
         pillar_linear_flops_mean=sum(x['pillar'] for x in measured.records)/n,dense_core_conv_flops=dense,
         core_conv_ratio=sum(x['core'] for x in measured.records)/(n*dense),
@@ -89,6 +91,7 @@ def main():
     p=argparse.ArgumentParser()
     for key in ('root','output','checkpoint','engineering'):p.add_argument('--'+key,required=True)
     p.add_argument('--gpu',required=True,type=int);p.add_argument('--worker',action='store_true')
+    p.add_argument('--policy',choices=['independent','late_only'],default='independent')
     a=p.parse_args();out=Path(a.output)
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('2h frozen evaluation budget')));signal.alarm(7200)
