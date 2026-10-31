@@ -151,7 +151,7 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
                 if 'fusion_probe' in output:
                     from opencood.utils.e3dsnn_fusion_probe import summarize_probe
                     frame['fusion_diagnostics'] = summarize_probe(output['fusion_probe'], gt, model.origin, model.step)
-                if getattr(model, 'packet_roundtrip', False):
+                if 'packet_bytes' in output:
                     lengths = output.get('packet_bytes', [])
                     frame['communication'] = {
                         'road_to_vehicle_packet_bytes': lengths,
@@ -166,6 +166,11 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
             'full_split': evaluated == len(dataset), 'predicted_boxes': predicted,
             'gt_boxes': ground_truth, 'metric': 'BEV AP; ' + getattr(dataset, 'protocol', 'vehicle-local GT, no fusion'),
             'ap': {str(threshold): eval_utils.calculate_ap(stat, threshold)[0] for threshold in stat}}
+    if getattr(model, 'snapshot_selection', None) == 'event_quota':
+        result['selection'] = dict(policy='event_quota',
+            event_quota=model.snapshot_event_quotas.get(model.snapshot_budget,model.snapshot_budget),
+            nominal_budget_label=model.snapshot_budget,communication_measured=bool(packets),
+            hard_compressed_byte_cap=False)
     if include_3d:
         result.update({'metric': 'BEV and upright 3D AP; ' + getattr(dataset, 'protocol', 'vehicle-local GT, no fusion'),
             'ap_3d': {str(t): eval_utils.calculate_ap(stat_3d, t)[0] for t in stat_3d},
@@ -247,7 +252,11 @@ def execute(args, output_dir):
         'gpu_visible': os.getenv('CUDA_VISIBLE_DEVICES'), 'parameters': sum(p.numel() for p in model.parameters()),
         'cuda_allocator_memory_fraction': memory_fraction,
         'architecture': cfg['model']['core_method'],
-        'snapshot_adaptation': dict(family=model.snapshot_family,budget_bytes=model.snapshot_budget,
+        'snapshot_adaptation': dict(family=model.snapshot_family,
+            budget_bytes=model.snapshot_budget if getattr(model,'snapshot_selection','actual_bytes')=='actual_bytes' else None,
+            nominal_budget_label=model.snapshot_budget,
+            selection=getattr(model,'snapshot_selection','actual_bytes'),
+            event_quotas=getattr(model,'snapshot_event_quotas',{}),
             trainable=[k for k,p in model.named_parameters() if p.requires_grad],
             transport='E3TS1 common snapshot; paid ANN FP32 channel scales',
             gradient='existing quantizer/fixed-frontier STE; no sorting or bytes gradient',
@@ -314,6 +323,10 @@ def execute(args, output_dir):
     (output_dir / 'config.yaml').write_bytes(Path(args.config).read_bytes())
     if args.checkpoint:
         model.load_state_dict(torch.load(args.checkpoint, map_location='cpu'), strict=True)
+    if getattr(args, 'measure_communication', False):
+        if not hasattr(model, 'snapshot_measure_bytes'):
+            raise ValueError('Explicit communication measurement requires a snapshot model')
+        model.snapshot_measure_bytes = True
     if args.single_checkpoint:
         model.load_single(torch.load(args.single_checkpoint, map_location='cpu'))
     if args.mode == 'eval':
@@ -464,10 +477,11 @@ def execute(args, output_dir):
             for key, value in model.last_loss_components.items():
                 component_totals[key] = component_totals.get(key, 0.) + value * n
             samples += n
-            if 'stream_budgets' in train_output:
-                for key in ('stream_budgets', 'packet_bytes', 'stream_events'):
+            if 'stream_budgets' in train_output or 'event_quotas' in train_output:
+                for key in ('stream_budgets', 'packet_bytes', 'stream_events', 'event_quotas'):
+                    if key not in train_output: continue
                     stream_totals[key] = stream_totals.get(key, 0) + sum(train_output[key])
-            if index % 50 == 0:
+            if index % 10 == 0:
                 progress = {'state': 'training', 'epoch': epoch + 1, 'epochs': epochs,
                     'batch': index + 1, 'batches': len(loader), 'loss': float(loss.detach()),
                     'gradient_norm': float(grad_norm), 'elapsed_seconds': time.monotonic() - started}
@@ -565,6 +579,8 @@ def main():
     parser.add_argument('--single-checkpoint', help='Initialize fusion from the corresponding fixed single-agent state')
     parser.add_argument('--warmup-epochs', type=int, default=0, help='Freeze pretrained parameters and BN during residual-fusion warmup')
     parser.add_argument('--packet-roundtrip', action='store_true', help='Serialize/decode road features during eval')
+    parser.add_argument('--measure-communication', action='store_true',
+        help='Eval only: encode each selected message once and report measured bytes')
     parser.add_argument('--eval-3d', action='store_true', help='Also report volume-IoU AP in eval mode')
     parser.add_argument('--save-predictions', action='store_true', help='Save per-frame boxes/scores/GT and hashes for offline AP replay')
     parser.add_argument('--profile', action='store_true', help='Profile synchronized batch=1 inference in eval mode')
@@ -576,6 +592,8 @@ def main():
     parser.add_argument('--defer-initial-validation', action='store_true',
         help='Evaluate the fixed initial checkpoint concurrently; include it before first best selection')
     args = parser.parse_args()
+    if args.measure_communication and args.mode != 'eval':
+        parser.error('--measure-communication is evaluation-only')
     if args.defer_initial_validation and (args.mode != 'train' or not args.retain_initial_best):
         parser.error('--defer-initial-validation requires train and --retain-initial-best')
     if (args.eval_3d or args.save_predictions or args.profile or args.packet_roundtrip or args.fusion_diagnostics) and args.mode != 'eval':

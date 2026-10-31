@@ -5,15 +5,28 @@ the original ANN quantizer/row mask supplies gradients; sorting and bytes
 remain discrete. Geometry/basis validation is performed by the wire codec.
 """
 from dataclasses import dataclass
+from typing import Optional
 import numpy as np
 import torch
 from opencood.utils import task_snapshot_packet as wire
 from opencood.models.fuse_modules.e3dsnn_content_message import CountContent
 
 
+def select_event_quota(stream, quota):
+    """Tensor-only IF prefix selection; quota is events, never measured bytes."""
+    if quota is not None and (type(quota) is not int or quota < 0):
+        raise ValueError('Expected a nonnegative event quota or None')
+    count = len(stream.addresses) if quota is None else min(quota, len(stream.addresses))
+    counts = stream.prefix(count)
+    scales = counts.new_ones((1,32,1,1,1))
+    return SelectedSnapshot(None, counts, scales,
+        dict(accepted_units=count,selected_events=count,event_quota=quota,
+             selection='IF crossing-time prefix, fixed event quota',communication_measured=False))
+
+
 @dataclass
 class SelectedSnapshot:
-    packet: bytes
+    packet: Optional[bytes]
     counts: torch.Tensor
     scales: torch.Tensor
     record: dict

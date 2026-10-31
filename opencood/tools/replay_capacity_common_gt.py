@@ -10,7 +10,7 @@ GT_SHA='77657e251057b5323a97b4b8f0820ec2e1dfa3b4b745e87c6f13902816a904ba'
 def read(p):return json.loads(Path(p).read_text())
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
-def replay(folder,reference,budget):
+def replay(folder,reference,budget,event_quota=None):
     e=read(folder/'evaluation.json');native=read(folder/'offline_replay.json')
     assert native['passed'] and native['exact_match'] and native['all_file_hashes_verified']
     assert native['ap']==e['ap'] and native['ap_3d']==e['ap_3d']
@@ -31,7 +31,14 @@ def replay(folder,reference,budget):
         assert wire.resolve().parent==(folder/'packets').resolve()
         assert sha(p)==row['sha256'] and sha(gpath)==ref['sha256'] and sha(wire)==packet['sha256']
         size=wire.stat().st_size
-        assert size==packet['actual_bytes']==row['communication']['total_bytes'] and 0<=size<=budget
+        assert size==packet['actual_bytes']==row['communication']['total_bytes'] and size>=0
+        if event_quota is None:
+            assert size<=budget
+        else:
+            assert packet['event_quota']==event_quota
+            assert 0<=packet['accepted_units']==packet['selected_events']<=event_quota
+            assert packet['communication_measured']
+            if event_quota==0:assert size==0
         with np.load(str(p),allow_pickle=False) as z:
             assert str(z['frame_id'].item())==fid
             boxes=z['pred_boxes'].copy();scores=z['scores'].copy();original=z['gt_boxes'].copy()
@@ -58,11 +65,17 @@ def replay(folder,reference,budget):
         unchanged_predictions=True,all_prediction_and_packet_hashes_verified=True,
         gt_order_or_geometry_differences=differences,communication_frames=comm)
     target=folder/'common_gt_evaluation.json'
+    if event_quota is not None:
+        result.update(budget_semantics='event quota, measured bytes without a hard compressed-byte cap',
+                      event_quota=event_quota,nominal_budget_label=budget)
     if target.exists():assert read(target)==result,'Existing common-GT result differs'
     else:target.write_text(json.dumps(result,indent=2))
     return result
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--evaluation-dir',required=True);p.add_argument('--reference',required=True);p.add_argument('--budget',type=int,required=True)
-    a=p.parse_args();r=replay(Path(a.evaluation_dir),Path(a.reference),a.budget)
+    p.add_argument('--event-quota',type=int)
+    a=p.parse_args()
+    if a.event_quota is not None and a.event_quota<0:p.error('event quota must be nonnegative')
+    r=replay(Path(a.evaluation_dir),Path(a.reference),a.budget,a.event_quota)
     print(json.dumps({k:v for k,v in r.items() if k not in ('communication_frames','gt_order_or_geometry_differences')}))
