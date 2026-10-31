@@ -66,11 +66,15 @@ def main():
     parser.add_argument('--feature-only', action='store_true', help='Keep both intermediate feature participants, omit roadside late detections')
     parser.add_argument('--count-thresholds', help='Training-only fitted count thresholds; diagnostic tensor transport only')
     parser.add_argument('--count-steps', type=int, choices=(8, 32))
+    parser.add_argument('--count-event-quotas', type=int, nargs=3, help='Three fixed per-stage IF event caps')
+    parser.add_argument('--count-wire', action='store_true', help='Actual integer counts, scales, masks and request; no late boxes')
     args = parser.parse_args()
     if bool(args.count_thresholds) != bool(args.count_steps):
         parser.error('Count thresholds and steps must be specified together')
     if args.count_thresholds and (not args.feature_only or args.wire_codec or args.compute_smoke_reference):
         parser.error('Count diagnostic requires feature-only without the FP16 wire codec or compute benchmark')
+    if (args.count_wire or args.count_event_quotas is not None) and not args.count_thresholds:
+        parser.error('Count wire/quotas require count representation')
     if args.feature_only and (args.ego_only or args.compute_smoke_reference):
         parser.error('feature-only is distinct from ego-only and the hybrid compute reference')
     if args.ego_only:
@@ -162,13 +166,16 @@ def main():
         counts = None
         if args.count_thresholds:
             from cosdh_counts import CoSDHCounts
-            counts = CoSDHCounts(model, args.count_thresholds, args.count_steps)
+            counts = CoSDHCounts(model, args.count_thresholds, args.count_steps, args.count_event_quotas)
 
         dataset = build_dataset(cfg, visualize=True, train=False)
         wire=None
         if args.wire_codec:
             from cosdh_wire import CoSDHWire
             wire=CoSDHWire(model,dataset,output,include_late_boxes=not args.feature_only)
+        if args.count_wire:
+            from cosdh_count_wire import CoSDHCountWire
+            wire=CoSDHCountWire(model,counts,output)
         ids = list(dataset.split_info)
         source_ids = json.loads(split.read_text(encoding='utf-8'))
         if ids != source_ids or len(ids) != len(dataset):
@@ -202,9 +209,11 @@ def main():
         metadata['ego_only'] = args.ego_only
         metadata['feature_only'] = args.feature_only
         metadata['count_conversion'] = dict(steps=args.count_steps, thresholds_sha256=digest(args.count_thresholds),
-            scope='Frozen remote-only decoder-input IF counts; original masks/decoder/fusion; no event quota or wire bytes') if counts else None
+            stage_quotas=args.count_event_quotas,wire=args.count_wire,
+            scope='Frozen remote-only decoder-input IF counts; original masks/decoder/fusion; optional crossing-time quotas and integer wire') if counts else None
         metadata['single_agent_boundary'] = 'Collaborative checkpoint with remote participants disabled; not independently trained single-agent' if args.ego_only else None
         metadata['wire_codec']='demand_sparse_latent_dependency_closure_late_boxes_v1' if args.wire_codec else None
+        if args.count_wire:metadata['wire_codec']='sparse_integer_count_scale_mask_request_v1'
         if args.wire_codec and args.feature_only:
             metadata['wire_codec']='demand_sparse_latent_dependency_closure_v1'
         metadata['wire_compute_scope']='includes redundant diagnostic decode/warp, not optimized algorithmic cost' if args.wire_codec else None
@@ -305,7 +314,9 @@ def main():
                     row['actual_communication_bytes'] = 0
                 if args.feature_only and row['model_forwards'] != 1:
                     raise ValueError('feature-only executed a separate roadside detector')
-                if counts:row['count_conversion'] = counts.finish()
+                if counts:
+                    row['count_conversion'] = counts.finish()
+                    row['count_conversion']['codec_executed'] = args.count_wire
                 rows.append(row)
                 if wire:row['wire']=wire.finish(index)
                 with (output / 'frames.jsonl').open('a', encoding='utf-8') as f:
@@ -349,6 +360,8 @@ def main():
         if counts:summary['model_state_unchanged'] = True
         if args.feature_only and args.wire_codec:
             summary['wire_note']='Actual demand and three dependency-closed FP16 latent/mask sections; no late boxes; 160-byte two-way metadata included; link/IP overhead excluded'
+        if args.count_wire:
+            summary['wire_note']='Actual sparse integer counts with per-channel FP32 scales, three exact masks, one reused request and 160B metadata; no FP16 features/late boxes; link/IP overhead excluded'
         if args.ego_only:
             summary['actual_communication_bytes'] = 0
             summary['single_agent_frames'] = len(rows)
