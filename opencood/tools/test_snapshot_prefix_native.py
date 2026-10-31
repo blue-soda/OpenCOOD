@@ -99,6 +99,17 @@ class NativePrefixTest(unittest.TestCase):
             (root/'validation_progress.json').write_text(json.dumps(dict(samples=26,unix=3)))
             self.assertNotEqual(first,progress_signature(root))
 
+    def test_concurrent_evaluator_failure_and_stall(self):
+        from opencood.utils.deferred_initial_validation import check
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            with self.assertRaises(RuntimeError):check((SimpleNamespace(poll=lambda:1),root,{}))
+            record=dict(started_unix=time.time()-1000,last_samples=0,last_progress_unix=time.time()-1000)
+            with self.assertRaises(RuntimeError):check((SimpleNamespace(poll=lambda:None),root,record))
+            (root/'validation_progress.json').write_text(json.dumps(dict(samples=1)))
+            check((SimpleNamespace(poll=lambda:None),root,record))
+            self.assertEqual(record['last_samples'],1)
+
     def test_stall_timeout_requires_real_progress(self):
         from opencood.tools.run_registered_research import wait_for_job
         with tempfile.TemporaryDirectory() as directory:

@@ -447,6 +447,9 @@ def execute(args, output_dir):
         for index, batch in enumerate(loader):
             if batch is None:
                 raise ValueError('Unexpected empty training batch')
+            if deferred_initial is not None:
+                from opencood.utils.deferred_initial_validation import check
+                check(deferred_initial)
             apply_warmup(optimizer, epoch, index, len(loader),
                          cfg['optimizer'].get('lr_warmup_epochs', 0))
             batch = train_utils.to_device(batch, torch.device('cuda'))

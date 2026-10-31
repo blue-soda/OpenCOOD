@@ -42,6 +42,21 @@ def launch(args, output):
     return child, root, record
 
 
+def check(handle):
+    """Do not train for an entire epoch after the concurrent evaluator fails/stalls."""
+    child, root, record = handle
+    code = child.poll()
+    if code is not None:
+        if code: raise RuntimeError('Concurrent initial evaluator failed: {}'.format(code))
+        return
+    progress = root / 'validation_progress.json'
+    samples = json.loads(progress.read_text()).get('samples', 0) if progress.exists() else 0
+    if samples != record.get('last_samples'):
+        record.update(last_samples=samples, last_progress_unix=time.time())
+    if time.time() - record.get('last_progress_unix', record['started_unix']) > 900:
+        raise RuntimeError('Concurrent initial evaluator made no frame progress for 900 seconds')
+
+
 def collect(handle, checkpoint, expected_manifest):
     child, root, record = handle
     code = child.wait(timeout=max(1, 86400 - (time.time() - record['started_unix'])))
