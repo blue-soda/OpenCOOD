@@ -47,6 +47,26 @@ class TwoScaleTests(unittest.TestCase):
             actual['psm'].square().mean().backward()
             self.assertGreater(float(model.core.readout.projection.weight.grad.abs().sum()),0)
 
+    def test_transfer_optimizer_covers_each_parameter_once_and_preserves_lr_ratios(self):
+        from opencood.tools.run_int_two_scale import make_optimizer
+        model=self.model(architecture='two_scale_full')
+        optimizer=make_optimizer(model,'transfer')
+        groups={g['name']:g for g in optimizer.param_groups}
+        self.assertEqual(set(groups),{'new','observation','coarse_encoder','heads'})
+        for name in ('observation','coarse_encoder'):
+            self.assertEqual({id(p) for p in groups[name]['params']},
+                             {id(p) for p in getattr(model.core,name).parameters()})
+        all_ids=[id(p) for g in optimizer.param_groups for p in g['params']]
+        self.assertEqual(len(all_ids),len(set(all_ids)))
+        self.assertEqual(set(all_ids),{id(p) for p in model.core.parameters()})
+        self.assertAlmostEqual(groups['new']['lr']/groups['observation']['lr'],30.)
+        scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=0,
+            min_lr=[g['lr']/30 for g in optimizer.param_groups])
+        scheduler.step(.5);scheduler.step(.4)
+        self.assertAlmostEqual(groups['new']['lr'],.00015)
+        self.assertAlmostEqual(groups['new']['lr']/groups['heads']['lr'],30.)
+        self.assertEqual(len(make_optimizer(model).param_groups),1)
+
     def test_initial_policy_equivalence_and_state_ownership(self):
         torch.manual_seed(303)
         model=self.model();reset=copy.deepcopy(model);reset.memory_policy='reset'

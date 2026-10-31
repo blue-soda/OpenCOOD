@@ -22,7 +22,27 @@ import signal
 import random
 
 
-def engineering(student,teacher,cfg,rows,out):
+def make_optimizer(student, profile='uniform'):
+    if profile == 'uniform':
+        return torch.optim.AdamW(student.core.parameters(),lr=.0003,weight_decay=.0001)
+    if profile != 'transfer': raise ValueError(profile)
+    buckets={name:[] for name in ('new','observation','coarse_encoder','heads')}
+    for name,param in student.core.named_parameters():
+        if not param.requires_grad: continue
+        prefix=name.split('.')[0]
+        group=(prefix if prefix in ('observation','coarse_encoder') else
+               'heads' if prefix in ('cls_head','reg_head','dir_head') else 'new')
+        buckets[group].append(param)
+    rates=dict(new=.0003,observation=.00001,coarse_encoder=.0001,heads=.00001)
+    groups=[dict(params=params,lr=rates[name],name=name) for name,params in buckets.items()]
+    expected={id(p) for p in student.core.parameters() if p.requires_grad}
+    actual=[id(p) for group in groups for p in group['params']]
+    assert len(actual)==len(set(actual)) and set(actual)==expected
+    assert all(group['params'] for group in groups)
+    return torch.optim.AdamW(groups,weight_decay=.0001)
+
+
+def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
     result=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],
                           stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     (out/'unit_tests.log').write_bytes(result.stdout)
@@ -79,7 +99,7 @@ def engineering(student,teacher,cfg,rows,out):
     # Discard a real supervised optimizer probe before any formal training.
     import copy
     initial=copy.deepcopy(student.state_dict())
-    optimizer=torch.optim.AdamW(student.core.parameters(),lr=.0003)
+    optimizer=make_optimizer(student,optimizer_profile)
     criterion=PointPillarDirLoss(cfg['loss']['args']).cuda()
     selected=None
     for start in range(len(rows)-3):
@@ -100,7 +120,8 @@ def engineering(student,teacher,cfg,rows,out):
     assert any(not torch.equal(initial[k],v) for k,v in student.state_dict().items())
     student.load_state_dict(initial);student.zero_grad(set_to_none=True)
     assert all(torch.equal(initial[k],v) for k,v in student.state_dict().items())
-    report.update(real_supervised_probe_loss=float(loss.detach()),gradient_norm=float(norm),probe_restored=True)
+    report.update(real_supervised_probe_loss=float(loss.detach()),gradient_norm=float(norm),probe_restored=True,
+                  probe_optimizer_profile=optimizer_profile)
     write_json(out/'engineering.json',report)
 
 
@@ -199,7 +220,7 @@ def worker(a):
         evaluation_rows=train_rows if a.evaluation_split=='train' else val
         provenance['split']=a.evaluation_split
         write_json(out/'provenance.json',provenance)
-        engineering(student,teacher,cfg,evaluation_rows,out)
+        engineering(student,teacher,cfg,evaluation_rows,out,a.optimizer_profile)
         if a.diagnostic:
             from opencood.tools.diagnose_int_unified_bev import diagnose
             report=diagnose(student,teacher,cfg,val,out)
@@ -207,7 +228,8 @@ def worker(a):
             report=validate(a,student,teacher,cfg,evaluation_rows,out)
         report.update(checkpoint=a.checkpoint,checkpoint_sha256=digest(Path(a.checkpoint)))
         report.update(training_memory_policy=a.memory_policy,
-                      evaluation_memory_policy=student.memory_policy)
+                      evaluation_memory_policy=student.memory_policy,
+                      training_optimizer_profile=saved['contract'].get('optimizer_profile','uniform'))
         if student.memory_policy != a.memory_policy:
             report['caveats'].append('Memory policy is an inference-only intervention on this exact checkpoint; not a separately trained baseline.')
         write_json(out/'report.json',report)
@@ -238,9 +260,15 @@ def worker(a):
         contract.update(version=student.version,
             architecture=('Full mature fine encoder' if a.variant=='two_scale_full' else 'First mature fine block')+
                 '; two coarse256 residual blocks at original stride; fine128/coarse256 explicit states; unchanged bottleneck history updates; pointwise256 fusion plus radius2 width64 residual reader; no FM/teacher in inference.')
-    optimizer=torch.optim.AdamW(student.core.parameters(),lr=.0003,weight_decay=.0001)
+    optimizer=make_optimizer(student,a.optimizer_profile)
+    min_lrs=([1e-5] if a.optimizer_profile=='uniform' else [group['lr']/30 for group in optimizer.param_groups])
+    if a.optimizer_profile != 'uniform':
+        contract.update(optimizer_profile=a.optimizer_profile,
+            optimizer_groups=[dict(name=g['name'],initial_lr=g['lr'],min_lr=minimum,
+                parameters=sum(p.numel() for p in g['params']))
+                for g,minimum in zip(optimizer.param_groups,min_lrs)])
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=.5,patience=2,
-        threshold=.001,threshold_mode='abs',min_lr=1e-5)
+        threshold=.001,threshold_mode='abs',min_lr=min_lrs)
     best=significant=-1.;stale=0;history=[];start=1
     if a.resume:
         source=Path(a.resume).parent
@@ -260,7 +288,7 @@ def worker(a):
         write_json(out/'best.json',prior_best);write_json(out/'history.json',history)
         write_json(out/'resumption.json',dict(source=str(source),checkpoint_sha256=digest(Path(a.resume)),next_epoch=start))
     write_json(out/'training_contract.json',contract)
-    engineering(student,teacher,cfg,train_rows,out)
+    engineering(student,teacher,cfg,train_rows,out,a.optimizer_profile)
     if a.engineering_only:
         write_json(out/'status.json',dict(status='COMPLETED',scope='engineering only'));return
     criterion=PointPillarDirLoss(cfg['loss']['args']).cuda()
@@ -278,6 +306,8 @@ def worker(a):
         if ap>significant+.001:significant=ap;stale=0
         else:stale+=1
         history.append(dict(epoch=epoch,ap70=ap,stale_epochs=stale,lr=optimizer.param_groups[0]['lr'],seconds=time.monotonic()-tick,**result))
+        if a.optimizer_profile != 'uniform':
+            history[-1]['group_lrs']={g['name']:g['lr'] for g in optimizer.param_groups}
         write_json(out/'history.json',history)
         save_checkpoint(out/'latest.pth',dict(model=student.state_dict(),optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),
             contract=contract,epoch=epoch,history=history,best=best,significant=significant,stale=stale,
@@ -295,6 +325,7 @@ def main():
     p.add_argument('--checkpoint');p.add_argument('--resume');p.add_argument('--worker',action='store_true')
     p.add_argument('--variant',choices=['two_scale_v1','two_scale_narrow','two_scale_full'],default='two_scale_v1')
     p.add_argument('--memory-policy',choices=['recurrent','reset'],default='recurrent')
+    p.add_argument('--optimizer-profile',choices=['uniform','transfer'],default='uniform')
     p.add_argument('--evaluation-memory-policy',choices=['recurrent','reset'],
                    help='Override only full checkpoint evaluation; --memory-policy must still match its training contract')
     p.add_argument('--evaluation-split',choices=['val','train'],default='val',
