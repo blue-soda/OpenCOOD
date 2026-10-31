@@ -67,5 +67,28 @@ class PyramidTests(unittest.TestCase):
         apply_warmup(o2,1,0,4,1);o2.step();s2.step()
         self.assertAlmostEqual(o2.param_groups[0]['lr'],.0001)
 
+    def test_normalized_bounded_current_preserves_initial_and_geometry(self):
+        old=PyramidCurrent(2)
+        a=PyramidCurrent(2,normalize_merge=True,residual_limit=1.)
+        self.assertTrue(all(torch.equal(v,a.state_dict()[k]) for k,v in old.state_dict().items()))
+        base=self.d*.1
+        current,support=a(self.u,self.d,base,self.mask,self.coverage)
+        self.assertTrue(torch.equal(current,base*self.mask))
+        opt=torch.optim.Adam(a.parameters(),lr=1e-3)
+        for _ in range(2):
+            opt.zero_grad();current,_=a(self.u,self.d,base,self.mask,self.coverage)
+            (current-.2).square().mean().backward();opt.step()
+        self.assertGreater(float(a.spatial[0].weight.grad.abs().sum()),0)
+        with torch.no_grad():a.output.weight.normal_(std=10.)
+        current,support=a(self.u*100,self.d*100,base,self.mask,self.coverage)
+        delta=current-base*self.mask
+        self.assertTrue(torch.isfinite(current).all())
+        self.assertLessEqual(float(delta.abs().max()),1.000001)
+        zero=torch.zeros_like(self.mask)
+        current,support=a(self.u,self.d,base,zero,self.coverage)
+        self.assertEqual(float(current.abs().max()),0);self.assertFalse(bool(support.any()))
+        for limit in (0,-1,float('nan'),float('inf')):
+            with self.assertRaises(ValueError):PyramidCurrent(2,residual_limit=limit)
+
 
 if __name__=='__main__':unittest.main()

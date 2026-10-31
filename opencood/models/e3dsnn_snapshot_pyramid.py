@@ -13,4 +13,4 @@ class E3dsnnSnapshotPyramid(E3dsnnSnapshotFrontend):
         for _ in range(3):
             depth = (depth + 1) // 2
         depth = (depth - 3) // 2 + 1
-        self.joint_receiver.snapshot_pyramid = PyramidCurrent(depth)
+        self.joint_receiver.snapshot_pyramid = PyramidCurrent(depth, **args.get('pyramid_current', {}))

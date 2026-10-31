@@ -22,11 +22,15 @@ def support_block(mask, stride=1):
 
 
 class PyramidCurrent(nn.Module):
-    def __init__(self, depth, channels=128):
+    def __init__(self, depth, channels=128, normalize_merge=False, residual_limit=None):
         super().__init__()
         if depth < 1 or channels != 128:
             raise ValueError('Expected positive height and the F0 128-channel basis')
         self.depth, self.channels = depth, channels
+        self.normalize_merge = bool(normalize_merge)
+        if residual_limit is not None and (not math.isfinite(residual_limit) or residual_limit <= 0):
+            raise ValueError('Residual current limit must be positive and finite')
+        self.residual_limit = residual_limit
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(20260929)
             self.spatial = nn.Sequential(
@@ -71,7 +75,16 @@ class PyramidCurrent(nn.Module):
         # Height-compressed interaction can affect any in-range height at the
         # supported XY position; this is a declared receiver reconstruction.
         expanded = mask.unsqueeze(2).expand_as(received) & (coverage > 0)
-        delta = self.output(self.merge(torch.cat(fused, 1))).reshape_as(membrane)
+        merged = self.merge(torch.cat(fused, 1))
+        if self.normalize_merge:
+            # Per-position channel normalization, with no affine parameters or
+            # spatial statistics; support dependencies remain unchanged.
+            merged = F.layer_norm(merged.permute(0,2,3,1), (merged.shape[1],)).permute(0,3,1,2)
+        delta = self.output(merged).reshape_as(membrane)
+        if self.residual_limit is not None:
+            if not torch.isfinite(delta).all():
+                raise FloatingPointError('Nonfinite pyramid current before bounded readout')
+            delta = self.residual_limit * torch.tanh(delta / self.residual_limit)
         delta = delta * expanded.to(delta.dtype)
         current = base_current * active + delta
         return current, received | expanded
