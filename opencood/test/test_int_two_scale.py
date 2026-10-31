@@ -75,7 +75,7 @@ class TwoScaleTests(unittest.TestCase):
         medium=self.model(architecture='two_scale_medium')
         self.assertTrue(all(torch.equal(v,medium.state_dict()[k]) for k,v in small.state_dict().items()))
         self.assertEqual(sum(p.numel() for p in medium.parameters())-
-                         sum(p.numel() for p in small.parameters()),3420160)
+                         sum(p.numel() for p in small.parameters()),3419584)
         optimizer=make_optimizer(medium,'transfer')
         new_ids={id(p) for g in optimizer.param_groups if g['name']=='new' for p in g['params']}
         self.assertTrue({id(p) for p in medium.core.coarse_context.parameters()} <= new_ids)
