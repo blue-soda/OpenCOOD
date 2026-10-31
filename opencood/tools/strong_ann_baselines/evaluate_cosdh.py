@@ -62,7 +62,14 @@ def main():
     parser.add_argument('--compute-smoke-reference', help='Immutable full-wire reference; four-frame parity gate only')
     parser.add_argument('--compute-count',type=int,choices=(4,64),default=4)
     parser.add_argument('--compute-repeat',type=int,choices=(0,1,2),default=0)
+    parser.add_argument('--ego-only', action='store_true', help='Same collaborative weights, only ego participant; no remote features or late boxes')
     args = parser.parse_args()
+    if args.ego_only:
+        if args.wire_codec or args.compute_smoke_reference:
+            parser.error('ego-only has zero transport and cannot use wire/compute adapters')
+        if args.comm_range not in (None, 1e-6):
+            parser.error('ego-only uses the audited 1e-6 metre participant range')
+        args.comm_range = 1e-6
     if args.compute_smoke_reference and (args.limit != 0 or not args.wire_codec):
         parser.error('Compute gate requires --limit 0 --wire-codec')
     compute_reference = Path(args.compute_smoke_reference).resolve() if args.compute_smoke_reference else None
@@ -179,6 +186,8 @@ def main():
                     'timing_scope': 'CUDA-synchronized official hybrid inference incl both model forwards and postprocess/NMS, excludes loading/H2D/export/AP; batch1',
                     'source_script_sha256': digest(__file__), 'started_unix': start_wall}
         write_json(output / 'provenance.json', metadata)
+        metadata['ego_only'] = args.ego_only
+        metadata['single_agent_boundary'] = 'Collaborative checkpoint with remote participants disabled; not independently trained single-agent' if args.ego_only else None
         metadata['wire_codec']='demand_sparse_latent_dependency_closure_late_boxes_v1' if args.wire_codec else None
         metadata['wire_compute_scope']='includes redundant diagnostic decode/warp, not optimized algorithmic cost' if args.wire_codec else None
         write_json(output / 'provenance.json', metadata)
@@ -216,6 +225,12 @@ def main():
                 if int(batch['ego']['sample_idx']) != index:
                     raise RuntimeError('Frame index mismatch')
                 t0 = time.perf_counter()
+                if args.ego_only:
+                    # Dataset range filtering preserves ego processing and cooperative GT.
+                    # Drop the hybrid roadside dictionary as well as its intermediate input.
+                    batch = {'ego': batch['ego']}
+                    if batch['ego']['record_len'].tolist() != [1]:
+                        raise ValueError('ego-only requires exactly one participant')
                 batch = train_utils.to_device(batch, device)
                 if wire:wire.begin(batch,str(ids[index]))
                 torch.cuda.synchronize()
@@ -258,6 +273,10 @@ def main():
                        'model_forwards': len(raw_outputs),
                        'record_len': batch['ego']['record_len'].detach().cpu().tolist(),
                        'gt_array_sha256': hashlib.sha256(gt.tobytes(order='C')).hexdigest()}
+                if args.ego_only:
+                    if row['model_forwards'] != 1:
+                        raise ValueError('ego-only hybrid inference executed a remote forward')
+                    row['actual_communication_bytes'] = 0
                 rows.append(row)
                 if wire:row['wire']=wire.finish(index)
                 with (output / 'frames.jsonl').open('a', encoding='utf-8') as f:
@@ -291,6 +310,10 @@ def main():
             summary['wire_statistics']={k:stats([r['wire'][k] for r in rows]) for k in ('demand_bytes','response_bytes','total_bytes','envelope_bytes','late_boxes')}
             summary['actual_communication_bytes']=summary['wire_statistics']['total_bytes']['mean']
             summary['wire_note']='Actual binary demand, three dependency-closed FP16 latent/mask sections and pre-NMS late boxes; 160-byte two-way metadata included; link/IP overhead excluded; diagnostic redundant compute not suitable for efficiency comparison'
+        summary['ego_only'] = args.ego_only
+        if args.ego_only:
+            summary['actual_communication_bytes'] = 0
+            summary['single_agent_frames'] = len(rows)
         write_json(output / 'summary.json', summary)
         write_json(output / 'status.json', summary)
         print(json.dumps(summary, indent=2, allow_nan=False), flush=True)

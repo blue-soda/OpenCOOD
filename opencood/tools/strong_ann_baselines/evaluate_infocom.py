@@ -192,6 +192,8 @@ def run(args, output):
             'overrides': {'data_dir': str(data_root), 'root_dir': str(split_path),
                           'validate_dir': str(split_path), 'test_dir': str(split_path)}}
     write_json(output / 'metadata.json', meta)
+    meta['ego_only'] = args.ego_only
+    meta['single_agent_boundary'] = 'Collaborative checkpoint with remote participants disabled; not independently trained single-agent' if args.ego_only else None
     meta['participant_range_metres'] = hypes['comm_range']
     meta['comm_range_override'] = args.comm_range
     meta['mask_ratio_override'] = mask_ratio
@@ -249,6 +251,12 @@ def run(args, output):
                 raise ValueError('Dataset returned None for ' + str(ids[i]))
             if int(batch['ego']['sample_idx']) != i:
                 raise ValueError('Sample index mismatch')
+            if args.ego_only:
+                # Dataset range filtering preserves ego processing and cooperative GT.
+                # Drop the hybrid roadside dictionary as well as its intermediate input.
+                batch = {'ego': batch['ego']}
+                if batch['ego']['record_len'].tolist() != [1]:
+                    raise ValueError('ego-only requires exactly one participant')
             batch = train_utils.to_device(batch, torch.device('cuda:0'))
             if wire:wire.begin(batch,str(ids[i]))
             if i == 0:
@@ -284,6 +292,7 @@ def run(args, output):
                           'record_len': batch['ego']['record_len'].detach().cpu().tolist(),
                           'forward_seconds': timing['durations'][-1],
                           'forward_postprocess_seconds': elapsed})
+            if args.ego_only:index[-1]['actual_communication_bytes']=0
             if wire:index[-1]['wire']=wire.finish(i)
             write_json(output / 'status.json', {'processed': i + 1, 'planned': count,
                                                'frame_id': str(ids[i]), 'finished': False})
@@ -311,6 +320,9 @@ def run(args, output):
                                     ('packet_bytes','envelope_bytes','total_bytes','encode_seconds','decode_seconds')}
         summary['wire_exact_fp32']=True
         summary['wire_note']='Measured exact codec; separately counted 80-byte frame/sender/sequence/pairwise-transform envelope; excludes link/IP overhead. CPU codec included in forward timing.'
+    if args.ego_only:
+        summary['wire_bytes'] = 0
+        summary['wire_note'] = 'No remote participant and no serialized message; ego-only input asserted for every frame'
     summary['participant_counts']={str(n):sum(x['record_len']==[n] for x in index) for n in (1,2)}
     write_json(output / 'predictions_index.json', index)
     write_json(output / 'summary.json', summary)
@@ -334,7 +346,14 @@ def main():
     parser.add_argument('--compute-count',type=int,choices=(4,64),default=4)
     parser.add_argument('--compute-repeat',type=int,choices=(0,1,2),default=0)
     parser.add_argument('--compute-diagnose',action='store_true',help='Untimed repeated discrepancy export; original strict gate unchanged')
+    parser.add_argument('--ego-only', action='store_true', help='Same collaborative weights, only ego participant; no remote features or late boxes')
     args = parser.parse_args()
+    if args.ego_only:
+        if args.wire_codec or args.compute_smoke_reference:
+            parser.error('ego-only has zero transport and cannot use wire/compute adapters')
+        if args.comm_range not in (None, 1e-6):
+            parser.error('ego-only uses the audited 1e-6 metre participant range')
+        args.comm_range = 1e-6
     if args.mask_ratio is not None and (not math.isfinite(args.mask_ratio) or not 0 < args.mask_ratio <= .1):
         parser.error('mask ratio must be finite and in (0,0.1]')
     if args.limit < 0 or ',' in args.gpu:
