@@ -38,7 +38,7 @@ class LocalUpdate(nn.Module):
 
 
 class BlockCachedPyramidDetector(CachedPyramidDetector):
-    def __init__(self, base, force_full_blocks=(), **kwargs):
+    def __init__(self, base, force_full_blocks=(), compact_dense=False, **kwargs):
         super().__init__(base, **kwargs)
         self.blocks = []
         self.output_indices = []
@@ -52,6 +52,9 @@ class BlockCachedPyramidDetector(CachedPyramidDetector):
         self.force_full_blocks=frozenset(force_full_blocks)
         if any(type(i) is not int or i<0 or i>=len(self.blocks) for i in self.force_full_blocks):
             raise ValueError('Invalid forced-full block index')
+        if compact_dense and self.force_full_blocks!=frozenset(range(9)):
+            raise ValueError('Compact layout requires exactly the late-only policy')
+        self.compact_dense=compact_dense
 
     def step_spatial(self, spatial, state, meta, detach_state=True, requests=None):
         if self.training or torch.is_grad_enabled() or spatial.shape[0]!=1:
@@ -66,8 +69,24 @@ class BlockCachedPyramidDetector(CachedPyramidDetector):
                 gap=(stamp-state['timestamp_us'])/1e6
                 if gap<=0:raise ValueError('Noncausal state')
                 if gap>.25:reason='gap'
-        caches=[];stats=[];self.last_requests=[];x=spatial
+        caches=[];stats=[];values=[];self.last_requests=[];x=spatial
         for i,(module,scale,is_update) in enumerate(self.blocks):
+            if self.compact_dense and i<9:
+                if is_update:
+                    key=self.state_keys[len(values)]
+                    if reason:
+                        old=torch.zeros_like(x);valid=torch.zeros_like(x[:,:1],dtype=torch.bool)
+                    else:
+                        bounds=block_lidar_range(self.bounds,spatial.shape[-2:],x.shape[-2:],scale)
+                        old,valid=warp_bev(state[key],state['pose'],meta['pose'],bounds)
+                    x=module(torch.cat((x,old,valid.to(x.dtype)),1));values.append(x.detach())
+                else:x=module(x)
+                caches.append(None)
+                stats.append(dict(block=i,scale=scale,is_update=is_update,input_radius=module.radius,
+                    full_update=True,mandatory_fraction=0.,actual_write_fraction=1.,
+                    executed_input_area_ratio=1.,fallback=False,compact_dense=True))
+                self.last_requests.append(torch.ones_like(x[:,:1],dtype=torch.bool))
+                continue
             stride=module.stride
             evidence=F.avg_pool2d(x,3,2,1,count_include_pad=False) if stride==2 else x
             shape=evidence.shape[-2:]
@@ -99,16 +118,19 @@ class BlockCachedPyramidDetector(CachedPyramidDetector):
                     allow_fallback=self.allow_fallback,execution=self.execution)
             caches.append(dict(value=x.detach(),reference=torch.where(written,evidence,reference).detach(),
                 age=torch.where(written,torch.zeros_like(age),age).detach()))
+            if is_update:values.append(x.detach())
             stats.append(dict(block=i,scale=scale,is_update=is_update,input_radius=module.radius,
                 full_update=bool(written.all()),mandatory_fraction=float(mandatory.float().mean()),**info))
             self.last_requests.append(requested.detach().clone())
-        values=[caches[i]['value'] for i in self.output_indices]
         features=self.core.readout(torch.cat([layer(value) for layer,value in zip(self.core.deblocks,values)],1))
         prediction=dict(psm=self.core.cls_head(features),rm=self.core.reg_head(features))
         if self.core.dir_head is not None:prediction['dm']=self.core.dir_head(features)
         new={key:value for key,value in zip(self.state_keys,values)}
         new.update(blocks=caches,pose=copy.deepcopy(meta['pose']),scene=meta['segment'],timestamp_us=stamp)
-        size=sum(c['value'].numel()*c['value'].element_size() for c in caches)
-        total=sum(v.numel()*v.element_size() for c in caches for v in c.values())
+        size=sum(c['value'].numel()*c['value'].element_size() for c in caches if c is not None)
+        total=sum(v.numel()*v.element_size() for c in caches if c is not None for v in c.values())
+        if self.compact_dense:
+            dense_states=sum(v.numel()*v.element_size() for v in values[:2])
+            size+=dense_states;total+=dense_states
         return prediction,new,dict(reset=reason,state_bytes=size,cache_bytes=total,cache_stages=stats,
             dense_components=['Pillar','selectors','warps','deblocks','readout','heads'])

@@ -27,6 +27,29 @@ def fixture():
 
 
 class PyramidCacheTests(unittest.TestCase):
+    def test_compact_late_cache_preserves_outputs_and_reduces_live_state(self):
+        from opencood.models.sub_modules.int_pyramid_block_cache import BlockCachedPyramidDetector
+        model=fixture();options=dict(force_full_blocks=list(range(9)),fraction=.1,tile=4,execution='coalesced')
+        old=BlockCachedPyramidDetector(model,**options)
+        compact=BlockCachedPyramidDetector(model,compact_dense=True,**options)
+        a=b=None
+        with torch.no_grad():
+            for i in range(8):
+                pose=np.eye(4);pose[0,3]=i*.12
+                meta=dict(timestamp_us=i*100000,segment='a' if i<6 else 'b',pose=pose)
+                x=torch.randn(1,64,64,96)
+                expected,a,ai=old.step_spatial(x,a,meta)
+                actual,b,bi=compact.step_spatial(x,b,meta)
+                for key in expected:self.assertTrue(torch.equal(expected[key],actual[key]))
+                for key in old.state_keys:self.assertTrue(torch.equal(a[key],b[key]))
+                self.assertTrue(all(c is None for c in b['blocks'][:9]))
+                for c,d in zip(a['blocks'][9:],b['blocks'][9:]):
+                    for key in c:self.assertTrue(torch.equal(c[key],d[key]))
+                self.assertLess(bi['cache_bytes'],ai['cache_bytes'])
+                tensors=[v for c in b['blocks'][9:] for v in c.values()]+[b['value'],b['coarse']]
+                self.assertEqual(bi['cache_bytes'],sum(v.numel()*v.element_size() for v in tensors))
+        with self.assertRaises(ValueError):BlockCachedPyramidDetector(model,compact_dense=True)
+
     def test_forced_blocks_only_bypass_their_own_selection(self):
         from opencood.models.sub_modules.int_pyramid_block_cache import BlockCachedPyramidDetector
         model=fixture();indices=[i for i in range(15) if i not in (3,8,14)]
