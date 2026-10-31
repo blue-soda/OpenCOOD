@@ -490,6 +490,9 @@ def execute(args, output_dir):
                 if cfg['optimizer'].get('monitor_new_parameters', False):
                     from opencood.utils.cp_optimizer import new_parameter_health
                     progress['new_parameter_health'] = new_parameter_health(optimizer)
+                    if progress['new_parameter_health']['parameter_l2'] < cfg['optimizer'].get('new_parameter_minimum_l2', 0.):
+                        write_json(output_dir / 'new_parameter_alert.json', progress)
+                        raise FloatingPointError('New-module weights collapsed below the registered norm floor')
                 write_json(output_dir / 'progress.json', progress)
                 print(json.dumps(progress), flush=True)
         assert samples == len(train_data)
