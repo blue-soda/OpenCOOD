@@ -71,7 +71,7 @@ class PyramidCacheTests(unittest.TestCase):
         age=AnchoredLatePyramidDetector(base,period=3,coverage='zero',max_age=.15)
         x=torch.randn(1,64,24,32);meta=dict(timestamp_us=0,segment='a',pose=np.eye(4))
         with torch.no_grad():
-            _,state,_=strict.step_spatial(x,None,meta);pose=np.eye(4);pose[0,3]=1
+            _,state,_=strict.step_spatial(x,None,meta);pose=np.eye(4);pose[0,3]=2
             _,_,info=strict.step_spatial(x,state,dict(meta,timestamp_us=100000,pose=pose))
             self.assertEqual(info['late_refresh'],'coverage')
             _,_,info=age.step_spatial(x,state,dict(meta,timestamp_us=160000))
