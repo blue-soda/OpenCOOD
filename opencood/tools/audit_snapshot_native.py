@@ -48,11 +48,13 @@ def run(a):
     npafter=np.random.get_state();assert before[1][0]==npafter[0] and np.array_equal(before[1][1],npafter[1]) and before[1][2:]==npafter[2:]
     assert before[2]==random.getstate() and all(torch.equal(x,y) for x,y in zip(before[3],torch.cuda.get_rng_state_all()))
     report['parent_rng_matches_deferred_base_seed_draw']=True
+    write_json(Path(a.output).with_suffix('.forward.json'),report)
     seed();batch=train_utils.to_device(train.collate_batch_train([train[0],train[1]]),torch.device('cuda'))
     criterion=train_utils.create_loss(cfg).cuda();reference=[]
     for native in (False,True):
         os.environ['OPENCOOD_SNAPSHOT_NATIVE_LIB']=a.library if native else ''
         model.load_state_dict(initial,strict=True);model.train();optimizer=make_optimizer(cfg,model);seed()
+        for group in optimizer.param_groups: group['initial_lr']=group['lr']
         for step in range(2):
             optimizer.zero_grad(set_to_none=True);apply_warmup(optimizer,0,step,2339,1)
             output,loss=checked_forward(model,criterion,batch);loss.backward()
