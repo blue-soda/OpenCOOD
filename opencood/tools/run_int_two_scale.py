@@ -12,6 +12,7 @@ import torch
 from opencood.data_utils.int_tbptt import window_ends
 from opencood.loss.point_pillar_dir_loss import PointPillarDirLoss
 from opencood.models.sub_modules.int_two_scale import TwoScaleDetector
+from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
 from opencood.models.sub_modules.int_light_repair import foreground_head_loss
 from opencood.tools.run_int_cache_repair import setup,evaluate
 from opencood.tools.run_int_ego import loader,to_device,write_json
@@ -26,14 +27,19 @@ def make_optimizer(student, profile='uniform'):
     if profile == 'uniform':
         return torch.optim.AdamW(student.core.parameters(),lr=.0003,weight_decay=.0001)
     if profile != 'transfer': raise ValueError(profile)
-    buckets={name:[] for name in ('new','observation','coarse_encoder','heads')}
+    pyramid=student.variant == PyramidStateDetector.version
+    names=('new','observation','coarse_encoder','heads') + (('decoder',) if pyramid else ())
+    buckets={name:[] for name in names}
     for name,param in student.core.named_parameters():
         if not param.requires_grad: continue
         prefix=name.split('.')[0]
         group=(prefix if prefix in ('observation','coarse_encoder') else
                'heads' if prefix in ('cls_head','reg_head','dir_head') else 'new')
+        if pyramid and prefix=='deep_encoder':group='coarse_encoder'
+        if pyramid and prefix in ('deblocks','readout'):group='decoder'
         buckets[group].append(param)
     rates=dict(new=.0003,observation=.00001,coarse_encoder=.0001,heads=.00001)
+    if pyramid:rates['decoder']=.00001
     groups=[dict(params=params,lr=rates[name],name=name) for name,params in buckets.items()]
     expected={id(p) for p in student.core.parameters() if p.requires_grad}
     actual=[id(p) for group in groups for p in group['params']]
@@ -42,26 +48,35 @@ def make_optimizer(student, profile='uniform'):
     return torch.optim.AdamW(groups,weight_decay=.0001)
 
 
+def detach_stream_state(state):
+    return {key:value.detach() if torch.is_tensor(value) else value for key,value in state.items()}
+
+
 def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
     result=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],
                           stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     (out/'unit_tests.log').write_bytes(result.stdout)
     if result.returncode:raise RuntimeError('INT engineering tests failed')
+    torch.cuda.reset_peak_memory_stats()
     calls=[0,0,0]
     def hit(index):
         def callback(module,inputs,output):calls[index]+=1
         return callback
     modules=[teacher.backbone.resnet,teacher.backbone.deblocks[0],teacher.shrink_conv]
     hooks=[m.register_forward_hook(hit(i)) for i,m in enumerate(modules)]
-    student.eval();state=None;records=[];conv_macs={};cost_hooks=[];capacity_parity=[]
+    student.eval();state=None;records=[];conv_macs={};cost_hooks=[];capacity_parity=[];spatial_parity=[]
+    pyramid=student.variant == PyramidStateDetector.version
+    initial_pyramid=pyramid and student.updates_are_initial_identity()
     def count_conv(name):
         def callback(module,inputs,output):
             group=name.split('.')[0]
             macs=output.numel()*(module.in_channels//module.groups)*module.kernel_size[0]*module.kernel_size[1]
+            if isinstance(module,torch.nn.ConvTranspose2d):
+                macs=inputs[0].numel()*(module.out_channels//module.groups)*module.kernel_size[0]*module.kernel_size[1]
             conv_macs[group]=conv_macs.get(group,0)+macs
         return callback
     for name,module in student.core.named_modules():
-        if isinstance(module,torch.nn.Conv2d):cost_hooks.append(module.register_forward_hook(count_conv(name)))
+        if isinstance(module,(torch.nn.Conv2d,torch.nn.ConvTranspose2d)):cost_hooks.append(module.register_forward_hook(count_conv(name)))
     _,stream=loader(rows[:8],cfg,2,303)
     try:
         with torch.no_grad():
@@ -71,6 +86,13 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
                 pred,state,info=student.step(ego,state,sample['meta'])
                 for hook in cost_hooks:hook.remove()
                 cost_hooks=[]
+                if initial_pyramid:
+                    student.spatial_only=True
+                    try:control,control_state,_=student.step(ego,prior_state,sample['meta'])
+                    finally:student.spatial_only=False
+                    assert all(torch.equal(pred[k],control[k]) for k in pred)
+                    assert all(torch.equal(state[k],control_state[k]) for k in student.state_keys)
+                    spatial_parity.append(sample['meta']['frame'])
                 if student.variant == 'two_scale_medium_context_v1':
                     context=student.core.coarse_context
                     # An initial zero branch must be functionally identical to the small core.
@@ -110,6 +132,18 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
                 cost_scope='One real frame, core Conv2d only; excludes Pillar, warp, normalization, activation, interpolation and data movement; not measured latency.',
                 state_bytes=info['state_bytes'],update_radius=2,
                 caveat='New model: finite predictions/shape/causality, not parity with the teacher. Crop equivalence is a unit test, not an active sparse policy.')
+    if pyramid:
+        equality=[]
+        for target,source in student.migrated_source_pairs(teacher):
+            a,b=target.state_dict(),source.state_dict()
+            equality.append(a.keys()==b.keys() and all(torch.equal(a[k],b[k]) for k in a))
+        if initial_pyramid:assert all(equality)
+        report.update(mature_spatial_modules_equal_to_source=all(equality),
+            spatial_identity_frames=spatial_parity,initial_spatial_identity=initial_pyramid,
+            encoder_blocks=[len(student.core.observation),len(student.core.coarse_encoder),len(student.core.deep_encoder)],
+            state_shapes={key:list(state[key].shape) for key in student.state_keys},
+            cost_scope='One real frame core Conv2d plus ConvTranspose2d dense MAC*2; excludes Pillar, warp, normalization, activation and data movement; not latency.',
+            caveat='Complete mature spatial path with three new recurrent states; spatial-only initial parity does not imply INT GRU temporal parity. All modules execute densely.')
     if student.variant == 'two_scale_medium_context_v1':
         report['capacity_base_state_sha256']=capacity_base_hash.hexdigest()
         report['context_projection_initially_zero']=bool(
@@ -124,7 +158,7 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
     selected=None
     for start in range(len(rows)-3):
         chosen=rows[start:start+4]
-        if any(r['supervised'] for r in chosen) and window_ends(chosen,4)=={3}:
+        if any(r['supervised'] for r in (chosen[1:] if pyramid else chosen)) and window_ends(chosen,4)=={3}:
             selected=chosen;break
     if selected is None:raise ValueError('No supervised contiguous engineering window')
     state=None;terms=[]
@@ -140,12 +174,19 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
         gradient=student.core.coarse_context.projection.weight.grad
         report['context_projection_probe_gradient_l1']=float(gradient.abs().sum())
         assert torch.isfinite(gradient).all() and report['context_projection_probe_gradient_l1']>0
+    if pyramid:
+        report['state_history_probe_gradient_l1']={name:float(getattr(student.core,name).history.weight.grad.abs().sum())
+            for name in ('fine_update','coarse_update','deep_update')}
+        assert all(value>0 and np.isfinite(value) for value in report['state_history_probe_gradient_l1'].values())
     optimizer.step()
     assert any(not torch.equal(initial[k],v) for k,v in student.state_dict().items())
     student.load_state_dict(initial);student.zero_grad(set_to_none=True)
     assert all(torch.equal(initial[k],v) for k,v in student.state_dict().items())
     report.update(real_supervised_probe_loss=float(loss.detach()),gradient_norm=float(norm),probe_restored=True,
                   probe_optimizer_profile=optimizer_profile)
+    if pyramid:
+        report.update(engineering_peak_allocated_bytes=torch.cuda.max_memory_allocated(),
+                      engineering_peak_reserved_bytes=torch.cuda.max_memory_reserved())
     write_json(out/'engineering.json',report)
 
 
@@ -158,11 +199,15 @@ def validate(a,student,teacher,cfg,rows,directory):
     report['scope']='Two-scale dense-update full validation' if split=='val' else 'Full training-split fit diagnostic; not validation AP'
     report['evaluation_split']=split
     report['variant']=student.variant;report['memory_policy']=student.memory_policy
+    if student.variant == PyramidStateDetector.version:
+        report['scope']='Three-scale state pyramid full validation' if split=='val' else 'Full training-split fit diagnostic; not validation AP'
     report['caveats']=[
         'All state cells are updated each frame. No selective-update or sparsity speedup is claimed.',
         'Frozen Pillar; migrated shallow/coarse residual blocks, two-scale states and new spatial reader. No original GRU or teacher in inference.',
         'No teacher execution or teacher state in validation/inference. Model timing excludes IO/voxelization/postprocess.',
         'Concurrent training throughput is not a paired latency benchmark. Use independent same-GPU sequential evaluation after training.']
+    if student.variant == PyramidStateDetector.version:
+        report['caveats'][1]='Frozen Pillar; complete mature 3/4/5-block encoders and multiscale spatial readout; three new recurrent states. No original GRU or teacher in inference.'
     if split=='train':
         report['caveats'].append('Fixed-weight evaluation on seen training data, without optimizer updates; train/val distribution differences prevent assigning a gap to overfitting alone.')
     for key in list(report):
@@ -206,7 +251,7 @@ def train_epoch(a,student,teacher,cfg,rows,optimizer,criterion,epoch,directory,o
                     kd_windows.append(float(kd_mean.detach()))
                     if gt_mean is not None:gt_windows.append(float(gt_mean.detach()))
                     record.update(kd_loss=kd_windows[-1],gt_loss=float(gt_mean.detach()) if gt_mean is not None else None)
-                state=dict(state,value=state['value'].detach(),coarse=state['coarse'].detach());distilled=[];supervised=[]
+                state=detach_stream_state(state);distilled=[];supervised=[]
             log.write(json.dumps(record)+'\n')
             if (index+1)%200==0:
                 status=dict(status='RUNNING',phase='train',epoch=epoch,scans=index+1,total_scans=len(rows),
@@ -230,7 +275,9 @@ def worker(a):
     write_json(out/'provenance.json',provenance)
     runtime=json.loads((Path(a.root)/'full_gru'/'effective_runtime.json').read_text())['arguments']
     train_rows=relocate_tree(json.loads(Path(artifact_path(runtime['manifest'])).read_text())['train'])
-    torch.manual_seed(303);np.random.seed(303);random.seed(303);student=TwoScaleDetector(teacher,cfg,a.memory_policy,a.variant).cuda()
+    torch.manual_seed(303);np.random.seed(303);random.seed(303)
+    student=(PyramidStateDetector(teacher,cfg,a.memory_policy) if a.variant=='pyramid_large'
+             else TwoScaleDetector(teacher,cfg,a.memory_policy,a.variant)).cuda()
     a.engineering=str(out/'engineering.json')
     if a.checkpoint:
         saved=torch.load(a.checkpoint,map_location='cpu')
@@ -287,6 +334,12 @@ def worker(a):
     if a.variant == 'two_scale_medium':
         contract['architecture']+=' Stateless stride8 context: 256->384 stride2 3x3, three width192 residual bottlenecks, zero-initialized 384->256 projection and nearest resize added before coarse update.'
         contract['capacity_control']='two_scale_full; all shared initial weights and initial outputs match; same two recurrent state shapes; added context is evaluated densely every frame'
+    if a.variant == 'pyramid_large':
+        contract.update(version=student.version,
+            architecture='Complete mature 3/4/5-block 128/256/512 encoders, three transposed-convolution readout branches, full mature spatial readout and heads; new sequential pose-aligned states at strides2/4/8; no original input GRU or teacher in inference.',
+            priority='Detection AP first; no small-parameter, low-resolution-only or local-crop constraint',
+            protocol='Dense three-scale autoregressive states; student state only; no augmentation/delay; scene/gap>.25s resets; TBPTT4 detaches all three states; no teacher refresh',
+            capacity_control='Compare with INT and smaller state models; architecture, state layout and capacity jointly change, not parameter-only ablation')
     optimizer=make_optimizer(student,a.optimizer_profile)
     min_lrs=([1e-5] if a.optimizer_profile=='uniform' else [group['lr']/30 for group in optimizer.param_groups])
     if a.optimizer_profile != 'uniform':
@@ -350,7 +403,7 @@ def main():
     p.add_argument('--root',required=True);p.add_argument('--output',required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--epochs',type=int,default=12)
     p.add_argument('--checkpoint');p.add_argument('--resume');p.add_argument('--worker',action='store_true')
-    p.add_argument('--variant',choices=['two_scale_v1','two_scale_narrow','two_scale_full','two_scale_medium'],default='two_scale_v1')
+    p.add_argument('--variant',choices=['two_scale_v1','two_scale_narrow','two_scale_full','two_scale_medium','pyramid_large'],default='two_scale_v1')
     p.add_argument('--memory-policy',choices=['recurrent','reset'],default='recurrent')
     p.add_argument('--optimizer-profile',choices=['uniform','transfer'],default='uniform')
     p.add_argument('--evaluation-memory-policy',choices=['recurrent','reset'],
