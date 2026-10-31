@@ -69,7 +69,7 @@ class PyramidTests(unittest.TestCase):
 
     def test_normalized_bounded_current_preserves_initial_and_geometry(self):
         old=PyramidCurrent(2)
-        a=PyramidCurrent(2,normalize_merge=True,residual_limit=1.)
+        a=PyramidCurrent(2,normalize_merge=True,residual_limit=1.,activation='leaky_relu')
         self.assertTrue(all(torch.equal(v,a.state_dict()[k]) for k,v in old.state_dict().items()))
         base=self.d*.1
         current,support=a(self.u,self.d,base,self.mask,self.coverage)

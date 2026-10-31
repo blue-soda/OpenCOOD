@@ -10,11 +10,17 @@ from torch import nn
 from torch.nn import functional as F
 
 
-def block(cin, cout, stride=1):
+def activation_layer(kind):
+    if kind == 'relu': return nn.ReLU()
+    if kind == 'leaky_relu': return nn.LeakyReLU(.1)
+    raise ValueError('Unknown pyramid activation')
+
+
+def block(cin, cout, stride=1, activation='relu'):
     # No batch/spatial normalization: a zero remote input remains zero and
     # normalization statistics cannot create global support dependencies.
-    return nn.Sequential(nn.Conv2d(cin, cout, 3, stride, 1, bias=False), nn.ReLU(),
-                         nn.Conv2d(cout, cout, 3, 1, 1, bias=False), nn.ReLU())
+    return nn.Sequential(nn.Conv2d(cin, cout, 3, stride, 1, bias=False), activation_layer(activation),
+                         nn.Conv2d(cout, cout, 3, 1, 1, bias=False), activation_layer(activation))
 
 
 def support_block(mask, stride=1):
@@ -22,7 +28,7 @@ def support_block(mask, stride=1):
 
 
 class PyramidCurrent(nn.Module):
-    def __init__(self, depth, channels=128, normalize_merge=False, residual_limit=None):
+    def __init__(self, depth, channels=128, normalize_merge=False, residual_limit=None, activation='relu'):
         super().__init__()
         if depth < 1 or channels != 128:
             raise ValueError('Expected positive height and the F0 128-channel basis')
@@ -34,13 +40,13 @@ class PyramidCurrent(nn.Module):
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(20260929)
             self.spatial = nn.Sequential(
-                nn.Conv3d(channels, channels, 3, padding=1, bias=False), nn.ReLU(),
+                nn.Conv3d(channels, channels, 3, padding=1, bias=False), activation_layer(activation),
                 nn.Conv3d(channels, channels, 3, padding=1, bias=False))
             self.local_projection = nn.Conv2d(channels*depth, 128, 1, bias=False)
             self.remote_projection = nn.Conv2d(channels*depth, 128, 1, bias=False)
-            self.blocks = nn.ModuleList([block(128, 128), block(128, 256, 2), block(256, 256, 2)])
+            self.blocks = nn.ModuleList([block(128, 128, activation=activation), block(128, 256, 2, activation), block(256, 256, 2, activation)])
             self.lateral = nn.ModuleList([nn.Conv2d(c, 128, 1, bias=False) for c in (128,256,256)])
-            self.merge = nn.Sequential(nn.Conv2d(384, 256, 3, padding=1, bias=False), nn.ReLU())
+            self.merge = nn.Sequential(nn.Conv2d(384, 256, 3, padding=1, bias=False), activation_layer(activation))
             self.output = nn.Conv2d(256, channels*depth, 1, bias=False)
             nn.init.zeros_(self.output.weight)
 
