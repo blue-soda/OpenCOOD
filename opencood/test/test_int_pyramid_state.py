@@ -91,5 +91,21 @@ class PyramidTests(unittest.TestCase):
             model.memory_policy='recurrent'
             with self.assertRaises(ValueError):model.step_spatial(x,state,meta)
 
+    def test_reset_probe_has_zero_history_gradients_and_learns_current_path(self):
+        torch.manual_seed(303)
+        _,model=make_pair();model.memory_policy='reset'
+        for name in ('fine_update','coarse_update','deep_update'):
+            nn.init.normal_(getattr(model.core,name).history.weight,std=.001)
+        x=torch.randn(1,64,24,32);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
+        _,state,_=model.step_spatial(x,None,meta,False)
+        prediction,_,info=model.step_spatial(x,state,dict(meta,timestamp_us=200000),False)
+        self.assertEqual(info['reset'],'explicit')
+        prediction['psm'].square().mean().backward()
+        for name in ('fine_update','coarse_update','deep_update'):
+            gradient=getattr(model.core,name).history.weight.grad
+            self.assertIsNotNone(gradient)
+            self.assertEqual(float(gradient.abs().sum()),0.)
+        self.assertGreater(float(model.core.cls_head.weight.grad.abs().sum()),0.)
+
 
 if __name__=='__main__':unittest.main()

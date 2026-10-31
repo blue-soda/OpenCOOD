@@ -177,7 +177,13 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
     if pyramid:
         report['state_history_probe_gradient_l1']={name:float(getattr(student.core,name).history.weight.grad.abs().sum())
             for name in ('fine_update','coarse_update','deep_update')}
-        assert all(value>0 and np.isfinite(value) for value in report['state_history_probe_gradient_l1'].values())
+        history_gradients=report['state_history_probe_gradient_l1'].values()
+        # Reset intervention supplies zero history and validity at every scale.
+        # Its history projection must have zero gradient, unlike recurrence.
+        if student.memory_policy == 'reset':
+            assert all(value==0 for value in history_gradients)
+        else:
+            assert all(value>0 and np.isfinite(value) for value in history_gradients)
     optimizer.step()
     assert any(not torch.equal(initial[k],v) for k,v in student.state_dict().items())
     student.load_state_dict(initial);student.zero_grad(set_to_none=True)
