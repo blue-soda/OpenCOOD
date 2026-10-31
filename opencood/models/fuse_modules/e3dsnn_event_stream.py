@@ -103,5 +103,7 @@ compute optimization, and no new receiver accuracy mechanism is claimed.
     if hasattr(receiver, 'snapshot_context_gate'):
         current = current * receiver.snapshot_context_gate(membrane, decoded)
     supported = (aligned.detach() != 0).any(1, keepdim=True) & (coverage > 0)
+    if hasattr(receiver, 'snapshot_pyramid'):
+        current, supported = receiver.snapshot_pyramid(membrane, decoded, current, supported, coverage)
     return torch.where(supported, count_readout(membrane + current),
                        count_readout(membrane))

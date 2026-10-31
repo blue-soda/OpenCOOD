@@ -223,7 +223,8 @@ def execute(args, output_dir):
             raise ValueError('Packet replay requires a fusion model')
         model.packet_roundtrip = True
     criterion = train_utils.create_loss(cfg).cuda()
-    optimizer = train_utils.setup_optimizer(cfg, model)
+    from opencood.utils.cp_optimizer import make_optimizer, apply_warmup
+    optimizer = make_optimizer(cfg, model)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
         milestones=cfg['lr_scheduler']['step_size'], gamma=cfg['lr_scheduler']['gamma'])
     generator = torch.Generator().manual_seed(args.seed)
@@ -432,6 +433,8 @@ def execute(args, output_dir):
         for index, batch in enumerate(loader):
             if batch is None:
                 raise ValueError('Unexpected empty training batch')
+            apply_warmup(optimizer, epoch, index, len(loader),
+                         cfg['optimizer'].get('lr_warmup_epochs', 0))
             batch = train_utils.to_device(batch, torch.device('cuda'))
             optimizer.zero_grad(set_to_none=True)
             train_output, loss = checked_forward(model, criterion, batch, teacher,
