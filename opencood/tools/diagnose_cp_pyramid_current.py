@@ -77,6 +77,8 @@ def run(a):
             assert all(torch.isfinite(output[k]).all() for k in ('psm','rm','dm'))
             assert 'packet_bytes' not in output
             row=observed.pop();row.update(index=index,frame_id=str(batch_cpu['ego']['frame_ids'][0]),events=output['stream_events'][0]);rows.append(row)
+            if getattr(pyramid,'residual_limit',None) is not None:
+                assert row['delta_abs_max'] <= pyramid.residual_limit+1e-5
             if label=='initial':assert row['delta_abs_max']==0 and row['count_changed_global']==0
             if (index+1)%8==0:print(json.dumps(dict(state=label,frames=index+1)),flush=True)
         assert all(torch.equal(v.cpu(),state[k]) for k,v in model.state_dict().items())
@@ -85,7 +87,9 @@ def run(a):
         report['states'][label]=dict(checkpoint_sha256=sha(path),means=averages,frames=rows,
             output_weight_norm=float(pyramid.output.weight.norm()))
     for h in handles:h.remove()
-    report['passed']=True;write_json(Path(a.output),report)
+    report.update(passed=True,residual_limit=getattr(pyramid,'residual_limit',None),
+                  normalized_merge=getattr(pyramid,'normalize_merge',False))
+    write_json(Path(a.output),report)
     print(json.dumps({key:value['means'] for key,value in report['states'].items()}),flush=True)
 
 
