@@ -1,4 +1,4 @@
-"""Training-only CoSDH sender-latent calibration before count conversion.
+"""Training-only CoSDH sender-latent or post-fusion count calibration.
 
 No AP, optimizer, packets or model mutation. The next 32 training frames audit
 fixed thresholds fitted on the first 64; validation IDs are forbidden.
@@ -129,7 +129,9 @@ def main():
                         minimum_by_channel=fit.min(axis=1).tolist(), maximum_by_channel=fit.max(axis=1).tolist())
                 write(out / 'thresholds.json', dict(fit_ids=ids[:64], stages=thresholds,
                     count_formula='min(floor(x/(range_p999/T)),T)', steps=list(step_options), interface=a.interface,
-                    note='Analytic constant-current IF count diagnostic; no event selection or SNN encoder yet'))
+                    checkpoint_sha256=sha(checkpoint),
+                    sender_thresholds_sha256=sha(a.sender_thresholds) if counts else None,
+                    note='Analytic IF readout diagnostic at the named interface; no membrane/gate or SNN encoder conversion'))
             write(out / 'status.json', dict(stage='calibrating', completed=index+1, planned=96))
     for handle in handles: handle.remove()
     if counts: counts.close()
