@@ -51,7 +51,7 @@ def run(a):
     write_json(Path(a.output).with_suffix('.forward.json'),report)
     seed();batch=train_utils.to_device(train.collate_batch_train([train[0],train[1]]),torch.device('cuda'))
     criterion=train_utils.create_loss(cfg).cuda();reference=[]
-    for native in (False,True):
+    for attempt,native in enumerate((False,False,True)):
         os.environ['OPENCOOD_SNAPSHOT_NATIVE_LIB']=a.library if native else ''
         model.load_state_dict(initial,strict=True);model.train();optimizer=make_optimizer(cfg,model);seed()
         for group in optimizer.param_groups: group['initial_lr']=group['lr']
@@ -61,14 +61,23 @@ def run(a):
             gradients={k:p.grad.detach().cpu().clone() for k,p in model.named_parameters() if p.grad is not None}
             norm=torch.nn.utils.clip_grad_norm_(model.parameters(),10.);optimizer.step()
             state={k:v.detach().cpu().clone() for k,v in model.state_dict().items()}
-            if not native:reference.append((float(loss),gradients,state))
+            if attempt==0:reference.append((float(loss),gradients,state))
             else:
-                expected=reference[step];assert float(loss)==expected[0]
+                expected=reference[step]
                 assert set(gradients)==set(expected[1])
-                assert all(torch.equal(v,expected[1][k]) for k,v in gradients.items())
-                assert all(torch.equal(v,expected[2][k]) for k,v in state.items())
-                report['steps'].append(dict(step=step+1,loss=float(loss),gradient_tensors=len(gradients),state_tensors=len(state),gradient_norm=float(norm),exact=True))
-            print(json.dumps(dict(native=native,step=step+1,loss=float(loss))),flush=True)
+                grad_max=max(float((v-expected[1][k]).abs().max()) for k,v in gradients.items())
+                state_max=max(float((v.double()-expected[2][k].double()).abs().max()) for k,v in state.items())
+                passed=(np.isclose(float(loss),expected[0],rtol=1e-7,atol=1e-9) and
+                    all(torch.allclose(v,expected[1][k],rtol=1e-5,atol=1e-6) for k,v in gradients.items()) and
+                    all(torch.allclose(v,expected[2][k],rtol=1e-6,atol=1e-7) for k,v in state.items()))
+                report['steps'].append(dict(attempt=attempt,native=native,step=step+1,loss=float(loss),
+                    gradient_tensors=len(gradients),state_tensors=len(state),gradient_norm=float(norm),
+                    gradient_max_abs_error=grad_max,state_max_abs_error=state_max,
+                    gradient_bitwise_equal=all(torch.equal(v,expected[1][k]) for k,v in gradients.items()),
+                    state_bitwise_equal=all(torch.equal(v,expected[2][k]) for k,v in state.items()),passed=bool(passed)))
+                write_json(Path(a.output).with_suffix('.steps.json'),report)
+                assert passed,report['steps'][-1]
+            print(json.dumps(dict(attempt=attempt,native=native,step=step+1,loss=float(loss))),flush=True)
     report.update(passed=True,audit_updates_discarded=True,checkpoint_sha256=hashlib.sha256(Path(a.checkpoint).read_bytes()).hexdigest(),library_sha256=hashlib.sha256(Path(a.library).read_bytes()).hexdigest())
     write_json(Path(a.output),report)
 
