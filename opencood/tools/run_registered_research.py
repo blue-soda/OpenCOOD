@@ -34,6 +34,10 @@ def progress_signature(directory):
     directory = Path(directory)
     path = directory / 'progress.json'
     progress = json.loads(path.read_text()) if path.exists() else {}
+    if not progress and (directory / 'status.json').exists():
+        status = json.loads((directory / 'status.json').read_text())
+        if 'stage' in status and 'completed' in status:
+            return dict(state=status['stage'], samples=status['completed'])
     signature = {k: progress.get(k) for k in ('state', 'epoch', 'batch')}
     if progress.get('state') in ('validating', 'initial_validation'):
         frame = directory / 'validation_progress.json'
