@@ -68,7 +68,13 @@ def main():
     parser.add_argument('--count-steps', type=int, choices=(8, 32))
     parser.add_argument('--count-event-quotas', type=int, nargs=3, help='Three fixed per-stage IF event caps')
     parser.add_argument('--count-wire', action='store_true', help='Actual integer counts, scales, masks and request; no late boxes')
+    parser.add_argument('--readout-thresholds', help='Training-only post-fusion calibration')
+    parser.add_argument('--readout-mode', choices=('identity', 'clip', 'count4', 'count16'))
     args = parser.parse_args()
+    if bool(args.readout_thresholds) != bool(args.readout_mode):
+        parser.error('Readout mode and thresholds must be specified together')
+    if args.readout_mode and not args.count_thresholds:
+        parser.error('Readout probe requires the fixed count sender')
     if bool(args.count_thresholds) != bool(args.count_steps):
         parser.error('Count thresholds and steps must be specified together')
     if args.count_thresholds and (not args.feature_only or args.wire_codec or args.compute_smoke_reference):
@@ -167,6 +173,14 @@ def main():
         if args.count_thresholds:
             from cosdh_counts import CoSDHCounts
             counts = CoSDHCounts(model, args.count_thresholds, args.count_steps, args.count_event_quotas)
+        readout = None
+        if args.readout_mode:
+            from cosdh_readout import CoSDHReadout
+            readout = CoSDHReadout(model, args.readout_thresholds, args.readout_mode)
+        if not args.wire_codec and not args.count_wire:
+            import zlib
+            def forbidden(*args, **kwargs): raise AssertionError('Ordinary evaluation must not use codec')
+            zlib.compress = zlib.decompress = forbidden
 
         dataset = build_dataset(cfg, visualize=True, train=False)
         wire=None
@@ -208,6 +222,8 @@ def main():
         write_json(output / 'provenance.json', metadata)
         metadata['ego_only'] = args.ego_only
         metadata['feature_only'] = args.feature_only
+        metadata['readout'] = dict(mode=args.readout_mode, thresholds_sha256=digest(args.readout_thresholds),
+            interface='post_fusion', original_fusion_preserved=True, membrane_conversion=False) if readout else None
         metadata['count_conversion'] = dict(steps=args.count_steps, thresholds_sha256=digest(args.count_thresholds),
             stage_quotas=args.count_event_quotas,wire=args.count_wire,
             scope='Frozen remote-only decoder-input IF counts; original masks/decoder/fusion; optional crossing-time quotas and integer wire') if counts else None
@@ -283,6 +299,7 @@ def main():
                 raw_outputs.clear()
                 if wire:wire.begin(batch,str(ids[index]))
                 if counts:counts.begin()
+                if readout:readout.begin()
                 torch.cuda.synchronize()
                 t0 = time.perf_counter()
                 result = inference_utils.inference_late_fusion(batch, model, dataset)
@@ -317,6 +334,7 @@ def main():
                 if counts:
                     row['count_conversion'] = counts.finish()
                     row['count_conversion']['codec_executed'] = args.count_wire
+                if readout:row['readout'] = readout.finish()
                 rows.append(row)
                 if wire:row['wire']=wire.finish(index)
                 with (output / 'frames.jsonl').open('a', encoding='utf-8') as f:
@@ -328,6 +346,7 @@ def main():
                     print('completed {}/{}'.format(index + 1, count), flush=True)
         hook.remove()
         if wire:wire.close()
+        if readout:readout.close()
         if counts:
             counts.close()
             original = torch.load(str(checkpoint), map_location='cpu')
@@ -357,6 +376,7 @@ def main():
         summary['ego_only'] = args.ego_only
         summary['feature_only'] = args.feature_only
         summary['count_conversion'] = metadata['count_conversion']
+        summary['readout'] = metadata['readout']
         if counts:summary['model_state_unchanged'] = True
         if args.feature_only and args.wire_codec:
             summary['wire_note']='Actual demand and three dependency-closed FP16 latent/mask sections; no late boxes; 160-byte two-way metadata included; link/IP overhead excluded'
