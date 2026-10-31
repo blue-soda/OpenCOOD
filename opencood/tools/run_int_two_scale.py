@@ -13,6 +13,7 @@ from opencood.data_utils.int_tbptt import window_ends
 from opencood.loss.point_pillar_dir_loss import PointPillarDirLoss
 from opencood.models.sub_modules.int_two_scale import TwoScaleDetector
 from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector, GatedPyramidStateDetector
+from opencood.models.sub_modules.int_observation_bank import ObservationBankDetector
 from opencood.models.sub_modules.int_light_repair import foreground_head_loss
 from opencood.tools.run_int_cache_repair import setup,evaluate
 from opencood.tools.run_int_ego import loader,to_device,write_json
@@ -70,6 +71,7 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
     student.eval();state=None;records=[];conv_macs={};cost_hooks=[];capacity_parity=[];spatial_parity=[]
     pyramid=isinstance(student,PyramidStateDetector)
     initial_pyramid=pyramid and student.updates_are_initial_identity()
+    observation_bank=isinstance(student,ObservationBankDetector)
     def count_conv(name):
         def callback(module,inputs,output):
             group=name.split('.')[0]
@@ -112,6 +114,7 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
                 assert calls==[0,0,0]
                 records.append(dict(frame=sample['meta']['frame'],reset=info['reset'],
                                     state_shape=list(state['value'].shape)))
+                if observation_bank:records[-1]['history_observations_used']=info['history_observations_used']
     finally:
         for hook in hooks:hook.remove()
         for hook in cost_hooks:hook.remove()
@@ -152,6 +155,9 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
             state_shapes={key:list(state[key].shape) for key in student.state_keys},
             cost_scope='One real frame core Conv2d plus ConvTranspose2d dense MAC*2; excludes Pillar, warp, normalization, activation and data movement; not latency.',
             caveat='Complete mature spatial path with three new recurrent states; spatial-only initial parity does not imply INT GRU temporal parity. All modules execute densely.')
+        if observation_bank:
+            report.update(caveat='Two frozen raw Pillar observations, aligned before spatial downsampling; no recurrent semantic states; dense execution.',
+                          history_age_limit=student.max_history_age)
     if student.variant == 'two_scale_medium_context_v1':
         report['capacity_base_state_sha256']=capacity_base_hash.hexdigest()
         report['context_projection_initially_zero']=bool(
@@ -182,7 +188,11 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
         gradient=student.core.coarse_context.projection.weight.grad
         report['context_projection_probe_gradient_l1']=float(gradient.abs().sum())
         assert torch.isfinite(gradient).all() and report['context_projection_probe_gradient_l1']>0
-    if pyramid:
+    if observation_bank:
+        gradient=student.core.evidence_fusion[-1].weight.grad
+        report['evidence_projection_probe_gradient_l1']=float(gradient.abs().sum())
+        assert torch.isfinite(gradient).all() and report['evidence_projection_probe_gradient_l1']>0
+    elif pyramid:
         report['state_history_probe_gradient_l1']={name:float(getattr(student.core,name).history.weight.grad.abs().sum())
             for name in ('fine_update','coarse_update','deep_update')}
         history_gradients=report['state_history_probe_gradient_l1'].values()
@@ -235,6 +245,9 @@ def validate(a,student,teacher,cfg,rows,directory):
         'Concurrent training throughput is not a paired latency benchmark. Use independent same-GPU sequential evaluation after training.']
     if isinstance(student,PyramidStateDetector):
         report['caveats'][1]='Frozen Pillar; complete mature 3/4/5-block encoders and multiscale spatial readout; three new recurrent states. No original GRU or teacher in inference.'
+    if isinstance(student,ObservationBankDetector):
+        report['scope']='Three-observation early-fusion full validation' if split=='val' else 'Full training-split fit diagnostic; not validation AP'
+        report['caveats'][1]='Two past raw frozen Pillar grids plus current grid; independently pose-aligned, age<=.25s, fusion before spatial downsampling; no recurrent semantic state or teacher inference.'
     if split=='train':
         report['caveats'].append('Fixed-weight evaluation on seen training data, without optimizer updates; train/val distribution differences prevent assigning a gap to overfitting alone.')
     for key in list(report):
@@ -303,7 +316,8 @@ def worker(a):
     runtime=json.loads((Path(a.root)/'full_gru'/'effective_runtime.json').read_text())['arguments']
     train_rows=relocate_tree(json.loads(Path(artifact_path(runtime['manifest'])).read_text())['train'])
     torch.manual_seed(303);np.random.seed(303);random.seed(303)
-    student=(GatedPyramidStateDetector(teacher,cfg,a.memory_policy) if a.variant=='pyramid_gated' else
+    student=(ObservationBankDetector(teacher,cfg,a.memory_policy) if a.variant=='observation_bank' else
+             GatedPyramidStateDetector(teacher,cfg,a.memory_policy) if a.variant=='pyramid_gated' else
              PyramidStateDetector(teacher,cfg,a.memory_policy) if a.variant=='pyramid_large'
              else TwoScaleDetector(teacher,cfg,a.memory_policy,a.variant)).cuda()
     a.engineering=str(out/'engineering.json')
@@ -362,7 +376,7 @@ def worker(a):
     if a.variant == 'two_scale_medium':
         contract['architecture']+=' Stateless stride8 context: 256->384 stride2 3x3, three width192 residual bottlenecks, zero-initialized 384->256 projection and nearest resize added before coarse update.'
         contract['capacity_control']='two_scale_full; all shared initial weights and initial outputs match; same two recurrent state shapes; added context is evaluated densely every frame'
-    if a.variant in ('pyramid_large','pyramid_gated'):
+    if a.variant in ('pyramid_large','pyramid_gated','observation_bank'):
         contract.update(version=student.version,
             architecture='Complete mature 3/4/5-block 128/256/512 encoders, three transposed-convolution readout branches, full mature spatial readout and heads; new sequential pose-aligned states at strides2/4/8; no original input GRU or teacher in inference.',
             priority='Detection AP first; no small-parameter, low-resolution-only or local-crop constraint',
@@ -371,6 +385,10 @@ def worker(a):
     if a.variant == 'pyramid_gated':
         contract['architecture']+=' Per-scale channel/spatial gate on aligned history: concat(current,history,difference,valid), width C/2, 1x1 and 3x3 with GroupNorm, zero-ended 1x1, multiplier 2*sigmoid; initially one.'
         contract['capacity_control']='pyramid_large transfer; shared initial weights and initial predictions identical; gate adds capacity and temporal weighting jointly; same three states and training recipe'
+    if a.variant == 'observation_bank':
+        contract.update(architecture='Complete mature spatial encoders/readout/heads; raw current Pillar64 and two past raw Pillar64 grids, separately pose-warped with validity/normalized ages; 196->128 pointwise, two 128 3x3 layers with GroupNorm, zero 128->64 residual projection before spatial downsampling. No semantic recurrent updates or original GRU.',
+            protocol='Two raw observation slots; each age<=.25s; scene/gap reset, strict causal timestamps; frozen Pillar means no gradient through stored observations; same four-frame loss/update windows as TBPTT4 controls; no teacher refresh',
+            capacity_control='Changes temporal fusion position, finite horizon and state topology jointly; complete spatial source preserved; not a parameter-only or single-factor control')
     optimizer=make_optimizer(student,a.optimizer_profile)
     min_lrs=([1e-5] if a.optimizer_profile=='uniform' else [group['lr']/30 for group in optimizer.param_groups])
     if a.optimizer_profile != 'uniform':
@@ -434,7 +452,7 @@ def main():
     p.add_argument('--root',required=True);p.add_argument('--output',required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--epochs',type=int,default=12)
     p.add_argument('--checkpoint');p.add_argument('--resume');p.add_argument('--worker',action='store_true')
-    p.add_argument('--variant',choices=['two_scale_v1','two_scale_narrow','two_scale_full','two_scale_medium','pyramid_large','pyramid_gated'],default='two_scale_v1')
+    p.add_argument('--variant',choices=['two_scale_v1','two_scale_narrow','two_scale_full','two_scale_medium','pyramid_large','pyramid_gated','observation_bank'],default='two_scale_v1')
     p.add_argument('--memory-policy',choices=['recurrent','reset'],default='recurrent')
     p.add_argument('--optimizer-profile',choices=['uniform','transfer','protect_spatial'],default='uniform')
     p.add_argument('--evaluation-memory-policy',choices=['recurrent','reset'],
