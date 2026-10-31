@@ -44,7 +44,7 @@ class CachedPyramidDetector(PyramidStateDetector):
             raise ValueError('Only the ungated recurrent pyramid has this local contract')
         if not 0 <= fraction <= 1 or tile < 1 or not math.isfinite(max_cache_age) or max_cache_age <= 0:
             raise ValueError('Invalid cache policy')
-        if execution not in ('sparse','masked_dense','coalesced'):
+        if execution not in ('sparse','masked_dense','coalesced','coalesced_dense'):
             raise ValueError('Unsupported execution')
         self.core, self.pillar_vfe, self.scatter = base.core, base.pillar_vfe, base.scatter
         self.bounds, self.memory_policy, self.variant = base.bounds, base.memory_policy, base.variant
@@ -96,9 +96,10 @@ class CachedPyramidDetector(PyramidStateDetector):
                     raise ValueError('Cache mask shape/dtype mismatch')
                 if bool(((~valid | (age>=self.max_cache_age-1e-6)) & ~requested).any()):
                     raise ValueError('Explicit mask omits mandatory refresh cells')
-                if self.execution == 'coalesced':
+                if self.execution in ('coalesced','coalesced_dense'):
                     from opencood.models.sub_modules.int_pyramid_regions import coalesced_refresh
-                    x,written,stat = coalesced_refresh(stage,packed,old,requested,self.tile)
+                    x,written,stat = coalesced_refresh(stage,packed,old,requested,self.tile,
+                        dense_reference=self.execution=='coalesced_dense')
                 else:
                     x,written,stat = refresh_tiles(stage,packed,old,requested,2,stage.radius,self.tile,
                         allow_fallback=self.allow_fallback,execution=self.execution)

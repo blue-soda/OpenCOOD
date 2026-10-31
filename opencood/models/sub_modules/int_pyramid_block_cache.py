@@ -111,8 +111,9 @@ class BlockCachedPyramidDetector(CachedPyramidDetector):
             if reason:
                 x=module(packed);written=requested
                 info=dict(actual_write_fraction=1.,executed_input_area_ratio=1.,fallback=False)
-            elif self.execution=='coalesced':
-                x,written,info=coalesced_refresh(module,packed,old,requested,self.tile,stride=stride)
+            elif self.execution in ('coalesced','coalesced_dense'):
+                x,written,info=coalesced_refresh(module,packed,old,requested,self.tile,stride=stride,
+                    dense_reference=self.execution=='coalesced_dense')
             else:
                 x,written,info=refresh_tiles(module,packed,old,requested,stride,module.radius,self.tile,
                     allow_fallback=self.allow_fallback,execution=self.execution)

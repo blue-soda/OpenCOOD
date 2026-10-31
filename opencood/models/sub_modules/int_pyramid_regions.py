@@ -4,7 +4,7 @@ from opencood.models.sub_modules.int_cache_repair import (
     tile_mask, expand_tiles, rectangles, crop_jobs)
 
 
-def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8, stride=2):
+def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8, stride=2, dense_reference=False):
     """Local blocks whose convolutions all use the same output grid.
 
     Candidate cost counts executed output pixels, including repeated halos.
@@ -35,8 +35,12 @@ def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8, stride
                  original_stage_conv_ratio=original_work/float(dense_work),
                  stage_conv_ratio=best_work/float(dense_work),
                  tiles=1 if best_jobs is None else len(best_jobs))
-    if best_jobs is None:
+    if best_jobs is None or dense_reference:
         stats['executed_input_area_ratio'] = 1.
+        stats['dense_reference'] = dense_reference
+        if dense_reference:
+            stats['planned_stage_conv_ratio'] = stats['stage_conv_ratio']
+            stats['stage_conv_ratio'] = 1.
         return torch.where(written, module(x), cached), written, stats
     stats['executed_input_area_ratio'] = sum((j[6]-j[4])*(j[7]-j[5]) for j in best_jobs)/float(h*w)
     output = cached.clone(); groups = {}

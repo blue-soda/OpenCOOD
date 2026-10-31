@@ -27,6 +27,22 @@ def fixture():
 
 
 class PyramidCacheTests(unittest.TestCase):
+    def test_same_plan_dense_control_preserves_writes_and_planned_work(self):
+        from opencood.models.sub_modules.int_pyramid_regions import coalesced_refresh
+        from opencood.models.sub_modules.int_pyramid_block_cache import LocalBlock
+        model=fixture();block=LocalBlock(model.core.observation[1]).eval()
+        x=torch.randn(1,128,48,64);old=torch.randn_like(x);request=torch.zeros_like(x[:,:1],dtype=torch.bool)
+        request[...,20:24,20:24]=True
+        with torch.no_grad():
+            actual,written,stats=coalesced_refresh(block,x,old,request,stride=1)
+            expected,mask,control=coalesced_refresh(block,x,old,request,stride=1,dense_reference=True)
+        self.assertTrue(torch.equal(mask,written))
+        self.assertTrue(torch.allclose(actual,expected,atol=1e-4,rtol=1e-4))
+        self.assertEqual(stats['execution_tile'],control['execution_tile'])
+        self.assertEqual(stats['stage_conv_ratio'],control['planned_stage_conv_ratio'])
+        self.assertLess(stats['stage_conv_ratio'],control['stage_conv_ratio'])
+        self.assertTrue(torch.equal(expected[~mask.expand_as(expected)],old[~mask.expand_as(old)]))
+
     def test_compact_late_cache_preserves_outputs_and_reduces_live_state(self):
         from opencood.models.sub_modules.int_pyramid_block_cache import BlockCachedPyramidDetector
         model=fixture();options=dict(force_full_blocks=list(range(9)),fraction=.1,tile=4,execution='coalesced')

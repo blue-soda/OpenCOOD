@@ -44,6 +44,9 @@ def worker(a):
     options=dict(force_full_blocks=list(range(9)),fraction=.1,tile=4,max_cache_age=.5,execution='coalesced')
     original=BlockCachedPyramidDetector(base,**options)
     compact=BlockCachedPyramidDetector(base,compact_dense=True,**options)
+    if a.suite=='execution_control':
+        control_options=dict(options,execution='coalesced_dense')
+        original=BlockCachedPyramidDetector(base,compact_dense=True,**control_options)
     models=dict(dense=base,original=original,compact=compact)
     states={name:None for name in models};engineering=[]
     _,stream=loader(rows[:32],cfg,2,303)
@@ -60,16 +63,21 @@ def worker(a):
             assert all(torch.equal(states['original'][k],states['compact'][k]) for k in base.state_keys)
             for old,new in zip(states['original']['blocks'][9:],states['compact']['blocks'][9:]):
                 assert all(torch.equal(old[k],new[k]) for k in old)
-            assert oc==cc and ci['cache_bytes']<oi['cache_bytes']
+            if a.suite=='execution_control':
+                assert cc<=oc and ci['cache_bytes']==oi['cache_bytes']
+                assert all(torch.equal(x,y) for x,y in zip(original.last_requests,compact.last_requests))
+            else:assert oc==cc and ci['cache_bytes']<oi['cache_bytes']
             engineering.append(dict(frame=meta['frame'],predictions_exact=True,deep_cache_exact=True,
                 original_core_flops=oc,compact_core_flops=cc,original_cache_bytes=oi['cache_bytes'],
                 compact_cache_bytes=ci['cache_bytes'],compact_state_bytes=ci['state_bytes']))
-    write_json(out/'engineering.json',dict(status='PASSED',records=engineering,scope='32 real-frame own-state parity; no full compact AP recomputation'))
+    write_json(out/'engineering.json',dict(status='PASSED',suite=a.suite,records=engineering,scope='32 real-frame own-state parity; no full compact AP recomputation'))
     for m in base.modules():
         assert not m._forward_hooks and not m._forward_pre_hooks
     occupancy.append(check_exclusive(a.gpu))
     names=list(models);timings={name:[] for name in names};rounds=[]
-    write_json(out/'contract.json',dict(checkpoint_sha256=completed['checkpoint_sha256'],frames=a.frames,rounds=3,
+    profiles=dict(dense='R051 dense',compact='compact late-only coalesced crops',
+        original='compact late-only same-plan masked dense' if a.suite=='execution_control' else 'uncompacted R068 late-only')
+    write_json(out/'contract.json',dict(suite=a.suite,profiles=profiles,checkpoint_sha256=completed['checkpoint_sha256'],frames=a.frames,rounds=3,
         excluded_warmup_frames=16,orders=[names[i:]+names[:i] for i in range(3)],
         scope='Synchronized wall time of model.step including Pillar/warp/selectors/cache/crops/decoder/heads; excludes input preparation/H2D/postprocess',
         instrumentation='No forward/counting hooks; correctness comparisons and nvidia-smi outside timed interval',
@@ -86,6 +94,8 @@ def worker(a):
                     torch.cuda.synchronize();elapsed[name]=1000*(time.perf_counter()-tick)
                     if index>=16:timings[name].append(elapsed[name]);local[name].append(elapsed[name])
                 assert all(torch.equal(outputs['original'][k],outputs['compact'][k]) for k in outputs['original'])
+                if a.suite=='execution_control':
+                    assert all(torch.equal(x,y) for x,y in zip(original.last_requests,compact.last_requests))
                 log.write(json.dumps(dict(round=repeat,frame=meta['frame'],order=order,warmup=index<16,ms=elapsed,compact_exact=True))+'\n')
                 if (index+1)%64==0:
                     occupancy.append(check_exclusive(a.gpu));write_json(out/'occupancy.json',occupancy)
@@ -93,7 +103,7 @@ def worker(a):
             rounds.append({name:float(np.mean(local[name])) for name in names})
             occupancy.append(check_exclusive(a.gpu));write_json(out/'occupancy.json',occupancy)
     summary={name:dict(mean_ms=float(np.mean(values)),p50_ms=float(np.median(values)),p95_ms=float(np.percentile(values,95)),samples=len(values)) for name,values in timings.items()}
-    report=dict(status='COMPLETED',timing_valid=True,frames=a.frames,rounds=rounds,timings=summary,
+    report=dict(status='COMPLETED',suite=a.suite,profiles=profiles,timing_valid=True,frames=a.frames,rounds=rounds,timings=summary,
         compact_predictions_exact_all=True,checkpoint_sha256=completed['checkpoint_sha256'],
         original_cache_bytes=engineering[-1]['original_cache_bytes'],compact_cache_bytes=engineering[-1]['compact_cache_bytes'],
         compact_state_bytes=engineering[-1]['compact_state_bytes'],compact_to_dense_time=summary['compact']['mean_ms']/summary['dense']['mean_ms'],
@@ -108,6 +118,7 @@ def main():
     p=argparse.ArgumentParser()
     for key in ('root','output','checkpoint','source-report'):p.add_argument('--'+key,required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--frames',type=int,default=256);p.add_argument('--worker',action='store_true')
+    p.add_argument('--suite',choices=['compact','execution_control'],default='compact')
     a=p.parse_args();out=Path(a.output)
     if not 64<=a.frames<=512:p.error('Benchmark budget: 64 to 512 frames')
     if a.worker:
