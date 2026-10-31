@@ -17,7 +17,8 @@ class E3dsnnSnapshotHighres(E3dsnnSnapshotFrontend):
         self.use_shallow_skip = opts['use_shallow_skip']
         if type(self.use_shallow_skip) is not bool:
             raise ValueError('use_shallow_skip must be boolean')
-        self.local_detail = LocalCountDetail() if self.use_shallow_skip else None
+        self.local_detail = LocalCountDetail(opts.get('hidden_channels', 128),
+                                            opts.get('second_dilation', 1)) if self.use_shallow_skip else None
         self.shallow_readout = Multispike()
         self._local_shallow = None
 

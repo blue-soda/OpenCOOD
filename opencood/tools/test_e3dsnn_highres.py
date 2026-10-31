@@ -4,6 +4,25 @@ from opencood.models.sub_modules.e3dsnn_highres_bev import LocalCountDetail, ups
 
 
 class HighResolutionTest(unittest.TestCase):
+    def test_width_and_receptive_field_preserve_count_interface(self):
+        torch.set_num_threads(1)
+        modules = [LocalCountDetail(), LocalCountDetail(256, 1), LocalCountDetail(128, 2)]
+        self.assertEqual(sum(p.numel() for p in modules[0].parameters()),
+                         sum(p.numel() for p in modules[2].parameters()))
+        for key, value in modules[0].state_dict().items():
+            self.assertTrue(torch.equal(value, modules[2].state_dict()[key]))
+        self.assertGreater(sum(p.numel() for p in modules[1].parameters()),
+                           sum(p.numel() for p in modules[0].parameters()))
+        for module in modules:
+            counts = torch.randint(0, 5, (2, 64, 12, 16)).float().requires_grad_()
+            self.assertEqual(module(counts).shape, (2, 256, 12, 16))
+            self.assertEqual(module(counts).abs().sum().item(), 0)
+            with torch.no_grad(): module.output.weight.normal_(0, .01)
+            out = module(counts); out.square().mean().backward()
+            self.assertTrue(torch.isfinite(counts.grad).all())
+            self.assertGreater(counts.grad.abs().sum().item(), 0)
+            self.assertLessEqual(out.abs().max().item(), 1)
+
     def test_zero_initialization_then_gradient_and_bound(self):
         torch.set_num_threads(1)
         module = LocalCountDetail()
