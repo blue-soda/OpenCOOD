@@ -27,6 +27,18 @@ def fixture():
 
 
 class PyramidCacheTests(unittest.TestCase):
+    def test_forced_blocks_only_bypass_their_own_selection(self):
+        from opencood.models.sub_modules.int_pyramid_block_cache import BlockCachedPyramidDetector
+        model=fixture();indices=[i for i in range(15) if i not in (3,8,14)]
+        cached=BlockCachedPyramidDetector(model,fraction=0,force_full_blocks=indices,execution='coalesced')
+        x=torch.randn(1,64,24,32);meta=dict(timestamp_us=0,segment='a',pose=np.eye(4))
+        with torch.no_grad():
+            _,state,_=cached.step_spatial(x,None,meta)
+            _,_,info=cached.step_spatial(x,state,dict(meta,timestamp_us=100000))
+        self.assertEqual([s['actual_write_fraction'] for s in info['cache_stages']],
+                         [1. if i in indices else 0. for i in range(15)])
+        with self.assertRaises(ValueError):BlockCachedPyramidDetector(model,force_full_blocks=[15])
+
     def test_block_cache_full_refresh_matches_original(self):
         from opencood.models.sub_modules.int_pyramid_block_cache import BlockCachedPyramidDetector
         model=fixture();cached=BlockCachedPyramidDetector(model,fraction=1,execution='coalesced')

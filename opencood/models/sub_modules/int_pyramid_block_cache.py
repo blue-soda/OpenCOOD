@@ -38,7 +38,7 @@ class LocalUpdate(nn.Module):
 
 
 class BlockCachedPyramidDetector(CachedPyramidDetector):
-    def __init__(self, base, **kwargs):
+    def __init__(self, base, force_full_blocks=(), **kwargs):
         super().__init__(base, **kwargs)
         self.blocks = []
         self.output_indices = []
@@ -49,6 +49,9 @@ class BlockCachedPyramidDetector(CachedPyramidDetector):
                 self.blocks.append((local,scale,False))
             self.blocks.append((LocalUpdate(getattr(self.core,update)).eval(),scale,True))
             self.output_indices.append(len(self.blocks)-1)
+        self.force_full_blocks=frozenset(force_full_blocks)
+        if any(type(i) is not int or i<0 or i>=len(self.blocks) for i in self.force_full_blocks):
+            raise ValueError('Invalid forced-full block index')
 
     def step_spatial(self, spatial, state, meta, detach_state=True, requests=None):
         if self.training or torch.is_grad_enabled() or spatial.shape[0]!=1:
@@ -81,7 +84,7 @@ class BlockCachedPyramidDetector(CachedPyramidDetector):
                 age=aligned[:,-1:]+(stamp-state['timestamp_us'])/1e6
             packed=torch.cat((x,old,valid.to(x.dtype)),1) if is_update else x
             mandatory=~valid | (age>=self.max_cache_age-1e-6)
-            requested=(torch.ones_like(valid) if reason else
+            requested=(torch.ones_like(valid) if reason or i in self.force_full_blocks else
                 change_request(evidence,reference,valid,age,self.fraction,self.tile,self.max_cache_age)
                 if requests is None else requests[i])
             if requested.shape!=valid.shape or requested.dtype!=torch.bool or bool((mandatory & ~requested).any()):
