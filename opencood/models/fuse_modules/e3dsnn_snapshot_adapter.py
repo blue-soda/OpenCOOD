@@ -62,6 +62,10 @@ class SnapshotAdapter:
         # the source-only IF drive and must extend event_basis_digest as well.
         return torch.relu(self.content.project(source))
 
+    def detect_bev_sample(self, spatial, sample_index):
+        """Per-example dispatch for receivers with local multiscale features."""
+        return self.detect_bev(spatial)
+
     def forward(self, data):
         if self.training and self.packet_roundtrip:
             raise ValueError('Wire reconstruction is eval-only; preserve training gradients')
@@ -87,7 +91,7 @@ class SnapshotAdapter:
         outputs=[];sizes=[];units=[];self.snapshot_records=[]
         for i in range(b):
             if local_only:
-                outputs.append(self.detect_bev(ego[i:i+1].flatten(1,2)));sizes.append(0);units.append(0)
+                outputs.append(self.detect_bev_sample(ego[i:i+1].flatten(1,2),i));sizes.append(0);units.append(0)
                 continue
             if self.snapshot_family=='if8':
                 stream=integrate_and_fire(self.snapshot_drive(sources[i:i+1]),8)
@@ -132,7 +136,7 @@ class SnapshotAdapter:
             else:
                 events=None if self.packet_roundtrip else [CountContent(counts,scales).event(k) for k in (1,2,3)]
                 _,fused=ann_readout(self,ego[i:i+1],counts,scales,contract,pose,events)
-            outputs.append(self.detect_bev(fused))
+            outputs.append(self.detect_bev_sample(fused,i))
             if selected.packet is not None:sizes.append(len(selected.packet))
             units.append(selected.record['selected_events'])
             if observer is not None:

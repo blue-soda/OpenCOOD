@@ -72,12 +72,18 @@ def run(a):
             assert any(torch.count_nonzero(v)>0 for k,v in gradients.items() if k.startswith('content.project.'))
             if cfg['model']['core_method']=='e3dsnn_snapshot_pyramid':
                 assert any(torch.count_nonzero(v)>0 for k,v in gradients.items() if k.startswith('joint_receiver.snapshot_pyramid.'))
+            prefix=cfg['optimizer'].get('new_parameter_prefix')
+            if prefix:
+                assert any(torch.count_nonzero(v)>0 for k,v in gradients.items() if k.startswith(prefix))
             norm=torch.nn.utils.clip_grad_norm_(model.parameters(),10.);optimizer.step()
             torch.cuda.synchronize();seconds=time.perf_counter()-started
         assert 'packet_bytes' not in output and not output['communication_measured']
         report['steps'].append(dict(step=step+1,loss=float(loss),gradient_norm=float(norm),
             gradient_tensors=len(gradients),seconds=seconds,encode_calls=0,decode_calls=0))
     assert any(not torch.equal(v.cpu(),initial[k]) for k,v in model.state_dict().items())
+    prefix=cfg['optimizer'].get('new_parameter_prefix')
+    if prefix:
+        assert any(not torch.equal(v.cpu(),initial[k]) for k,v in model.state_dict().items() if k.startswith(prefix))
     report.update(passed=True,audit_updates_discarded=True,
         checkpoint_sha256=hashlib.sha256(Path(a.checkpoint).read_bytes()).hexdigest())
     write_json(Path(a.output),report)
