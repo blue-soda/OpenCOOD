@@ -31,7 +31,15 @@ def main():
         p.add_argument('--' + key, required=True)
     p.add_argument('--steps', type=int, choices=(0, 8, 32), required=True)
     p.add_argument('--smoke', action='store_true')
-    a = p.parse_args(); root = Path(a.output); root.mkdir(parents=True, exist_ok=False)
+    p.add_argument('--checkpoint-name', default='net_epoch11.pth')
+    p.add_argument('--readout-thresholds')
+    p.add_argument('--readout-mode', choices=('identity', 'clip', 'count4', 'count16'))
+    a = p.parse_args()
+    if bool(a.readout_thresholds) != bool(a.readout_mode):
+        p.error('Readout thresholds and mode required together')
+    if a.readout_mode and a.steps != 8:
+        p.error('Readout adaptation requires fixed IF8 sender')
+    root = Path(a.output); root.mkdir(parents=True, exist_ok=False)
     sys.path.insert(0, str(Path(a.repo).resolve())); os.chdir(a.repo)
     import numpy as np
     import torch
@@ -50,7 +58,7 @@ def main():
     cfg.update(data_dir=a.data_root, root_dir=a.train_split, validate_dir=a.train_split,
                test_dir=a.train_split, comm_range=1e6)
     cfg['fusion']['core_method'] = 'intermediatelate'
-    checkpoint = model_dir/'net_epoch11.pth'; original = torch.load(str(checkpoint), map_location='cpu')
+    checkpoint = model_dir/a.checkpoint_name; original = torch.load(str(checkpoint), map_location='cpu')
     model = train_utils.create_model(cfg); model.load_state_dict(original, strict=True); model.cuda().eval()
     for param in model.parameters(): param.requires_grad_(False)
     names = []
@@ -63,15 +71,21 @@ def main():
     optimizer = torch.optim.AdamW(parameters, lr=1e-5, weight_decay=1e-4)
     criterion = train_utils.create_loss(cfg)
     counts = CoSDHCounts(model, a.thresholds, a.steps) if a.steps else None
+    readout = None
+    if a.readout_mode:
+        from cosdh_readout import CoSDHReadout
+        readout = CoSDHReadout(model, a.readout_thresholds, a.readout_mode, surrogate=True)
     dataset = build_dataset(cfg, visualize=False, train=False)
     assert list(dataset.split_info) == train_ids
     contract = dict(epochs=3, batch_size=1, seed=303, lr=1e-5, weight_decay=1e-4, optimizer='AdamW',
         grad_clip=10., steps=a.steps, trainable_names=names, trainable_parameters=sum(v.numel() for v in parameters),
         scope='Shared local/remote decoder convolutions only; all other tensors and all BN frozen; model.eval inference masks',
         preprocessing='Common training split with inference preprocessing, no random augmentation; shuffled each epoch',
-        selection='Last epoch3 only; no intermediate AP selection; original and R-053 unadapted references retained',
+        selection='Last epoch3 only; no intermediate AP selection; pre-adaptation references retained',
         checkpoint_sha256=sha(checkpoint), train_split_sha256=sha(a.train_split), val_split_sha256=sha(a.val_split),
-        thresholds_sha256=sha(a.thresholds), source_sha256=sha(__file__), no_wire=True)
+        thresholds_sha256=sha(a.thresholds), source_sha256=sha(__file__), no_wire=True,
+        readout_mode=a.readout_mode, readout_thresholds_sha256=sha(a.readout_thresholds) if readout else None,
+        readout_surrogate='Unit derivative on [0,scale], zero outside; exact IF forward' if readout and a.readout_mode.startswith('count') else None)
     write(root/'contract.json', contract)
     def forbidden(*args, **kwargs): raise AssertionError('Training must not compress/decompress')
     zlib.compress = zlib.decompress = forbidden
@@ -86,9 +100,11 @@ def main():
             batch = train_utils.to_device(batch, torch.device('cuda:0'))
             assert batch['ego']['record_len'].tolist() == [2]
             if counts: counts.begin()
+            if readout: readout.begin()
             optimizer.zero_grad(set_to_none=True)
             output = model(batch['ego'])
             if counts: counts.finish()
+            if readout: readout.finish()
             loss = criterion(output, batch['ego']['label_dict'])
             assert torch.isfinite(loss)
             loss.backward()
