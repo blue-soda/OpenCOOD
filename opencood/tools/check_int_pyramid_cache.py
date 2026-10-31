@@ -13,6 +13,7 @@ from opencood.tools.run_int_ego import loader, to_device, write_json
 from opencood.tools.launch_int_memory import digest
 from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
 from opencood.models.sub_modules.int_pyramid_cache import CachedPyramidDetector
+from opencood.models.sub_modules.int_pyramid_block_cache import BlockCachedPyramidDetector
 
 
 def measured_step(model, x, state, meta, requests=None):
@@ -42,12 +43,13 @@ def worker(a):
     assert saved['contract']['data_contract']==provenance['contract']
     assert saved['contract']['version']==model.version
     model.load_state_dict(saved['model'],strict=True)
-    full=CachedPyramidDetector(model,fraction=1)
-    sparse=CachedPyramidDetector(model,fraction=.1,tile=4,allow_fallback=False)
-    masked=CachedPyramidDetector(model,fraction=.1,tile=4,allow_fallback=False,execution='masked_dense')
-    coalesced=CachedPyramidDetector(model,fraction=.1,tile=4,execution='coalesced')
+    wrapper=BlockCachedPyramidDetector if a.granularity=='block' else CachedPyramidDetector
+    full=wrapper(model,fraction=1)
+    sparse=wrapper(model,fraction=.1,tile=4,allow_fallback=False)
+    masked=wrapper(model,fraction=.1,tile=4,allow_fallback=False,execution='masked_dense')
+    coalesced=wrapper(model,fraction=.1,tile=4,execution='coalesced')
     base_state=full_state=partial_state=None;records=[]
-    _,stream=loader(rows[:8],cfg,2,303)
+    _,stream=loader(rows[:a.frames],cfg,2,303)
     with torch.no_grad():
         for sample in stream:
             ego=to_device(sample['ego'],torch.device('cuda'));meta=sample['meta'];captured=[]
@@ -68,6 +70,11 @@ def worker(a):
             assert all(torch.allclose(merged_state[k],ref_state[k],atol=1e-4,rtol=1e-4) for k in model.state_keys)
             assert [s['actual_write_fraction'] for s in merged_info['cache_stages']]==[s['actual_write_fraction'] for s in info['cache_stages']]
             assert merged_cost<=min(sparse_cost,full_cost)
+            if a.granularity=='block':
+                for local_cache,merged_cache,ref_cache in zip(next_state['blocks'],merged_state['blocks'],ref_state['blocks']):
+                    for key in ref_cache:
+                        assert torch.allclose(local_cache[key],ref_cache[key],atol=1e-4,rtol=1e-4)
+                        assert torch.allclose(merged_cache[key],ref_cache[key],atol=1e-4,rtol=1e-4)
             records.append(dict(frame=meta['frame'],reset=info['reset'],full_refresh_exact=True,
                 same_mask_prediction_max_error=max(float((local[k]-reference[k]).abs().max()) for k in local),
                 sparse_core_flops=sparse_cost,masked_dense_core_flops=masked_cost,full_core_flops=full_cost,
@@ -76,7 +83,7 @@ def worker(a):
                 coalesced_prediction_max_error=max(float((merged[k]-reference[k]).abs().max()) for k in merged)))
             partial_state=next_state
     report=dict(status='PASSED',checkpoint=a.checkpoint,checkpoint_sha256=digest(Path(a.checkpoint)),records=records,
-        scope='Eight real frames engineering only; no full-validation AP or latency claim',
+        granularity=a.granularity,scope='%d real frames engineering only; no full-validation AP or latency claim'%a.frames,
         limitations=['Pillar/selector/warp/deblocks/readout/heads remain dense; this is stage-cache execution, not whole-network caching.',
                      'Convolution FLOPs include executed halos and duplicated crop work; exclude nonconvolution overhead.',
                      'Partial mode matches same-mask dense intervention, not ordinary full-update predictions.',
@@ -87,7 +94,9 @@ def worker(a):
 def main():
     p=argparse.ArgumentParser();p.add_argument('--root',required=True);p.add_argument('--output',required=True)
     p.add_argument('--checkpoint',required=True);p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true')
+    p.add_argument('--granularity',choices=['stage','block'],default='stage');p.add_argument('--frames',type=int,default=8)
     a=p.parse_args();out=Path(a.output)
+    if not 8<=a.frames<=64:p.error('Engineering budget: 8 to 64 frames')
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('1h engineering budget')));signal.alarm(3600)
         try:worker(a)

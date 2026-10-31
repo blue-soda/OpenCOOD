@@ -27,6 +27,60 @@ def fixture():
 
 
 class PyramidCacheTests(unittest.TestCase):
+    def test_block_cache_full_refresh_matches_original(self):
+        from opencood.models.sub_modules.int_pyramid_block_cache import BlockCachedPyramidDetector
+        model=fixture();cached=BlockCachedPyramidDetector(model,fraction=1,execution='coalesced')
+        a=b=None
+        with torch.no_grad():
+            for i in range(3):
+                pose=np.eye(4);pose[0,3]=i*.2
+                meta=dict(timestamp_us=i*100000,segment='a',pose=pose)
+                x=torch.randn(1,64,24,32)
+                pred,a,_=model.step_spatial(x,a,meta)
+                actual,b,info=cached.step_spatial(x,b,meta)
+                self.assertEqual(len(b['blocks']),15)
+                self.assertEqual([m.radius for m,_,_ in cached.blocks],[3,2,2,2,3,2,2,2,2,3,2,2,2,2,2])
+                for key in pred:self.assertTrue(torch.equal(pred[key],actual[key]))
+                for key in model.state_keys:self.assertTrue(torch.equal(a[key],b[key]))
+                self.assertGreater(info['cache_bytes'],info['state_bytes'])
+
+    def test_block_cache_same_mask_matches_dense_on_moving_stream(self):
+        from opencood.models.sub_modules.int_pyramid_block_cache import BlockCachedPyramidDetector
+        model=fixture()
+        sparse=BlockCachedPyramidDetector(model,fraction=.1,tile=2,max_cache_age=.2,execution='coalesced')
+        dense=BlockCachedPyramidDetector(model,fraction=.1,tile=2,max_cache_age=.2,
+            execution='masked_dense',allow_fallback=False)
+        state=None
+        with torch.no_grad():
+            for i in range(4):
+                pose=np.eye(4);theta=i*.01
+                pose[:2,:2]=[[np.cos(theta),-np.sin(theta)],[np.sin(theta),np.cos(theta)]]
+                pose[0,3]=i*.15
+                meta=dict(timestamp_us=i*100000,segment='a',pose=pose)
+                x=torch.randn(1,64,64,96)
+                actual,new,_=sparse.step_spatial(x,state,meta)
+                expected,reference,_=dense.step_spatial(x,state,meta,requests=sparse.last_requests)
+                for k in actual:self.assertTrue(torch.allclose(actual[k],expected[k],atol=1e-4,rtol=1e-4))
+                for c,d in zip(new['blocks'],reference['blocks']):
+                    for k in c:self.assertTrue(torch.allclose(c[k],d[k],atol=1e-4,rtol=1e-4))
+                    self.assertLess(float(c['age'].max()),.2)
+                state=new
+            with self.assertRaises(ValueError):sparse.step_spatial(x,state,meta)
+
+    def test_block_cache_skips_all_blocks_when_no_requested_work(self):
+        from opencood.models.sub_modules.int_pyramid_block_cache import BlockCachedPyramidDetector
+        model=fixture();cached=BlockCachedPyramidDetector(model,fraction=0,execution='coalesced')
+        x=torch.randn(1,64,24,32);meta=dict(timestamp_us=0,segment='a',pose=np.eye(4))
+        with torch.no_grad():
+            _,state,_=cached.step_spatial(x,None,meta)
+            calls=[];hooks=[m.register_forward_hook(lambda *_:calls.append(1)) for m,_,_ in cached.blocks]
+            try:_,new,info=cached.step_spatial(x,state,dict(meta,timestamp_us=100000))
+            finally:
+                for h in hooks:h.remove()
+            self.assertEqual(calls,[])
+            for c,d in zip(state['blocks'],new['blocks']):self.assertTrue(torch.equal(c['value'],d['value']))
+            self.assertTrue(all(s['executed_input_area_ratio']==0 for s in info['cache_stages']))
+
     def test_coalescing_preserves_sparse_write_mask_and_bounds_work(self):
         from opencood.models.sub_modules.int_pyramid_regions import coalesced_refresh
         model=fixture();stage=PackedPyramidStage(model.core.observation,model.core.fine_update).eval()

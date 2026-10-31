@@ -4,27 +4,27 @@ from opencood.models.sub_modules.int_cache_repair import (
     tile_mask, expand_tiles, rectangles, crop_jobs)
 
 
-def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8):
-    """PackedPyramidStage only: every convolution uses the stride-two grid.
+def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8, stride=2):
+    """Local blocks whose convolutions all use the same output grid.
 
     Candidate cost counts executed output pixels, including repeated halos.
     All convolutions have the same output lattice, so this is proportional to
     their actual MACs, including downsample projections and state updates.
     Dense fallback preserves the same write mask; it is not a full refresh.
     """
-    if module.training or x.shape[0] != 1 or batch_size < 1 or tile < 1:
+    if module.training or x.shape[0] != 1 or batch_size < 1 or tile < 1 or stride not in (1,2):
         raise ValueError('Frozen single-stream inference required')
     h, w = x.shape[-2:]; oh, ow = cached.shape[-2:]
-    if (oh, ow) != ((h+1)//2, (w+1)//2) or requested.shape != cached[:, :1].shape:
-        raise ValueError('Stride-two output/mask mismatch')
+    if (oh, ow) != ((h+stride-1)//stride, (w+stride-1)//stride) or requested.shape != cached[:, :1].shape:
+        raise ValueError('Output/mask mismatch')
     written = expand_tiles(tile_mask(requested, tile), tile, (oh, ow))
     dense_work = oh*ow
     best_jobs = None; best_work = dense_work; chosen_tile = None
     original_work = None
     for size in (tile, tile*2, tile*4, tile*8, tile*16):
         regions = rectangles(tile_mask(written, size))
-        jobs, _ = crop_jobs(regions, h, w, oh, ow, 2, module.radius, size)
-        work = sum(((j[6]-j[4]+1)//2)*((j[7]-j[5]+1)//2) for j in jobs)
+        jobs, _ = crop_jobs(regions, h, w, oh, ow, stride, module.radius, size)
+        work = sum(((j[6]-j[4]+stride-1)//stride)*((j[7]-j[5]+stride-1)//stride) for j in jobs)
         if original_work is None: original_work = work
         if work < best_work:
             best_work, best_jobs, chosen_tile = work, jobs, size
@@ -48,7 +48,7 @@ def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8):
             crops = torch.cat([x[..., j[4]:j[6], j[5]:j[7]] for j in batch], 0)
             result = module(crops)
             for i, (y0,x0,y1,x1,iy0,ix0,_,_) in enumerate(batch):
-                sy,sx = y0-iy0//2,x0-ix0//2
+                sy,sx = y0-iy0//stride,x0-ix0//stride
                 mask = written[..., y0:y1, x0:x1]
                 output[..., y0:y1, x0:x1] = torch.where(mask,
                     result[i:i+1,:,sy:sy+y1-y0,sx:sx+x1-x0],cached[...,y0:y1,x0:x1])
