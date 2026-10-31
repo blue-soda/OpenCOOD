@@ -45,6 +45,11 @@ class SnapshotAdapter:
         self.content.train(mode)
         return self
 
+    def snapshot_drive(self, source):
+        # Default F0 arithmetic is unchanged; candidate subclasses may modulate
+        # the source-only IF drive and must extend event_basis_digest as well.
+        return torch.relu(self.content.project(source))
+
     def forward(self, data):
         if self.training and self.packet_roundtrip:
             raise ValueError('Wire reconstruction is eval-only; preserve training gradients')
@@ -67,7 +72,7 @@ class SnapshotAdapter:
                 outputs.append(self.detect_bev(ego[i:i+1].flatten(1,2)));sizes.append(0);units.append(0)
                 continue
             if self.snapshot_family=='if8':
-                stream=integrate_and_fire(torch.relu(self.content.project(sources[i:i+1])),8)
+                stream=integrate_and_fire(self.snapshot_drive(sources[i:i+1]),8)
                 full=stream.prefix(len(stream.addresses));scales=full.new_ones((1,32,1,1,1))
                 order=dict(stream=stream)
             else:
