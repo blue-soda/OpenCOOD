@@ -45,6 +45,7 @@ def worker(a):
     full=CachedPyramidDetector(model,fraction=1)
     sparse=CachedPyramidDetector(model,fraction=.1,tile=4,allow_fallback=False)
     masked=CachedPyramidDetector(model,fraction=.1,tile=4,allow_fallback=False,execution='masked_dense')
+    coalesced=CachedPyramidDetector(model,fraction=.1,tile=4,execution='coalesced')
     base_state=full_state=partial_state=None;records=[]
     _,stream=loader(rows[:8],cfg,2,303)
     with torch.no_grad():
@@ -59,13 +60,20 @@ def worker(a):
             assert all(torch.equal(base_state[k],full_state[k]) for k in model.state_keys)
             (local,next_state,info),sparse_cost=measured_step(sparse,x,partial_state,meta)
             (reference,ref_state,ref_info),masked_cost=measured_step(masked,x,partial_state,meta,sparse.last_requests)
+            (merged,merged_state,merged_info),merged_cost=measured_step(coalesced,x,partial_state,meta,sparse.last_requests)
             assert all(torch.allclose(local[k],reference[k],atol=1e-4,rtol=1e-4) for k in local)
             assert all(torch.allclose(next_state[k],ref_state[k],atol=1e-4,rtol=1e-4) for k in model.state_keys)
             assert [s['actual_write_fraction'] for s in info['cache_stages']]==[s['actual_write_fraction'] for s in ref_info['cache_stages']]
+            assert all(torch.allclose(merged[k],reference[k],atol=1e-4,rtol=1e-4) for k in merged)
+            assert all(torch.allclose(merged_state[k],ref_state[k],atol=1e-4,rtol=1e-4) for k in model.state_keys)
+            assert [s['actual_write_fraction'] for s in merged_info['cache_stages']]==[s['actual_write_fraction'] for s in info['cache_stages']]
+            assert merged_cost<=min(sparse_cost,full_cost)
             records.append(dict(frame=meta['frame'],reset=info['reset'],full_refresh_exact=True,
                 same_mask_prediction_max_error=max(float((local[k]-reference[k]).abs().max()) for k in local),
                 sparse_core_flops=sparse_cost,masked_dense_core_flops=masked_cost,full_core_flops=full_cost,
-                cache_bytes=info['cache_bytes'],stages=info['cache_stages']))
+                cache_bytes=info['cache_bytes'],stages=info['cache_stages'],
+                coalesced_core_flops=merged_cost,coalesced_stages=merged_info['cache_stages'],
+                coalesced_prediction_max_error=max(float((merged[k]-reference[k]).abs().max()) for k in merged)))
             partial_state=next_state
     report=dict(status='PASSED',checkpoint=a.checkpoint,checkpoint_sha256=digest(Path(a.checkpoint)),records=records,
         scope='Eight real frames engineering only; no full-validation AP or latency claim',

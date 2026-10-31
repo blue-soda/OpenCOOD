@@ -27,6 +27,27 @@ def fixture():
 
 
 class PyramidCacheTests(unittest.TestCase):
+    def test_coalescing_preserves_sparse_write_mask_and_bounds_work(self):
+        from opencood.models.sub_modules.int_pyramid_regions import coalesced_refresh
+        model=fixture();stage=PackedPyramidStage(model.core.observation,model.core.fine_update).eval()
+        x=torch.randn(1,64,129,161);old=torch.randn(1,128,65,81);valid=torch.ones_like(old[:,:1],dtype=torch.bool)
+        with torch.no_grad():
+            packed=stage.pack(x,old,valid)
+            for mode in ('empty','cluster','fragmented','full'):
+                request=torch.zeros_like(valid)
+                if mode=='cluster':request[...,20:25,20:25]=True;request[...,28:33,20:25]=True
+                if mode=='fragmented':request[...,::8,::8]=True;request[...,-1,-1]=True
+                if mode=='full':request.fill_(True)
+                actual,written,stats=coalesced_refresh(stage,packed,old,request,tile=4)
+                expected,mask,_=refresh_tiles(stage,packed,old,request,2,stage.radius,4,
+                    allow_fallback=False,execution='masked_dense')
+                self.assertTrue(torch.equal(written,mask))
+                self.assertTrue(torch.allclose(actual,expected,atol=1e-4,rtol=1e-4))
+                self.assertTrue(torch.equal(actual[~mask.expand_as(actual)],old[~mask.expand_as(old)]))
+                self.assertLessEqual(stats['stage_conv_ratio'],1.)
+                self.assertLessEqual(stats['stage_conv_ratio'],stats['original_stage_conv_ratio'])
+                if mode=='empty':self.assertEqual(stats['tiles'],0)
+
     def test_stage_sparse_matches_same_mask_dense_at_edges_and_odd_sizes(self):
         model=fixture();stage=PackedPyramidStage(model.core.observation,model.core.fine_update).eval()
         self.assertEqual(stage.radius,15)
