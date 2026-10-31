@@ -67,6 +67,35 @@ class TwoScaleTests(unittest.TestCase):
         self.assertAlmostEqual(groups['new']['lr']/groups['heads']['lr'],30.)
         self.assertEqual(len(make_optimizer(model).param_groups),1)
 
+    def test_medium_context_preserves_initial_function_and_learns_through_new_branch(self):
+        from opencood.tools.run_int_two_scale import make_optimizer
+        torch.manual_seed(303)
+        small=self.model(architecture='two_scale_full')
+        torch.manual_seed(303)
+        medium=self.model(architecture='two_scale_medium')
+        self.assertTrue(all(torch.equal(v,medium.state_dict()[k]) for k,v in small.state_dict().items()))
+        self.assertEqual(sum(p.numel() for p in medium.parameters())-
+                         sum(p.numel() for p in small.parameters()),3420160)
+        optimizer=make_optimizer(medium,'transfer')
+        new_ids={id(p) for g in optimizer.param_groups if g['name']=='new' for p in g['params']}
+        self.assertTrue({id(p) for p in medium.core.coarse_context.parameters()} <= new_ids)
+        # Odd spatial dimensions exercise resize back to the exact coarse lattice.
+        x=torch.randn(1,64,18,22);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
+        a,sa,ia=small.step_spatial(x,None,meta,False)
+        b,sb,ib=medium.step_spatial(x,None,meta,False)
+        self.assertTrue(all(torch.equal(a[k],b[k]) for k in a))
+        self.assertTrue(all(torch.equal(sa[k],sb[k]) for k in ('value','coarse')))
+        self.assertEqual(ia['state_bytes'],ib['state_bytes'])
+        context=medium.core.coarse_context
+        b['psm'].square().mean().backward()
+        self.assertGreater(float(context.projection.weight.grad.abs().sum()),0)
+        optimizer.step();optimizer.zero_grad()
+        b,_,_=medium.step_spatial(x,None,meta,False)
+        b['psm'].square().mean().backward()
+        self.assertGreater(float(context.down.weight.grad.abs().sum()),0)
+        for block in context.blocks:
+            self.assertGreater(float(block.residual[-1].weight.grad.abs().sum()),0)
+
     def test_initial_policy_equivalence_and_state_ownership(self):
         torch.manual_seed(303)
         model=self.model();reset=copy.deepcopy(model);reset.memory_policy='reset'

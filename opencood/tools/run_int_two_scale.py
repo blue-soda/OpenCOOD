@@ -53,7 +53,7 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
         return callback
     modules=[teacher.backbone.resnet,teacher.backbone.deblocks[0],teacher.shrink_conv]
     hooks=[m.register_forward_hook(hit(i)) for i,m in enumerate(modules)]
-    student.eval();state=None;records=[];conv_macs={};cost_hooks=[]
+    student.eval();state=None;records=[];conv_macs={};cost_hooks=[];capacity_parity=[]
     def count_conv(name):
         def callback(module,inputs,output):
             group=name.split('.')[0]
@@ -67,9 +67,21 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
         with torch.no_grad():
             for sample in stream:
                 ego=to_device(sample['ego'],torch.device('cuda'))
+                prior_state=state
                 pred,state,info=student.step(ego,state,sample['meta'])
                 for hook in cost_hooks:hook.remove()
                 cost_hooks=[]
+                if student.variant == 'two_scale_medium_context_v1':
+                    context=student.core.coarse_context
+                    # An initial zero branch must be functionally identical to the small core.
+                    # On checkpoint evaluation the learned branch is intentionally nonzero.
+                    if not torch.count_nonzero(context.projection.weight) and not torch.count_nonzero(context.projection.bias):
+                        student.core.coarse_context=torch.nn.Identity()
+                        try:control,control_state,_=student.step(ego,prior_state,sample['meta'])
+                        finally:student.core.coarse_context=context
+                        assert all(torch.equal(pred[k],control[k]) for k in pred)
+                        assert all(torch.equal(state[k],control_state[k]) for k in ('value','coarse'))
+                        capacity_parity.append(sample['meta']['frame'])
                 assert all(torch.isfinite(v).all() for v in pred.values())
                 assert pred['psm'].shape[-2:]==ego['anchor_box'].shape[:2]
                 assert calls==[0,0,0]
@@ -79,9 +91,11 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
         for hook in hooks:hook.remove()
         for hook in cost_hooks:hook.remove()
     assert not any('backbone' in name or 'feature_memory' in name for name,_ in student.named_modules())
-    weight_hash=hashlib.sha256();shared_hash=hashlib.sha256()
+    weight_hash=hashlib.sha256();shared_hash=hashlib.sha256();capacity_base_hash=hashlib.sha256()
     for name,value in sorted(student.core.state_dict().items()):
         weight_hash.update(name.encode());weight_hash.update(value.detach().cpu().contiguous().numpy().tobytes())
+        if not name.startswith('coarse_context.'):
+            capacity_base_hash.update(name.encode());capacity_base_hash.update(value.detach().cpu().contiguous().numpy().tobytes())
         if not name.startswith('observation.'):
             shared_hash.update(name.encode());shared_hash.update(value.detach().cpu().contiguous().numpy().tobytes())
     report=dict(status='PASSED',frames=records,original_spatial_calls=calls,
@@ -96,6 +110,12 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
                 cost_scope='One real frame, core Conv2d only; excludes Pillar, warp, normalization, activation, interpolation and data movement; not measured latency.',
                 state_bytes=info['state_bytes'],update_radius=2,
                 caveat='New model: finite predictions/shape/causality, not parity with the teacher. Crop equivalence is a unit test, not an active sparse policy.')
+    if student.variant == 'two_scale_medium_context_v1':
+        report['capacity_base_state_sha256']=capacity_base_hash.hexdigest()
+        report['context_projection_initially_zero']=bool(
+            torch.count_nonzero(student.core.coarse_context.projection.weight)==0 and
+            torch.count_nonzero(student.core.coarse_context.projection.bias)==0)
+        report['capacity_initial_exact_parity_frames']=capacity_parity
     # Discard a real supervised optimizer probe before any formal training.
     import copy
     initial=copy.deepcopy(student.state_dict())
@@ -116,6 +136,10 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
     loss=torch.stack(terms).mean();loss.backward()
     norm=torch.nn.utils.clip_grad_norm_(student.core.parameters(),5.)
     assert torch.isfinite(norm) and norm>0
+    if student.variant == 'two_scale_medium_context_v1':
+        gradient=student.core.coarse_context.projection.weight.grad
+        report['context_projection_probe_gradient_l1']=float(gradient.abs().sum())
+        assert torch.isfinite(gradient).all() and report['context_projection_probe_gradient_l1']>0
     optimizer.step()
     assert any(not torch.equal(initial[k],v) for k,v in student.state_dict().items())
     student.load_state_dict(initial);student.zero_grad(set_to_none=True)
@@ -258,8 +282,11 @@ def worker(a):
         future_sparse='Not implemented; dense controls first', normalization='Frozen BN statistics, trainable affine')
     if a.variant != 'two_scale_v1':
         contract.update(version=student.version,
-            architecture=('Full mature fine encoder' if a.variant=='two_scale_full' else 'First mature fine block')+
+            architecture=('Full mature fine encoder' if a.variant in ('two_scale_full','two_scale_medium') else 'First mature fine block')+
                 '; two coarse256 residual blocks at original stride; fine128/coarse256 explicit states; unchanged bottleneck history updates; pointwise256 fusion plus radius2 width64 residual reader; no FM/teacher in inference.')
+    if a.variant == 'two_scale_medium':
+        contract['architecture']+=' Stateless stride8 context: 256->384 stride2 3x3, three width192 residual bottlenecks, zero-initialized 384->256 projection and nearest resize added before coarse update.'
+        contract['capacity_control']='two_scale_full; all shared initial weights and initial outputs match; same two recurrent state shapes; added context is evaluated densely every frame'
     optimizer=make_optimizer(student,a.optimizer_profile)
     min_lrs=([1e-5] if a.optimizer_profile=='uniform' else [group['lr']/30 for group in optimizer.param_groups])
     if a.optimizer_profile != 'uniform':
@@ -323,7 +350,7 @@ def main():
     p.add_argument('--root',required=True);p.add_argument('--output',required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--epochs',type=int,default=12)
     p.add_argument('--checkpoint');p.add_argument('--resume');p.add_argument('--worker',action='store_true')
-    p.add_argument('--variant',choices=['two_scale_v1','two_scale_narrow','two_scale_full'],default='two_scale_v1')
+    p.add_argument('--variant',choices=['two_scale_v1','two_scale_narrow','two_scale_full','two_scale_medium'],default='two_scale_v1')
     p.add_argument('--memory-policy',choices=['recurrent','reset'],default='recurrent')
     p.add_argument('--optimizer-profile',choices=['uniform','transfer'],default='uniform')
     p.add_argument('--evaluation-memory-policy',choices=['recurrent','reset'],

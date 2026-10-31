@@ -42,11 +42,40 @@ class BottleneckReadout(nn.Module):
         return F.relu(x + self.residual(x))
 
 
+class ContextResidual(nn.Module):
+    """Spatial capacity at stride eight, without adding recurrent state."""
+    def __init__(self):
+        super().__init__()
+        self.residual = nn.Sequential(nn.Conv2d(384, 192, 1), nn.ReLU(),
+            nn.Conv2d(192, 192, 3, padding=1), nn.ReLU(),
+            nn.Conv2d(192, 192, 3, padding=1), nn.ReLU(), nn.Conv2d(192, 384, 1))
+        nn.init.zeros_(self.residual[-1].weight)
+        nn.init.zeros_(self.residual[-1].bias)
+
+    def forward(self, x):
+        return F.relu(x + self.residual(x))
+
+
+class CoarseContext(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.down = nn.Conv2d(256, 384, 3, stride=2, padding=1)
+        self.blocks = nn.Sequential(*[ContextResidual() for _ in range(3)])
+        self.projection = nn.Conv2d(384, 256, 1)
+        # Preserve the small model's initial function, including its coarse state.
+        nn.init.zeros_(self.projection.weight)
+        nn.init.zeros_(self.projection.bias)
+
+    def forward(self, x):
+        context = self.projection(self.blocks(F.relu(self.down(x))))
+        return x + F.interpolate(context, size=x.shape[-2:], mode='nearest')
+
+
 class TwoScaleCore(nn.Module):
     def __init__(self, teacher, architecture='two_scale_v1'):
         super().__init__()
         source = teacher.backbone.resnet.layer0
-        self.observation = copy.deepcopy(source if architecture == 'two_scale_full' else source[0])
+        self.observation = copy.deepcopy(source if architecture in ('two_scale_full', 'two_scale_medium') else source[0])
         self.coarse_encoder = copy.deepcopy(nn.Sequential(*list(teacher.backbone.resnet.layer1)[:2]))
         self.fine_update = StateUpdate(128)
         self.coarse_update = StateUpdate(256)
@@ -57,6 +86,8 @@ class TwoScaleCore(nn.Module):
         self.cls_head = copy.deepcopy(teacher.cls_head)
         self.reg_head = copy.deepcopy(teacher.reg_head)
         self.dir_head = copy.deepcopy(teacher.dir_head) if teacher.use_dir else None
+        # Construct after all shared modules so seed303 preserves their weights.
+        self.coarse_context = CoarseContext() if architecture == 'two_scale_medium' else nn.Identity()
 
 
 class TwoScaleDetector(nn.Module):
@@ -67,7 +98,8 @@ class TwoScaleDetector(nn.Module):
         if memory_policy not in ('reset', 'recurrent'): raise ValueError(memory_policy)
         versions = dict(two_scale_v1='two_scale_dense_v1',
                         two_scale_narrow='two_scale_narrow_reader_v1',
-                        two_scale_full='two_scale_full_encoder_v1')
+                        two_scale_full='two_scale_full_encoder_v1',
+                        two_scale_medium='two_scale_medium_context_v1')
         if architecture not in versions: raise ValueError(architecture)
         self.version = versions[architecture]
         self.memory_policy = memory_policy
@@ -98,7 +130,7 @@ class TwoScaleDetector(nn.Module):
                 if gap <= 0: raise ValueError('Noncausal state')
                 if gap > .25: reason = 'gap'
         fine = self.core.observation(spatial)
-        coarse = self.core.coarse_encoder(fine)
+        coarse = self.core.coarse_context(self.core.coarse_encoder(fine))
         values = []
         for name, current, update, stride in (
                 ('value', fine, self.core.fine_update, 2),
