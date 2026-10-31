@@ -5,21 +5,61 @@ import torch
 from torch import nn
 from opencood.models.sub_modules.codyntrust_base_bev_backbone_resnet import ResNetBEVBackbone
 from opencood.models.sub_modules.codyntrust_downsample_conv import DownsampleConv
-from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
+from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector, GatedPyramidStateDetector, TemporalEvidenceGate
 
 
-def make_pair():
+def make_pair(model_class=PyramidStateDetector):
     teacher=SimpleNamespace(pillar_vfe=nn.Identity(),scatter=nn.Identity(),use_dir=True,shrink_flag=True,
         backbone=ResNetBEVBackbone(dict(layer_nums=[3,4,5],layer_strides=[2,2,2],
             num_filters=[128,256,512],upsample_strides=[1,2,4],num_upsample_filter=[128,128,128])),
         shrink_conv=DownsampleConv(dict(input_dim=384,kernal_size=[3],dim=[256],stride=[1],padding=[1])),
         cls_head=nn.Conv2d(256,2,1),reg_head=nn.Conv2d(256,14,1),dir_head=nn.Conv2d(256,4,1))
     for m in (teacher.backbone,teacher.shrink_conv):m.eval()
-    model=PyramidStateDetector(teacher,{'model':{'args':{'lidar_range':[-4,-4,-1,4,4,1]}}})
+    model=model_class(teacher,{'model':{'args':{'lidar_range':[-4,-4,-1,4,4,1]}}})
     return teacher,model
 
 
 class PyramidTests(unittest.TestCase):
+    def test_protect_spatial_changes_only_coarse_and_deep_learning_rate(self):
+        from opencood.tools.run_int_two_scale import make_optimizer
+        _,model=make_pair()
+        original=make_optimizer(model,'transfer');protected=make_optimizer(model,'protect_spatial')
+        for a,b in zip(original.param_groups,protected.param_groups):
+            self.assertEqual(a['name'],b['name'])
+            self.assertEqual([id(p) for p in a['params']],[id(p) for p in b['params']])
+            self.assertEqual(b['lr'],1e-5 if a['name']=='coarse_encoder' else a['lr'])
+
+    def test_temporal_gate_preserves_shared_weights_and_neutral_history_behavior(self):
+        torch.manual_seed(303);_,base=make_pair()
+        torch.manual_seed(303);_,gated=make_pair(GatedPyramidStateDetector)
+        self.assertTrue(all(torch.equal(v,gated.state_dict()[k]) for k,v in base.state_dict().items()))
+        self.assertEqual(sum(p.numel() for p in gated.parameters())-sum(p.numel() for p in base.parameters()),1466304)
+        # Neutral gates must also preserve nonzero history projections, beyond
+        # the trivially identical zero-history initialization.
+        for name in ('fine_update','coarse_update','deep_update'):
+            nn.init.constant_(getattr(base.core,name).history.weight,.001)
+            nn.init.constant_(getattr(gated.core,name).history.weight,.001)
+        x=torch.randn(1,64,24,32);meta=dict(segment='a',timestamp_us=100000,pose=np.eye(4))
+        a_state=b_state=None
+        with torch.no_grad():
+            for timestamp in (100000,200000):
+                a,a_state,_=base.step_spatial(x,a_state,dict(meta,timestamp_us=timestamp))
+                b,b_state,_=gated.step_spatial(x,b_state,dict(meta,timestamp_us=timestamp))
+                self.assertTrue(all(torch.equal(a[k],b[k]) for k in a))
+                self.assertTrue(all(torch.equal(a_state[k],b_state[k]) for k in base.state_keys))
+
+    def test_temporal_gate_learns_and_cannot_create_missing_history(self):
+        torch.manual_seed(303);gate=TemporalEvidenceGate(32)
+        current=torch.randn(1,32,8,8);old=torch.randn_like(current);valid=torch.ones(1,1,8,8,dtype=torch.bool)
+        self.assertTrue(torch.equal(gate(current,old,valid),old))
+        optimizer=torch.optim.AdamW(gate.parameters(),lr=.001)
+        gate(current,old,valid).square().mean().backward()
+        self.assertGreater(float(gate.net[-1].weight.grad.abs().sum()),0.)
+        optimizer.step();optimizer.zero_grad()
+        gate(current,old,valid).square().mean().backward()
+        self.assertGreater(float(gate.net[0].weight.grad.abs().sum()),0.)
+        self.assertTrue(torch.equal(gate(current,torch.zeros_like(old),~valid),torch.zeros_like(old)))
+
     def test_complete_spatial_path_is_preserved_at_initialization(self):
         torch.manual_seed(303)
         teacher,model=make_pair()

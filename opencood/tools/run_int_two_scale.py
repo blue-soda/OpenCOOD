@@ -12,7 +12,7 @@ import torch
 from opencood.data_utils.int_tbptt import window_ends
 from opencood.loss.point_pillar_dir_loss import PointPillarDirLoss
 from opencood.models.sub_modules.int_two_scale import TwoScaleDetector
-from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
+from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector, GatedPyramidStateDetector
 from opencood.models.sub_modules.int_light_repair import foreground_head_loss
 from opencood.tools.run_int_cache_repair import setup,evaluate
 from opencood.tools.run_int_ego import loader,to_device,write_json
@@ -26,8 +26,10 @@ import random
 def make_optimizer(student, profile='uniform'):
     if profile == 'uniform':
         return torch.optim.AdamW(student.core.parameters(),lr=.0003,weight_decay=.0001)
-    if profile != 'transfer': raise ValueError(profile)
-    pyramid=student.variant == PyramidStateDetector.version
+    if profile not in ('transfer','protect_spatial'): raise ValueError(profile)
+    pyramid=isinstance(student,PyramidStateDetector)
+    if profile == 'protect_spatial' and not pyramid:
+        raise ValueError('protect_spatial is registered only for pyramid models')
     names=('new','observation','coarse_encoder','heads') + (('decoder',) if pyramid else ())
     buckets={name:[] for name in names}
     for name,param in student.core.named_parameters():
@@ -40,6 +42,7 @@ def make_optimizer(student, profile='uniform'):
         buckets[group].append(param)
     rates=dict(new=.0003,observation=.00001,coarse_encoder=.0001,heads=.00001)
     if pyramid:rates['decoder']=.00001
+    if profile == 'protect_spatial':rates['coarse_encoder']=.00001
     groups=[dict(params=params,lr=rates[name],name=name) for name,params in buckets.items()]
     expected={id(p) for p in student.core.parameters() if p.requires_grad}
     actual=[id(p) for group in groups for p in group['params']]
@@ -65,7 +68,7 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
     modules=[teacher.backbone.resnet,teacher.backbone.deblocks[0],teacher.shrink_conv]
     hooks=[m.register_forward_hook(hit(i)) for i,m in enumerate(modules)]
     student.eval();state=None;records=[];conv_macs={};cost_hooks=[];capacity_parity=[];spatial_parity=[]
-    pyramid=student.variant == PyramidStateDetector.version
+    pyramid=isinstance(student,PyramidStateDetector)
     initial_pyramid=pyramid and student.updates_are_initial_identity()
     def count_conv(name):
         def callback(module,inputs,output):
@@ -133,6 +136,11 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
                 state_bytes=info['state_bytes'],update_radius=2,
                 caveat='New model: finite predictions/shape/causality, not parity with the teacher. Crop equivalence is a unit test, not an active sparse policy.')
     if pyramid:
+        base_hash=hashlib.sha256()
+        for name,value in sorted(student.core.state_dict().items()):
+            if not name.startswith('temporal_gates.'):
+                base_hash.update(name.encode());base_hash.update(value.detach().cpu().contiguous().numpy().tobytes())
+        report['pyramid_base_sha256']=base_hash.hexdigest()
         equality=[]
         for target,source in student.migrated_source_pairs(teacher):
             a,b=target.state_dict(),source.state_dict()
@@ -186,6 +194,19 @@ def engineering(student,teacher,cfg,rows,out,optimizer_profile='uniform'):
             assert all(value>0 and np.isfinite(value) for value in history_gradients)
     optimizer.step()
     assert any(not torch.equal(initial[k],v) for k,v in student.state_dict().items())
+    if isinstance(student,GatedPyramidStateDetector) and student.memory_policy=='recurrent':
+        # At identity initialization history projection is zero, so gates begin
+        # receiving gradients only after the history projection's first update.
+        optimizer.zero_grad(set_to_none=True);state=None;terms=[]
+        _,stream=loader(selected,cfg,0,303)
+        for sample in stream:
+            ego=to_device(sample['ego'],torch.device('cuda'))
+            pred,state,_=student.step(ego,state,sample['meta'],detach_state=False)
+            if sample['meta']['supervised']:terms.append(criterion(pred,ego['label_dict']))
+        torch.stack(terms).mean().backward()
+        report['temporal_gate_second_probe_gradient_l1']={key:float(gate.net[-1].weight.grad.abs().sum())
+            for key,gate in student.core.temporal_gates.items()}
+        assert all(v>0 and np.isfinite(v) for v in report['temporal_gate_second_probe_gradient_l1'].values())
     student.load_state_dict(initial);student.zero_grad(set_to_none=True)
     assert all(torch.equal(initial[k],v) for k,v in student.state_dict().items())
     report.update(real_supervised_probe_loss=float(loss.detach()),gradient_norm=float(norm),probe_restored=True,
@@ -205,14 +226,14 @@ def validate(a,student,teacher,cfg,rows,directory):
     report['scope']='Two-scale dense-update full validation' if split=='val' else 'Full training-split fit diagnostic; not validation AP'
     report['evaluation_split']=split
     report['variant']=student.variant;report['memory_policy']=student.memory_policy
-    if student.variant == PyramidStateDetector.version:
+    if isinstance(student,PyramidStateDetector):
         report['scope']='Three-scale state pyramid full validation' if split=='val' else 'Full training-split fit diagnostic; not validation AP'
     report['caveats']=[
         'All state cells are updated each frame. No selective-update or sparsity speedup is claimed.',
         'Frozen Pillar; migrated shallow/coarse residual blocks, two-scale states and new spatial reader. No original GRU or teacher in inference.',
         'No teacher execution or teacher state in validation/inference. Model timing excludes IO/voxelization/postprocess.',
         'Concurrent training throughput is not a paired latency benchmark. Use independent same-GPU sequential evaluation after training.']
-    if student.variant == PyramidStateDetector.version:
+    if isinstance(student,PyramidStateDetector):
         report['caveats'][1]='Frozen Pillar; complete mature 3/4/5-block encoders and multiscale spatial readout; three new recurrent states. No original GRU or teacher in inference.'
     if split=='train':
         report['caveats'].append('Fixed-weight evaluation on seen training data, without optimizer updates; train/val distribution differences prevent assigning a gap to overfitting alone.')
@@ -282,7 +303,8 @@ def worker(a):
     runtime=json.loads((Path(a.root)/'full_gru'/'effective_runtime.json').read_text())['arguments']
     train_rows=relocate_tree(json.loads(Path(artifact_path(runtime['manifest'])).read_text())['train'])
     torch.manual_seed(303);np.random.seed(303);random.seed(303)
-    student=(PyramidStateDetector(teacher,cfg,a.memory_policy) if a.variant=='pyramid_large'
+    student=(GatedPyramidStateDetector(teacher,cfg,a.memory_policy) if a.variant=='pyramid_gated' else
+             PyramidStateDetector(teacher,cfg,a.memory_policy) if a.variant=='pyramid_large'
              else TwoScaleDetector(teacher,cfg,a.memory_policy,a.variant)).cuda()
     a.engineering=str(out/'engineering.json')
     if a.checkpoint:
@@ -340,12 +362,15 @@ def worker(a):
     if a.variant == 'two_scale_medium':
         contract['architecture']+=' Stateless stride8 context: 256->384 stride2 3x3, three width192 residual bottlenecks, zero-initialized 384->256 projection and nearest resize added before coarse update.'
         contract['capacity_control']='two_scale_full; all shared initial weights and initial outputs match; same two recurrent state shapes; added context is evaluated densely every frame'
-    if a.variant == 'pyramid_large':
+    if a.variant in ('pyramid_large','pyramid_gated'):
         contract.update(version=student.version,
             architecture='Complete mature 3/4/5-block 128/256/512 encoders, three transposed-convolution readout branches, full mature spatial readout and heads; new sequential pose-aligned states at strides2/4/8; no original input GRU or teacher in inference.',
             priority='Detection AP first; no small-parameter, low-resolution-only or local-crop constraint',
             protocol='Dense three-scale autoregressive states; student state only; no augmentation/delay; scene/gap>.25s resets; TBPTT4 detaches all three states; no teacher refresh',
             capacity_control='Compare with INT and smaller state models; architecture, state layout and capacity jointly change, not parameter-only ablation')
+    if a.variant == 'pyramid_gated':
+        contract['architecture']+=' Per-scale channel/spatial gate on aligned history: concat(current,history,difference,valid), width C/2, 1x1 and 3x3 with GroupNorm, zero-ended 1x1, multiplier 2*sigmoid; initially one.'
+        contract['capacity_control']='pyramid_large transfer; shared initial weights and initial predictions identical; gate adds capacity and temporal weighting jointly; same three states and training recipe'
     optimizer=make_optimizer(student,a.optimizer_profile)
     min_lrs=([1e-5] if a.optimizer_profile=='uniform' else [group['lr']/30 for group in optimizer.param_groups])
     if a.optimizer_profile != 'uniform':
@@ -409,9 +434,9 @@ def main():
     p.add_argument('--root',required=True);p.add_argument('--output',required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--epochs',type=int,default=12)
     p.add_argument('--checkpoint');p.add_argument('--resume');p.add_argument('--worker',action='store_true')
-    p.add_argument('--variant',choices=['two_scale_v1','two_scale_narrow','two_scale_full','two_scale_medium','pyramid_large'],default='two_scale_v1')
+    p.add_argument('--variant',choices=['two_scale_v1','two_scale_narrow','two_scale_full','two_scale_medium','pyramid_large','pyramid_gated'],default='two_scale_v1')
     p.add_argument('--memory-policy',choices=['recurrent','reset'],default='recurrent')
-    p.add_argument('--optimizer-profile',choices=['uniform','transfer'],default='uniform')
+    p.add_argument('--optimizer-profile',choices=['uniform','transfer','protect_spatial'],default='uniform')
     p.add_argument('--evaluation-memory-policy',choices=['recurrent','reset'],
                    help='Override only full checkpoint evaluation; --memory-policy must still match its training contract')
     p.add_argument('--evaluation-split',choices=['val','train'],default='val',

@@ -7,6 +7,23 @@ from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.models.sub_modules.int_block_cache import block_lidar_range
 
 
+class TemporalEvidenceGate(nn.Module):
+    """Bounded channel/spatial weighting of aligned history; initially one."""
+    def __init__(self, channels):
+        super().__init__()
+        width = channels // 2
+        self.net = nn.Sequential(
+            nn.Conv2d(3 * channels + 1, width, 1), nn.GroupNorm(8, width), nn.ReLU(),
+            nn.Conv2d(width, width, 3, padding=1), nn.GroupNorm(8, width), nn.ReLU(),
+            nn.Conv2d(width, channels, 1))
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.zeros_(self.net[-1].bias)
+
+    def forward(self, current, old, valid):
+        evidence = torch.cat((current, old, current - old, valid.to(old.dtype)), 1)
+        return old * (2 * torch.sigmoid(self.net(evidence)))
+
+
 class PyramidCore(nn.Module):
     def __init__(self, source):
         super().__init__()
@@ -94,6 +111,8 @@ class PyramidStateDetector(TwoScaleDetector):
                 else:
                     bounds = block_lidar_range(self.bounds, spatial.shape[-2:], current.shape[-2:], stride)
                     old, valid = warp_bev(state[key], state['pose'], meta['pose'], bounds)
+                if hasattr(self.core, 'temporal_gates'):
+                    old = self.core.temporal_gates[key](current, old, valid)
                 x = update(current, old, valid)
             values.append(x)
         ups = [deblock(value) for deblock, value in zip(self.core.deblocks, values)]
@@ -109,3 +128,14 @@ class PyramidStateDetector(TwoScaleDetector):
         size = sum(x.numel() * x.element_size() for x in values)
         return prediction, new, dict(reset=reason, state_bytes=size, cache_bytes=size,
             cache_stages=[dict(actual_write_fraction=1., executed_input_area_ratio=1.) for _ in values])
+
+
+class GatedPyramidStateDetector(PyramidStateDetector):
+    version = 'pyramid_state_temporal_gate_v1'
+
+    def __init__(self, teacher, config, memory_policy='recurrent'):
+        super().__init__(teacher, config, memory_policy)
+        # Append after the complete base model to preserve all shared RNG draws.
+        self.core.temporal_gates = nn.ModuleDict({key: TemporalEvidenceGate(channels)
+            for key, channels in zip(self.state_keys, (128, 256, 512))})
+        self.train(False)
