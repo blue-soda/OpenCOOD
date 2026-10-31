@@ -16,6 +16,7 @@ from opencood.tools.run_int_ego import loader, to_device, write_json
 from opencood.tools.launch_int_memory import digest
 from opencood.tools.int_artifact_paths import artifact_path,relocate_tree
 from opencood.utils import eval_utils
+from opencood.tools.int_stage_summary import stage_means
 
 
 def setup(a):
@@ -131,9 +132,7 @@ def evaluate(a,model,cfg,rows,out,wrapper=None):
             log.write(json.dumps(entry)+'\n');records.append(entry)
             if len(records)%200==0:print('EVAL',len(records),'/',len(chosen),flush=True)
     assert len(records)==len(chosen)
-    stages=[]
-    for i in range(3):
-        stages.append({k:float(np.mean([r['cache_stages'][i][k] for r in records])) for k in records[0]['cache_stages'][i]})
+    stages=stage_means(records)
     return dict(status='COMPLETED',scope='Fixed-weight inference intervention; full validation' if a.stage=='full' else 'Engineering prefix only; not a full validation result',
         scans=len(records),labels=sum(r['supervised'] for r in records),reset_frames=sum(bool(r['reset']) for r in records),
         metrics={'bev_ap%d'%int(t*100):eval_utils.calculate_ap(ap,t)[0] for t in ap},stage_means=stages,
