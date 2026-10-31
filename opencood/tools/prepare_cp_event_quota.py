@@ -27,7 +27,7 @@ def prepare(a):
         ['--config',path,'--checkpoint',root/'initial.pth','--output',root/'audit.json'],900,[root/'audit.json']),
         job('train','opencood.tools.train_e3dsnn_single',
         ['--mode','train','--config',path,'--checkpoint',root/'initial.pth','--output',root/'train',
-         '--epochs',20,'--workers',2,'--seed',20260929,'--selection-iou','.7',
+         '--epochs',20,'--workers',2,'--seed',20260929,'--selection-iou','0.7',
          '--retain-initial-best','--defer-initial-validation'],345600,
         [root/'train/status.json',root/'train/best_ap70.pth'])]
     jobs[-1]['progress_watch']=dict(directory=str(root/'train'),timeout_seconds=900)
