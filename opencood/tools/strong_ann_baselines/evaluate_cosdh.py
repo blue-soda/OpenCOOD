@@ -63,7 +63,10 @@ def main():
     parser.add_argument('--compute-count',type=int,choices=(4,64),default=4)
     parser.add_argument('--compute-repeat',type=int,choices=(0,1,2),default=0)
     parser.add_argument('--ego-only', action='store_true', help='Same collaborative weights, only ego participant; no remote features or late boxes')
+    parser.add_argument('--feature-only', action='store_true', help='Keep both intermediate feature participants, omit roadside late detections')
     args = parser.parse_args()
+    if args.feature_only and (args.ego_only or args.compute_smoke_reference):
+        parser.error('feature-only is distinct from ego-only and the hybrid compute reference')
     if args.ego_only:
         if args.wire_codec or args.compute_smoke_reference:
             parser.error('ego-only has zero transport and cannot use wire/compute adapters')
@@ -155,7 +158,7 @@ def main():
         wire=None
         if args.wire_codec:
             from cosdh_wire import CoSDHWire
-            wire=CoSDHWire(model,dataset,output)
+            wire=CoSDHWire(model,dataset,output,include_late_boxes=not args.feature_only)
         ids = list(dataset.split_info)
         source_ids = json.loads(split.read_text(encoding='utf-8'))
         if ids != source_ids or len(ids) != len(dataset):
@@ -187,8 +190,11 @@ def main():
                     'source_script_sha256': digest(__file__), 'started_unix': start_wall}
         write_json(output / 'provenance.json', metadata)
         metadata['ego_only'] = args.ego_only
+        metadata['feature_only'] = args.feature_only
         metadata['single_agent_boundary'] = 'Collaborative checkpoint with remote participants disabled; not independently trained single-agent' if args.ego_only else None
         metadata['wire_codec']='demand_sparse_latent_dependency_closure_late_boxes_v1' if args.wire_codec else None
+        if args.wire_codec and args.feature_only:
+            metadata['wire_codec']='demand_sparse_latent_dependency_closure_v1'
         metadata['wire_compute_scope']='includes redundant diagnostic decode/warp, not optimized algorithmic cost' if args.wire_codec else None
         write_json(output / 'provenance.json', metadata)
         if compute_reference:
@@ -231,6 +237,13 @@ def main():
                     batch = {'ego': batch['ego']}
                     if batch['ego']['record_len'].tolist() != [1]:
                         raise ValueError('ego-only requires exactly one participant')
+                if args.feature_only:
+                    # The ego dictionary already contains both agents' features.
+                    # Removing only the outer road entry disables its separate
+                    # detector forward and late boxes, preserving intermediate fusion.
+                    batch = {'ego': batch['ego']}
+                    if batch['ego']['record_len'].tolist() != [2]:
+                        raise ValueError('feature-only requires both intermediate participants')
                 batch = train_utils.to_device(batch, device)
                 if wire:wire.begin(batch,str(ids[index]))
                 torch.cuda.synchronize()
@@ -277,6 +290,8 @@ def main():
                     if row['model_forwards'] != 1:
                         raise ValueError('ego-only hybrid inference executed a remote forward')
                     row['actual_communication_bytes'] = 0
+                if args.feature_only and row['model_forwards'] != 1:
+                    raise ValueError('feature-only executed a separate roadside detector')
                 rows.append(row)
                 if wire:row['wire']=wire.finish(index)
                 with (output / 'frames.jsonl').open('a', encoding='utf-8') as f:
@@ -311,6 +326,9 @@ def main():
             summary['actual_communication_bytes']=summary['wire_statistics']['total_bytes']['mean']
             summary['wire_note']='Actual binary demand, three dependency-closed FP16 latent/mask sections and pre-NMS late boxes; 160-byte two-way metadata included; link/IP overhead excluded; diagnostic redundant compute not suitable for efficiency comparison'
         summary['ego_only'] = args.ego_only
+        summary['feature_only'] = args.feature_only
+        if args.feature_only and args.wire_codec:
+            summary['wire_note']='Actual demand and three dependency-closed FP16 latent/mask sections; no late boxes; 160-byte two-way metadata included; link/IP overhead excluded'
         if args.ego_only:
             summary['actual_communication_bytes'] = 0
             summary['single_agent_frames'] = len(rows)

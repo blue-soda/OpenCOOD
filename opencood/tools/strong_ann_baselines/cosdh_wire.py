@@ -76,9 +76,10 @@ def decode_boxes(packet):
     return (boxes,np.frombuffer(raw[h*8*4:],dtype='<f4').copy().reshape(4,4)) if flag else boxes
 
 class CoSDHWire:
-    def __init__(self,model,dataset,output):
+    def __init__(self,model,dataset,output,include_late_boxes=True):
         assert len(model.fusion_net)==3 and not any(m.fully for m in model.fusion_net), 'Audited masked three-scale config required'
         self.model=model;self.dataset=dataset;self.output=Path(output)/'wire';self.output.mkdir()
+        self.include_late_boxes=include_late_boxes
         self.handles=[];self.rebuilding=False;self.cache={}
         for stage in range(3):
             self.handles += [model.naive_compressor_list[stage].decoder.register_forward_pre_hook(self.capture_latent(stage)),
@@ -92,6 +93,7 @@ class CoSDHWire:
     def begin(self,batch,frame_id):
         assert batch['ego']['record_len'].tolist()==[2], 'Matched two-agent audit only'
         self.batch=batch;self.frame_id=frame_id;self.cache={};self.parts={};self.details=[];self.request=None
+        self.late_count=0
         self.pose=batch['ego']['pairwise_t_matrix'][0,0,1].detach().cpu().numpy()
 
     def capture_latent(self,stage):
@@ -158,6 +160,8 @@ class CoSDHWire:
         from opencood.utils.common_utils import limit_period
         pp=self.dataset.post_processor;corners_list=[];score_list=[]
         for cav_id,content in data_dict.items():
+            if not self.include_late_boxes and cav_id!='ego':
+                raise ValueError('Feature-only transport received roadside late detections')
             output=output_dict[cav_id]
             assert 'iou_preds' not in output and 'psm' not in output
             prob=torch.sigmoid(output['cls_preds'].permute(0,2,3,1))
@@ -198,9 +202,10 @@ class CoSDHWire:
 
     def packets(self):
         """Assemble real bidirectional envelopes without disk IO or hashing."""
-        assert sorted(self.parts)==[0,1,2,3] and self.request is not None
+        stages=[0,1,2,3] if self.include_late_boxes else [0,1,2]
+        assert sorted(self.parts)==stages and self.request is not None
         backward=envelope(self.frame_id,0,self.pose)+self.request
-        forward=envelope(self.frame_id,1,self.pose)+struct.pack('<4sI',b'CFW1',4)+b''.join(self.parts[i] for i in range(4))
+        forward=envelope(self.frame_id,1,self.pose)+struct.pack('<4sI',b'CFW1',len(stages))+b''.join(self.parts[i] for i in stages)
         return [('demand',backward),('response',forward)]
 
     def finish(self,index):
@@ -210,7 +215,7 @@ class CoSDHWire:
         for name,packet in packets:
             p=self.output/('%06d_%s.bin'%(index,name));p.write_bytes(packet)
             rows.append({'direction':name,'file':'wire/'+p.name,'bytes':len(packet),'sha256':hashlib.sha256(packet).hexdigest()})
-        return {'packets':rows,'demand_bytes':len(backward),'response_bytes':len(forward),'total_bytes':len(backward)+len(forward),'envelope_bytes':160,'late_boxes':self.late_count,'sections':self.details,'late_section_bytes':len(self.parts[3])}
+        return {'packets':rows,'demand_bytes':len(backward),'response_bytes':len(forward),'total_bytes':len(backward)+len(forward),'envelope_bytes':160,'late_boxes':self.late_count,'sections':self.details,'late_section_bytes':len(self.parts[3]) if self.include_late_boxes else 0}
 
     def close(self):
         for handle in self.handles:handle.remove()
