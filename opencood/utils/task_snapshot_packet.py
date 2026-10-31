@@ -114,7 +114,16 @@ def select(counts,scales,meta,budget=None,addresses=None,row_order=None):
             slots=np.searchsorted(coords,ids)
         rows=np.zeros_like(full);active=np.zeros(len(coords),dtype=bool)
         packet=b'';accepted=0;rejected=None
-        for i,slot in enumerate(slots):
+        native = None
+        if addresses is not None and meta['family'] == 'if8':
+            from opencood.utils.snapshot_prefix_native import search
+            native = search(coords, slots, channels, HEADER.size + len(context), budget)
+        if native is not None:
+            accepted, rejected = native
+            np.add.at(rows, (slots[:accepted], channels[:accepted]), 1)
+            active = np.any(rows != 0, axis=1)
+            packet = _encode_rows(coords[active], rows[active], context, scale_bytes, bits)
+        for i,slot in (enumerate(slots) if native is None else ()):
             old=rows[slot].copy();was_active=active[slot]
             if addresses is not None:rows[slot,channels[i]]+=1
             else:rows[slot]=full[slot]

@@ -74,7 +74,8 @@ def checked_forward(model, criterion, batch, teacher=None, kd_weight=0.):
     return output, loss
 
 
-def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=None, profile=False):
+def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=None, profile=False,
+             progress_path=None):
     model.eval()
     stat = {threshold: {'tp': [], 'fp': [], 'gt': 0, 'score': []} for threshold in (.3, .5, .7)}
     stat_3d = {threshold: {'tp': [], 'fp': [], 'gt': 0, 'score': []} for threshold in stat}
@@ -90,6 +91,10 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
         torch.cuda.synchronize()
         torch.cuda.reset_peak_memory_stats()
     previous_done = time.perf_counter()
+    validation_started = time.monotonic()
+    last_progress = validation_started
+    if progress_path is not None:
+        write_json(progress_path, dict(state='validating', samples=0, indexed_samples=len(dataset), unix=time.time()))
     with torch.no_grad():
         for index, batch in enumerate(loader):
             if limit and index >= limit:
@@ -119,6 +124,10 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
             if include_3d:
                 eval_3d_utils.calculate_tp_fp_3d(boxes, scores, gt, stat_3d)
             evaluated += 1
+            if progress_path is not None and (evaluated % 25 == 0 or time.monotonic() - last_progress >= 30):
+                write_json(progress_path, dict(state='validating', samples=evaluated,
+                    indexed_samples=len(dataset), elapsed_seconds=time.monotonic()-validation_started, unix=time.time()))
+                last_progress = time.monotonic()
             predicted += 0 if boxes is None else len(boxes)
             ground_truth += len(gt)
             timing = {'batch_wait_ms': (batch_ready - previous_done) * 1000,
@@ -311,7 +320,8 @@ def execute(args, output_dir):
         if not args.checkpoint and not args.single_checkpoint:
             raise ValueError('Evaluation requires --checkpoint')
         metrics = validate(model, val_data, args.workers, include_3d=args.eval_3d,
-            prediction_dir=output_dir / 'predictions' if args.save_predictions else None, profile=args.profile)
+            prediction_dir=output_dir / 'predictions' if args.save_predictions else None, profile=args.profile,
+            progress_path=output_dir / 'validation_progress.json')
         write_json(output_dir / 'evaluation.json', metrics)
         return metrics
     if args.mode == 'overfit':
@@ -409,9 +419,13 @@ def execute(args, output_dir):
         from opencood.utils.e3dsnn_fusion_probe import detector_digest
         frozen_digest = detector_digest(model)
         write_json(output_dir / 'frozen_detector.json', {'initial_sha256': frozen_digest})
-    if getattr(args, 'retain_initial_best', False) and not args.resume:
+    deferred_initial = None
+    if getattr(args, 'defer_initial_validation', False) and not args.resume:
+        from opencood.utils.deferred_initial_validation import launch
+        deferred_initial = launch(args, output_dir)
+    elif getattr(args, 'retain_initial_best', False) and not args.resume:
         write_json(output_dir / 'progress.json', {'state': 'initial_validation', 'epoch': 0})
-        initial = validate(model, val_data, args.workers)
+        initial = validate(model, val_data, args.workers, progress_path=output_dir / 'validation_progress.json')
         initial['epoch'] = 0
         best = save_best_checkpoints(model, initial, output_dir, best_by_iou, args.selection_iou, best)
         write_json(output_dir / 'initial_metrics.json', initial)
@@ -461,7 +475,7 @@ def execute(args, output_dir):
         assert samples == len(train_data)
         scheduler.step()
         write_json(output_dir / 'progress.json', {'state': 'validating', 'epoch': epoch + 1})
-        metrics = validate(model, val_data, args.workers)
+        metrics = validate(model, val_data, args.workers, progress_path=output_dir / 'validation_progress.json')
         metrics.update({'epoch': epoch + 1, 'train_loss': total / samples,
                         'train_samples': samples, 'seconds': time.monotonic() - started})
         metrics['train_loss_components'] = {k: v / samples for k, v in component_totals.items()}
@@ -508,6 +522,14 @@ def execute(args, output_dir):
                 raise RuntimeError('Frozen detector weights or buffers changed')
             write_json(output_dir / 'frozen_detector.json', {'initial_sha256': frozen_digest,
                 'current_sha256': current_digest, 'verified_through_epoch': epoch + 1, 'passed': True})
+        if deferred_initial is not None:
+            from opencood.utils.deferred_initial_validation import collect
+            write_json(output_dir / 'progress.json', dict(state='awaiting_initial_selection', epoch=epoch+1))
+            initial_model, initial = collect(deferred_initial, args.checkpoint, manifest)
+            best = save_best_checkpoints(initial_model, initial, output_dir, best_by_iou, args.selection_iou, best)
+            write_json(output_dir / 'initial_metrics.json', initial)
+            deferred_initial = None
+            del initial_model
         best = save_best_checkpoints(model, metrics, output_dir, best_by_iou, args.selection_iou, best)
         save_torch(output_dir / 'last.pt', {'epoch': epoch + 1, 'model': model.state_dict(), 'warmup_epochs': args.warmup_epochs,
             'response_distillation': teacher_manifest,
@@ -548,7 +570,11 @@ def main():
                         help='Validation BEV IoU for best.pth; retain both AP50/AP70 best snapshots')
     parser.add_argument('--resume', action='store_true')
     parser.add_argument('--retain-initial-best', action='store_true', help='Include epoch zero in best AP selection')
+    parser.add_argument('--defer-initial-validation', action='store_true',
+        help='Evaluate the fixed initial checkpoint concurrently; include it before first best selection')
     args = parser.parse_args()
+    if args.defer_initial_validation and (args.mode != 'train' or not args.retain_initial_best):
+        parser.error('--defer-initial-validation requires train and --retain-initial-best')
     if (args.eval_3d or args.save_predictions or args.profile or args.packet_roundtrip or args.fusion_diagnostics) and args.mode != 'eval':
         parser.error('--eval-3d, --save-predictions and --profile require eval mode')
     if args.resume and args.mode != 'train':
