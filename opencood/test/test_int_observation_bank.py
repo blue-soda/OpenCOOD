@@ -1,10 +1,25 @@
 import unittest
+from types import SimpleNamespace
 import numpy as np
 import torch
 from torch import nn
-from opencood.test.test_int_pyramid_state import make_pair
+from opencood.models.sub_modules.codyntrust_base_bev_backbone_resnet import ResNetBEVBackbone
+from opencood.models.sub_modules.codyntrust_downsample_conv import DownsampleConv
 from opencood.models.sub_modules.int_observation_bank import ObservationBankDetector
 from opencood.models.sub_modules.int_feature_memory import warp_bev
+
+
+def make_pair(model_class):
+    # opencood/test.py is an executable script, not a test package. Keep this
+    # fixture independent so unittest discovery never imports that script.
+    teacher=SimpleNamespace(pillar_vfe=nn.Identity(),scatter=nn.Identity(),use_dir=True,shrink_flag=True,
+        backbone=ResNetBEVBackbone(dict(layer_nums=[3,4,5],layer_strides=[2,2,2],
+            num_filters=[128,256,512],upsample_strides=[1,2,4],num_upsample_filter=[128,128,128])),
+        shrink_conv=DownsampleConv(dict(input_dim=384,kernal_size=[3],dim=[256],stride=[1],padding=[1])),
+        cls_head=nn.Conv2d(256,2,1),reg_head=nn.Conv2d(256,14,1),dir_head=nn.Conv2d(256,4,1))
+    for module in (teacher.backbone,teacher.shrink_conv):module.eval()
+    model=model_class(teacher,{'model':{'args':{'lidar_range':[-4,-4,-1,4,4,1]}}})
+    return teacher,model
 
 
 class ObservationBankTests(unittest.TestCase):
