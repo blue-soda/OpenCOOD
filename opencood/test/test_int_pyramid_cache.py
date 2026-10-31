@@ -27,6 +27,59 @@ def fixture():
 
 
 class PyramidCacheTests(unittest.TestCase):
+    def test_anchor_period_one_matches_original(self):
+        from opencood.models.sub_modules.int_pyramid_anchor import AnchoredLatePyramidDetector
+        base=fixture();cached=AnchoredLatePyramidDetector(base,period=1);a=b=None
+        with torch.no_grad():
+            for i in range(4):
+                x=torch.randn(1,64,24,32);pose=np.eye(4);pose[0,3]=i*.1
+                meta=dict(timestamp_us=i*100000,segment='a',pose=pose)
+                expected,a,_=base.step_spatial(x,a,meta);actual,b,info=cached.step_spatial(x,b,meta)
+                for k in expected:self.assertTrue(torch.equal(actual[k],expected[k]))
+                self.assertTrue(torch.equal(a['deep'],b['anchor']['value']))
+                self.assertTrue(info['late_refresh'])
+
+    def test_anchor_reuse_skips_deep_compute_and_keeps_original_pose(self):
+        from opencood.models.sub_modules.int_pyramid_anchor import AnchoredLatePyramidDetector
+        from opencood.models.sub_modules.int_feature_memory import warp_bev
+        from opencood.models.sub_modules.int_block_cache import block_lidar_range
+        base=fixture();cached=AnchoredLatePyramidDetector(base,period=3,coverage='zero');calls=[]
+        x=torch.randn(1,64,24,32);meta=dict(timestamp_us=0,segment='a',pose=np.eye(4))
+        with torch.no_grad():
+            _,state,_=cached.step_spatial(x,None,meta);initial=state['anchor'];outputs=[]
+            handles=[base.core.deep_encoder.register_forward_hook(lambda *_:calls.append(1)),
+                     base.core.deep_update.register_forward_hook(lambda *_:calls.append(1)),
+                     base.core.deblocks[2].register_forward_pre_hook(lambda m,args:outputs.append(args[0]))]
+            try:
+                for i in (1,2):
+                    pose=np.eye(4);pose[0,3]=i*.4
+                    _,state,info=cached.step_spatial(x,state,dict(meta,timestamp_us=i*100000,pose=pose))
+                    self.assertIsNone(info['late_refresh']);self.assertEqual(calls,[])
+                    self.assertIs(state['anchor']['value'],initial['value'])
+                    self.assertTrue(np.array_equal(state['anchor']['pose'],initial['pose']))
+                    bounds=block_lidar_range(cached.bounds,x.shape[-2:],initial['value'].shape[-2:],8)
+                    expected,_=warp_bev(initial['value'],initial['pose'],pose,bounds)
+                    self.assertTrue(torch.equal(outputs[-1],expected))
+                _,_,info=cached.step_spatial(x,state,dict(meta,timestamp_us=250000))
+                self.assertEqual(info['late_refresh'],'period');self.assertEqual(len(calls),2)
+            finally:
+                for handle in handles:handle.remove()
+
+    def test_anchor_coverage_and_age_guards(self):
+        from opencood.models.sub_modules.int_pyramid_anchor import AnchoredLatePyramidDetector
+        base=fixture();strict=AnchoredLatePyramidDetector(base,period=3,coverage='strict')
+        age=AnchoredLatePyramidDetector(base,period=3,coverage='zero',max_age=.15)
+        x=torch.randn(1,64,24,32);meta=dict(timestamp_us=0,segment='a',pose=np.eye(4))
+        with torch.no_grad():
+            _,state,_=strict.step_spatial(x,None,meta);pose=np.eye(4);pose[0,3]=1
+            _,_,info=strict.step_spatial(x,state,dict(meta,timestamp_us=100000,pose=pose))
+            self.assertEqual(info['late_refresh'],'coverage')
+            _,_,info=age.step_spatial(x,state,dict(meta,timestamp_us=160000))
+            self.assertEqual(info['late_refresh'],'age')
+            _,_,info=age.step_spatial(x,state,dict(meta,timestamp_us=100000,segment='b'))
+            self.assertEqual(info['late_refresh'],'scene')
+            with self.assertRaises(ValueError):age.step_spatial(x,state,meta)
+
     def test_same_plan_dense_control_preserves_writes_and_planned_work(self):
         from opencood.models.sub_modules.int_pyramid_regions import coalesced_refresh
         from opencood.models.sub_modules.int_pyramid_block_cache import LocalBlock
