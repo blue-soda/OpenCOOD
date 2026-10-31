@@ -487,6 +487,9 @@ def execute(args, output_dir):
                     'gradient_norm': float(grad_norm), 'elapsed_seconds': time.monotonic() - started}
                 if stream_totals:
                     progress['stream_means'] = {k: v / samples for k, v in stream_totals.items()}
+                if cfg['optimizer'].get('monitor_new_parameters', False):
+                    from opencood.utils.cp_optimizer import new_parameter_health
+                    progress['new_parameter_health'] = new_parameter_health(optimizer)
                 write_json(output_dir / 'progress.json', progress)
                 print(json.dumps(progress), flush=True)
         assert samples == len(train_data)
