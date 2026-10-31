@@ -3,7 +3,7 @@ import copy
 import unittest
 import torch
 from torch import nn
-from opencood.models.sub_modules.mural_resolution import install_resolution_bn, ResolutionBatchNorm, resolution_configs
+from opencood.models.sub_modules.mural_resolution import install_resolution_bn, ResolutionBatchNorm, resolution_configs, mode_configs
 from opencood.hypes_yaml.yaml_utils import load_yaml
 
 
@@ -38,6 +38,16 @@ class MuralCoreTest(unittest.TestCase):
             self.assertAlmostEqual(ny*vy,80)
             self.assertEqual(nx%8,0);self.assertEqual(ny%8,0)
             self.assertEqual(config['postprocess']['anchor_args']['W'],nx)
+
+    def test_fixed_grid_selection_and_joint_mode_guard(self):
+        base=load_yaml('opencood/hypes_yaml/dair-v2x/repro/dair_stage1_codyntrust_single_wide.yaml')
+        expected=resolution_configs(base)
+        for index in range(3):
+            self.assertEqual(mode_configs(base,'fixed',index),[expected[index]])
+        self.assertEqual(mode_configs(base,'mural'),expected)
+        self.assertEqual(mode_configs(base,'shared_bn'),expected)
+        with self.assertRaises(ValueError): mode_configs(base,'mural',1)
+        with self.assertRaises(ValueError): mode_configs(base,'fixed',3)
 
 
 if __name__=='__main__':unittest.main()

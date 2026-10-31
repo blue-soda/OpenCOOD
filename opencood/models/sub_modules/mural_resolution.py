@@ -57,6 +57,18 @@ def resolution_configs(base, grids=((504, 200), (448, 176), (400, 160))):
     return result
 
 
+def mode_configs(base, mode, fixed_resolution=0):
+    """Select a fixed grid without changing the jointly trained scale order."""
+    if mode not in ('fixed', 'mural', 'shared_bn'):
+        raise ValueError('Unknown resolution mode: '+mode)
+    if fixed_resolution not in (0, 1, 2):
+        raise ValueError('fixed_resolution must be 0, 1, or 2')
+    if mode != 'fixed' and fixed_resolution != 0:
+        raise ValueError('fixed_resolution only applies to fixed mode')
+    configs = resolution_configs(base)
+    return configs[fixed_resolution:fixed_resolution+1] if mode == 'fixed' else configs
+
+
 class OperationCounter:
     """Executed Conv2d/ConvTranspose2d/Linear MACs; excludes other operations."""
     def __init__(self, model):

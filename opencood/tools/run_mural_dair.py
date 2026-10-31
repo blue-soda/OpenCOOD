@@ -19,7 +19,7 @@ from opencood.data_utils.int_ego_stream import DairEgoStreamDataset, read_json, 
 from opencood.hypes_yaml.yaml_utils import load_yaml
 from opencood.loss.point_pillar_dir_loss import PointPillarDirLoss
 from opencood.models.point_pillar_codyntrust_single import PointPillarCodyntrustSingle
-from opencood.models.sub_modules.mural_resolution import install_resolution_bn, select_resolution, resolution_configs, OperationCounter
+from opencood.models.sub_modules.mural_resolution import install_resolution_bn, select_resolution, mode_configs, OperationCounter
 from opencood.tools.train_utils import to_device
 from opencood.utils import pcd_utils, eval_utils
 
@@ -130,6 +130,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--config',required=True);p.add_argument('--manifest',required=True)
     p.add_argument('--checkpoint',required=True);p.add_argument('--output',required=True)
     p.add_argument('--mode',choices=['fixed','mural','shared_bn'],required=True)
+    p.add_argument('--fixed-resolution',type=int,choices=[0,1,2],default=0)
     p.add_argument('--epochs',type=int,default=12);p.add_argument('--workers',type=int,default=2)
     p.add_argument('--seed',type=int,default=303);p.add_argument('--lr',type=float,default=1e-4)
     p.add_argument('--sweeps',type=int,default=3);p.add_argument('--train-limit',type=int,default=0)
@@ -137,8 +138,7 @@ def main():
     args=p.parse_args();out=Path(args.output);out.mkdir(parents=True,exist_ok=bool(args.resume))
     random.seed(args.seed);np.random.seed(args.seed);torch.manual_seed(args.seed);torch.cuda.manual_seed_all(args.seed)
     torch.backends.cudnn.benchmark=False;torch.backends.cudnn.deterministic=True
-    base=load_yaml(args.config);configs=resolution_configs(base)
-    if args.mode=='fixed':configs=configs[:1]
+    base=load_yaml(args.config);configs=mode_configs(base,args.mode,args.fixed_resolution)
     manifest=read_json(args.manifest)
     model=PointPillarCodyntrustSingle(configs[0]['model']['args'])
     state=torch.load(args.checkpoint,map_location='cpu');state=state.get('model',state)
