@@ -31,6 +31,14 @@ def frozen_digest(model):
     return result.hexdigest()
 
 
+def encoder_digest(memory):
+    result=hashlib.sha256()
+    for name,value in memory.state_dict().items():
+        if not name.startswith('readout.'):
+            result.update(name.encode());result.update(value.detach().cpu().contiguous().numpy().tobytes())
+    return result.hexdigest()
+
+
 def evaluate(models,base,cfg,rows,out,tag,identity=False):
     states={n:None for n in models};base_state=None;records=[]
     ap={n:{t:dict(tp=[],fp=[],score=[],gt=0) for t in (.5,.7)} for n in models}
@@ -56,7 +64,7 @@ def evaluate(models,base,cfg,rows,out,tag,identity=False):
             records.append(record);log.write(json.dumps(record)+'\n')
     assert len(records)==256
     write_json(out/(tag+'_ap_records.json'),ap)
-    metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),adaptation_parameters=0 if n=='strict' else 82016,
+    metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),adaptation_parameters=0 if n=='strict' else sum(p.numel() for p in m.core.temporal_feature.parameters() if p.requires_grad),
         core_conv_flops_mean=sum(r['arms'][n]['core_conv_flops'] for r in records)/256,cache_bytes=records[0]['arms'][n]['cache_bytes'],
         ap50=eval_utils.calculate_ap(ap[n],.5)[0],ap70=eval_utils.calculate_ap(ap[n],.7)[0],model_step_ms_mean=None,
         timing_invalid_reason='Multi-arm instrumented train-subset evaluation, no valid timing') for n,m in models.items()}
@@ -68,7 +76,11 @@ def evaluate(models,base,cfg,rows,out,tag,identity=False):
 def train_one(model,base,cfg,rows,out,name,criterion,contract):
     model.eval();model.reset_feature_memory=False
     before=frozen_digest(model);memory=model.core.temporal_feature;memory.record_channels=True
-    params=list(memory.parameters());assert sum(p.numel() for p in params)==82016
+    encoder_before=encoder_digest(memory)
+    params=[p for p in memory.parameters() if p.requires_grad]
+    assert sum(p.numel() for p in params)==contract['adaptation_parameters']
+    if contract['readout_only']:
+        assert [n for n,p in memory.named_parameters() if p.requires_grad]==['readout.weight']
     optimizer=torch.optim.AdamW(params,lr=.0003,weight_decay=.0001)
     ends=window_ends(rows,4);state=base_state=None;losses=[];updates=labels=0;windows=[]
     optimizer.zero_grad(set_to_none=True);_,stream=loader(rows,cfg,2,303)
@@ -85,6 +97,7 @@ def train_one(model,base,cfg,rows,out,name,criterion,contract):
                 if losses:
                     loss=torch.stack(losses).mean();loss.backward()
                     assert all(p.grad is None for n,p in model.named_parameters() if not n.startswith('core.temporal_feature.'))
+                    assert all(p.grad is None for p in memory.parameters() if not p.requires_grad)
                     norm=torch.nn.utils.clip_grad_norm_(params,10.);assert torch.isfinite(norm)
                     assert all(p.grad is None or bool(torch.isfinite(p.grad).all()) for p in params)
                     record.update(optimizer_step=True,window_loss=float(loss.detach()),gradient_norm_before_clip=float(norm),
@@ -95,6 +108,8 @@ def train_one(model,base,cfg,rows,out,name,criterion,contract):
             if (i+1)%32==0:write_json(out/'status.json',dict(status='RUNNING',phase='train_'+name,scans=i+1,total=512,updates=updates))
     assert i+1==512 and labels==sum(r['supervised'] for r in rows) and not losses and updates>0
     assert frozen_digest(model)==before
+    encoder_after=encoder_digest(memory)
+    if contract['readout_only']:assert encoder_after==encoder_before
     assert all(bool(torch.isfinite(p).all()) for p in params)
     assert bool((memory.readout.weight!=0).any())
     memory.record_channels=False
@@ -102,7 +117,8 @@ def train_one(model,base,cfg,rows,out,name,criterion,contract):
     torch.save(dict(adapter=memory.state_dict(),optimizer=optimizer.state_dict(),contract=contract,mode=name,updates=updates,
         rng_cpu=torch.get_rng_state(),rng_cuda=torch.cuda.get_rng_state(),resume='Completed fixed one-pass pilot; any continuation starts a newly registered pass from empty stream state'),checkpoint)
     return dict(scans=512,labels=labels,optimizer_steps=updates,supervised_windows=len(windows),mean_window_loss=sum(windows)/len(windows),
-        frozen_parameters_and_bn_unchanged=True,readout_weight_l1=float(memory.readout.weight.detach().abs().sum()),checkpoint_sha256=digest(checkpoint))
+        frozen_parameters_and_bn_unchanged=True,encoder_before_sha256=encoder_before,encoder_after_sha256=encoder_after,
+        readout_weight_l1=float(memory.readout.weight.detach().abs().sum()),checkpoint_sha256=digest(checkpoint))
 
 
 def worker(a):
@@ -124,34 +140,58 @@ def worker(a):
     base.load_state_dict(saved['model'],strict=True)
     models={n:DifferentiableTemporalFeatureAnchor(base,n).cuda().eval() for n in ('lif','leaky')}
     assert all(torch.equal(v,models['leaky'].core.temporal_feature.state_dict()[k]) for k,v in models['lif'].core.temporal_feature.state_dict().items())
+    reference=None
+    if a.readout_only:
+        assert a.pilot_reference,'Readout-only control requires completed full-adapter reference'
+        reference=Path(a.pilot_reference)
+        reference_report=json.loads((reference/'report.json').read_text())
+        reference_contract=json.loads((reference/'contract.json').read_text())
+        assert reference_report['status']=='COMPLETED' and reference_contract['adaptation_parameters']==82016
+        assert reference_contract['checkpoint_sha256']==digest(Path(a.checkpoint))
+        for model in models.values():
+            for name,p in model.core.temporal_feature.named_parameters():p.requires_grad_(name=='readout.weight')
     strict=AnchoredLatePyramidDetector(base)
     contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),gradient_gate_sha256=digest(gate),split='train',seed=303,
         train_frames=[r['frame'] for r in training],evaluation_frames=[r['frame'] for r in evaluation],
         train_scans=512,evaluation_scans=256,epochs=1,optimizer='AdamW',lr=.0003,weight_decay=.0001,clip_norm=10.,tbptt=4,
         loss='Mean PointPillarDirLoss over labelled frames per window; no distillation; context-only windows detach without update',
-        adaptation_parameters=82016,parameters=32838068,tau_u=.2,tau_r=.1,threshold=1.,input_gain=.25,
+        adaptation_parameters=8192 if a.readout_only else 82016,readout_only=a.readout_only,
+        parameters=32838068,tau_u=.2,tau_r=.1,threshold=1.,input_gain=.25,
         schedule='Sequential lif then leaky on same GPU, identical frames/windows/initialization, frozen backbone and BN, no LR/AP search',
         evaluation='Disjoint train scan prefixes, possibly correlated scenes; each arm starts with empty stream state, no train-state carryover. Reset is fixed-weight intervention, not separately trained.',
         precision='FP32, TF32 disabled',timing_valid=False)
+    if reference is not None:
+        for key in ('train_frames','evaluation_frames','seed','epochs','optimizer','lr','weight_decay','clip_norm','tbptt','loss','tau_u','tau_r','threshold','input_gain','precision','gradient_gate_sha256'):
+            assert contract[key]==reference_contract[key],key
+        contract['pilot_reference_report_sha256']=digest(reference/'report.json')
     write_json(out/'contract.json',contract)
     write_json(out/'status.json',dict(status='RUNNING',phase='initial_evaluation'))
     initial,initial_ap=evaluate(dict(strict=strict,**models),base,cfg,evaluation,out,'initial',True)
     assert initial_ap['strict']==initial_ap['lif']==initial_ap['leaky']
+    if reference is not None:
+        assert json.loads((reference/'initial_ap_records.json').read_text())==json.loads((out/'initial_ap_records.json').read_text())
+        assert (reference/'initial_frames.jsonl').read_bytes()==(out/'initial_frames.jsonl').read_bytes()
     criterion=PointPillarDirLoss(cfg['loss']['args']).cuda();learned={}
     for name,model in models.items():learned[name]=train_one(model,base,cfg,training,out,name,criterion,contract)
     assert learned['lif']['optimizer_steps']==learned['leaky']['optimizer_steps']
+    if reference is not None:
+        for name in models:
+            frames=lambda path:[json.loads(line)['frame'] for line in path.read_text().splitlines() if json.loads(line)['optimizer_step']]
+            assert frames(out/(name+'_train_frames.jsonl'))==frames(reference/(name+'_train_frames.jsonl'))
     write_json(out/'status.json',dict(status='RUNNING',phase='final_evaluation'))
     final,final_ap=evaluate(dict(strict=strict,lif=models['lif'],leaky=models['leaky'],lif_reset=models['lif'],leaky_reset=models['leaky']),base,cfg,evaluation,out,'final')
     assert initial_ap['strict']==final_ap['strict']
     write_json(out/'report.json',dict(status='COMPLETED',split='train',train_scans=512,evaluation_scans=256,checkpoint_sha256=contract['checkpoint_sha256'],
         initial=initial,training=learned,final=final,initial_predictions_exact=True,strict_raw_ap_replayed=True,
-        trained=True,timing_valid=False,boundary='Single-seed fixed-budget mechanism pilot on train subsets, not full val or independent test. Dense Conv plus continuous state; no energy/speed advantage claimed.'))
+        trained=True,readout_only=a.readout_only,matched_reference_verified=reference is not None,
+        timing_valid=False,boundary='Single-seed fixed-budget mechanism pilot on train subsets, not full val or independent test. Dense Conv plus continuous state; no energy/speed advantage claimed.'))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
 
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','gradient-gate','output'):p.add_argument('--'+n,required=True)
+    p.add_argument('--readout-only',action='store_true');p.add_argument('--pilot-reference')
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('90min sequential pilot budget')));signal.alarm(5400)
