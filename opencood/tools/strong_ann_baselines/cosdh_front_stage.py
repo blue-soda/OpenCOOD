@@ -8,7 +8,11 @@ import torch
 from cosdh_readout import _CountReadout
 
 
-def activate(x, scale, mode, surrogate=False):
+def activate(x, scale, mode, surrogate=False, initial_voltage=0.):
+    if initial_voltage not in (0., .5):
+        raise ValueError('Registered initial voltage fractions are zero and half threshold')
+    if initial_voltage and (mode not in ('count16','count32') or surrogate):
+        raise ValueError('Half-threshold probe is a frozen count-only evaluation')
     if x.ndim != 4 or x.shape[0] != 2 or scale.shape != (1,x.shape[1],1,1):
         raise ValueError('Two participants and shared channel scales required')
     if not torch.isfinite(x).all() or (x<0).any() or not torch.isfinite(scale).all() or (scale<=0).any():
@@ -18,16 +22,19 @@ def activate(x, scale, mode, surrogate=False):
     if mode not in ('count16','count32'): raise ValueError('Unsupported activation')
     steps=int(mode[5:]);theta=scale/steps
     if surrogate: return _CountReadout.apply(x,scale,steps)
+    if initial_voltage:
+        return torch.floor(x/theta+initial_voltage).clamp(0,steps)*theta
     return torch.floor(x/theta).clamp(0,steps)*theta
 
 
 class CoSDHFrontStage:
-    def __init__(self, model, thresholds, mode, surrogate=False, audit_gradients=False):
+    def __init__(self, model, thresholds, mode, surrogate=False, audit_gradients=False, initial_voltage=0.):
         t=json.loads(Path(thresholds).read_text())
         assert t['interface']=='backbone.blocks.0' and t['shared_agent_thresholds'] and t['expected_calls_per_forward']==8
         assert type(model.backbone).__name__=='BaseBEVBackbone'
         modules=dict(model.named_modules()); self.mode=mode;self.calls=[0]*4;self.first={};self.delta={};self.handles=[]
         self.surrogate=surrogate;self.audit_gradients=audit_gradients;self.gradients={}
+        self.initial_voltage=initial_voltage
         for phase,name in enumerate(t['module_names']):
             assert type(modules[name]).__name__=='ReLU'
             scale=torch.tensor(t['phases'][str(phase)]['range_p999'],device=next(model.parameters()).device).reshape(1,-1,1,1)
@@ -35,7 +42,7 @@ class CoSDHFrontStage:
 
     def hook(self, phase, scale):
         def apply(module,inputs,output):
-            value=activate(output,scale,self.mode,self.surrogate);self.calls[phase]+=1
+            value=activate(output,scale,self.mode,self.surrogate,self.initial_voltage);self.calls[phase]+=1
             if self.calls[phase]%2:
                 self.first[phase]=value.detach().clone()
                 self.delta[phase]=float((value-output).detach().abs().mean())
@@ -61,6 +68,7 @@ class CoSDHFrontStage:
     def finish(self):
         assert self.calls==[2]*4 and len(self.delta)==4
         return dict(mode=self.mode,calls=self.calls[:],agents=2,paths_bitwise_equal=True,
+            initial_voltage_threshold_fraction=self.initial_voltage,
             activation_abs_change=[self.delta[i] for i in range(4)],first_stage_only=True,whole_encoder_snn=False)
 
     def close(self):
@@ -77,6 +85,16 @@ def self_test():
         z=x.clone().requires_grad_(True);value=activate(z,scale,mode,surrogate=True)
         assert torch.equal(value.detach(),activate(x,scale,mode))
         value.sum().backward();assert torch.equal(z.grad,(x<=scale).float())
+    # Binary-exact inputs verify the analytic count against T explicit IF steps,
+    # with one spike per tick, subtractive reset and V0 = theta/2.
+    probe=torch.arange(0,257,dtype=torch.float32).reshape(1,1,1,-1).repeat(2,1,1,1)/128
+    for steps in (16,32):
+        theta=scale/steps;membrane=torch.ones_like(probe)*theta*.5;count=torch.zeros_like(probe)
+        for _ in range(steps):
+            membrane=membrane+probe/steps
+            spike=(membrane>=theta).float();count+=spike;membrane-=spike*theta
+        value=activate(probe,scale,'count'+str(steps),initial_voltage=.5)
+        assert torch.equal(value,count*theta) and torch.count_nonzero(value[...,0])==0
     print('Both-agent IF grid, saturation, clipping and input preservation passed')
 
 

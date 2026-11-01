@@ -73,7 +73,10 @@ def main():
     parser.add_argument('--membrane-mode', choices=('identity', 'fixed', 'local'))
     parser.add_argument('--front-thresholds')
     parser.add_argument('--front-mode', choices=('identity', 'clip', 'count16', 'count32'))
+    parser.add_argument('--front-initial-voltage', type=float, choices=(0., .5), default=0.)
     args = parser.parse_args()
+    if args.front_initial_voltage and args.front_mode not in ('count16','count32'):
+        parser.error('Half-threshold initialization requires a count frontend')
     if bool(args.front_thresholds) != bool(args.front_mode):
         parser.error('Front stage thresholds and mode required together')
     if args.front_mode and (args.membrane_mode != 'local' or args.readout_mode != 'count16'):
@@ -193,7 +196,7 @@ def main():
         front = None
         if args.front_mode:
             from cosdh_front_stage import CoSDHFrontStage
-            front = CoSDHFrontStage(model, args.front_thresholds, args.front_mode)
+            front = CoSDHFrontStage(model, args.front_thresholds, args.front_mode, initial_voltage=args.front_initial_voltage)
         if not args.wire_codec and not args.count_wire:
             import zlib
             def forbidden(*args, **kwargs): raise AssertionError('Ordinary evaluation must not use codec')
@@ -246,7 +249,7 @@ def main():
             max_replaced=args.membrane_mode != 'identity') if membrane else None
         if membrane and args.membrane_mode != 'identity':
             metadata['readout'].update(original_fusion_preserved=False, membrane_conversion=True)
-        metadata['front_stage'] = dict(mode=args.front_mode,thresholds_sha256=digest(args.front_thresholds),
+        metadata['front_stage'] = dict(mode=args.front_mode,initial_voltage_threshold_fraction=args.front_initial_voltage,thresholds_sha256=digest(args.front_thresholds),
             scope='First plain BEV stage four ReLUs; both agents and confidence/communication paths; remaining encoder ANN') if front else None
         metadata['count_conversion'] = dict(steps=args.count_steps, thresholds_sha256=digest(args.count_thresholds),
             stage_quotas=args.count_event_quotas,wire=args.count_wire,
