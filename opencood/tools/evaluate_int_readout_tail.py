@@ -90,7 +90,12 @@ def worker(a):
         scale_sha256=gate['scale_sha256'],timing_valid=False,core_and_refresh_identity_to_strict_all=True,
         validation_if_count_exact_frames=32,sites=sites,strict_baseline_ap70=prior['metrics']['bev_ap70'],
         ap70_delta_to_strict_pp=100*(report['metrics']['bev_ap70']-prior['metrics']['bev_ap70']),
-        core_conv_ratio=prior['core_conv_ratio'],scale_buffer_bytes=2560,persistent_membrane_bytes=0)
+        core_conv_ratio=prior['core_conv_ratio'],
+        core_conv_flops_mean=prior['core_conv_flops_mean'],
+        pillar_linear_flops_mean=prior['pillar_linear_flops_mean'],
+        parameters=sum(p.numel() for p in model.parameters()),
+        timing_invalid_reason='Hooks and first32 explicit IF reference work; isolated timing required',
+        scale_buffer_bytes=2560,persistent_membrane_bytes=0)
     for key in list(report):
         if key.startswith('model_step_ms'):report[key]=None
     report['caveats']=['Exploratory full validation with validation-selected seed303 R051; not independent testing or statistical superiority.',

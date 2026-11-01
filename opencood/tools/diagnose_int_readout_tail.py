@@ -54,7 +54,7 @@ def worker(a):
     for name,mode in [('clip_tail','clip'),('count8_tail','count'),('if8_tail','if')]:models[name]=readout_coded_anchor(base,scales,mode,8,True)
     if a.centered:
         for name,mode in [('count8_centered','count'),('if8_centered','if')]:models[name]=readout_coded_anchor(base,scales,mode,8,True,32768)
-    states={k:None for k in models};base_state=None;records=[];ap={k:{.7:dict(tp=[],fp=[],score=[],gt=0)} for k in models}
+    states={k:None for k in models};base_state=None;records=[];ap={k:{t:dict(tp=[],fp=[],score=[],gt=0) for t in (.5,.7)} for k in models}
     params={k:sum(p.numel() for p in m.parameters()) for k,m in models.items()};assert len(set(params.values()))==1
     dataset,stream=loader(rows[:256],cfg,2,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
@@ -80,7 +80,8 @@ def worker(a):
             if meta['supervised']:
                 data=dict(ego=ego);gt=dataset.post.generate_gt_bbx(data)
                 for name,pred in preds.items():
-                    boxes,scores=dataset.post.post_process(data,dict(ego=pred));eval_utils.caluclate_tp_fp(boxes,scores,gt,ap[name],.7)
+                    boxes,scores=dataset.post.post_process(data,dict(ego=pred))
+                    for threshold in (.5,.7):eval_utils.caluclate_tp_fp(boxes,scores,gt,ap[name],threshold)
             records.append(entry);log.write(json.dumps(entry)+'\n')
             if index==31:write_json(out/'engineering.json',dict(status='PASSED',frames=32,clip_tail_exact_ann=True,if_count_exact=True,all_cache_states_and_core_equal_ann=True))
             if (index+1)%32==0:write_json(out/'status.json',dict(status='RUNNING',phase='tail_diagnostic',scans=index+1))
@@ -104,8 +105,10 @@ def worker(a):
                     max_single_call_bypass_mask_bytes=max(v['bypass_mask_bytes'] for v in values),
                     explicit_neuron_updates=sum(v['if_neuron_updates'] for v in values),
                     emission_rate=None if values[0]['spike_count'] is None else sum(v['spike_count'] for v in values)/(8*elements))
-        metrics[name]=dict(ap70=eval_utils.calculate_ap(ap[name],.7)[0],sites=sites,
+        metrics[name]=dict(ap50=eval_utils.calculate_ap(ap[name],.5)[0],ap70=eval_utils.calculate_ap(ap[name],.7)[0],sites=sites,
             core_flops=sum(r['arms'][name]['core_flops'] for r in records),
+            core_conv_flops_mean=sum(r['arms'][name]['core_flops'] for r in records)/len(records),
+            model_step_ms_mean=None,timing_invalid_reason='Instrumented multi-arm diagnostic; no isolated timing',
             mean_relative_mse={k:sum(r['arms'][name]['relative_mse'][k] for r in records)/256 for k in preds[name]})
     write_json(out/'report.json',dict(status='COMPLETED',split='train',scans=256,labels=sum(r['supervised'] for r in records),
         checkpoint_sha256=digest(Path(a.checkpoint)),scale_sha256=digest(scale_file),parameters=params,metrics=metrics,
