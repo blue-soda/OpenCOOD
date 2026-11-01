@@ -8,7 +8,7 @@ from pathlib import Path
 import torch
 
 
-def integrate(x, theta, mode):
+def integrate(x, theta, mode, suppress_remote=False):
     if x.ndim != 4 or x.shape[0] != 2 or theta.shape != (1, x.shape[1], 1, 1):
         raise ValueError('Two already aligned/masked participants required')
     if not torch.isfinite(x).all() or (x < 0).any() or not torch.isfinite(theta).all() or (theta <= 0).any():
@@ -20,13 +20,16 @@ def integrate(x, theta, mode):
         gate = theta / (theta + local)
     else:
         raise ValueError('Unsupported integration mode')
-    current = gate * road
+    current = gate * (torch.zeros_like(road) if suppress_remote else road)
     return local + current, gate, current
 
 
 class CoSDHMembrane:
-    def __init__(self, model, thresholds, mode, readout_steps):
+    def __init__(self, model, thresholds, mode, readout_steps, suppress_remote=False):
         assert mode in ('identity', 'fixed', 'local') and readout_steps in (4, 16)
+        if suppress_remote and mode != 'local':
+            raise ValueError('Remote-current ablation preserves the local gate')
+        self.suppress_remote = suppress_remote
         values = json.loads(Path(thresholds).read_text())
         assert values['interface'] == 'post_fusion'
         self.mode = mode; self.handles = []; self.rows = {}; self.calls = [0, 0, 0]
@@ -47,11 +50,15 @@ class CoSDHMembrane:
             if self.mode == 'identity':
                 self.rows[stage] = dict(stage=stage, identity=True, membrane_minus_max_abs_mean=0.)
                 return output
-            membrane, gate, current = integrate(x, theta, self.mode)
+            membrane, gate, current = integrate(x, theta, self.mode, self.suppress_remote)
             assert torch.isfinite(membrane).all()
+            if self.suppress_remote:
+                assert torch.equal(membrane, x[:1]) and torch.count_nonzero(current) == 0
             self.rows[stage] = dict(stage=stage, gate_mean=float(gate.detach().mean()),
                 current_abs_mean=float(current.detach().abs().mean()),
                 membrane_minus_max_abs_mean=float((membrane-output).detach().abs().mean()))
+            if self.suppress_remote:
+                self.rows[stage].update(remote_current_suppressed=True, membrane_equals_local=True)
             return membrane
         return apply
 
@@ -82,6 +89,13 @@ def self_test():
     for mode in ('fixed', 'local'):
         assert torch.equal(integrate(y, theta, mode)[0], x[:1]), 'Zero road current must preserve local membrane'
     assert torch.equal(integrate(x, theta, 'fixed')[0], x[:1]+.5*x[1:])
+    for factor in (0., 1., 100.):
+        changed = x.clone(); changed[1] *= factor
+        m, g, current = integrate(changed, theta, 'local', suppress_remote=True)
+        assert torch.equal(m, x[:1]) and torch.count_nonzero(current) == 0
+    z = x.clone().requires_grad_(True)
+    integrate(z, theta, 'local', suppress_remote=True)[0].sum().backward()
+    assert torch.equal(z.grad[0], torch.ones_like(z.grad[0])) and z.grad[1].count_nonzero() == 0
     z = x.clone().requires_grad_(True)
     integrate(z, theta, 'local')[0].sum().backward()
     assert torch.isfinite(z.grad).all() and z.grad[1].count_nonzero() == 3

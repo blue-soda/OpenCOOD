@@ -85,7 +85,10 @@ def main():
     parser.add_argument('--pillar-initial-voltage', type=float, choices=(0.,.5), default=0.)
     parser.add_argument('--selection-mode', choices=('identity','request_only','confidence_only','geometry_only'))
     parser.add_argument('--geometry-backend',action='store_true',help='Single encoder pass; remove confidence and request computation')
+    parser.add_argument('--suppress-remote-current',action='store_true',help='Frozen geometry-model ablation: retain local membrane and readout, set aligned remote current to zero; not independently trained ego or wire accounting')
     args = parser.parse_args()
+    if args.suppress_remote_current and (not args.geometry_backend or args.membrane_mode!='local' or args.count_wire or args.wire_codec):
+        parser.error('Remote-current ablation requires the local-membrane geometry backend without wire accounting')
     if args.geometry_backend and args.selection_mode!='geometry_only':
         parser.error('Streamlined backend requires the fixed geometry-only selection study')
     if args.selection_mode and (args.pillar_mode!='count32' or args.pillar_initial_voltage!=.5 or args.count_wire or args.count_event_quotas is not None):
@@ -225,7 +228,7 @@ def main():
         membrane = None
         if args.membrane_mode:
             from cosdh_membrane import CoSDHMembrane
-            membrane = CoSDHMembrane(model, args.readout_thresholds, args.membrane_mode, int(args.readout_mode[5:]))
+            membrane = CoSDHMembrane(model, args.readout_thresholds, args.membrane_mode, int(args.readout_mode[5:]), suppress_remote=args.suppress_remote_current)
         front = None
         if args.front_mode:
             from cosdh_front_stage import CoSDHFrontStage
