@@ -132,10 +132,15 @@ def evaluate(a,model,cfg,rows,out,wrapper=None):
             log.write(json.dumps(entry)+'\n');records.append(entry)
             if len(records)%200==0:print('EVAL',len(records),'/',len(chosen),flush=True)
     assert len(records)==len(chosen)
+    # Preserve detection evidence before optional execution-statistics summaries.
+    # A summary schema failure must not discard an otherwise completed AP replay.
+    write_json(out/'ap_records.json',ap)
+    metrics={'bev_ap%d'%int(t*100):eval_utils.calculate_ap(ap,t)[0] for t in ap}
+    write_json(out/'ap_metrics.json',dict(scans=len(records),labels=sum(r['supervised'] for r in records),metrics=metrics))
     stages=stage_means(records)
     return dict(status='COMPLETED',scope='Fixed-weight inference intervention; full validation' if a.stage=='full' else 'Engineering prefix only; not a full validation result',
         scans=len(records),labels=sum(r['supervised'] for r in records),reset_frames=sum(bool(r['reset']) for r in records),
-        metrics={'bev_ap%d'%int(t*100):eval_utils.calculate_ap(ap,t)[0] for t in ap},stage_means=stages,
+        metrics=metrics,stage_means=stages,
         model_step_ms_p50=float(np.median(times)),model_step_ms_p95=float(np.percentile(times,95)),
         model_step_ms_mean=float(np.mean(times)),
         timing_scope='Synchronized model, including FM/warp/gate/cache/crops/decoder/head; excludes IO, voxelization, postprocess; instrumentation included',

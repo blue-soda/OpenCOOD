@@ -6,6 +6,24 @@ from opencood.models.sub_modules.int_pyramid_anchor_patch import PatchedLatePyra
 
 
 class AnchorPatchTests(unittest.TestCase):
+    def test_summary_schema_stable_across_refresh_patch_and_empty_reuse(self):
+        from opencood.tools.int_stage_summary import stage_means
+        local=PatchedLatePyramidDetector(fixture());state=None;records=[]
+        x=torch.randn(1,64,24,32)
+        with torch.no_grad():
+            for i,shift in enumerate((0.,2.,2.,2.)):
+                pose=np.eye(4);pose[0,3]=shift
+                _,state,info=local.step_spatial(x,state,dict(timestamp_us=i*100000,segment='a',pose=pose))
+                records.append(info)
+        self.assertEqual(records[0]['late_refresh'],'initial')
+        self.assertTrue(records[1]['repair']['active'])
+        self.assertEqual(records[2]['late_refresh'],'period')
+        self.assertFalse(records[3]['repair']['active'])
+        for record in records:
+            for stage in record['cache_stages']:
+                self.assertEqual(set(stage),{'actual_write_fraction','executed_input_area_ratio'})
+        self.assertEqual(len(stage_means(records)),3)
+
     def test_patch_is_transient_and_matches_same_mask_reference(self):
         base=fixture();local=PatchedLatePyramidDetector(base)
         reference=PatchedLatePyramidDetector(base,dense_reference=True)

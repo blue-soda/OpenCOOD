@@ -75,4 +75,6 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
         return pred,new,dict(reset=reason,late_refresh=refresh,repair=repair,anchor_timestamp_us=anchor['timestamp_us'],
             anchor_age_before_refresh=age,uncovered_fraction=uncovered,state_bytes=size,cache_bytes=size,
             cache_stages=[dict(actual_write_fraction=1.,executed_input_area_ratio=1.) for _ in range(2)]+
-                         [repair if repair is not None else dict(actual_write_fraction=float(bool(refresh)),executed_input_area_ratio=float(bool(refresh)))])
+                         [dict(actual_write_fraction=repair['actual_write_fraction'],
+                               executed_input_area_ratio=repair['executed_input_area_ratio']) if repair is not None else
+                          dict(actual_write_fraction=float(bool(refresh)),executed_input_area_ratio=float(bool(refresh)))])
