@@ -11,6 +11,7 @@ import torch
 from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
 from opencood.models.sub_modules.int_pyramid_anchor import AnchoredLatePyramidDetector
 from opencood.models.sub_modules.int_pyramid_anchor_patch import PatchedLatePyramidDetector
+from opencood.models.sub_modules.int_pyramid_event import EventAnchoredPyramidDetector
 from opencood.tools.run_int_cache_repair import setup
 from opencood.tools.check_int_pyramid_cache import measured_step
 from opencood.tools.run_int_ego import loader,to_device,write_json
@@ -20,7 +21,17 @@ from opencood.utils import eval_utils
 
 def worker(a):
     out=Path(a.output);write_json(out/'status.json',dict(status='RUNNING',phase='engineering'))
-    if a.suite=='patch':
+    event_gate=None
+    if a.suite=='event':
+        gate=Path(a.calibration_report);event_gate=json.loads(gate.read_text())
+        assert event_gate['status']=='COMPLETED' and event_gate['scans']==256 and event_gate['split']=='train'
+        assert event_gate['offline_online_schedule_and_membrane_match'] and event_gate['coarse_states_match_dense_all']
+        assert event_gate['checkpoint_sha256']==digest(Path(a.checkpoint))
+        tests=(gate.parent/'unit_tests.log').read_text()
+        assert 'Ran 305 tests' in tests and tests.rstrip().endswith('OK')
+        write_json(out/'engineering.json',dict(status='PASSED',source_gate=str(gate),source_sha256=digest(gate),
+            scope='Unchanged event controller:305 tests and256 own-state replay frames; thresholds frozen from train count calibration'))
+    elif a.suite=='patch':
         gate=Path(a.source_gate);passed=json.loads(gate.read_text())
         assert passed['status']=='COMPLETED' and passed['scans']==256 and passed['split']=='train'
         assert passed['same_mask_parity_all'] and passed['period1_dense_exact_all']
@@ -42,14 +53,22 @@ def worker(a):
     configs=dict(dense=dict(period=1,coverage='strict'),period2_strict=dict(period=2,coverage='strict'),
                  period2_zero=dict(period=2,coverage='zero'),period3_zero=dict(period=3,coverage='zero'))
     if a.suite=='patch':del configs['period3_zero']
+    if a.suite=='event':configs={k:v for k,v in configs.items() if k in ('dense','period2_strict')}
     models={name:AnchoredLatePyramidDetector(base,**cfg_) for name,cfg_ in configs.items()}
     if a.suite=='patch':
         models['period2_patch']=PatchedLatePyramidDetector(base)
         configs['period2_patch']=dict(period=2,coverage='transient_patch',tile=1)
+    if a.suite=='event':
+        for mode,selected in event_gate['chosen'].items():
+            name='control_'+mode
+            models[name]=EventAnchoredPyramidDetector(base,mode,selected['threshold'])
+            configs[name]=dict(mode=mode,threshold=selected['threshold'],tau=.2,coverage='strict',periodic=False)
     states={name:None for name in models};base_state=None;records=[]
     ap={name:{.7:dict(tp=[],fp=[],gt=0,score=[])} for name in models}
     write_json(out/'contract.json',dict(split='train',frames=a.frames,checkpoint_sha256=digest(Path(a.checkpoint)),
         candidates=configs,max_age=.25,trained=False,suite=a.suite,
+        calibration_report_sha256=digest(Path(a.calibration_report)) if a.suite=='event' else None,
+        calibration_budget=event_gate['metrics'] if event_gate else None,
         policy='Fine/coarse dense every frame. Entire deep encoder/update refresh on period/age/reset; persistent deep anchor never rewarped in storage.',
         coverage='strict fully refreshes on new-view cells; zero retains zero fill; patch repairs only missing cells for current readout without overwriting anchor.',
         scope='Fixed training-prefix diagnostic; no independent AP, GPU speedup, SNN or energy claim'))
@@ -90,6 +109,7 @@ def worker(a):
             reuse_frames=sum(r['arms'][name]['late_refresh'] is None for r in records),
             whole_reuse_frames=sum(r['arms'][name]['late_refresh'] is None and not (r['arms'][name].get('repair') or {}).get('active',False) for r in records),
             patch_frames=sum((r['arms'][name].get('repair') or {}).get('active',False) for r in records),
+            controller_spikes=sum((r['arms'][name].get('controller') or {}).get('spike',False) for r in records),
             refresh_counts={str(reason):sum(r['arms'][name]['late_refresh']==reason for r in records)
                 for reason in sorted({r['arms'][name]['late_refresh'] for r in records},key=str)},
             cache_bytes=records[-1]['arms'][name]['cache_bytes'],
@@ -105,10 +125,12 @@ def main():
     p=argparse.ArgumentParser()
     for key in ('root','output','checkpoint'):p.add_argument('--'+key,required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--frames',type=int,default=256);p.add_argument('--worker',action='store_true')
-    p.add_argument('--suite',choices=['anchor','patch'],default='anchor');p.add_argument('--source-gate')
+    p.add_argument('--suite',choices=['anchor','patch','event'],default='anchor');p.add_argument('--source-gate')
+    p.add_argument('--calibration-report')
     a=p.parse_args();out=Path(a.output)
     if not 32<=a.frames<=256:p.error('Training diagnostic budget: 32 to 256 frames')
     if a.suite=='patch' and not a.source_gate:p.error('Patch diagnostic requires source engineering gate')
+    if a.suite=='event' and (not a.calibration_report or a.frames!=256):p.error('Event diagnostic requires completed calibration and256 frames')
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('1h anchor diagnostic budget')));signal.alarm(3600)
         try:worker(a)
