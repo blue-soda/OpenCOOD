@@ -369,7 +369,9 @@ def main():
                     for _ in range(3):
                         raw_outputs.clear()
                         if wire:wire.begin(batch,str(ids[index]))
+                        if pillar:pillar.begin()
                         warmup = inference_utils.inference_late_fusion(batch, model, dataset)
+                        if pillar:pillar.finish()
                         if not finite_tree(warmup) or not finite_tree(raw_outputs):
                             raise ValueError('Nonfinite warmup output')
                     del warmup
