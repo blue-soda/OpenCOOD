@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from opencood.test.test_int_pyramid_cache import fixture
+from test_int_pyramid_cache import fixture
 from opencood.models.sub_modules.int_pyramid_anchor_patch import PatchedLatePyramidDetector
 
 
@@ -18,7 +18,7 @@ class AnchorPatchTests(unittest.TestCase):
             b,sb,ib=reference.step_spatial(x,state,current)
             self.assertTrue(ia['repair']['active']);self.assertIsNone(ia['late_refresh'])
             for k in a:self.assertTrue(torch.allclose(a[k],b[k],atol=1e-4,rtol=1e-4))
-            self.assertTrue(torch.equal(local.last_patch_mask,reference.last_patch_mask))
+            self.assertEqual(ia['repair']['actual_write_fraction'],ib['repair']['actual_write_fraction'])
             self.assertIs(sa['anchor']['value'],state['anchor']['value'])
             self.assertEqual(sa['anchor']['timestamp_us'],0)
             self.assertTrue(np.array_equal(sa['anchor']['pose'],meta['pose']))

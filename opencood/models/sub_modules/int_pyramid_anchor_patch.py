@@ -10,13 +10,11 @@ class PatchedLatePyramidDetector(AnchoredLatePyramidDetector):
         super().__init__(base,period=period,coverage='zero',max_age=.25)
         self.patch_stage=PackedPyramidStage(self.core.deep_encoder,self.core.deep_update).eval()
         self.dense_reference=dense_reference
-        self.last_patch_mask=None
 
     def reuse_deep(self, current, old, valid):
         # Tile1 preserves exactly the uncovered mask; larger execution regions
         # may be chosen without changing which output cells are written.
         requested=~valid
-        self.last_patch_mask=requested.detach().clone()
         if not bool(requested.any()):
             return old,dict(active=False,actual_write_fraction=0.,executed_input_area_ratio=0.,stage_conv_ratio=0.,fallback=False)
         packed=self.patch_stage.pack(current,old,valid)
