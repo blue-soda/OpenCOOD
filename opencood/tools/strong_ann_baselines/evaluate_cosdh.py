@@ -70,7 +70,10 @@ def main():
     parser.add_argument('--count-wire', action='store_true', help='Actual integer counts, scales, masks and request; no late boxes')
     parser.add_argument('--readout-thresholds', help='Training-only post-fusion calibration')
     parser.add_argument('--readout-mode', choices=('identity', 'clip', 'count4', 'count16'))
+    parser.add_argument('--membrane-mode', choices=('identity', 'fixed', 'local'))
     args = parser.parse_args()
+    if args.membrane_mode and args.readout_mode not in ('count4', 'count16'):
+        parser.error('Membrane probe requires calibrated count readout')
     if bool(args.readout_thresholds) != bool(args.readout_mode):
         parser.error('Readout mode and thresholds must be specified together')
     if args.readout_mode and not args.count_thresholds:
@@ -177,6 +180,10 @@ def main():
         if args.readout_mode:
             from cosdh_readout import CoSDHReadout
             readout = CoSDHReadout(model, args.readout_thresholds, args.readout_mode)
+        membrane = None
+        if args.membrane_mode:
+            from cosdh_membrane import CoSDHMembrane
+            membrane = CoSDHMembrane(model, args.readout_thresholds, args.membrane_mode, int(args.readout_mode[5:]))
         if not args.wire_codec and not args.count_wire:
             import zlib
             def forbidden(*args, **kwargs): raise AssertionError('Ordinary evaluation must not use codec')
@@ -224,6 +231,11 @@ def main():
         metadata['feature_only'] = args.feature_only
         metadata['readout'] = dict(mode=args.readout_mode, thresholds_sha256=digest(args.readout_thresholds),
             interface='post_fusion', original_fusion_preserved=True, membrane_conversion=False) if readout else None
+        metadata['membrane'] = dict(mode=args.membrane_mode, single_frame=True, added_parameters=0,
+            gate='none' if args.membrane_mode == 'identity' else ('theta/(theta+local)' if args.membrane_mode == 'local' else '0.5'),
+            max_replaced=args.membrane_mode != 'identity') if membrane else None
+        if membrane and args.membrane_mode != 'identity':
+            metadata['readout'].update(original_fusion_preserved=False, membrane_conversion=True)
         metadata['count_conversion'] = dict(steps=args.count_steps, thresholds_sha256=digest(args.count_thresholds),
             stage_quotas=args.count_event_quotas,wire=args.count_wire,
             scope='Frozen remote-only decoder-input IF counts; original masks/decoder/fusion; optional crossing-time quotas and integer wire') if counts else None
@@ -300,6 +312,7 @@ def main():
                 if wire:wire.begin(batch,str(ids[index]))
                 if counts:counts.begin()
                 if readout:readout.begin()
+                if membrane:membrane.begin()
                 torch.cuda.synchronize()
                 t0 = time.perf_counter()
                 result = inference_utils.inference_late_fusion(batch, model, dataset)
@@ -335,6 +348,9 @@ def main():
                     row['count_conversion'] = counts.finish()
                     row['count_conversion']['codec_executed'] = args.count_wire
                 if readout:row['readout'] = readout.finish()
+                if membrane:
+                    row['membrane'] = membrane.finish()
+                    row['readout'].update(original_fusion_preserved=args.membrane_mode=='identity', membrane_conversion=args.membrane_mode!='identity')
                 rows.append(row)
                 if wire:row['wire']=wire.finish(index)
                 with (output / 'frames.jsonl').open('a', encoding='utf-8') as f:
@@ -347,6 +363,7 @@ def main():
         hook.remove()
         if wire:wire.close()
         if readout:readout.close()
+        if membrane:membrane.close()
         if counts:
             counts.close()
             original = torch.load(str(checkpoint), map_location='cpu')
@@ -377,6 +394,7 @@ def main():
         summary['feature_only'] = args.feature_only
         summary['count_conversion'] = metadata['count_conversion']
         summary['readout'] = metadata['readout']
+        summary['membrane'] = metadata['membrane']
         if counts:summary['model_state_unchanged'] = True
         if args.feature_only and args.wire_codec:
             summary['wire_note']='Actual demand and three dependency-closed FP16 latent/mask sections; no late boxes; 160-byte two-way metadata included; link/IP overhead excluded'
