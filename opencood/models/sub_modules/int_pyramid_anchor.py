@@ -21,6 +21,9 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
         self.period,self.max_age,self.coverage=period,max_age,coverage
         self.train(False)
 
+    def reuse_deep(self, current, old, valid):
+        return old, None
+
     def step_spatial(self, spatial, state, meta, detach_state=True, requests=None):
         if self.training or torch.is_grad_enabled() or spatial.shape[0]!=1 or requests is not None:
             raise ValueError('Frozen single stream, no spatial masks')
@@ -55,11 +58,12 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
             if count>=self.period:refresh='period'
             elif age>=self.max_age-1e-6:refresh='age'
             elif self.coverage=='strict' and bool((~valid).any()):refresh='coverage'
+        repair = None
         if refresh:
             deep=self.core.deep_update(self.core.deep_encoder(x),old,valid)
             anchor=dict(value=deep.detach(),pose=copy.deepcopy(meta['pose']),timestamp_us=stamp,skipped=0)
         else:
-            deep=old
+            deep,repair=self.reuse_deep(x,old,valid)
             anchor=dict(state['anchor'],skipped=count)
         values.append(deep)
         features=self.core.readout(torch.cat([layer(v) for layer,v in zip(self.core.deblocks,values)],1))
@@ -68,7 +72,7 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
         new=dict(value=values[0].detach(),coarse=values[1].detach(),anchor=anchor,
             pose=copy.deepcopy(meta['pose']),scene=meta['segment'],timestamp_us=stamp)
         size=sum(v.numel()*v.element_size() for v in (new['value'],new['coarse'],anchor['value']))
-        return pred,new,dict(reset=reason,late_refresh=refresh,anchor_timestamp_us=anchor['timestamp_us'],
+        return pred,new,dict(reset=reason,late_refresh=refresh,repair=repair,anchor_timestamp_us=anchor['timestamp_us'],
             anchor_age_before_refresh=age,uncovered_fraction=uncovered,state_bytes=size,cache_bytes=size,
             cache_stages=[dict(actual_write_fraction=1.,executed_input_area_ratio=1.) for _ in range(2)]+
-                         [dict(actual_write_fraction=float(bool(refresh)),executed_input_area_ratio=float(bool(refresh)))])
+                         [repair if repair is not None else dict(actual_write_fraction=float(bool(refresh)),executed_input_area_ratio=float(bool(refresh)))])
