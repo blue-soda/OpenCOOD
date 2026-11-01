@@ -41,6 +41,9 @@ def worker(a):
         assert training_report['checkpoint_sha256']==prior['checkpoint_sha256'] and training_report['scale_sha256']==prior['scale_sha256']
         assert training_report['all_cache_states_equal'] and training_report['reference_ap70_records_equal_R088']
         expected={'reference','folded_count','event8'} | ({'folded_count_int8','event8_int8'} if a.int8_weights else set())
+        if a.integer_accum:
+            expected|={'folded_count_int8_i32','event8_int8_i32'}
+            assert training_report['integer_predictions_exact_all'] and training_report['original_five_control_ap_records_equal']
         assert set(training_report['metrics'])==expected
         if a.int8_weights:
             assert training_report['fp32_control_ap_records_equal']
@@ -75,7 +78,7 @@ def worker(a):
         if full_source:assert quantization==training_report['quantization']==training_contract['quantization']
     if a.integer_accum:
         int8_prior=json.loads(Path(a.int8_reference).read_text())
-        assert int8_prior['status']=='COMPLETED' and int8_prior['split']=='train' and int8_prior['scans']==256
+        assert int8_prior['status']=='COMPLETED' and int8_prior['split']==split and int8_prior['scans']==frames
         assert int8_prior['checkpoint_sha256']==prior['checkpoint_sha256'] and int8_prior['scale_sha256']==prior['scale_sha256']
         assert all(quantization[name]==value for name,value in int8_prior['quantization'].items())
     params={name:sum(p.numel() for p in model.parameters()) for name,model in models.items()}
@@ -84,7 +87,8 @@ def worker(a):
         scale_sha256=prior['scale_sha256'],split=split,frames=frames,steps=8,quantum=65536,initial_membrane_units=32768,
         validation_reference_sha256=digest(full_source) if full_source else None,
         training_gate_sha256=digest(Path(a.training_gate)) if full_source else None,
-        modes=list(models),parameters=params,precision='INT8 storage roundtrip, FP32 dequantized convolution and accumulation; controls FP32; TF32 disabled' if a.int8_weights else 'FP32 weights/convolution outputs/time-block accumulator; TF32 disabled',
+        modes=list(models),parameters=params,precision=('INT8 q, bounded FP32 integer GEMM, INT32 time-block accumulation, FP32 scale/tail/bias/BN; original FP32/dequantized controls; TF32 disabled' if a.integer_accum else
+            'INT8 storage roundtrip, FP32 dequantized convolution and accumulation; controls FP32; TF32 disabled' if a.int8_weights else 'FP32 weights/convolution outputs/time-block accumulator; TF32 disabled'),
         weight_bits=8 if a.int8_weights else None,quantization=quantization,
         integer_accum=a.integer_accum,int8_source_sha256=digest(Path(a.int8_reference)) if a.integer_accum else None,
         integer_boundary='Bounded integer dot via dense FP32 GEMM with TF32 off; checked integer outputs converted to INT32; real INT32 time-block adds; one FP32 output scale; analog tail/bias/BN FP32. Not native INT8 kernel.' if a.integer_accum else None,
@@ -153,7 +157,7 @@ def worker(a):
         original_five_control_ap_records_equal=True if a.integer_accum else None,
         reference_ap70_records_equal_R088=True if not full_source else None,
         reference_raw_ap_equal_R089=True if full_source else None,all_cache_states_equal=True,timing_valid=False,
-        caveat='FP32 summation-order diagnostic; split explicitly recorded, validation-selected seed303 not independent test. Dense repeated Conv FLOPs include simulation overhead; no sparse hardware claim. Pillar computed once for shared spatial inputs and excluded from per-arm core budgets.'))
+        caveat='Frozen numerical diagnostic; split explicitly recorded, validation-selected seed303 not independent test. Dense repeated Conv/GEMM FLOPs include simulation overhead; integer adds/scaling separately in frame sites; no sparse hardware claim. Pillar computed once for shared spatial inputs and excluded from per-arm core budgets.'))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
 
@@ -164,12 +168,13 @@ def main():
     p.add_argument('--validation-reference');p.add_argument('--training-gate')
     p.add_argument('--int8-weights',action='store_true');p.add_argument('--fp32-reference')
     p.add_argument('--integer-accum',action='store_true');p.add_argument('--int8-reference');a=p.parse_args();out=Path(a.output)
-    if a.integer_accum and (not a.int8_weights or not a.int8_reference or a.validation_reference):
-        p.error('Integer study currently requires train256, INT8 controls and completed INT8 training reference')
+    if a.integer_accum and (not a.int8_weights or not a.int8_reference):
+        p.error('Integer study requires INT8 controls and completed INT8 reference on the same split')
     if a.int8_weights and not a.fp32_reference:p.error('INT8 study requires a completed FP32 diagnostic on the same split')
     if a.validation_reference and not a.training_gate:p.error('Full validation requires completed frozen three-arm training diagnostic')
     if a.worker:
-        signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('1h frozen FP32 diagnostic budget')));signal.alarm(3600)
+        budget=5400 if a.integer_accum and a.validation_reference else 3600
+        signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('Frozen diagnostic budget: %ds'%budget)));signal.alarm(budget)
         try:worker(a)
         except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
         return
