@@ -76,7 +76,9 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
             anchor=dict(value=keep(deep),pose=copy.deepcopy(meta['pose']),timestamp_us=stamp,skipped=0)
         else:
             deep,repair=self.reuse_deep(x,old,valid)
-            anchor=dict(state['anchor'],value=keep(state['anchor']['value']),skipped=count)
+            anchor=dict(state['anchor'],skipped=count)
+            if differentiable and detach_state:
+                anchor['value']=keep(anchor['value'])
         values.append(deep)
         features=self.core.readout(torch.cat([layer(v) for layer,v in zip(self.core.deblocks,values)],1))
         pred=dict(psm=self.core.cls_head(features),rm=self.core.reg_head(features))
