@@ -1,4 +1,4 @@
-"""First plain BEV stage analytic IF activations, both agents and both paths.
+"""Plain BEV stage analytic IF activations, both agents and both paths.
 
 This is a partial encoder conversion: PillarVFE and subsequent stages stay ANN.
 """
@@ -44,9 +44,14 @@ def activate(x, scale, mode, surrogate=False, initial_voltage=0.):
 class CoSDHFrontStage:
     def __init__(self, model, thresholds, mode, surrogate=False, audit_gradients=False, initial_voltage=0.):
         t=json.loads(Path(thresholds).read_text())
-        assert t['interface']=='backbone.blocks.0' and t['shared_agent_thresholds'] and t['expected_calls_per_forward']==8
         assert type(model.backbone).__name__=='BaseBEVBackbone'
-        modules=dict(model.named_modules()); self.mode=mode;self.calls=[0]*4;self.first={};self.delta={};self.handles=[]
+        assert t['interface'] in ('backbone.blocks.0','backbone.blocks.1')
+        self.stage=int(t['interface'].split('.')[-1])
+        expected=[t['interface']+'.'+n for n,m in model.backbone.blocks[self.stage].named_children() if type(m).__name__=='ReLU']
+        assert t['module_names']==expected and t['shared_agent_thresholds']
+        self.sites=len(expected)
+        assert self.sites==(4 if self.stage==0 else 6) and t['expected_calls_per_forward']==2*self.sites
+        modules=dict(model.named_modules()); self.mode=mode;self.calls=[0]*self.sites;self.first={};self.delta={};self.handles=[]
         self.surrogate=surrogate;self.audit_gradients=audit_gradients;self.gradients={}
         self.initial_voltage=initial_voltage
         for phase,name in enumerate(t['module_names']):
@@ -72,18 +77,19 @@ class CoSDHFrontStage:
             return value
         return apply
 
-    def begin(self): self.calls=[0]*4;self.first={};self.delta={};self.gradients={}
+    def begin(self): self.calls=[0]*self.sites;self.first={};self.delta={};self.gradients={}
 
     def gradient_summary(self):
-        assert self.audit_gradients and set(self.gradients)==set(range(4))
+        assert self.audit_gradients and self.stage==0 and set(self.gradients)==set(range(self.sites))
         assert all(len(v)==2 and all(g>0 for g in v) for v in self.gradients.values())
         return dict(both_agents_nonzero=True, all_four_sites=True, mean_abs=self.gradients)
 
     def finish(self):
-        assert self.calls==[2]*4 and len(self.delta)==4
+        assert self.calls==[2]*self.sites and len(self.delta)==self.sites
         return dict(mode=self.mode,calls=self.calls[:],agents=2,paths_bitwise_equal=True,
             initial_voltage_threshold_fraction=self.initial_voltage,
-            activation_abs_change=[self.delta[i] for i in range(4)],first_stage_only=True,whole_encoder_snn=False)
+            activation_abs_change=[self.delta[i] for i in range(self.sites)],stage_index=self.stage,
+            first_stage_only=self.stage==0,whole_encoder_snn=False)
 
     def close(self):
         for h in self.handles:h.remove()
