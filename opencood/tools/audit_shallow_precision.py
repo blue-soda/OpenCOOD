@@ -43,6 +43,11 @@ def run(a):
     cfg = load_yaml(a.config)
     model = train_utils.create_model(cfg).cuda().eval()
     ref = train_utils.create_model(load_yaml(a.reference_config)).cuda().eval()
+    # Terminal configs enable wire accounting; diagnostic forwards must not.
+    for m in (model, ref):
+        m.snapshot_measure_bytes = False
+        m.packet_roundtrip = False
+        m.snapshot_packet_directory = None
     state = torch.load(a.checkpoint, map_location='cpu')
     model.load_state_dict(state, strict=True); ref.load_state_dict(state, strict=True)
     assert sum(p.numel() for p in model.parameters()) == sum(p.numel() for p in ref.parameters()) == 3374583
