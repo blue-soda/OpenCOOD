@@ -5,9 +5,10 @@ This is a partial encoder conversion: PillarVFE and subsequent stages stay ANN.
 import json
 from pathlib import Path
 import torch
+from cosdh_readout import _CountReadout
 
 
-def activate(x, scale, mode):
+def activate(x, scale, mode, surrogate=False):
     if x.ndim != 4 or x.shape[0] != 2 or scale.shape != (1,x.shape[1],1,1):
         raise ValueError('Two participants and shared channel scales required')
     if not torch.isfinite(x).all() or (x<0).any() or not torch.isfinite(scale).all() or (scale<=0).any():
@@ -16,15 +17,17 @@ def activate(x, scale, mode):
     if mode=='clip': return torch.minimum(x,scale)
     if mode not in ('count16','count32'): raise ValueError('Unsupported activation')
     steps=int(mode[5:]);theta=scale/steps
+    if surrogate: return _CountReadout.apply(x,scale,steps)
     return torch.floor(x/theta).clamp(0,steps)*theta
 
 
 class CoSDHFrontStage:
-    def __init__(self, model, thresholds, mode):
+    def __init__(self, model, thresholds, mode, surrogate=False, audit_gradients=False):
         t=json.loads(Path(thresholds).read_text())
         assert t['interface']=='backbone.blocks.0' and t['shared_agent_thresholds'] and t['expected_calls_per_forward']==8
         assert type(model.backbone).__name__=='BaseBEVBackbone'
         modules=dict(model.named_modules()); self.mode=mode;self.calls=[0]*4;self.first={};self.delta={};self.handles=[]
+        self.surrogate=surrogate;self.audit_gradients=audit_gradients;self.gradients={}
         for phase,name in enumerate(t['module_names']):
             assert type(modules[name]).__name__=='ReLU'
             scale=torch.tensor(t['phases'][str(phase)]['range_p999'],device=next(model.parameters()).device).reshape(1,-1,1,1)
@@ -32,16 +35,28 @@ class CoSDHFrontStage:
 
     def hook(self, phase, scale):
         def apply(module,inputs,output):
-            value=activate(output,scale,self.mode);self.calls[phase]+=1
+            value=activate(output,scale,self.mode,self.surrogate);self.calls[phase]+=1
             if self.calls[phase]%2:
                 self.first[phase]=value.detach().clone()
                 self.delta[phase]=float((value-output).detach().abs().mean())
             else:
                 assert torch.equal(self.first[phase],value), 'Confidence and communication paths diverged'
+                if self.audit_gradients:
+                    assert value.requires_grad
+                    def record(grad):
+                        assert torch.isfinite(grad).all()
+                        self.gradients[phase]=[float(v.abs().mean()) for v in grad]
+                        return grad
+                    value.register_hook(record)
             return value
         return apply
 
-    def begin(self): self.calls=[0]*4;self.first={};self.delta={}
+    def begin(self): self.calls=[0]*4;self.first={};self.delta={};self.gradients={}
+
+    def gradient_summary(self):
+        assert self.audit_gradients and set(self.gradients)==set(range(4))
+        assert all(len(v)==2 and all(g>0 for g in v) for v in self.gradients.values())
+        return dict(both_agents_nonzero=True, all_four_sites=True, mean_abs=self.gradients)
 
     def finish(self):
         assert self.calls==[2]*4 and len(self.delta)==4
@@ -58,6 +73,10 @@ def self_test():
     assert activate(x,scale,'identity') is x
     for steps in (16,32):assert torch.equal(activate(x,scale,'count'+str(steps)),torch.floor(x*steps).clamp(0,steps)/steps)
     assert torch.equal(activate(x,scale,'clip'),x.clamp(max=1)) and x.max()==2
+    for mode in ('count16','count32'):
+        z=x.clone().requires_grad_(True);value=activate(z,scale,mode,surrogate=True)
+        assert torch.equal(value.detach(),activate(x,scale,mode))
+        value.sum().backward();assert torch.equal(z.grad,(x<=scale).float())
     print('Both-agent IF grid, saturation, clipping and input preservation passed')
 
 

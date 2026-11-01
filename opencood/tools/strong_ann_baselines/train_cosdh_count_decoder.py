@@ -35,7 +35,14 @@ def main():
     p.add_argument('--readout-thresholds')
     p.add_argument('--readout-mode', choices=('identity', 'clip', 'count4', 'count16'))
     p.add_argument('--membrane-mode', choices=('identity', 'fixed', 'local'))
+    p.add_argument('--front-thresholds')
+    p.add_argument('--front-mode', choices=('identity', 'clip', 'count16', 'count32'))
+    p.add_argument('--train-front-stage', action='store_true')
     a = p.parse_args()
+    if bool(a.front_thresholds) != bool(a.front_mode) or bool(a.front_mode) != a.train_front_stage:
+        p.error('Front adaptation requires thresholds, mode and --train-front-stage together')
+    if a.train_front_stage and (a.membrane_mode != 'local' or a.readout_mode != 'count16' or a.steps != 8):
+        p.error('Front adaptation requires the registered IF8/local membrane/Count16 receiver')
     if a.membrane_mode and a.readout_mode not in ('count4', 'count16'):
         p.error('Membrane adaptation requires calibrated count readout')
     if bool(a.readout_thresholds) != bool(a.readout_mode):
@@ -66,14 +73,19 @@ def main():
     for param in model.parameters(): param.requires_grad_(False)
     names = []
     for name, module in model.named_modules():
-        if name.startswith('naive_compressor_list.') and '.decoder.' in name and isinstance(module, torch.nn.Conv2d):
+        decoder = name.startswith('naive_compressor_list.') and '.decoder.' in name
+        front_conv = a.train_front_stage and name.startswith('backbone.blocks.0.')
+        if (decoder or front_conv) and isinstance(module, torch.nn.Conv2d):
             for suffix, param in module.named_parameters(recurse=False):
                 param.requires_grad_(True); names.append(name+'.'+suffix)
-    assert len(names) == 12, names
+    assert len(names) == (16 if a.train_front_stage else 12), names
+    if a.train_front_stage:
+        assert {n for n in names if n.startswith('backbone.')} == {
+            'backbone.blocks.0.'+str(i)+'.weight' for i in (1,4,7,10)}
     parameters = [v for v in model.parameters() if v.requires_grad]
     optimizer = torch.optim.AdamW(parameters, lr=1e-5, weight_decay=1e-4)
     criterion = train_utils.create_loss(cfg)
-    counts = CoSDHCounts(model, a.thresholds, a.steps) if a.steps else None
+    counts = CoSDHCounts(model, a.thresholds, a.steps, surrogate=a.train_front_stage) if a.steps else None
     readout = None
     if a.readout_mode:
         from cosdh_readout import CoSDHReadout
@@ -82,16 +94,23 @@ def main():
     if a.membrane_mode:
         from cosdh_membrane import CoSDHMembrane
         membrane = CoSDHMembrane(model, a.readout_thresholds, a.membrane_mode, int(a.readout_mode[5:]))
+    front = None
+    if a.train_front_stage:
+        from cosdh_front_stage import CoSDHFrontStage
+        front = CoSDHFrontStage(model, a.front_thresholds, a.front_mode, surrogate=True, audit_gradients=a.smoke)
     dataset = build_dataset(cfg, visualize=False, train=False)
     assert list(dataset.split_info) == train_ids
     contract = dict(epochs=3, batch_size=1, seed=303, lr=1e-5, weight_decay=1e-4, optimizer='AdamW',
         grad_clip=10., steps=a.steps, trainable_names=names, trainable_parameters=sum(v.numel() for v in parameters),
-        scope='Shared local/remote decoder convolutions only; all other tensors and all BN frozen; model.eval inference masks',
+        scope=('Shared first BEV stage four convolutions plus shared decoder convolutions; all other tensors and all BN frozen; model.eval inference masks' if front else 'Shared local/remote decoder convolutions only; all other tensors and all BN frozen; model.eval inference masks'),
         preprocessing='Common training split with inference preprocessing, no random augmentation; shuffled each epoch',
         selection='Last epoch3 only; no intermediate AP selection; pre-adaptation references retained',
         checkpoint_sha256=sha(checkpoint), train_split_sha256=sha(a.train_split), val_split_sha256=sha(a.val_split),
         thresholds_sha256=sha(a.thresholds), source_sha256=sha(__file__), no_wire=True,
         membrane_mode=a.membrane_mode, membrane_parameters=0,
+        train_front_stage=a.train_front_stage, front_mode=a.front_mode,
+        front_thresholds_sha256=sha(a.front_thresholds) if front else None,
+        sender_surrogate=a.train_front_stage, front_surrogate=bool(front),
         readout_mode=a.readout_mode, readout_thresholds_sha256=sha(a.readout_thresholds) if readout else None,
         readout_surrogate='Unit derivative on [0,scale], zero outside; exact IF forward' if readout and a.readout_mode.startswith('count') else None)
     write(root/'contract.json', contract)
@@ -110,14 +129,17 @@ def main():
             if counts: counts.begin()
             if readout: readout.begin()
             if membrane: membrane.begin()
+            if front: front.begin()
             optimizer.zero_grad(set_to_none=True)
             output = model(batch['ego'])
             if counts: counts.finish()
             if readout: readout.finish()
             membrane_diagnostic = membrane.finish() if membrane else None
+            front_diagnostic = front.finish() if front else None
             loss = criterion(output, batch['ego']['label_dict'])
             assert torch.isfinite(loss)
             loss.backward()
+            front_gradient = front.gradient_summary() if front and a.smoke else None
             norm = torch.nn.utils.clip_grad_norm_(parameters, 10., error_if_nonfinite=True)
             assert any(v.grad is not None and torch.count_nonzero(v.grad) > 0 for v in parameters)
             optimizer.step(); updates += 1; loss_sum += float(loss.detach())
@@ -126,6 +148,8 @@ def main():
                     optimizer_steps=updates, loss=float(loss.detach()), gradient_norm=float(norm),
                     elapsed_seconds=time.time()-start, order_sha256=order_hash)
                 if membrane_diagnostic: row['membrane'] = membrane_diagnostic
+                if front_diagnostic: row['front_stage'] = front_diagnostic
+                if front_gradient: row['front_gradient'] = front_gradient
                 write(root/'progress.json', row)
                 with (root/'steps.jsonl').open('a') as f: f.write(json.dumps(row)+'\n')
             del output, loss, batch
