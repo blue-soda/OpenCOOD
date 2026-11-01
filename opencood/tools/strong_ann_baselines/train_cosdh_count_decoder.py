@@ -83,6 +83,8 @@ def main():
         assert {n for n in names if n.startswith('backbone.')} == {
             'backbone.blocks.0.'+str(i)+'.weight' for i in (1,4,7,10)}
     parameters = [v for v in model.parameters() if v.requires_grad]
+    if a.train_front_stage:
+        assert sum(v.numel() for v in parameters) == 970880
     optimizer = torch.optim.AdamW(parameters, lr=1e-5, weight_decay=1e-4)
     criterion = train_utils.create_loss(cfg)
     counts = CoSDHCounts(model, a.thresholds, a.steps, surrogate=a.train_front_stage) if a.steps else None
@@ -156,6 +158,8 @@ def main():
         state = model.state_dict()
         changed = [k for k,v in state.items() if not torch.equal(v.detach().cpu(), original[k])]
         assert changed and set(changed).issubset(names), changed
+        if front and a.smoke:
+            assert set(changed) == set(names), 'Every registered front/decoder tensor must update in admission'
         assert all(torch.isfinite(v).all() for v in parameters)
         history.append(dict(epoch=epoch, samples=len(order), loss=loss_sum/len(order), order_sha256=order_hash,
                             changed_names=changed, frozen_tensors_unchanged=True))
