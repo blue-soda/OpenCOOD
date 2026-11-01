@@ -62,3 +62,37 @@ def coded_anchor(base, scales, mode='count', steps=8):
     core.deep_update.residual[1]=FixedPointIFActivation(scales,mode,steps).to(device)
     model.core=core;model.train(False)
     return model
+
+
+class CodedReadout(nn.Module):
+    """Two decoded input codes; BN and final activation remain analog."""
+    def __init__(self, source, scales, mode='count', steps=8):
+        super().__init__()
+        if mode not in ('clip','count','if','zero_mid'):
+            raise ValueError('Unsupported readout coding mode')
+        if len(source.layers)!=1 or not isinstance(source.layers[0].double_conv[2],nn.ReLU):
+            raise ValueError('Expected frozen two-convolution BN readout')
+        self.body=copy.deepcopy(source)
+        self.input_codec=nn.Identity() if mode=='zero_mid' else FixedPointIFActivation(scales['input'],mode,steps)
+        self.body.layers[0].double_conv[2]=FixedPointIFActivation(scales['middle'],'zero' if mode=='zero_mid' else mode,steps)
+
+    @property
+    def middle_codec(self):
+        return self.body.layers[0].double_conv[2]
+
+    def forward(self,x):
+        if bool((x<0).any()):raise ValueError('Readout input code requires nonnegative deblock output')
+        return self.body(self.input_codec(x))
+
+    def coding_stats(self):
+        return dict(input=getattr(self.input_codec,'last_stats',None),middle=self.middle_codec.last_stats)
+
+
+def readout_coded_anchor(base,scales,mode='count',steps=8):
+    model=AnchoredLatePyramidDetector(base,period=2,max_age=.25,coverage='strict')
+    core=nn.Module()
+    for name,module in base.core.named_children():
+        core.add_module(name,CodedReadout(module,scales,mode,steps) if name=='readout' else module)
+    if not hasattr(core,'dir_head'):core.dir_head=None
+    model.core=core.to(base.core.deep_update.history.weight.device);model.train(False)
+    return model

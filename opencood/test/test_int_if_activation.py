@@ -2,7 +2,8 @@ import unittest
 import numpy as np
 import torch
 from test_int_pyramid_cache import fixture
-from opencood.models.sub_modules.int_if_activation import FixedPointIFActivation,coded_anchor
+from opencood.models.sub_modules.int_if_activation import FixedPointIFActivation,coded_anchor,readout_coded_anchor
+from opencood.models.sub_modules.int_pyramid_anchor import AnchoredLatePyramidDetector
 
 
 class IFActivationTests(unittest.TestCase):
@@ -45,6 +46,27 @@ class IFActivationTests(unittest.TestCase):
         with torch.no_grad():actual=zero(torch.randn(1,2,5,7)*10)
         self.assertEqual(int(torch.count_nonzero(actual)),0)
         self.assertEqual(zero.last_stats['if_neuron_updates'],0)
+
+    def test_readout_codes_preserve_cache_on_refresh_and_reuse(self):
+        base=fixture();scales=dict(input=torch.ones(384),middle=torch.ones(256))
+        models=dict(ann=AnchoredLatePyramidDetector(base),count=readout_coded_anchor(base,scales,'count'),
+                    spike=readout_coded_anchor(base,scales,'if'),zero=readout_coded_anchor(base,scales,'zero_mid'))
+        self.assertIsInstance(base.core.readout.layers[0].double_conv[2],torch.nn.ReLU)
+        states={k:None for k in models};x=torch.randn(1,64,24,32)
+        self.assertEqual(len({sum(p.numel() for p in m.parameters()) for m in models.values()}),1)
+        with torch.no_grad():
+            for frame in range(3):
+                preds={};meta=dict(timestamp_us=frame*100000,segment='a',pose=np.eye(4))
+                for name,model in models.items():
+                    pred,states[name],_=model.step_spatial(x,states[name],meta);preds[name]=pred
+                    for key in ('value','coarse'):self.assertTrue(torch.equal(states[name][key],states['ann'][key]))
+                    self.assertTrue(torch.equal(states[name]['anchor']['value'],states['ann']['anchor']['value']))
+                self.assertTrue(all(torch.equal(preds['count'][k],preds['spike'][k]) for k in preds['count']))
+                self.assertEqual(models['spike'].core.readout.middle_codec.calls,frame+1)
+
+    def test_readout_rejects_signed_input(self):
+        model=readout_coded_anchor(fixture(),dict(input=torch.ones(384),middle=torch.ones(256)))
+        with torch.no_grad(),self.assertRaises(ValueError):model.core.readout(-torch.ones(1,384,3,3))
 
 
 if __name__=='__main__':unittest.main()
