@@ -1,6 +1,6 @@
 import unittest
 import torch
-from opencood.models.sub_modules.int_integer_readout import bounded_integer_conv,IntegerCodeConv
+from opencood.models.sub_modules.int_integer_readout import bounded_integer_conv,IntegerCodeConv,bitplane_cost
 
 
 class IntegerReadoutTests(unittest.TestCase):
@@ -38,6 +38,32 @@ class IntegerReadoutTests(unittest.TestCase):
         self.assertTrue(torch.equal(a,b))
         self.assertEqual(count.quantization,event.quantization)
         self.assertEqual(event.last_stats['integer_time_block_additions'],7*a.numel())
+
+    def test_bitplane_all_counts_negative_weights_and_tail(self):
+        conv=torch.nn.Conv2d(1,2,3,padding=1)
+        with torch.no_grad():conv.weight[0].fill_(-.7);conv.weight[1].fill_(.3)
+        scales=torch.ones(1,1,1,1)
+        count=IntegerCodeConv(conv,scales,'folded_count').eval()
+        bits=IntegerCodeConv(conv,scales,'bitplane').eval()
+        x=torch.arange(12).float().reshape(1,1,3,4)/8
+        with torch.no_grad():a=count(x);b=bits(x)
+        self.assertTrue(torch.equal(a,b))
+        self.assertEqual(count.quantization,bits.quantization)
+        self.assertEqual(bits.last_stats['integer_bit_shifts'],3*a.numel())
+
+    def test_bitplane_delivery_histogram_matches_explicit_fanout(self):
+        for h,w in ((1,1),(1,9),(3,3)):
+            x=(torch.arange(h*w).reshape(1,1,h,w)%9).int()
+            actual=bitplane_cost(x,2)
+            expected=[0]*9
+            for y in range(h):
+                for z in range(w):
+                    for dy in (-1,0,1):
+                        for dz in (-1,0,1):
+                            if 0<=y+dy<h and 0<=z+dz<w:expected[int(x[0,0,y,z])]+=2
+            self.assertEqual(actual['valid_delivery_histogram'],expected)
+            self.assertLessEqual(actual['bitplane_shifted_ac'],actual['unary_event_ac'])
+            self.assertGreaterEqual(actual['bitplane_shifted_ac'],actual['sparse_count_mac'])
 
 
 if __name__=='__main__':unittest.main()

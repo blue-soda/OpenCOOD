@@ -10,6 +10,26 @@ from torch.nn import functional as F
 from opencood.models.sub_modules.int_folded_readout import FoldedCodeConv
 
 
+def bitplane_cost(counts,out_channels):
+    """Ideal valid spatial deliveries, no skipping of zero weights; not GPU work."""
+    assert counts.dtype==torch.int32 and bool(((counts>=0)&(counts<=8)).all())
+    h,w=counts.shape[-2:]
+    y=torch.arange(h,device=counts.device);x=torch.arange(w,device=counts.device)
+    fy=sum(((y+d>=0)&(y+d<h)).long() for d in (-1,0,1))
+    fx=sum(((x+d>=0)&(x+d<w)).long() for d in (-1,0,1))
+    fanout=fy[:,None]*fx[None,:]*out_channels
+    histogram=[int((counts==v).sum()) for v in range(9)]
+    weighted=[int(((counts==v).long()*fanout).sum()) for v in range(9)]
+    pop=[bin(v).count('1') for v in range(9)]
+    return dict(count_histogram=histogram,valid_delivery_histogram=weighted,
+        unary_event_ac=sum(v*n for v,n in enumerate(weighted)),
+        sparse_count_mac=sum(weighted[1:]),bitplane_shifted_ac=sum(p*n for p,n in zip(pop,weighted)),
+        bitplane_source_packets=sum(p*n for p,n in zip(pop,histogram)),
+        unary_source_packets=sum(v*n for v,n in enumerate(histogram)),
+        count_source_packets=sum(histogram[1:]),
+        scope='Ideal nonzero activations, valid 3x3 fanout, all output channels, no zero-weight skipping; shift/routing/memory/neuron costs separate')
+
+
 def bounded_integer_conv(values,qweight,max_input=8,audit_seed=None):
     assert values.dtype==torch.int32 and qweight.dtype==torch.int8
     assert qweight.shape[1]==values.shape[1] and qweight.shape[2:]==(3,3)
@@ -35,7 +55,8 @@ def bounded_integer_conv(values,qweight,max_input=8,audit_seed=None):
 
 class IntegerCodeConv(FoldedCodeConv):
     def __init__(self,source,scales,mode):
-        super().__init__(source,scales,mode,8)
+        super().__init__(source,scales,'folded_count' if mode=='bitplane' else mode,8)
+        self.mode=mode
         self.calls=0
 
     def forward(self,x):
@@ -50,6 +71,15 @@ class IntegerCodeConv(FoldedCodeConv):
         if self.mode=='folded_count':
             accumulator,checks=bounded_integer_conv(counts,self.event_int8,8,seed)
             calls=2;integer_adds=0
+        elif self.mode=='bitplane':
+            accumulator=None
+            for bit in range(4):
+                plane=(counts>>bit)&1
+                contribution,nchecks=bounded_integer_conv(plane,self.event_int8,1,seed)
+                contribution=contribution<<bit
+                accumulator=contribution if accumulator is None else accumulator+contribution
+                checks+=nchecks
+            calls=5;integer_adds=3*accumulator.numel()
         else:
             membrane=torch.full_like(drive,32768);emitted=torch.zeros_like(drive);accumulator=None
             for _ in range(8):
@@ -73,6 +103,9 @@ class IntegerCodeConv(FoldedCodeConv):
             integer_dot_bound=bound,integer_time_block_additions=integer_adds,
             post_accumulator_scale_muls=output.numel(),sampled_int64_dot_checks=checks,
             accumulator_dtype='int32',dot_backend='dense unfold+FP32 GEMM with integer checks; not native INT8')
+        if self.mode=='bitplane':
+            self.last_stats['integer_bit_shifts']=3*accumulator.numel()
+            self.last_stats['ideal_spatial_cost']=bitplane_cost(counts,self.source.out_channels)
         return output
 
 
