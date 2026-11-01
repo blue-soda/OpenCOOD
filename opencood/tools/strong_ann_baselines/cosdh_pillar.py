@@ -27,9 +27,10 @@ def activate_pillar(x, scale, mode, initial_voltage=0., surrogate=False):
 
 
 class CoSDHPillar:
-    def __init__(self,model,thresholds,mode,initial_voltage=0.,surrogate=False,encoder_paths=2):
+    def __init__(self,model,thresholds,mode,initial_voltage=0.,surrogate=False,encoder_paths=2,audit_gradients=False):
         assert encoder_paths in (1,2)
         self.encoder_paths=encoder_paths
+        self.audit_gradients=audit_gradients
         t=json.loads(Path(thresholds).read_text())
         assert t['interface']=='pillar_vfe.pfn_layers.0.norm' and t['before_point_max'] and t['shared_agent_thresholds']
         assert len(model.pillar_vfe.pfn_layers)==1
@@ -54,10 +55,23 @@ class CoSDHPillar:
         self.calls+=1
         self.agent_pillars=[int((self.agent_ids==i).sum()) for i in (0,1)]
         self.agent_delta=[float(delta[self.agent_ids==i].mean()) for i in (0,1)]
+        if self.audit_gradients:
+            assert value.requires_grad
+            agent_ids=self.agent_ids.detach().clone()
+            def record(grad):
+                assert torch.isfinite(grad).all()
+                self.gradients=[float(grad[agent_ids==i].abs().mean()) for i in (0,1)]
+                return grad
+            value.register_hook(record)
         return value
 
     def begin(self):
         self.input_calls=0;self.calls=0;self.agent_ids=None;self.agent_pillars=[];self.agent_delta=[]
+        self.gradients=[]
+
+    def gradient_summary(self):
+        assert self.audit_gradients and len(self.gradients)==2 and all(x>0 for x in self.gradients)
+        return dict(both_agents_nonzero=True,mean_abs=self.gradients)
 
     def finish(self):
         assert self.input_calls==self.calls==1 and all(n>0 for n in self.agent_pillars)

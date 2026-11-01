@@ -82,9 +82,10 @@ class CoSDHFrontStage:
     def begin(self): self.calls=[0]*self.sites;self.first={};self.delta={};self.gradients={}
 
     def gradient_summary(self):
-        assert self.audit_gradients and self.stage==0 and set(self.gradients)==set(range(self.sites))
+        assert self.audit_gradients and set(self.gradients)==set(range(self.sites))
         assert all(len(v)==2 and all(g>0 for g in v) for v in self.gradients.values())
-        return dict(both_agents_nonzero=True, all_four_sites=True, mean_abs=self.gradients)
+        return dict(both_agents_nonzero=True, all_four_sites=self.stage==0,
+            stage=self.stage,all_sites=True,sites=self.sites,mean_abs=self.gradients)
 
     def finish(self):
         assert self.calls==[self.encoder_paths]*self.sites and len(self.delta)==self.sites
