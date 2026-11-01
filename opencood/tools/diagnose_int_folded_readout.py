@@ -39,7 +39,12 @@ def worker(a):
         assert training_report['status']=='COMPLETED' and training_report['split']=='train' and training_report['scans']==256
         assert training_report['checkpoint_sha256']==prior['checkpoint_sha256'] and training_report['scale_sha256']==prior['scale_sha256']
         assert training_report['all_cache_states_equal'] and training_report['reference_ap70_records_equal_R088']
-        assert set(training_report['metrics'])=={'reference','folded_count','event8'}
+        expected={'reference','folded_count','event8'} | ({'folded_count_int8','event8_int8'} if a.int8_weights else set())
+        assert set(training_report['metrics'])==expected
+        if a.int8_weights:
+            assert training_report['fp32_control_ap_records_equal']
+            training_contract=json.loads((training_gate.parent/'contract.json').read_text())
+            assert training_contract['weight_bits']==8 and training_contract['steps']==8 and training_contract['initial_membrane_units']==32768
         gold=[json.loads(x) for x in (full_source.parent/'frames.jsonl').read_text().splitlines()]
     frames=5794 if full_source else 256
     split='val' if full_source else 'train'
@@ -57,12 +62,13 @@ def worker(a):
     quantization={}
     if a.int8_weights:
         fp32_source=Path(a.fp32_reference);fp32_prior=json.loads(fp32_source.read_text())
-        assert fp32_prior['status']=='COMPLETED' and fp32_prior['split']=='train' and fp32_prior['scans']==256
+        assert fp32_prior['status']=='COMPLETED' and fp32_prior['split']==split and fp32_prior['scans']==frames
         assert fp32_prior['checkpoint_sha256']==prior['checkpoint_sha256'] and fp32_prior['scale_sha256']==prior['scale_sha256']
         for name in names[-2:]:
             block=models[name].core.readout.body.layers[0].double_conv
             quantization[name]={site:block[index].quantization for site,index in [('input',0),('middle',3)]}
         assert quantization['folded_count_int8']==quantization['event8_int8']
+        if full_source:assert quantization==training_report['quantization']==training_contract['quantization']
     params={name:sum(p.numel() for p in model.parameters()) for name,model in models.items()}
     assert len(set(params.values()))==1
     write_json(out/'contract.json',dict(source_sha256=digest(source),checkpoint_sha256=digest(Path(a.checkpoint)),
@@ -139,7 +145,7 @@ def main():
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true')
     p.add_argument('--validation-reference');p.add_argument('--training-gate')
     p.add_argument('--int8-weights',action='store_true');p.add_argument('--fp32-reference');a=p.parse_args();out=Path(a.output)
-    if a.int8_weights and (not a.fp32_reference or a.validation_reference):p.error('INT8 study requires FP32 train reference and is limited to train256 until separately gated')
+    if a.int8_weights and not a.fp32_reference:p.error('INT8 study requires a completed FP32 diagnostic on the same split')
     if a.validation_reference and not a.training_gate:p.error('Full validation requires completed frozen three-arm training diagnostic')
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('1h frozen FP32 diagnostic budget')));signal.alarm(3600)
