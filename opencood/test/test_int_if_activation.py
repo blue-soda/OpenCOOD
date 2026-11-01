@@ -40,6 +40,7 @@ class IFActivationTests(unittest.TestCase):
         for scale in ([0.],[-1.],[float('nan')]):
             with self.assertRaises(ValueError):FixedPointIFActivation(scale)
         with self.assertRaises(ValueError):FixedPointIFActivation([1.],steps=0)
+        with self.assertRaises(ValueError):FixedPointIFActivation([1.],'zero',preserve_tail=True)
 
     def test_zero_intervention_is_exact(self):
         zero=FixedPointIFActivation([.1,1.],'zero').eval()
@@ -51,7 +52,10 @@ class IFActivationTests(unittest.TestCase):
         base=fixture();scales=dict(input=torch.ones(384),middle=torch.ones(256))
         models=dict(ann=AnchoredLatePyramidDetector(base),count=readout_coded_anchor(base,scales,'count'),
                     spike=readout_coded_anchor(base,scales,'if'),zero=readout_coded_anchor(base,scales,'zero_mid'),
-                    clip_input=readout_coded_anchor(base,scales,'clip_input'),clip_middle=readout_coded_anchor(base,scales,'clip_middle'))
+                    clip_input=readout_coded_anchor(base,scales,'clip_input'),clip_middle=readout_coded_anchor(base,scales,'clip_middle'),
+                    clip_tail=readout_coded_anchor(base,scales,'clip',preserve_tail=True),
+                    count_tail=readout_coded_anchor(base,scales,'count',preserve_tail=True),
+                    if_tail=readout_coded_anchor(base,scales,'if',preserve_tail=True))
         self.assertIsInstance(base.core.readout.layers[0].double_conv[2],torch.nn.ReLU)
         states={k:None for k in models};x=torch.randn(1,64,24,32)
         self.assertEqual(len({sum(p.numel() for p in m.parameters()) for m in models.values()}),1)
@@ -63,6 +67,8 @@ class IFActivationTests(unittest.TestCase):
                     for key in ('value','coarse'):self.assertTrue(torch.equal(states[name][key],states['ann'][key]))
                     self.assertTrue(torch.equal(states[name]['anchor']['value'],states['ann']['anchor']['value']))
                 self.assertTrue(all(torch.equal(preds['count'][k],preds['spike'][k]) for k in preds['count']))
+                self.assertTrue(all(torch.equal(preds['ann'][k],preds['clip_tail'][k]) for k in preds['ann']))
+                self.assertTrue(all(torch.equal(preds['count_tail'][k],preds['if_tail'][k]) for k in preds['ann']))
                 self.assertEqual(models['spike'].core.readout.middle_codec.calls,frame+1)
 
     def test_readout_rejects_signed_input(self):
@@ -84,6 +90,23 @@ class IFActivationTests(unittest.TestCase):
             for hook in hooks:hook.remove()
             self.assertTrue(torch.equal(actual,expected))
             self.assertIsNone(coded.coding_stats()['middle' if mode=='clip_input' else 'input'])
+
+    def test_tail_bypass_is_exact_and_exceptions_emit_no_spikes(self):
+        x=torch.tensor([-.5,0.,.125,.5,1.,1.01,9.]).reshape(1,1,1,-1)
+        for steps in (4,8,16):
+            clip=FixedPointIFActivation([1.],'clip',steps,True).eval()
+            count=FixedPointIFActivation([1.],'count',steps,True).eval()
+            spike=FixedPointIFActivation([1.],'if',steps,True).eval()
+            with torch.no_grad():
+                self.assertTrue(torch.equal(clip(x),x.clamp_min(0)))
+                a=count(x);b=spike(x)
+            self.assertTrue(torch.equal(a,b))
+            self.assertTrue(torch.equal(a[x>1],x[x>1]))
+            expected=int(torch.floor(x.clamp_min(0)[x<=1]*steps).sum())
+            self.assertEqual(spike.last_stats['spike_count'],expected)
+            self.assertEqual(spike.last_stats['analog_bypass_elements'],2)
+            self.assertEqual(spike.last_stats['analog_value_payload_bytes'],8)
+            self.assertEqual(spike.last_stats['if_neuron_updates'],steps*x.numel())
 
 
 if __name__=='__main__':unittest.main()
