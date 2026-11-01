@@ -1,0 +1,118 @@
+"""Frozen train256 FP32 scale folding and time-block accumulation diagnostic."""
+import argparse
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
+import torch
+from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
+from opencood.models.sub_modules.int_if_activation import readout_coded_anchor
+from opencood.models.sub_modules.int_folded_readout import folded_readout,folded_stats
+from opencood.tools.calibrate_int_event_refresh import capture
+from opencood.tools.check_int_pyramid_cache import measured_step
+from opencood.tools.run_int_cache_repair import setup
+from opencood.tools.run_int_ego import loader,to_device,write_json
+from opencood.tools.launch_int_memory import digest
+from opencood.utils import eval_utils
+
+
+def worker(a):
+    out=Path(a.output);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
+    tests=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    (out/'unit_tests.log').write_bytes(tests.stdout)
+    if tests.returncode:raise RuntimeError('INT unit tests failed')
+    torch.cuda.set_per_process_memory_fraction(.45)
+    source=Path(a.source);prior=json.loads(source.read_text());contract=json.loads((source.parent/'contract.json').read_text())
+    assert prior['status']=='COMPLETED' and prior['split']=='train' and prior['scans']==256 and prior['centered']
+    assert prior['checkpoint_sha256']==digest(Path(a.checkpoint))
+    assert contract['steps']==8 and contract['quantum']==65536 and contract['centered']
+    gold=[json.loads(x) for x in (source.parent/'frames.jsonl').read_text().splitlines()]
+    a.mode='gru';a.stage='calibrate';a.content_calibration=None;a.periodic_last=0;a.max_age=.25
+    teacher,cfg,rows,provenance=setup(a);write_json(out/'provenance.json',provenance)
+    base=PyramidStateDetector(teacher,cfg).cuda().eval();saved=torch.load(a.checkpoint,map_location='cpu')
+    assert saved['contract']['teacher_sha256']==provenance['checkpoint']['sha256']
+    assert saved['contract']['data_contract']==provenance['contract'] and saved['contract']['version']==base.version
+    base.load_state_dict(saved['model'],strict=True)
+    models={name:readout_coded_anchor(base,contract['scales'],'count',8,True,32768) for name in ('reference','folded_count','event8')}
+    for name in ('folded_count','event8'):models[name].core.readout=folded_readout(models[name].core.readout,name)
+    params={name:sum(p.numel() for p in model.parameters()) for name,model in models.items()}
+    assert len(set(params.values()))==1
+    write_json(out/'contract.json',dict(source_sha256=digest(source),checkpoint_sha256=digest(Path(a.checkpoint)),
+        scale_sha256=prior['scale_sha256'],split='train',frames=256,steps=8,quantum=65536,initial_membrane_units=32768,
+        modes=list(models),parameters=params,precision='FP32 weights/convolution outputs/time-block accumulator; TF32 disabled',
+        scope='Dense GPU numerical emulation. Folded count uses two Conv per site; event8 uses nine. Bias once, unchanged BN.',
+        boundary='Library chooses within-Conv summation. Not per-synapse hardware arithmetic, sparse kernel, speed or energy evidence.',
+        trained=False,tuned=False,timing_valid=False))
+    states={name:None for name in models};base_state=None;records=[]
+    ap={name:{t:dict(tp=[],fp=[],score=[],gt=0) for t in (.5,.7)} for name in models}
+    dataset,stream=loader(rows[:256],cfg,2,303)
+    with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
+        for index,sample in enumerate(stream):
+            meta=sample['meta'];ego=to_device(sample['ego'],torch.device('cuda'));x,base_state=capture(base,ego,base_state,meta)
+            assert meta['frame']==gold[index]['frame']
+            entry=dict(frame=meta['frame'],supervised=meta['supervised'],arms={});preds={}
+            for name,model in models.items():
+                (pred,states[name],info),hook_flops=measured_step(model,x,states[name],meta);preds[name]=pred
+                assert all(torch.isfinite(value).all() for value in pred.values())
+                assert info['late_refresh']==gold[index]['arms']['ann']['refresh']
+                assert all(torch.equal(states[name][k],states['reference'][k]) for k in ('value','coarse'))
+                assert torch.equal(states[name]['anchor']['value'],states['reference']['anchor']['value'])
+                sites=None if name=='reference' else folded_stats(model.core.readout)
+                functional_flops=0 if sites is None else sum(v['functional_conv_flops'] for v in sites.values())
+                cost=hook_flops+functional_flops
+                if name=='reference':
+                    assert cost==gold[index]['arms']['ann']['core_flops']
+                else:
+                    readout_flops=sum(v['reference_conv_flops'] for v in sites.values())
+                    assert cost==entry['arms']['reference']['core_conv_flops']+readout_flops*(1 if name=='folded_count' else 8)
+                entry['arms'][name]=dict(core_conv_flops=cost,functional_conv_flops=functional_flops,sites=sites,
+                    max_abs_error={k:float((pred[k]-preds['reference'][k]).abs().max()) for k in pred},
+                    relative_mse={k:float((pred[k]-preds['reference'][k]).square().mean()/(preds['reference'][k].square().mean()+1e-12)) for k in pred})
+            if meta['supervised']:
+                data=dict(ego=ego);gt=dataset.post.generate_gt_bbx(data)
+                for name,pred in preds.items():
+                    boxes,scores=dataset.post.post_process(data,dict(ego=pred))
+                    for threshold in (.5,.7):eval_utils.caluclate_tp_fp(boxes,scores,gt,ap[name],threshold)
+            records.append(entry);log.write(json.dumps(entry)+'\n')
+            if index==31:write_json(out/'engineering.json',dict(status='PASSED',frames=32,cache_states_equal=True,conv_accounting_verified=True))
+            if (index+1)%32==0:write_json(out/'status.json',dict(status='RUNNING',phase='train_diagnostic',scans=index+1,total=256))
+    assert len(records)==256
+    write_json(out/'ap_records.json',ap)
+    old_ap=json.loads((source.parent/'ap_records.json').read_text())
+    assert ap['reference'][.7]==old_ap['count8_centered']['0.7']
+    metrics={name:dict(parameters=params[name],ap50=eval_utils.calculate_ap(ap[name],.5)[0],ap70=eval_utils.calculate_ap(ap[name],.7)[0],
+        core_conv_flops_mean=sum(r['arms'][name]['core_conv_flops'] for r in records)/256,
+        max_abs_error={k:max(r['arms'][name]['max_abs_error'][k] for r in records) for k in preds[name]},
+        mean_relative_mse={k:sum(r['arms'][name]['relative_mse'][k] for r in records)/256 for k in preds[name]},
+        model_step_ms_mean=None,timing_invalid_reason='Multi-arm instrumented numerical diagnostic; no valid timing',
+        extra_folded_weight_bytes=0 if name=='reference' else sum(v['folded_weight_bytes'] for v in records[0]['arms'][name]['sites'].values())) for name in models}
+    write_json(out/'report.json',dict(status='COMPLETED',split='train',scans=256,labels=sum(r['supervised'] for r in records),
+        checkpoint_sha256=digest(Path(a.checkpoint)),scale_sha256=prior['scale_sha256'],source_sha256=digest(source),
+        metrics=metrics,reference_ap70_records_equal_R088=True,all_cache_states_equal=True,timing_valid=False,
+        caveat='FP32 summation-order diagnostic on training prefix. Dense repeated Conv FLOPs include simulation overhead; no sparse hardware or full validation claim. Pillar computed once for shared spatial inputs and excluded from per-arm core budgets.'))
+    write_json(out/'status.json',dict(status='COMPLETED'))
+
+
+def main():
+    p=argparse.ArgumentParser()
+    for name in ('root','source','checkpoint','output'):p.add_argument('--'+name,required=True)
+    p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
+    if a.worker:
+        signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('1h frozen FP32 diagnostic budget')));signal.alarm(3600)
+        try:worker(a)
+        except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
+        return
+    free=int(subprocess.check_output(['nvidia-smi','-i',str(a.gpu),'--query-gpu=memory.free','--format=csv,noheader,nounits']).decode().strip())
+    if free<12000:raise RuntimeError('At least12GB free required')
+    out.mkdir(parents=True,exist_ok=False)
+    command=[sys.executable,'-m','opencood.tools.diagnose_int_folded_readout']+sys.argv[1:]+['--worker']
+    env=dict(os.environ,CUDA_VISIBLE_DEVICES=str(a.gpu),PYTHONPATH=str(Path.cwd()),OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1')
+    with (out/'run.log').open('x') as log:proc=subprocess.Popen(command,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=log,start_new_session=True)
+    write_json(out/'launch.json',dict(pid=proc.pid,gpu=a.gpu,command=command,created_unix=time.time(),code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()))
+    print(json.dumps(dict(pid=proc.pid,output=str(out))))
+
+
+if __name__=='__main__':main()
