@@ -69,7 +69,7 @@ def worker(a):
         candidates=configs,max_age=.25,trained=False,suite=a.suite,
         calibration_report_sha256=digest(Path(a.calibration_report)) if a.suite=='event' else None,
         calibration_budget=event_gate['metrics'] if event_gate else None,
-        policy='Fine/coarse dense every frame. Entire deep encoder/update refresh on period/age/reset; persistent deep anchor never rewarped in storage.',
+        policy='Fine/coarse dense every frame. Deep refresh follows declared periodic or evidence policy plus coverage/age/reset; persistent anchor never rewarped in storage.',
         coverage='strict fully refreshes on new-view cells; zero retains zero fill; patch repairs only missing cells for current readout without overwriting anchor.',
         scope='Fixed training-prefix diagnostic; no independent AP, GPU speedup, SNN or energy claim'))
     dataset,stream=loader(rows[:a.frames],cfg,2,303)
@@ -110,11 +110,13 @@ def worker(a):
             whole_reuse_frames=sum(r['arms'][name]['late_refresh'] is None and not (r['arms'][name].get('repair') or {}).get('active',False) for r in records),
             patch_frames=sum((r['arms'][name].get('repair') or {}).get('active',False) for r in records),
             controller_spikes=sum((r['arms'][name].get('controller') or {}).get('spike',False) for r in records),
+            controller_forced_refresh=sum((r['arms'][name].get('controller') or {}).get('forced') is not None for r in records),
             refresh_counts={str(reason):sum(r['arms'][name]['late_refresh']==reason for r in records)
                 for reason in sorted({r['arms'][name]['late_refresh'] for r in records},key=str)},
             cache_bytes=records[-1]['arms'][name]['cache_bytes'],
             uncovered_fraction_mean=sum(r['arms'][name]['uncovered_fraction'] for r in records)/len(records)) for name in models},
         caveats=['Train prefix only, not full validation; candidate boundaries predeclared.',
+                 'Event-control thresholds were selected by train refresh counts, with any residual budget differences reported; no exact-budget or SNN benefit assumed.',
                  'Zero coverage policy is explicit approximation, not boundary repair; deep stale context can miss dynamic/new-view evidence.',
                  'Conv hooks include actual refreshed deep work and full decoder, exclude Pillar and nonconv overhead; no timing claim.',
                  'Fixed-anchor refresh also changes recurrent history alignment semantics; not a pure execution optimization.'])
