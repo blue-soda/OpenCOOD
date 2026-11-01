@@ -80,7 +80,16 @@ def main():
     parser.add_argument('--third-thresholds')
     parser.add_argument('--third-mode', choices=('identity','clip','count32'))
     parser.add_argument('--third-initial-voltage', type=float, choices=(0.,.5), default=0.)
+    parser.add_argument('--pillar-thresholds')
+    parser.add_argument('--pillar-mode', choices=('identity','clip','count32'))
+    parser.add_argument('--pillar-initial-voltage', type=float, choices=(0.,.5), default=0.)
     args = parser.parse_args()
+    if bool(args.pillar_thresholds)!=bool(args.pillar_mode):
+        parser.error('Pillar thresholds and mode required together')
+    if args.pillar_mode and (args.third_mode!='count32' or args.third_initial_voltage!=0.):
+        parser.error('Pillar study retains zero-initialized Count32 third stage')
+    if args.pillar_initial_voltage and args.pillar_mode!='count32':
+        parser.error('Half-threshold pillar requires count32')
     if bool(args.third_thresholds)!=bool(args.third_mode):
         parser.error('Third-stage thresholds and mode required together')
     if args.third_mode and (args.second_mode!='count32' or args.second_initial_voltage!=.5):
@@ -223,6 +232,10 @@ def main():
         if args.third_mode:
             third=CoSDHFrontStage(model,args.third_thresholds,args.third_mode,initial_voltage=args.third_initial_voltage)
             assert third.stage==2
+        pillar=None
+        if args.pillar_mode:
+            from cosdh_pillar import CoSDHPillar
+            pillar=CoSDHPillar(model,args.pillar_thresholds,args.pillar_mode,args.pillar_initial_voltage)
         if not args.wire_codec and not args.count_wire:
             import zlib
             def forbidden(*args, **kwargs): raise AssertionError('Ordinary evaluation must not use codec')
@@ -286,6 +299,11 @@ def main():
         if third:
             metadata['front_stage']['scope']='Four first-stage IFs retained; later stages reported separately; PillarVFE remains ANN'
             metadata['second_stage']['scope']='Six second-stage IFs retained; third stage reported separately; PillarVFE remains ANN'
+        metadata['pillar']=dict(mode=args.pillar_mode,initial_voltage_threshold_fraction=args.pillar_initial_voltage,
+            thresholds_sha256=digest(args.pillar_thresholds),scope='PFN point activation before max, both agents, shared input to both BEV paths; ANN decoding and detection backend retained') if pillar else None
+        if pillar:
+            for key in ('front_stage','second_stage','third_stage'):
+                metadata[key]['scope']='BEV IF stage retained; PFN intervention reported separately; ANN decoding and detection backend retained'
         metadata['count_conversion'] = dict(steps=args.count_steps, thresholds_sha256=digest(args.count_thresholds),
             stage_quotas=args.count_event_quotas,wire=args.count_wire,
             scope='Frozen remote-only decoder-input IF counts; original masks/decoder/fusion; optional crossing-time quotas and integer wire') if counts else None
@@ -366,6 +384,7 @@ def main():
                 if front:front.begin()
                 if second:second.begin()
                 if third:third.begin()
+                if pillar:pillar.begin()
                 torch.cuda.synchronize()
                 t0 = time.perf_counter()
                 result = inference_utils.inference_late_fusion(batch, model, dataset)
@@ -407,6 +426,7 @@ def main():
                 if front:row['front_stage'] = front.finish()
                 if second:row['second_stage']=second.finish()
                 if third:row['third_stage']=third.finish()
+                if pillar:row['pillar']=pillar.finish()
                 rows.append(row)
                 if wire:row['wire']=wire.finish(index)
                 with (output / 'frames.jsonl').open('a', encoding='utf-8') as f:
@@ -423,6 +443,7 @@ def main():
         if front:front.close()
         if second:second.close()
         if third:third.close()
+        if pillar:pillar.close()
         if counts:
             counts.close()
             original = torch.load(str(checkpoint), map_location='cpu')
@@ -457,6 +478,7 @@ def main():
         summary['front_stage'] = metadata['front_stage']
         summary['second_stage']=metadata['second_stage']
         summary['third_stage']=metadata['third_stage']
+        summary['pillar']=metadata['pillar']
         if counts:summary['model_state_unchanged'] = True
         if args.feature_only and args.wire_codec:
             summary['wire_note']='Actual demand and three dependency-closed FP16 latent/mask sections; no late boxes; 160-byte two-way metadata included; link/IP overhead excluded'
