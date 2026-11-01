@@ -50,7 +50,8 @@ class IFActivationTests(unittest.TestCase):
     def test_readout_codes_preserve_cache_on_refresh_and_reuse(self):
         base=fixture();scales=dict(input=torch.ones(384),middle=torch.ones(256))
         models=dict(ann=AnchoredLatePyramidDetector(base),count=readout_coded_anchor(base,scales,'count'),
-                    spike=readout_coded_anchor(base,scales,'if'),zero=readout_coded_anchor(base,scales,'zero_mid'))
+                    spike=readout_coded_anchor(base,scales,'if'),zero=readout_coded_anchor(base,scales,'zero_mid'),
+                    clip_input=readout_coded_anchor(base,scales,'clip_input'),clip_middle=readout_coded_anchor(base,scales,'clip_middle'))
         self.assertIsInstance(base.core.readout.layers[0].double_conv[2],torch.nn.ReLU)
         states={k:None for k in models};x=torch.randn(1,64,24,32)
         self.assertEqual(len({sum(p.numel() for p in m.parameters()) for m in models.values()}),1)
@@ -67,6 +68,22 @@ class IFActivationTests(unittest.TestCase):
     def test_readout_rejects_signed_input(self):
         model=readout_coded_anchor(fixture(),dict(input=torch.ones(384),middle=torch.ones(256)))
         with torch.no_grad(),self.assertRaises(ValueError):model.core.readout(-torch.ones(1,384,3,3))
+
+    def test_single_site_clipping_matches_manual_intervention(self):
+        import copy
+        base=fixture();scales=dict(input=torch.ones(384)*.1,middle=torch.ones(256)*.2)
+        x=torch.rand(1,384,8,10)
+        for mode in ('clip_input','clip_middle'):
+            coded=readout_coded_anchor(base,scales,mode).core.readout
+            reference=copy.deepcopy(base.core.readout)
+            hooks=[]
+            if mode=='clip_middle':hooks.append(reference.layers[0].double_conv[2].register_forward_hook(lambda m,args,y:y.clamp_max(.2)))
+            with torch.no_grad():
+                expected=reference(x.clamp_max(.1) if mode=='clip_input' else x)
+                actual=coded(x)
+            for hook in hooks:hook.remove()
+            self.assertTrue(torch.equal(actual,expected))
+            self.assertIsNone(coded.coding_stats()['middle' if mode=='clip_input' else 'input'])
 
 
 if __name__=='__main__':unittest.main()

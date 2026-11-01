@@ -68,13 +68,14 @@ class CodedReadout(nn.Module):
     """Two decoded input codes; BN and final activation remain analog."""
     def __init__(self, source, scales, mode='count', steps=8):
         super().__init__()
-        if mode not in ('clip','count','if','zero_mid'):
+        if mode not in ('clip','count','if','zero_mid','clip_input','clip_middle'):
             raise ValueError('Unsupported readout coding mode')
         if len(source.layers)!=1 or not isinstance(source.layers[0].double_conv[2],nn.ReLU):
             raise ValueError('Expected frozen two-convolution BN readout')
         self.body=copy.deepcopy(source)
-        self.input_codec=nn.Identity() if mode=='zero_mid' else FixedPointIFActivation(scales['input'],mode,steps)
-        self.body.layers[0].double_conv[2]=FixedPointIFActivation(scales['middle'],'zero' if mode=='zero_mid' else mode,steps)
+        self.input_codec=nn.Identity() if mode in ('zero_mid','clip_middle') else FixedPointIFActivation(scales['input'],'clip' if mode=='clip_input' else mode,steps)
+        if mode!='clip_input':
+            self.body.layers[0].double_conv[2]=FixedPointIFActivation(scales['middle'],'zero' if mode=='zero_mid' else ('clip' if mode=='clip_middle' else mode),steps)
 
     @property
     def middle_codec(self):
@@ -85,7 +86,7 @@ class CodedReadout(nn.Module):
         return self.body(self.input_codec(x))
 
     def coding_stats(self):
-        return dict(input=getattr(self.input_codec,'last_stats',None),middle=self.middle_codec.last_stats)
+        return dict(input=getattr(self.input_codec,'last_stats',None),middle=getattr(self.middle_codec,'last_stats',None))
 
 
 def readout_coded_anchor(base,scales,mode='count',steps=8):
