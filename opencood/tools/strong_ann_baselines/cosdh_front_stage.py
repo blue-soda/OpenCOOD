@@ -45,12 +45,12 @@ class CoSDHFrontStage:
     def __init__(self, model, thresholds, mode, surrogate=False, audit_gradients=False, initial_voltage=0.):
         t=json.loads(Path(thresholds).read_text())
         assert type(model.backbone).__name__=='BaseBEVBackbone'
-        assert t['interface'] in ('backbone.blocks.0','backbone.blocks.1')
+        assert t['interface'] in ('backbone.blocks.0','backbone.blocks.1','backbone.blocks.2')
         self.stage=int(t['interface'].split('.')[-1])
         expected=[t['interface']+'.'+n for n,m in model.backbone.blocks[self.stage].named_children() if type(m).__name__=='ReLU']
         assert t['module_names']==expected and t['shared_agent_thresholds']
         self.sites=len(expected)
-        assert self.sites==(4 if self.stage==0 else 6) and t['expected_calls_per_forward']==2*self.sites
+        assert self.sites==(4,6,9)[self.stage] and t['expected_calls_per_forward']==2*self.sites
         modules=dict(model.named_modules()); self.mode=mode;self.calls=[0]*self.sites;self.first={};self.delta={};self.handles=[]
         self.surrogate=surrogate;self.audit_gradients=audit_gradients;self.gradients={}
         self.initial_voltage=initial_voltage

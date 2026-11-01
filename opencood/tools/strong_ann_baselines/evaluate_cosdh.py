@@ -77,7 +77,16 @@ def main():
     parser.add_argument('--second-thresholds')
     parser.add_argument('--second-mode', choices=('identity','clip','count32'))
     parser.add_argument('--second-initial-voltage', type=float, choices=(0.,.5), default=0.)
+    parser.add_argument('--third-thresholds')
+    parser.add_argument('--third-mode', choices=('identity','clip','count32'))
+    parser.add_argument('--third-initial-voltage', type=float, choices=(0.,.5), default=0.)
     args = parser.parse_args()
+    if bool(args.third_thresholds)!=bool(args.third_mode):
+        parser.error('Third-stage thresholds and mode required together')
+    if args.third_mode and (args.second_mode!='count32' or args.second_initial_voltage!=.5):
+        parser.error('Third-stage study preserves the half-initialized Count32 second stage')
+    if args.third_initial_voltage and args.third_mode!='count32':
+        parser.error('Half-threshold third stage requires count32')
     if bool(args.second_thresholds)!=bool(args.second_mode):
         parser.error('Second-stage thresholds and mode required together')
     if args.second_mode and (args.front_mode!='count32' or args.front_initial_voltage!=0.):
@@ -210,6 +219,10 @@ def main():
         if args.second_mode:
             second=CoSDHFrontStage(model,args.second_thresholds,args.second_mode,initial_voltage=args.second_initial_voltage)
             assert second.stage==1 and front.stage==0
+        third=None
+        if args.third_mode:
+            third=CoSDHFrontStage(model,args.third_thresholds,args.third_mode,initial_voltage=args.third_initial_voltage)
+            assert third.stage==2
         if not args.wire_codec and not args.count_wire:
             import zlib
             def forbidden(*args, **kwargs): raise AssertionError('Ordinary evaluation must not use codec')
@@ -268,6 +281,11 @@ def main():
             thresholds_sha256=digest(args.second_thresholds),scope='Six second-stage ReLUs, both agents and both paths; PillarVFE/final BEV stage ANN') if second else None
         if second:
             metadata['front_stage']['scope']='First-stage four IF ReLUs retained; second-stage intervention reported separately; PillarVFE/final stage ANN'
+        metadata['third_stage']=dict(mode=args.third_mode,initial_voltage_threshold_fraction=args.third_initial_voltage,
+            thresholds_sha256=digest(args.third_thresholds),scope='Nine third-stage ReLUs, both agents and both paths; PillarVFE and ANN detection backend retained') if third else None
+        if third:
+            metadata['front_stage']['scope']='Four first-stage IFs retained; later stages reported separately; PillarVFE remains ANN'
+            metadata['second_stage']['scope']='Six second-stage IFs retained; third stage reported separately; PillarVFE remains ANN'
         metadata['count_conversion'] = dict(steps=args.count_steps, thresholds_sha256=digest(args.count_thresholds),
             stage_quotas=args.count_event_quotas,wire=args.count_wire,
             scope='Frozen remote-only decoder-input IF counts; original masks/decoder/fusion; optional crossing-time quotas and integer wire') if counts else None
@@ -347,6 +365,7 @@ def main():
                 if membrane:membrane.begin()
                 if front:front.begin()
                 if second:second.begin()
+                if third:third.begin()
                 torch.cuda.synchronize()
                 t0 = time.perf_counter()
                 result = inference_utils.inference_late_fusion(batch, model, dataset)
@@ -387,6 +406,7 @@ def main():
                     row['readout'].update(original_fusion_preserved=args.membrane_mode=='identity', membrane_conversion=args.membrane_mode!='identity')
                 if front:row['front_stage'] = front.finish()
                 if second:row['second_stage']=second.finish()
+                if third:row['third_stage']=third.finish()
                 rows.append(row)
                 if wire:row['wire']=wire.finish(index)
                 with (output / 'frames.jsonl').open('a', encoding='utf-8') as f:
@@ -402,6 +422,7 @@ def main():
         if membrane:membrane.close()
         if front:front.close()
         if second:second.close()
+        if third:third.close()
         if counts:
             counts.close()
             original = torch.load(str(checkpoint), map_location='cpu')
@@ -435,6 +456,7 @@ def main():
         summary['membrane'] = metadata['membrane']
         summary['front_stage'] = metadata['front_stage']
         summary['second_stage']=metadata['second_stage']
+        summary['third_stage']=metadata['third_stage']
         if counts:summary['model_state_unchanged'] = True
         if args.feature_only and args.wire_codec:
             summary['wire_note']='Actual demand and three dependency-closed FP16 latent/mask sections; no late boxes; 160-byte two-way metadata included; link/IP overhead excluded'
