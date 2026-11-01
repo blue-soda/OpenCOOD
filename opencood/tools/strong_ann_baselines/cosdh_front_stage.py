@@ -8,11 +8,24 @@ import torch
 from cosdh_readout import _CountReadout
 
 
+class _InitialVoltageCount(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x, scale, steps, initial_voltage):
+        ctx.save_for_backward(x,scale)
+        theta=scale/steps
+        return torch.floor(x/theta+initial_voltage).clamp(0,steps)*theta
+
+    @staticmethod
+    def backward(ctx, grad):
+        x,scale=ctx.saved_tensors
+        return grad*((x>=0)&(x<=scale)).to(grad.dtype),None,None,None
+
+
 def activate(x, scale, mode, surrogate=False, initial_voltage=0.):
     if initial_voltage not in (0., .5):
         raise ValueError('Registered initial voltage fractions are zero and half threshold')
-    if initial_voltage and (mode not in ('count16','count32') or surrogate):
-        raise ValueError('Half-threshold probe is a frozen count-only evaluation')
+    if initial_voltage and mode not in ('count16','count32'):
+        raise ValueError('Half-threshold initialization requires count activations')
     if x.ndim != 4 or x.shape[0] != 2 or scale.shape != (1,x.shape[1],1,1):
         raise ValueError('Two participants and shared channel scales required')
     if not torch.isfinite(x).all() or (x<0).any() or not torch.isfinite(scale).all() or (scale<=0).any():
@@ -21,9 +34,10 @@ def activate(x, scale, mode, surrogate=False, initial_voltage=0.):
     if mode=='clip': return torch.minimum(x,scale)
     if mode not in ('count16','count32'): raise ValueError('Unsupported activation')
     steps=int(mode[5:]);theta=scale/steps
-    if surrogate: return _CountReadout.apply(x,scale,steps)
     if initial_voltage:
+        if surrogate: return _InitialVoltageCount.apply(x,scale,steps,initial_voltage)
         return torch.floor(x/theta+initial_voltage).clamp(0,steps)*theta
+    if surrogate: return _CountReadout.apply(x,scale,steps)
     return torch.floor(x/theta).clamp(0,steps)*theta
 
 
@@ -95,6 +109,10 @@ def self_test():
             spike=(membrane>=theta).float();count+=spike;membrane-=spike*theta
         value=activate(probe,scale,'count'+str(steps),initial_voltage=.5)
         assert torch.equal(value,count*theta) and torch.count_nonzero(value[...,0])==0
+        z=probe.clone().requires_grad_(True)
+        train_value=activate(z,scale,'count'+str(steps),surrogate=True,initial_voltage=.5)
+        assert torch.equal(train_value.detach(),value)
+        train_value.sum().backward();assert torch.equal(z.grad,(probe<=scale).float())
     print('Both-agent IF grid, saturation, clipping and input preservation passed')
 
 

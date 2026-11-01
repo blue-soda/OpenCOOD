@@ -38,7 +38,10 @@ def main():
     p.add_argument('--front-thresholds')
     p.add_argument('--front-mode', choices=('identity', 'clip', 'count16', 'count32'))
     p.add_argument('--train-front-stage', action='store_true')
+    p.add_argument('--front-initial-voltage', type=float, choices=(0., .5), default=0.)
     a = p.parse_args()
+    if a.front_initial_voltage and a.front_mode not in ('count16','count32'):
+        p.error('Half-threshold initialization requires a count frontend')
     if bool(a.front_thresholds) != bool(a.front_mode) or bool(a.front_mode) != a.train_front_stage:
         p.error('Front adaptation requires thresholds, mode and --train-front-stage together')
     if a.train_front_stage and (a.membrane_mode != 'local' or a.readout_mode != 'count16' or a.steps != 8):
@@ -99,7 +102,7 @@ def main():
     front = None
     if a.train_front_stage:
         from cosdh_front_stage import CoSDHFrontStage
-        front = CoSDHFrontStage(model, a.front_thresholds, a.front_mode, surrogate=True, audit_gradients=a.smoke)
+        front = CoSDHFrontStage(model, a.front_thresholds, a.front_mode, surrogate=True, audit_gradients=a.smoke, initial_voltage=a.front_initial_voltage)
     dataset = build_dataset(cfg, visualize=False, train=False)
     assert list(dataset.split_info) == train_ids
     contract = dict(epochs=3, batch_size=1, seed=303, lr=1e-5, weight_decay=1e-4, optimizer='AdamW',
@@ -111,6 +114,7 @@ def main():
         thresholds_sha256=sha(a.thresholds), source_sha256=sha(__file__), no_wire=True,
         membrane_mode=a.membrane_mode, membrane_parameters=0,
         train_front_stage=a.train_front_stage, front_mode=a.front_mode,
+        front_initial_voltage_threshold_fraction=a.front_initial_voltage,
         front_thresholds_sha256=sha(a.front_thresholds) if front else None,
         sender_surrogate=a.train_front_stage, front_surrogate=bool(front),
         readout_mode=a.readout_mode, readout_thresholds_sha256=sha(a.readout_thresholds) if readout else None,
