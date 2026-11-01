@@ -42,7 +42,9 @@ def activate(x, scale, mode, surrogate=False, initial_voltage=0.):
 
 
 class CoSDHFrontStage:
-    def __init__(self, model, thresholds, mode, surrogate=False, audit_gradients=False, initial_voltage=0.):
+    def __init__(self, model, thresholds, mode, surrogate=False, audit_gradients=False, initial_voltage=0., encoder_paths=2):
+        assert encoder_paths in (1,2)
+        self.encoder_paths=encoder_paths
         t=json.loads(Path(thresholds).read_text())
         assert type(model.backbone).__name__=='BaseBEVBackbone'
         assert t['interface'] in ('backbone.blocks.0','backbone.blocks.1','backbone.blocks.2')
@@ -62,18 +64,18 @@ class CoSDHFrontStage:
     def hook(self, phase, scale):
         def apply(module,inputs,output):
             value=activate(output,scale,self.mode,self.surrogate,self.initial_voltage);self.calls[phase]+=1
-            if self.calls[phase]%2:
+            if self.encoder_paths==1 or self.calls[phase]%2:
                 self.first[phase]=value.detach().clone()
                 self.delta[phase]=float((value-output).detach().abs().mean())
             else:
                 assert torch.equal(self.first[phase],value), 'Confidence and communication paths diverged'
-                if self.audit_gradients:
-                    assert value.requires_grad
-                    def record(grad):
-                        assert torch.isfinite(grad).all()
-                        self.gradients[phase]=[float(v.abs().mean()) for v in grad]
-                        return grad
-                    value.register_hook(record)
+            if self.audit_gradients and (self.encoder_paths==1 or self.calls[phase]%2==0):
+                assert value.requires_grad
+                def record(grad):
+                    assert torch.isfinite(grad).all()
+                    self.gradients[phase]=[float(v.abs().mean()) for v in grad]
+                    return grad
+                value.register_hook(record)
             return value
         return apply
 
@@ -85,8 +87,9 @@ class CoSDHFrontStage:
         return dict(both_agents_nonzero=True, all_four_sites=True, mean_abs=self.gradients)
 
     def finish(self):
-        assert self.calls==[2]*self.sites and len(self.delta)==self.sites
-        return dict(mode=self.mode,calls=self.calls[:],agents=2,paths_bitwise_equal=True,
+        assert self.calls==[self.encoder_paths]*self.sites and len(self.delta)==self.sites
+        return dict(mode=self.mode,calls=self.calls[:],agents=2,encoder_paths=self.encoder_paths,
+            paths_bitwise_equal=True if self.encoder_paths==2 else None,
             initial_voltage_threshold_fraction=self.initial_voltage,
             activation_abs_change=[self.delta[i] for i in range(self.sites)],stage_index=self.stage,
             first_stage_only=self.stage==0,whole_encoder_snn=False)

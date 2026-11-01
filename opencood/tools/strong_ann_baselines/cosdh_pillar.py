@@ -27,7 +27,9 @@ def activate_pillar(x, scale, mode, initial_voltage=0., surrogate=False):
 
 
 class CoSDHPillar:
-    def __init__(self,model,thresholds,mode,initial_voltage=0.,surrogate=False):
+    def __init__(self,model,thresholds,mode,initial_voltage=0.,surrogate=False,encoder_paths=2):
+        assert encoder_paths in (1,2)
+        self.encoder_paths=encoder_paths
         t=json.loads(Path(thresholds).read_text())
         assert t['interface']=='pillar_vfe.pfn_layers.0.norm' and t['before_point_max'] and t['shared_agent_thresholds']
         assert len(model.pillar_vfe.pfn_layers)==1
@@ -62,7 +64,7 @@ class CoSDHPillar:
         return dict(mode=self.mode,initial_voltage_threshold_fraction=self.initial_voltage,
             calls=self.calls,agents=2,pillars_per_agent=self.agent_pillars,
             activation_abs_change_per_agent=self.agent_delta,before_point_max=True,
-            one_shared_pillar_output_for_both_BEV_paths=True)
+            BEV_paths=self.encoder_paths,one_shared_pillar_output_for_both_BEV_paths=self.encoder_paths==2)
 
     def close(self):
         for h in self.handles:h.remove()
