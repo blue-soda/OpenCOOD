@@ -13,17 +13,20 @@ from opencood.models.sub_modules.int_pyramid_anchor import AnchoredLatePyramidDe
 class FixedPointIFActivation(nn.Module):
     quantum=65536
 
-    def __init__(self, scales, mode='count', steps=8, preserve_tail=False):
+    def __init__(self, scales, mode='count', steps=8, preserve_tail=False, initial_membrane_units=0):
         super().__init__()
         if mode not in ('zero','clip','count','if') or type(steps) is not int or not 1<=steps<=1024:
             raise ValueError('Invalid activation coding mode/steps')
         if type(preserve_tail) is not bool or (preserve_tail and mode=='zero'):
             raise ValueError('Tail bypass requires clip/count/IF mode')
+        if type(initial_membrane_units) is not int or initial_membrane_units not in (0,self.quantum//2):
+            raise ValueError('Only zero or half-threshold initial membrane supported')
         scales=torch.as_tensor(scales,dtype=torch.float32).flatten()
         if not len(scales) or not bool(torch.isfinite(scales).all()) or not bool((scales>0).all()):
             raise ValueError('Positive finite per-channel scales required')
         self.register_buffer('scales',scales.reshape(1,-1,1,1).clone())
         self.mode,self.steps=mode,steps;self.calls=0;self.last_stats=None;self.preserve_tail=preserve_tail
+        self.initial_membrane_units=initial_membrane_units
 
     def forward(self, x):
         if self.training or torch.is_grad_enabled() or x.ndim!=4 or x.shape[1]!=self.scales.shape[1]:
@@ -32,7 +35,7 @@ class FixedPointIFActivation(nn.Module):
         positive=x.clamp_min(0);clipped=torch.minimum(positive,self.scales);overflow=positive>self.scales
         self.calls+=1
         exceed_fraction=float(overflow.float().mean())
-        stats=dict(mode=self.mode,steps=self.steps,elements=x.numel(),threshold_exceed_fraction=exceed_fraction,
+        stats=dict(mode=self.mode,steps=self.steps,initial_membrane_units=self.initial_membrane_units,elements=x.numel(),threshold_exceed_fraction=exceed_fraction,
             clipped_fraction=0. if self.preserve_tail else exceed_fraction,scale_buffer_bytes=self.scales.numel()*self.scales.element_size(),
             persistent_membrane_bytes=0,if_neuron_updates=0,spike_count=None,emission_rate=None)
         bypass_count=int(overflow.sum()) if self.preserve_tail else 0
@@ -46,9 +49,9 @@ class FixedPointIFActivation(nn.Module):
             # Exceptions carry their original analog value and emit no spikes.
             # Dense simulation still updates all membrane entries and all Conv.
             if self.preserve_tail:drive.masked_fill_(overflow,0)
-            if self.mode=='count':counts=torch.floor_divide(drive*self.steps,self.quantum)
+            if self.mode=='count':counts=torch.floor_divide(drive*self.steps+self.initial_membrane_units,self.quantum)
             else:
-                membrane=torch.zeros_like(drive);counts=torch.zeros_like(drive)
+                membrane=torch.full_like(drive,self.initial_membrane_units);counts=torch.zeros_like(drive)
                 for _ in range(self.steps):
                     membrane.add_(drive);spikes=membrane>=self.quantum
                     emitted=spikes.to(torch.int32);membrane.sub_(emitted*self.quantum);counts.add_(emitted)
@@ -77,7 +80,7 @@ def coded_anchor(base, scales, mode='count', steps=8):
 
 class CodedReadout(nn.Module):
     """Two decoded input codes; BN and final activation remain analog."""
-    def __init__(self, source, scales, mode='count', steps=8, preserve_tail=False):
+    def __init__(self, source, scales, mode='count', steps=8, preserve_tail=False, initial_membrane_units=0):
         super().__init__()
         if mode not in ('clip','count','if','zero_mid','clip_input','clip_middle'):
             raise ValueError('Unsupported readout coding mode')
@@ -86,9 +89,9 @@ class CodedReadout(nn.Module):
         if len(source.layers)!=1 or not isinstance(source.layers[0].double_conv[2],nn.ReLU):
             raise ValueError('Expected frozen two-convolution BN readout')
         self.body=copy.deepcopy(source)
-        self.input_codec=nn.Identity() if mode in ('zero_mid','clip_middle') else FixedPointIFActivation(scales['input'],'clip' if mode=='clip_input' else mode,steps,preserve_tail)
+        self.input_codec=nn.Identity() if mode in ('zero_mid','clip_middle') else FixedPointIFActivation(scales['input'],'clip' if mode=='clip_input' else mode,steps,preserve_tail,initial_membrane_units)
         if mode!='clip_input':
-            self.body.layers[0].double_conv[2]=FixedPointIFActivation(scales['middle'],'zero' if mode=='zero_mid' else ('clip' if mode=='clip_middle' else mode),steps,preserve_tail)
+            self.body.layers[0].double_conv[2]=FixedPointIFActivation(scales['middle'],'zero' if mode=='zero_mid' else ('clip' if mode=='clip_middle' else mode),steps,preserve_tail,initial_membrane_units)
 
     @property
     def middle_codec(self):
@@ -102,11 +105,11 @@ class CodedReadout(nn.Module):
         return dict(input=getattr(self.input_codec,'last_stats',None),middle=getattr(self.middle_codec,'last_stats',None))
 
 
-def readout_coded_anchor(base,scales,mode='count',steps=8,preserve_tail=False):
+def readout_coded_anchor(base,scales,mode='count',steps=8,preserve_tail=False,initial_membrane_units=0):
     model=AnchoredLatePyramidDetector(base,period=2,max_age=.25,coverage='strict')
     core=nn.Module()
     for name,module in base.core.named_children():
-        core.add_module(name,CodedReadout(module,scales,mode,steps,preserve_tail) if name=='readout' else module)
+        core.add_module(name,CodedReadout(module,scales,mode,steps,preserve_tail,initial_membrane_units) if name=='readout' else module)
     if not hasattr(core,'dir_head'):core.dir_head=None
     model.core=core.to(base.core.deep_update.history.weight.device);model.train(False)
     return model

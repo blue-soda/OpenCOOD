@@ -108,5 +108,17 @@ class IFActivationTests(unittest.TestCase):
             self.assertEqual(spike.last_stats['analog_value_payload_bytes'],8)
             self.assertEqual(spike.last_stats['if_neuron_updates'],steps*x.numel())
 
+    def test_half_threshold_matches_nearest_count_and_resets(self):
+        x=torch.tensor([0.,.0625,.125,.1875,.99,1.,1.01,9.]).reshape(1,1,1,-1)
+        count=FixedPointIFActivation([1.],'count',8,True,32768).eval()
+        spike=FixedPointIFActivation([1.],'if',8,True,32768).eval()
+        expected=torch.where(x>1,x,torch.floor(torch.floor(x*65536).clamp_max(65536)*8/65536+.5)/8)
+        with torch.no_grad():
+            a=count(x);b=spike(x);spike(x*3);again=spike(x)
+        self.assertTrue(torch.equal(a,expected))
+        self.assertTrue(torch.equal(a,b) and torch.equal(a,again))
+        self.assertEqual(float(a.flatten()[0]),0.)
+        with self.assertRaises(ValueError):FixedPointIFActivation([1.],initial_membrane_units=1)
+
 
 if __name__=='__main__':unittest.main()

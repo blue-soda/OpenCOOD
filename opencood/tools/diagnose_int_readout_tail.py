@@ -27,6 +27,11 @@ def worker(a):
     source=Path(a.source);old=json.loads(source.read_text());scale_file=source.parent/'scales.json'
     assert old['status']=='COMPLETED' and old['scans']==256 and old['split']=='train'
     assert old['checkpoint_sha256']==digest(Path(a.checkpoint)) and old['scale_sha256']==digest(scale_file)
+    floor_source=Path(a.floor_source) if a.centered else None
+    if floor_source:
+        floor_report=json.loads(floor_source.read_text())
+        assert floor_report['status']=='COMPLETED' and floor_report['checkpoint_sha256']==old['checkpoint_sha256']
+        assert floor_report['scale_sha256']==old['scale_sha256'] and floor_report['scans']==256
     scales=json.loads(scale_file.read_text())['scales']
     gold=[json.loads(x) for x in (source.parent/'frames.jsonl').read_text().splitlines()]
     a.mode='gru';a.stage='calibrate';a.content_calibration=None;a.periodic_last=0;a.max_age=.25
@@ -37,7 +42,9 @@ def worker(a):
     base.load_state_dict(saved['model'],strict=True)
     write_json(out/'contract.json',dict(split='train',frames=256,checkpoint_sha256=digest(Path(a.checkpoint)),source_sha256=digest(source),
         scale_sha256=digest(scale_file),scales=scales,steps=8,quantum=65536,
-        candidates=['ann','count8','clip_tail','count8_tail','if8_tail'],
+        candidates=['ann','count8','clip_tail','count8_tail','if8_tail']+(['count8_centered','if8_centered'] if a.centered else []),
+        centered=a.centered,floor_source_sha256=digest(floor_source) if floor_source else None,
+        centered_rule='Initial membrane32768 of Q65536, count=floor((T*drive+32768)/65536), ties up after Q16 drive quantization; fixed, no phase search.',
         bypass='At each site, positive activation strictly greater than original scale keeps its full analog value and has zero spike drive; other elements use original Q16 coding. Equality to scale stays coded.',
         policy='Original frozen strict cache, both readout sites, no cross-frame membrane. No scale, T, weight or AP search.',
         accounting='Analog value payload=exception count*dtype bytes, conceptual values only, excludes indices/packing; implementation is dense where with full mask. Mask bytes counted per call, not allocator peak. All IF elements and all Conv still execute.',
@@ -45,6 +52,8 @@ def worker(a):
         trained=False,timing_valid=False))
     models=dict(ann=AnchoredLatePyramidDetector(base),count8=readout_coded_anchor(base,scales,'count'))
     for name,mode in [('clip_tail','clip'),('count8_tail','count'),('if8_tail','if')]:models[name]=readout_coded_anchor(base,scales,mode,8,True)
+    if a.centered:
+        for name,mode in [('count8_centered','count'),('if8_centered','if')]:models[name]=readout_coded_anchor(base,scales,mode,8,True,32768)
     states={k:None for k in models};base_state=None;records=[];ap={k:{.7:dict(tp=[],fp=[],score=[],gt=0)} for k in models}
     params={k:sum(p.numel() for p in m.parameters()) for k,m in models.items()};assert len(set(params.values()))==1
     dataset,stream=loader(rows[:256],cfg,2,303)
@@ -65,7 +74,9 @@ def worker(a):
                     relative_mse={k:float((pred[k]-preds['ann'][k]).square().mean()/(preds['ann'][k].square().mean()+1e-12)) for k in pred})
             assert all(torch.equal(preds['ann'][k],preds['clip_tail'][k]) for k in preds['ann'])
             assert all(torch.equal(preds['count8_tail'][k],preds['if8_tail'][k]) for k in preds['ann'])
+            if a.centered:assert all(torch.equal(preds['count8_centered'][k],preds['if8_centered'][k]) for k in preds['ann'])
             entry.update(clip_tail_exact_ann=True,if_count_exact=True,all_cache_states_equal_ann=True)
+            if a.centered:entry['centered_if_count_exact']=True
             if meta['supervised']:
                 data=dict(ego=ego);gt=dataset.post.generate_gt_bbx(data)
                 for name,pred in preds.items():
@@ -77,6 +88,10 @@ def worker(a):
     write_json(out/'ap_records.json',ap);old_ap=json.loads((source.parent/'ap_records.json').read_text())
     for name in ('ann','count8'):assert ap[name][.7]==old_ap[name]['0.7']
     assert ap['clip_tail']==ap['ann'] and ap['count8_tail']==ap['if8_tail']
+    if a.centered:
+        floor_ap=json.loads((floor_source.parent/'ap_records.json').read_text())
+        for name in ('ann','count8','clip_tail','count8_tail','if8_tail'):assert ap[name][.7]==floor_ap[name]['0.7']
+        assert ap['count8_centered']==ap['if8_centered']
     metrics={}
     for name in models:
         sites={}
@@ -96,6 +111,8 @@ def worker(a):
         checkpoint_sha256=digest(Path(a.checkpoint)),scale_sha256=digest(scale_file),parameters=params,metrics=metrics,
         clip_tail_exact_ann_all=True,if_count_exact_all=True,all_cache_states_and_core_equal_ann=True,
         ann_and_count8_raw_ap_equal_R085=True,scale_buffer_bytes=2560,persistent_membrane_bytes=0,timing_valid=False,
+        centered=a.centered,centered_if_count_exact_all=True if a.centered else None,
+        floor_raw_ap_equal_R087=True if a.centered else None,
         caveat='Train-prefix hybrid analog exceptions, not pure SNN. Payload values exclude positions and packing; implementation uses dense masks and where. Conv and full-grid IF updates unchanged; no execution or energy savings.'))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
@@ -103,7 +120,9 @@ def worker(a):
 def main():
     p=argparse.ArgumentParser()
     for key in ('root','output','checkpoint','source'):p.add_argument('--'+key,required=True)
-    p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
+    p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true')
+    p.add_argument('--centered',action='store_true');p.add_argument('--floor-source');a=p.parse_args();out=Path(a.output)
+    if a.centered and not a.floor_source:p.error('Centered diagnostic requires completed floor-bypass reference')
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('1h tail-bypass diagnostic budget')));signal.alarm(3600)
         try:worker(a)
