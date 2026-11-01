@@ -85,7 +85,11 @@ def main():
                 elif variant=='zero_decoded_features':
                     intervention=compressor.register_forward_hook(lambda m,x,y:torch.zeros_like(y))
                 elif variant=='zero_fused_readout':
-                    intervention=model.fusion_net[2].register_forward_hook(lambda m,x,y:(torch.zeros_like(y[0]),)+y[1:])
+                    def zero_fused(m,x,y):
+                        value=torch.zeros_like(y[0])
+                        captures['fusion_after_readout']=[value.detach().clone()]
+                        return (value,)+y[1:]
+                    intervention=model.fusion_net[2].register_forward_hook(zero_fused)
                 captures.clear()
                 for converter in converters:converter.begin()
                 try:result=model(batch['ego'])
