@@ -26,6 +26,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for k in ('repo','model-dir','data-root','train-split','val-split','sender-thresholds','readout-thresholds','front-thresholds','second-thresholds','third-thresholds','pillar-thresholds','output'):p.add_argument('--'+k,required=True)
     p.add_argument('--receiver',choices=('original','geometry'),required=True)
+    p.add_argument('--adaptation-scope',choices=('encoder_decoder','encoder_decoder_head'),default='encoder_decoder')
     p.add_argument('--smoke',action='store_true')
     a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
     sys.path.insert(0,str(Path(a.repo).resolve()));os.chdir(a.repo)
@@ -61,6 +62,22 @@ def main():
     expected|={'backbone.blocks.%d.%d.weight'%(stage,1+3*i) for stage,n in enumerate((4,6,9)) for i in range(n)}
     assert len(names)==32 and {n for n in names if not n.startswith('naive_compressor_list.')}==expected
     assert len([n for n in names if n.startswith('naive_compressor_list.')])==12
+    encoder_decoder_names=names[:]
+    head_names=[]
+    if a.adaptation_scope=='encoder_decoder_head':
+        assert a.receiver=='geometry', 'Registered head adaptation uses the geometry receiver'
+        for name,module in model.named_modules():
+            downstream=(name.startswith('backbone.deblocks.') or name.startswith('shrink_conv.') or name in ('cls_head','reg_head','dir_head'))
+            if downstream and isinstance(module,(torch.nn.Conv2d,torch.nn.ConvTranspose2d)):
+                for suffix,v in module.named_parameters(recurse=False):
+                    key=name+'.'+suffix;assert key not in names
+                    v.requires_grad_(True);names.append(key);head_names.append(key)
+        assert head_names and any(n.startswith('backbone.deblocks.') for n in head_names)
+        assert any(n.startswith('shrink_conv.') for n in head_names)
+        for prefix in ('cls_head.','reg_head.'):
+            assert any(n.startswith(prefix) for n in head_names)
+        if model.use_dir:assert any(n.startswith('dir_head.') for n in head_names)
+    assert all(not v.requires_grad for module in model.modules() if isinstance(module,torch.nn.modules.batchnorm._BatchNorm) for v in module.parameters())
     parameters=[v for v in model.parameters() if v.requires_grad]
     optimizer=torch.optim.AdamW(parameters,lr=1e-5,weight_decay=1e-4);criterion=train_utils.create_loss(cfg)
     paths=1 if a.receiver=='geometry' else 2
@@ -74,7 +91,9 @@ def main():
     dataset=build_dataset(cfg,visualize=False,train=False);assert list(dataset.split_info)==train_ids
     contract=dict(epochs=3,batch_size=1,seed=303,lr=1e-5,weight_decay=1e-4,optimizer='AdamW',grad_clip=10.,receiver=a.receiver,
         trainable_names=names,trainable_parameters=sum(v.numel() for v in parameters),encoder_paths=paths,
-        scope='PFN linear weight,19 BEV convolution weights,12 compressor-decoder tensors; BN/latent compressor encoders/BEV deblocks/shrink/detection heads frozen.',
+        adaptation_scope=a.adaptation_scope,encoder_decoder_names=encoder_decoder_names,head_names=head_names,
+        total_parameters=sum(v.numel() for v in model.parameters()),
+        scope='PFN linear weight,19 BEV convolution weights,12 compressor-decoder tensors; optional ANN deblock/shrink/detection convolutions. All BN and latent compressor encoders frozen.',
         checkpoint_sha256=sha(checkpoint),train_split_sha256=sha(a.train_split),val_split_sha256=sha(a.val_split),
         thresholds_sha256={k:sha(getattr(a,k+'_thresholds')) for k in ('sender','readout','front','second','third','pillar')},source_sha256=sha(__file__),
         preprocessing='4678 commontrain with inference preprocessing, no random augmentation; same seeded epoch permutation',
@@ -97,7 +116,7 @@ def main():
             gradients=dict(BEV=[c.gradient_summary() for c in stages],PFN=pillar.gradient_summary()) if a.smoke else None
             norm=torch.nn.utils.clip_grad_norm_(parameters,10.,error_if_nonfinite=True)
             assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in parameters)
-            if a.smoke:assert all(torch.count_nonzero(v.grad)>0 for v in parameters),'All32 trained tensors must receive gradients'
+            if a.smoke:assert all(torch.count_nonzero(v.grad)>0 for v in parameters),'All registered tensors must receive gradients'
             optimizer.step();updates+=1;loss_sum+=float(loss.detach())
             if batch_index==1 or batch_index%25==0 or a.smoke:
                 row=dict(state='training',epoch=epoch,batch=batch_index,batches=len(order),optimizer_steps=updates,loss=float(loss.detach()),gradient_norm=float(norm),elapsed_seconds=time.time()-start,order_sha256=order_hash,
@@ -108,11 +127,11 @@ def main():
             del output,loss,batch
         state=model.state_dict();changed=[k for k,v in state.items() if not torch.equal(v.detach().cpu(),original[k])]
         assert changed and set(changed).issubset(names) and all(torch.isfinite(v).all() for v in parameters)
-        if a.smoke:assert set(changed)==set(names),'All32 registered tensors must update in admission'
+        if a.smoke:assert set(changed)==set(names),'All registered tensors must update in admission'
         history.append(dict(epoch=epoch,samples=len(order),loss=loss_sum/len(order),order_sha256=order_hash,changed_names=changed,frozen_tensors_unchanged=True))
         write(out/'history.json',history)
         if a.smoke:
-            write(out/'smoke.json',dict(passed=True,optimizer_steps=updates,discarded=True,frozen_tensors_unchanged=True,all32_tensors_updated=True,both_agents_all20_IF_sites_nonzero_gradient=True,no_compression=True,history=history,contract=contract));return
+            write(out/'smoke.json',dict(passed=True,optimizer_steps=updates,discarded=True,frozen_tensors_unchanged=True,all_registered_tensors_updated=True,registered_tensor_count=len(names),both_agents_all20_IF_sites_nonzero_gradient=True,no_compression=True,history=history,contract=contract));return
         assert len(order)==4678 and shutil.disk_usage(str(out)).free>1024**3
         tmp=out/'last.tmp';torch.save(dict(model=state,optimizer=optimizer.state_dict(),epoch=epoch,history=history,contract=contract,rng=dict(python=random.getstate(),numpy=np.random.get_state(),torch=torch.get_rng_state(),cuda=torch.cuda.get_rng_state_all())),str(tmp));os.replace(str(tmp),str(out/'last.pt'))
     for c in reversed(converters):c.close()
