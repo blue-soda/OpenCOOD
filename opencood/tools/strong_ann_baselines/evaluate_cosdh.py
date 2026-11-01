@@ -71,7 +71,13 @@ def main():
     parser.add_argument('--readout-thresholds', help='Training-only post-fusion calibration')
     parser.add_argument('--readout-mode', choices=('identity', 'clip', 'count4', 'count16'))
     parser.add_argument('--membrane-mode', choices=('identity', 'fixed', 'local'))
+    parser.add_argument('--front-thresholds')
+    parser.add_argument('--front-mode', choices=('identity', 'clip', 'count16', 'count32'))
     args = parser.parse_args()
+    if bool(args.front_thresholds) != bool(args.front_mode):
+        parser.error('Front stage thresholds and mode required together')
+    if args.front_mode and (args.membrane_mode != 'local' or args.readout_mode != 'count16'):
+        parser.error('Front stage probe requires the fixed local membrane / Count16 route')
     if args.membrane_mode and args.readout_mode not in ('count4', 'count16'):
         parser.error('Membrane probe requires calibrated count readout')
     if bool(args.readout_thresholds) != bool(args.readout_mode):
@@ -184,6 +190,10 @@ def main():
         if args.membrane_mode:
             from cosdh_membrane import CoSDHMembrane
             membrane = CoSDHMembrane(model, args.readout_thresholds, args.membrane_mode, int(args.readout_mode[5:]))
+        front = None
+        if args.front_mode:
+            from cosdh_front_stage import CoSDHFrontStage
+            front = CoSDHFrontStage(model, args.front_thresholds, args.front_mode)
         if not args.wire_codec and not args.count_wire:
             import zlib
             def forbidden(*args, **kwargs): raise AssertionError('Ordinary evaluation must not use codec')
@@ -236,6 +246,8 @@ def main():
             max_replaced=args.membrane_mode != 'identity') if membrane else None
         if membrane and args.membrane_mode != 'identity':
             metadata['readout'].update(original_fusion_preserved=False, membrane_conversion=True)
+        metadata['front_stage'] = dict(mode=args.front_mode,thresholds_sha256=digest(args.front_thresholds),
+            scope='First plain BEV stage four ReLUs; both agents and confidence/communication paths; remaining encoder ANN') if front else None
         metadata['count_conversion'] = dict(steps=args.count_steps, thresholds_sha256=digest(args.count_thresholds),
             stage_quotas=args.count_event_quotas,wire=args.count_wire,
             scope='Frozen remote-only decoder-input IF counts; original masks/decoder/fusion; optional crossing-time quotas and integer wire') if counts else None
@@ -313,6 +325,7 @@ def main():
                 if counts:counts.begin()
                 if readout:readout.begin()
                 if membrane:membrane.begin()
+                if front:front.begin()
                 torch.cuda.synchronize()
                 t0 = time.perf_counter()
                 result = inference_utils.inference_late_fusion(batch, model, dataset)
@@ -351,6 +364,7 @@ def main():
                 if membrane:
                     row['membrane'] = membrane.finish()
                     row['readout'].update(original_fusion_preserved=args.membrane_mode=='identity', membrane_conversion=args.membrane_mode!='identity')
+                if front:row['front_stage'] = front.finish()
                 rows.append(row)
                 if wire:row['wire']=wire.finish(index)
                 with (output / 'frames.jsonl').open('a', encoding='utf-8') as f:
@@ -364,6 +378,7 @@ def main():
         if wire:wire.close()
         if readout:readout.close()
         if membrane:membrane.close()
+        if front:front.close()
         if counts:
             counts.close()
             original = torch.load(str(checkpoint), map_location='cpu')
@@ -395,6 +410,7 @@ def main():
         summary['count_conversion'] = metadata['count_conversion']
         summary['readout'] = metadata['readout']
         summary['membrane'] = metadata['membrane']
+        summary['front_stage'] = metadata['front_stage']
         if counts:summary['model_state_unchanged'] = True
         if args.feature_only and args.wire_codec:
             summary['wire_note']='Actual demand and three dependency-closed FP16 latent/mask sections; no late boxes; 160-byte two-way metadata included; link/IP overhead excluded'
