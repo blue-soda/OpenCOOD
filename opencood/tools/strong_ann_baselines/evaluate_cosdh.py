@@ -83,7 +83,10 @@ def main():
     parser.add_argument('--pillar-thresholds')
     parser.add_argument('--pillar-mode', choices=('identity','clip','count32'))
     parser.add_argument('--pillar-initial-voltage', type=float, choices=(0.,.5), default=0.)
+    parser.add_argument('--selection-mode', choices=('identity','request_only','confidence_only','geometry_only'))
     args = parser.parse_args()
+    if args.selection_mode and (args.pillar_mode!='count32' or args.pillar_initial_voltage!=.5 or args.count_wire or args.count_event_quotas is not None):
+        parser.error('Selection study fixes half-init PFN Count32 and unlimited IF8 tensor transport, without wire')
     if bool(args.pillar_thresholds)!=bool(args.pillar_mode):
         parser.error('Pillar thresholds and mode required together')
     if args.pillar_mode and (args.third_mode!='count32' or args.third_initial_voltage!=0.):
@@ -236,6 +239,10 @@ def main():
         if args.pillar_mode:
             from cosdh_pillar import CoSDHPillar
             pillar=CoSDHPillar(model,args.pillar_thresholds,args.pillar_mode,args.pillar_initial_voltage)
+        selection=None
+        if args.selection_mode:
+            from cosdh_selection import CoSDHSelection
+            selection=CoSDHSelection(model,args.selection_mode)
         if not args.wire_codec and not args.count_wire:
             import zlib
             def forbidden(*args, **kwargs): raise AssertionError('Ordinary evaluation must not use codec')
@@ -304,6 +311,7 @@ def main():
         if pillar:
             for key in ('front_stage','second_stage','third_stage'):
                 metadata[key]['scope']='BEV IF stage retained; PFN intervention reported separately; ANN decoding and detection backend retained'
+        metadata['selection']=dict(mode=args.selection_mode,scope='Receiver confidence/request mask ablation, counts unchanged; no byte advantage claim') if selection else None
         metadata['count_conversion'] = dict(steps=args.count_steps, thresholds_sha256=digest(args.count_thresholds),
             stage_quotas=args.count_event_quotas,wire=args.count_wire,
             scope='Frozen remote-only decoder-input IF counts; original masks/decoder/fusion; optional crossing-time quotas and integer wire') if counts else None
@@ -370,8 +378,10 @@ def main():
                         raw_outputs.clear()
                         if wire:wire.begin(batch,str(ids[index]))
                         if pillar:pillar.begin()
+                        if selection:selection.begin()
                         warmup = inference_utils.inference_late_fusion(batch, model, dataset)
                         if pillar:pillar.finish()
+                        if selection:selection.finish()
                         if not finite_tree(warmup) or not finite_tree(raw_outputs):
                             raise ValueError('Nonfinite warmup output')
                     del warmup
@@ -387,6 +397,7 @@ def main():
                 if second:second.begin()
                 if third:third.begin()
                 if pillar:pillar.begin()
+                if selection:selection.begin()
                 torch.cuda.synchronize()
                 t0 = time.perf_counter()
                 result = inference_utils.inference_late_fusion(batch, model, dataset)
@@ -429,6 +440,7 @@ def main():
                 if second:row['second_stage']=second.finish()
                 if third:row['third_stage']=third.finish()
                 if pillar:row['pillar']=pillar.finish()
+                if selection:row['selection']=selection.finish()
                 rows.append(row)
                 if wire:row['wire']=wire.finish(index)
                 with (output / 'frames.jsonl').open('a', encoding='utf-8') as f:
@@ -446,6 +458,7 @@ def main():
         if second:second.close()
         if third:third.close()
         if pillar:pillar.close()
+        if selection:selection.close()
         if counts:
             counts.close()
             original = torch.load(str(checkpoint), map_location='cpu')
@@ -481,6 +494,7 @@ def main():
         summary['second_stage']=metadata['second_stage']
         summary['third_stage']=metadata['third_stage']
         summary['pillar']=metadata['pillar']
+        summary['selection']=metadata['selection']
         if counts:summary['model_state_unchanged'] = True
         if args.feature_only and args.wire_codec:
             summary['wire_note']='Actual demand and three dependency-closed FP16 latent/mask sections; no late boxes; 160-byte two-way metadata included; link/IP overhead excluded'
