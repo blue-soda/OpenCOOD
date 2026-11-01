@@ -10,6 +10,7 @@ import time
 import torch
 from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
 from opencood.models.sub_modules.int_pyramid_anchor import AnchoredLatePyramidDetector
+from opencood.models.sub_modules.int_pyramid_anchor_patch import PatchedLatePyramidDetector
 from opencood.tools.run_int_cache_repair import setup,evaluate
 from opencood.tools.evaluate_int_block_cache import MeasuredCache
 from opencood.tools.run_int_ego import write_json
@@ -22,7 +23,8 @@ class MeasuredAnchor(MeasuredCache):
         pred,state,info=self.model.step(ego,state,meta)
         info.update(core_conv_flops=self.core,pillar_linear_flops=self.pillar)
         self.records.append(dict(core=self.core,pillar=self.pillar,state_bytes=info['state_bytes'],
-            cache_bytes=info['cache_bytes'],refresh=info['late_refresh'],uncovered=info['uncovered_fraction']))
+            cache_bytes=info['cache_bytes'],refresh=info['late_refresh'],uncovered=info['uncovered_fraction'],
+            repair=info.get('repair')))
         return pred,state,info
 
 
@@ -37,8 +39,19 @@ def worker(a):
     source_contract=json.loads((source.parent/'contract.json').read_text())
     assert source_contract['candidates']['period2_strict']==dict(period=2,coverage='strict')
     assert source_contract['max_age']==.25
-    tests=(source.parent/'unit_tests.log').read_text()
-    assert 'Ran 293 tests' in tests and tests.rstrip().endswith('OK')
+    if a.coverage=='patch':
+        assert source_contract['candidates']['period2_patch']==dict(period=2,coverage='transient_patch',tile=1)
+        engineering=json.loads((source.parent/'engineering.json').read_text())
+        assert engineering['status']=='PASSED'
+        prior=Path(engineering['source_gate']);assert digest(prior)==engineering['source_sha256']
+        prior_report=json.loads(prior.read_text())
+        assert prior_report['status']=='COMPLETED' and prior_report['same_mask_parity_all']
+        assert prior_report['checkpoint_sha256']==gate['checkpoint_sha256']
+        tests=(prior.parent/'unit_tests.log').read_text()
+        assert 'Ran 296 tests' in tests and tests.rstrip().endswith('OK')
+    else:
+        tests=(source.parent/'unit_tests.log').read_text()
+        assert 'Ran 293 tests' in tests and tests.rstrip().endswith('OK')
     with (source.parent/'frames.jsonl').open() as stream:dense=json.loads(next(stream))['arms']['dense']['core_conv_flops']
     for key,value in dict(mode='gru',stage='pilot',content_calibration=None,periodic_last=0,max_age=.25,
         oracle_stage0=False,oracle_index=0,support_profile=False,zero_uncovered=False).items():setattr(a,key,value)
@@ -47,25 +60,31 @@ def worker(a):
     assert saved['contract']['teacher_sha256']==provenance['checkpoint']['sha256']
     assert saved['contract']['data_contract']==provenance['contract'] and saved['contract']['version']==base.version
     base.load_state_dict(saved['model'],strict=True)
-    model=AnchoredLatePyramidDetector(base,period=2,max_age=.25,coverage='strict')
+    model=(PatchedLatePyramidDetector(base) if a.coverage=='patch' else
+           AnchoredLatePyramidDetector(base,period=2,max_age=.25,coverage='strict'))
     a.engineering=str(out/'engineering.json')
     write_json(a.engineering,dict(status='PASSED',source_report=str(source),source_sha256=digest(source),
-        scope='Reuses unchanged anchor implementation gate: 293 tests and 256 training frames, period1 exact'))
-    write_json(out/'policy.json',dict(period=2,coverage='strict',max_age=.25,selection_split='train',
+        scope='Reuses unchanged implementation: %d tests and256 training frames, period1 exact'%(296 if a.coverage=='patch' else 293)))
+    write_json(out/'policy.json',dict(period=2,coverage=a.coverage,max_age=.25,selection_split='train',
         source_diagnostic_sha256=digest(source),checkpoint_sha256=gate['checkpoint_sha256'],
         trained=False,allocator_fraction=.20,timing_valid=False,
-        boundary='Full validation exploratory; no zero-fill approximation on reuse, no tuning on validation'))
+        boundary=('Patch repairs missing cells only for current readout and never overwrites anchor.' if a.coverage=='patch' else
+                  'Strict coverage fully refreshes on any missing cell.')+' Full validation exploratory; no tuning on validation.'))
     measured=MeasuredAnchor(model);a.stage='full'
     write_json(out/'status.json',dict(status='RUNNING',phase='full_validation'))
     try:report=evaluate(a,teacher,cfg,rows,out,measured)
     finally:measured.close()
     n=len(measured.records)
-    report.update(scope='Period2 strict fixed-anchor full validation',period=2,coverage='strict',max_age=.25,
+    assert n==5794
+    report.update(scope='Period2 %s fixed-anchor full validation'%a.coverage,period=2,coverage=a.coverage,max_age=.25,
         checkpoint_sha256=gate['checkpoint_sha256'],timing_valid=False,
         core_conv_flops_mean=sum(r['core'] for r in measured.records)/n,
         core_conv_ratio=sum(r['core'] for r in measured.records)/(n*dense),dense_core_conv_flops=dense,
         pillar_linear_flops_mean=sum(r['pillar'] for r in measured.records)/n,
         reuse_frames=sum(r['refresh'] is None for r in measured.records),
+        whole_reuse_frames=sum(r['refresh'] is None and not (r['repair'] or {}).get('active',False) for r in measured.records),
+        patch_frames=sum((r['repair'] or {}).get('active',False) for r in measured.records),
+        patch_fallback_frames=sum((r['repair'] or {}).get('active',False) and r['repair']['fallback'] for r in measured.records),
         late_refresh_counts={str(reason):sum(r['refresh']==reason for r in measured.records)
             for reason in sorted({r['refresh'] for r in measured.records},key=str)},
         state_bytes=measured.records[-1]['state_bytes'],cache_bytes=measured.records[-1]['cache_bytes'])
@@ -75,6 +94,7 @@ def worker(a):
         'Fine/coarse/decoder/heads remain dense; whole deep encoder/update skipped only on eligible reuse frames.',
         'Core convolution and Pillar Linear work measured separately; warp, nonlinear ops, memory movement and IO excluded from those counts.',
         'Shared GPU and count hooks invalidate latency; independent exclusive no-hook timing required.',
+        'reuse_frames means no full anchor refresh; whole_reuse_frames excludes frames with actual local patch work.',
         'Persistent fixed anchor changes deep recurrent history semantics; no SNN or energy claim.']
     write_json(out/'report.json',report);write_json(out/'status.json',dict(status='COMPLETED'))
 
@@ -83,6 +103,7 @@ def main():
     p=argparse.ArgumentParser()
     for key in ('root','output','checkpoint','diagnostic-report'):p.add_argument('--'+key,required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true')
+    p.add_argument('--coverage',choices=['strict','patch'],default='strict')
     a=p.parse_args();out=Path(a.output)
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('2h anchor evaluation budget')));signal.alarm(7200)
