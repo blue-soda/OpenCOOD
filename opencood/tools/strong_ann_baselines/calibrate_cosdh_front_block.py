@@ -1,7 +1,7 @@
-"""Training-only first residual block activation calibration, no conversion.
+"""Training-only first plain BEV stage activation calibration, no conversion.
 
-The shared ReLU executes twice per block and the encoder executes twice per
-ego forward (confidence path and communication path). Both uses are audited.
+Each of four ReLUs executes in both encoder invocations per ego forward
+(confidence path and communication path). Both uses and both agents are audited.
 """
 import argparse
 import hashlib
@@ -49,8 +49,10 @@ def main():
     counts=CoSDHCounts(model,a.sender_thresholds,8)
     readout=CoSDHReadout(model,a.readout_thresholds,'count16')
     membrane=CoSDHMembrane(model,a.readout_thresholds,'local',16)
-    first=model.backbone.resnet.layer0[0]
-    assert type(first).__name__=='BasicBlock' and type(first.relu).__name__=='ReLU'
+    assert type(model.backbone).__name__=='BaseBEVBackbone', type(model.backbone).__name__
+    first=model.backbone.blocks[0]
+    relus=[(name,module) for name,module in first.named_children() if type(module).__name__=='ReLU']
+    assert [name for name,module in relus]==['3','6','9','12']
     def forbidden(*args,**kwargs): raise AssertionError('No codec during calibration')
     zlib.compress=zlib.decompress=forbidden
     dataset=build_dataset(cfg,visualize=False,train=False); assert list(dataset.split_info)==ids
@@ -59,17 +61,17 @@ def main():
         x=output.detach().cpu().numpy().copy()
         assert x.ndim==4 and x.shape[0]==2 and np.isfinite(x).all() and (x>=0).all()
         calls.append(x)
-    handle=first.relu.register_forward_hook(capture)
-    samples={i:[] for i in (0,1)}; scales={}; rows=[]; errors={i:{t:[] for t in (16,32)} for i in (0,1)}
+    handles=[module.register_forward_hook(capture) for name,module in relus]
+    samples={i:[] for i in range(4)}; scales={}; rows=[]; errors={i:{t:[] for t in (16,32)} for i in range(4)}
     with torch.no_grad():
         for index,fid in enumerate(ids):
             calls.clear(); counts.begin(); readout.begin(); membrane.begin()
             batch=dataset.collate_batch_test([dataset[index]]); batch=train_utils.to_device(batch,torch.device('cuda:0'))
             assert batch['ego']['record_len'].tolist()==[2]
             model(batch['ego']); counts.finish(); readout.finish(); membrane.finish()
-            assert len(calls)==4 and np.array_equal(calls[0],calls[2]) and np.array_equal(calls[1],calls[3])
-            row=dict(frame_id=fid,partition='fit' if index<64 else 'audit',relu_calls=4,two_encoder_paths_bitwise_equal=True,sites=[])
-            for phase in (0,1):
+            assert len(calls)==8 and all(np.array_equal(calls[i],calls[i+4]) for i in range(4))
+            row=dict(frame_id=fid,partition='fit' if index<64 else 'audit',relu_calls=8,two_encoder_paths_bitwise_equal=True,sites=[])
+            for phase in range(4):
                 x=calls[phase]; flat=x.transpose(1,0,2,3).reshape(x.shape[1],-1)
                 row['sites'].append(dict(phase=phase,shape=list(x.shape),minimum=float(x.min()),maximum=float(x.max()),nonzero_fraction=float((x>0).mean())))
                 if index<64:
@@ -81,11 +83,12 @@ def main():
                         errors[phase][steps].append(dict(mse=float(np.mean((restored-x)**2)),energy=float(np.mean(x*x)),clipped_fraction=float((x>scale).mean()),count_nonzero_fraction=float((q>0).mean())))
             rows.append(row)
             if index==63:
-                for phase in (0,1):
+                for phase in range(4):
                     fit=np.concatenate(samples[phase],axis=1); scales[phase]=dict(range_p999=np.maximum(np.quantile(fit,.999,axis=1),1e-6).tolist(),sampled_values_per_channel=int(fit.shape[1]))
-                write(out/'thresholds.json',dict(interface='backbone.resnet.layer0.0.relu',phases=scales,fit_ids=ids[:64],shared_agent_thresholds=True,expected_calls_per_forward=4,steps=[16,32],checkpoint_sha256=sha(checkpoint)))
+                write(out/'thresholds.json',dict(interface='backbone.blocks.0',module_names=['backbone.blocks.0.'+name for name,module in relus],phases=scales,fit_ids=ids[:64],shared_agent_thresholds=True,expected_calls_per_forward=8,steps=[16,32],checkpoint_sha256=sha(checkpoint)))
             write(out/'status.json',dict(stage='calibrating',completed=index+1,planned=96))
-    handle.remove(); counts.close(); readout.close(); membrane.close()
+    for handle in handles: handle.remove()
+    counts.close(); readout.close(); membrane.close()
     assert all(torch.equal(v.cpu(),original[k]) for k,v in model.state_dict().items())
     means={}
     for phase in errors:
@@ -94,7 +97,7 @@ def main():
             m={k:float(np.mean([v[k] for v in values])) for k in values[0]};m['normalized_mse']=m['mse']/max(m['energy'],1e-20);means[phase][steps]=m
     write(out/'calibration.json',dict(passed=True,samples=96,fit_samples=64,audit_samples=32,training_only=True,validation_disjoint=True,model_state_unchanged=True,no_optimization=True,no_ap_selection=True,no_wire_calls=True,
         checkpoint_sha256=sha(checkpoint),config_sha256=sha(model_dir/'config.yaml'),thresholds_sha256=sha(out/'thresholds.json'),source_sha256=sha(__file__),train_split_sha256=sha(a.train_split),val_split_sha256=sha(a.val_split),
-        frames=rows,heldout_training_error=means,boundary='Calibration only, first residual block has NOT been converted. Both agents share thresholds; both confidence and communication encoder invocations must later use the same converted activations. Skip remains continuous until separately changed.'))
+        frames=rows,heldout_training_error=means,boundary='Calibration only, first plain BEV stage has NOT been converted. Both agents share thresholds; both confidence and communication encoder invocations must later use the same converted activations. Remaining BEV stages and PillarVFE are still ANN; this stage has no residual skip.'))
     write(out/'status.json',dict(stage='complete',completed=96))
 
 
