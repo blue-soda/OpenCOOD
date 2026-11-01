@@ -105,5 +105,9 @@ compute optimization, and no new receiver accuracy mechanism is claimed.
     supported = (aligned.detach() != 0).any(1, keepdim=True) & (coverage > 0)
     if hasattr(receiver, 'snapshot_pyramid'):
         current, supported = receiver.snapshot_pyramid(membrane, decoded, current, supported, coverage)
-    return torch.where(supported, count_readout(membrane + current),
-                       count_readout(membrane))
+    local_counts = count_readout(membrane)
+    fused_counts = torch.where(supported, count_readout(membrane + current), local_counts)
+    observer = getattr(receiver, 'snapshot_readout_observer', None)
+    if observer is not None:
+        observer(local_counts, fused_counts)
+    return fused_counts
