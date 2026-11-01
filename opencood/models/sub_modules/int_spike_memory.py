@@ -110,6 +110,9 @@ class INTSpikeMemory(nn.Module):
                         membrane_abs_max=float(value[:, :self.channels].abs().max()),
                         trace_abs_max=float(value[:, self.channels:].abs().max()),
                         binary_emission=self.mode == 'lif')
+            if getattr(self,'record_channels',False):
+                info['emission_nonzero_per_channel']=emitted.float().mean((0,2,3)).cpu().tolist()
+                info['membrane_abs_max_per_channel']=value[:,:self.channels].abs().amax((0,2,3)).cpu().tolist()
         new_state = dict(value=value.detach() if detach_state else value,
                          scene=meta['segment'], pose=meta['pose'], timestamp_us=int(meta['timestamp_us']))
         return output, new_state, info

@@ -36,8 +36,10 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
         return refresh,None,None
 
     def step_spatial(self, spatial, state, meta, detach_state=True, requests=None):
-        if self.training or torch.is_grad_enabled() or spatial.shape[0]!=1 or requests is not None:
+        differentiable=getattr(self,'differentiable_state',False)
+        if self.training or (torch.is_grad_enabled() and not differentiable) or spatial.shape[0]!=1 or requests is not None:
             raise ValueError('Frozen single stream, no spatial masks')
+        keep=lambda value:value if differentiable and not detach_state else value.detach()
         stamp=int(meta['timestamp_us']);reason='initial' if state is None else None
         if meta.get('reset_before',False):reason='explicit'
         if state is not None and reason is None:
@@ -71,15 +73,15 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
         repair = None
         if refresh:
             deep=self.core.deep_update(self.core.deep_encoder(x),old,valid)
-            anchor=dict(value=deep.detach(),pose=copy.deepcopy(meta['pose']),timestamp_us=stamp,skipped=0)
+            anchor=dict(value=keep(deep),pose=copy.deepcopy(meta['pose']),timestamp_us=stamp,skipped=0)
         else:
             deep,repair=self.reuse_deep(x,old,valid)
-            anchor=dict(state['anchor'],skipped=count)
+            anchor=dict(state['anchor'],value=keep(state['anchor']['value']),skipped=count)
         values.append(deep)
         features=self.core.readout(torch.cat([layer(v) for layer,v in zip(self.core.deblocks,values)],1))
         pred=dict(psm=self.core.cls_head(features),rm=self.core.reg_head(features))
         if self.core.dir_head is not None:pred['dm']=self.core.dir_head(features)
-        new=dict(value=values[0].detach(),coarse=values[1].detach(),anchor=anchor,
+        new=dict(value=keep(values[0]),coarse=keep(values[1]),anchor=anchor,
             pose=copy.deepcopy(meta['pose']),scene=meta['segment'],timestamp_us=stamp)
         if controller_state is not None:new['controller']=controller_state
         size=sum(v.numel()*v.element_size() for v in (new['value'],new['coarse'],anchor['value']))

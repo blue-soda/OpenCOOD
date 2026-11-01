@@ -1,5 +1,6 @@
 """Frozen pyramid integration of real-frame feature memory; identity at init."""
 import copy
+import torch
 from torch import nn
 from opencood.models.sub_modules.int_spike_memory import INTSpikeMemory
 from opencood.models.sub_modules.int_pyramid_anchor import AnchoredLatePyramidDetector
@@ -40,3 +41,22 @@ class TemporalFeatureAnchor(AnchoredLatePyramidDetector):
         extra=info['feature_memory']['state_bytes']
         info['state_bytes']+=extra;info['cache_bytes']+=extra
         return prediction,new,info
+
+
+def detach_temporal_state(value):
+    """Detach all nested graph tensors, preserving cached values and metadata."""
+    if torch.is_tensor(value):return value.detach()
+    if isinstance(value,dict):return {k:detach_temporal_state(v) for k,v in value.items()}
+    if isinstance(value,list):return [detach_temporal_state(v) for v in value]
+    if isinstance(value,tuple):return tuple(detach_temporal_state(v) for v in value)
+    return value
+
+
+class DifferentiableTemporalFeatureAnchor(TemporalFeatureAnchor):
+    """Adapter gradients in eval mode; frozen spatial parameters and BN stats."""
+    differentiable_state=True
+
+    def __init__(self,base,mode,reset_memory=False):
+        super().__init__(base,mode,reset_memory)
+        for p in self.parameters():p.requires_grad_(False)
+        for p in self.core.temporal_feature.parameters():p.requires_grad_(True)
