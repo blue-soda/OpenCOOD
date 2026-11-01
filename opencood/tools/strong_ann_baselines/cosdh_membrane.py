@@ -8,7 +8,7 @@ from pathlib import Path
 import torch
 
 
-def integrate(x, theta, mode, suppress_remote=False):
+def integrate(x, theta, mode, suppress_remote=False, gain=None):
     if x.ndim != 4 or x.shape[0] != 2 or theta.shape != (1, x.shape[1], 1, 1):
         raise ValueError('Two already aligned/masked participants required')
     if not torch.isfinite(x).all() or (x < 0).any() or not torch.isfinite(theta).all() or (theta <= 0).any():
@@ -21,6 +21,10 @@ def integrate(x, theta, mode, suppress_remote=False):
     else:
         raise ValueError('Unsupported integration mode')
     current = gate * (torch.zeros_like(road) if suppress_remote else road)
+    if gain is not None:
+        if gain.shape not in ((1, 1, 1, 1), (1, x.shape[1], 1, 1)) or not torch.isfinite(gain).all() or (gain < 0).any() or (gain > 2).any():
+            raise ValueError('Bounded stage/channel synaptic gain required')
+        current = current * gain
     return local + current, gate, current
 
 
@@ -30,6 +34,9 @@ class CoSDHMembrane:
         if suppress_remote and mode != 'local':
             raise ValueError('Remote-current ablation preserves the local gate')
         self.suppress_remote = suppress_remote
+        self.synapse = getattr(model, 'snn_synapse', None)
+        if self.synapse is not None and mode != 'local':
+            raise ValueError('Learned synapses preserve the local-only gate')
         values = json.loads(Path(thresholds).read_text())
         assert values['interface'] == 'post_fusion'
         self.mode = mode; self.handles = []; self.rows = {}; self.calls = [0, 0, 0]
@@ -50,7 +57,8 @@ class CoSDHMembrane:
             if self.mode == 'identity':
                 self.rows[stage] = dict(stage=stage, identity=True, membrane_minus_max_abs_mean=0.)
                 return output
-            membrane, gate, current = integrate(x, theta, self.mode, self.suppress_remote)
+            gain = self.synapse(stage) if self.synapse is not None else None
+            membrane, gate, current = integrate(x, theta, self.mode, self.suppress_remote, gain)
             assert torch.isfinite(membrane).all()
             if self.suppress_remote:
                 assert torch.equal(membrane, x[:1]) and torch.count_nonzero(current) == 0
@@ -68,9 +76,11 @@ class CoSDHMembrane:
     def finish(self):
         assert self.calls == [1, 1, 1] and len(self.rows) == 3
         return dict(mode=self.mode, calls=self.calls[:], stages=[self.rows[i] for i in range(3)],
-            equation='U + g(U) * decoded_aligned_masked_road',
+            equation='U + a * g(U) * decoded_aligned_masked_road' if self.synapse is not None else 'U + g(U) * decoded_aligned_masked_road',
             gate='none' if self.mode == 'identity' else ('0.5' if self.mode == 'fixed' else 'theta/(theta+U)'),
-            local_only_gate=True, temporal_state=False, added_parameters=0,
+            local_only_gate=True, temporal_state=False,
+            added_parameters=sum(p.numel() for p in self.synapse.parameters()) if self.synapse is not None else 0,
+            synapse=self.synapse.statistics() if self.synapse is not None else None,
             original_max_output_used=self.mode == 'identity')
 
     def close(self):

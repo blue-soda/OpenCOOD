@@ -85,8 +85,14 @@ def main():
     parser.add_argument('--pillar-initial-voltage', type=float, choices=(0.,.5), default=0.)
     parser.add_argument('--selection-mode', choices=('identity','request_only','confidence_only','geometry_only'))
     parser.add_argument('--geometry-backend',action='store_true',help='Single encoder pass; remove confidence and request computation')
+    parser.add_argument('--synapse-mode',choices=('none','stage','channel'),default='none')
+    parser.add_argument('--synapse-identity',action='store_true',help='Fixed-weight ablation: replace learned current gains by one')
     parser.add_argument('--suppress-remote-current',action='store_true',help='Frozen geometry-model ablation: retain local membrane and readout, set aligned remote current to zero; not independently trained ego or wire accounting')
     args = parser.parse_args()
+    if args.synapse_mode != 'none' and (not args.geometry_backend or args.membrane_mode != 'local'):
+        parser.error('Learned synapses require the geometry/local membrane route')
+    if args.synapse_identity and args.synapse_mode == 'none':
+        parser.error('Identity ablation requires a registered learned synapse')
     if args.suppress_remote_current and (not args.geometry_backend or args.membrane_mode!='local' or args.count_wire or args.wire_codec):
         parser.error('Remote-current ablation requires the local-membrane geometry backend without wire accounting')
     if args.geometry_backend and args.selection_mode!='geometry_only':
@@ -197,6 +203,8 @@ def main():
             raise RuntimeError('Unexpected box_align external files: resolve explicitly before reproduction')
         checkpoint = checkpoint_path(model_dir)
         model = train_utils.create_model(cfg)
+        from cosdh_synapse import install as install_synapse
+        install_synapse(model,args.synapse_mode,args.readout_thresholds)
         saved = torch.load(str(checkpoint), map_location='cpu')
         expected = model.state_dict()
         if not isinstance(saved, dict):
@@ -216,6 +224,7 @@ def main():
         model.load_state_dict(saved, strict=True)
         del saved
         model.to(device).eval()
+        if args.synapse_identity: model.snn_synapse.force_identity = True
         parameters = sum(p.numel() for p in model.parameters())
         counts = None
         if args.count_thresholds:
@@ -300,7 +309,9 @@ def main():
         metadata['feature_only'] = args.feature_only
         metadata['readout'] = dict(mode=args.readout_mode, thresholds_sha256=digest(args.readout_thresholds),
             interface='post_fusion', original_fusion_preserved=True, membrane_conversion=False) if readout else None
-        metadata['membrane'] = dict(mode=args.membrane_mode, single_frame=True, added_parameters=0,
+        metadata['membrane'] = dict(mode=args.membrane_mode, single_frame=True,
+            added_parameters=sum(p.numel() for p in model.snn_synapse.parameters()) if args.synapse_mode!='none' else 0,
+            synapse=model.snn_synapse.statistics() if args.synapse_mode!='none' else None,
             gate='none' if args.membrane_mode == 'identity' else ('theta/(theta+local)' if args.membrane_mode == 'local' else '0.5'),
             max_replaced=args.membrane_mode != 'identity') if membrane else None
         if membrane and args.membrane_mode != 'identity':

@@ -1,7 +1,6 @@
-"""Matched three-epoch SNN encoder/decoder adaptation, fixed BN and heads.
+"""Three-epoch SNN adaptation with explicit trainable sets and fixed BN.
 
-Original confidence/request and single-pass geometry use the same checkpoint,
-32 parameter tensors, ordered data, optimizer and final-epoch selection.
+Optional ANN readout or bounded synaptic gains are separate registered studies.
 """
 import argparse
 import hashlib
@@ -27,6 +26,7 @@ def main():
     for k in ('repo','model-dir','data-root','train-split','val-split','sender-thresholds','readout-thresholds','front-thresholds','second-thresholds','third-thresholds','pillar-thresholds','output'):p.add_argument('--'+k,required=True)
     p.add_argument('--receiver',choices=('original','geometry'),required=True)
     p.add_argument('--adaptation-scope',choices=('encoder_decoder','encoder_decoder_head'),default='encoder_decoder')
+    p.add_argument('--synapse-mode',choices=('none','stage','channel'),default='none')
     p.add_argument('--smoke',action='store_true')
     a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
     sys.path.insert(0,str(Path(a.repo).resolve()));os.chdir(a.repo)
@@ -49,7 +49,11 @@ def main():
     model_dir=Path(a.model_dir);checkpoint=model_dir/'net_epoch3.pth'
     cfg=yaml_utils.load_yaml(str(model_dir/'config.yaml'))
     cfg.update(data_dir=a.data_root,root_dir=a.train_split,validate_dir=a.train_split,test_dir=a.train_split,comm_range=1e6);cfg['fusion']['core_method']='intermediatelate'
-    model=train_utils.create_model(cfg);original=torch.load(str(checkpoint),map_location='cpu')
+    model=train_utils.create_model(cfg)
+    from cosdh_synapse import install as install_synapse
+    if a.synapse_mode!='none':assert a.receiver=='geometry' and a.adaptation_scope=='encoder_decoder'
+    install_synapse(model,a.synapse_mode,a.readout_thresholds)
+    original=torch.load(str(checkpoint),map_location='cpu')
     model.load_state_dict(original,strict=True);model.cuda().eval()
     for v in model.parameters():v.requires_grad_(False)
     names=[]
@@ -78,8 +82,18 @@ def main():
             assert any(n.startswith(prefix) for n in head_names)
         if model.use_dir:assert any(n.startswith('dir_head.') for n in head_names)
     assert all(not v.requires_grad for module in model.modules() if isinstance(module,torch.nn.modules.batchnorm._BatchNorm) for v in module.parameters())
+    synapse_names=[]
+    if a.synapse_mode!='none':
+        for name,v in model.snn_synapse.named_parameters():
+            v.requires_grad_(True);synapse_names.append('snn_synapse.'+name)
+        assert len(synapse_names)==3
+        names+=synapse_names
     parameters=[v for v in model.parameters() if v.requires_grad]
-    optimizer=torch.optim.AdamW(parameters,lr=1e-5,weight_decay=1e-4);criterion=train_utils.create_loss(cfg)
+    groups=parameters
+    if synapse_names:
+        groups=[dict(params=[v for n,v in model.named_parameters() if v.requires_grad and n not in synapse_names],lr=1e-5),
+                dict(params=list(model.snn_synapse.parameters()),lr=1e-3)]
+    optimizer=torch.optim.AdamW(groups,lr=1e-5,weight_decay=1e-4);criterion=train_utils.create_loss(cfg)
     paths=1 if a.receiver=='geometry' else 2
     counts=CoSDHCounts(model,a.sender_thresholds,8,surrogate=True)
     readout=CoSDHReadout(model,a.readout_thresholds,'count16',surrogate=True)
@@ -92,8 +106,9 @@ def main():
     contract=dict(epochs=3,batch_size=1,seed=303,lr=1e-5,weight_decay=1e-4,optimizer='AdamW',grad_clip=10.,receiver=a.receiver,
         trainable_names=names,trainable_parameters=sum(v.numel() for v in parameters),encoder_paths=paths,
         adaptation_scope=a.adaptation_scope,encoder_decoder_names=encoder_decoder_names,head_names=head_names,
+        synapse_mode=a.synapse_mode,synapse_names=synapse_names,synapse_lr=1e-3 if synapse_names else None,
         total_parameters=sum(v.numel() for v in model.parameters()),
-        scope='PFN linear weight,19 BEV convolution weights,12 compressor-decoder tensors; optional ANN deblock/shrink/detection convolutions. All BN and latent compressor encoders frozen.',
+        scope='PFN linear weight,19 BEV convolution weights,12 compressor-decoder tensors; optional ANN downstream convolutions or registered bounded synaptic gains. All BN and latent compressor encoders frozen.',
         checkpoint_sha256=sha(checkpoint),train_split_sha256=sha(a.train_split),val_split_sha256=sha(a.val_split),
         thresholds_sha256={k:sha(getattr(a,k+'_thresholds')) for k in ('sender','readout','front','second','third','pillar')},source_sha256=sha(__file__),
         preprocessing='4678 commontrain with inference preprocessing, no random augmentation; same seeded epoch permutation',
@@ -114,6 +129,8 @@ def main():
             optimizer.zero_grad(set_to_none=True);output=model(batch['ego']);routes=[c.finish() for c in converters]
             loss=criterion(output,batch['ego']['label_dict']);assert torch.isfinite(loss);loss.backward()
             gradients=dict(BEV=[c.gradient_summary() for c in stages],PFN=pillar.gradient_summary()) if a.smoke else None
+            if a.smoke and synapse_names:
+                gradients['synapse']=[dict(nonzero=int(torch.count_nonzero(v.grad)),elements=v.numel(),l1=float(v.grad.abs().sum())) for v in model.snn_synapse.parameters()]
             norm=torch.nn.utils.clip_grad_norm_(parameters,10.,error_if_nonfinite=True)
             assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in parameters)
             if a.smoke:assert all(torch.count_nonzero(v.grad)>0 for v in parameters),'All registered tensors must receive gradients'
@@ -122,6 +139,7 @@ def main():
                 row=dict(state='training',epoch=epoch,batch=batch_index,batches=len(order),optimizer_steps=updates,loss=float(loss.detach()),gradient_norm=float(norm),elapsed_seconds=time.time()-start,order_sha256=order_hash,
                     PFN=routes[6],BEV=routes[3:6],receiver=routes[7] if geometry else routes[2])
                 if gradients:row['gradients']=gradients
+                if synapse_names:row['synapse']=model.snn_synapse.statistics()
                 write(out/'progress.json',row)
                 with (out/'steps.jsonl').open('a') as f:f.write(json.dumps(row)+'\n')
             del output,loss,batch
