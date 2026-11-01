@@ -15,7 +15,7 @@ class FixedPointIFActivation(nn.Module):
 
     def __init__(self, scales, mode='count', steps=8):
         super().__init__()
-        if mode not in ('clip','count','if') or type(steps) is not int or not 1<=steps<=1024:
+        if mode not in ('zero','clip','count','if') or type(steps) is not int or not 1<=steps<=1024:
             raise ValueError('Invalid activation coding mode/steps')
         scales=torch.as_tensor(scales,dtype=torch.float32).flatten()
         if not len(scales) or not bool(torch.isfinite(scales).all()) or not bool((scales>0).all()):
@@ -32,7 +32,8 @@ class FixedPointIFActivation(nn.Module):
         stats=dict(mode=self.mode,steps=self.steps,elements=x.numel(),
             clipped_fraction=float((positive>self.scales).float().mean()),scale_buffer_bytes=self.scales.numel()*self.scales.element_size(),
             persistent_membrane_bytes=0,if_neuron_updates=0,spike_count=None,emission_rate=None)
-        if self.mode=='clip':result=clipped
+        if self.mode=='zero':result=torch.zeros_like(positive)
+        elif self.mode=='clip':result=clipped
         else:
             drive=torch.floor((clipped/self.scales)*self.quantum).to(torch.int32).clamp_(0,self.quantum)
             if self.mode=='count':counts=torch.floor_divide(drive*self.steps,self.quantum)

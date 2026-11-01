@@ -40,5 +40,11 @@ class IFActivationTests(unittest.TestCase):
             with self.assertRaises(ValueError):FixedPointIFActivation(scale)
         with self.assertRaises(ValueError):FixedPointIFActivation([1.],steps=0)
 
+    def test_zero_intervention_is_exact(self):
+        zero=FixedPointIFActivation([.1,1.],'zero').eval()
+        with torch.no_grad():actual=zero(torch.randn(1,2,5,7)*10)
+        self.assertEqual(int(torch.count_nonzero(actual)),0)
+        self.assertEqual(zero.last_stats['if_neuron_updates'],0)
+
 
 if __name__=='__main__':unittest.main()
