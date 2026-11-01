@@ -34,6 +34,11 @@ def progress_signature(directory):
     directory = Path(directory)
     path = directory / 'progress.json'
     progress = json.loads(path.read_text()) if path.exists() else {}
+    # Standalone evaluation writes only validation_progress.json. Do not
+    # pre-create progress.json: the evaluator requires a fresh output directory.
+    if not progress and (directory / 'validation_progress.json').exists():
+        validation = json.loads((directory / 'validation_progress.json').read_text())
+        return dict(state=validation.get('state'), samples=validation.get('samples'))
     if not progress and (directory / 'status.json').exists():
         status = json.loads((directory / 'status.json').read_text())
         if 'stage' in status and 'completed' in status:
