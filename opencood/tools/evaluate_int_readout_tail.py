@@ -14,6 +14,7 @@ from opencood.tools.evaluate_int_late_anchor import MeasuredAnchor
 from opencood.tools.run_int_cache_repair import setup,evaluate
 from opencood.tools.run_int_ego import write_json
 from opencood.tools.launch_int_memory import digest
+from opencood.models.sub_modules.int_event_cost import attach_spatial_event_audit
 
 
 class MeasuredReadout(MeasuredAnchor):
@@ -37,6 +38,11 @@ class MeasuredReadout(MeasuredAnchor):
             assert torch.equal(state['anchor']['value'],other_state['anchor']['value'])
         assert self.model.core.readout.input_codec.calls==self.model.core.readout.middle_codec.calls==index+1
         coding=self.model.core.readout.coding_stats();info['activation_coding']=coding
+        if hasattr(self,'spatial_gold'):
+            previous_coding=self.spatial_gold[index]['activation_coding']
+            assert meta['frame']==self.spatial_gold[index]['frame']
+            for site in ('input','middle'):
+                assert all(coding[site][k]==v for k,v in previous_coding[site].items())
         info['validation_if_count_exact']=True if index<32 else None
         self.records[-1]['coding']=coding
         if (index+1)%200==0 or index==31:write_json(self.out/'status.json',dict(status='RUNNING',phase='full_validation',scans=index+1,total=5794))
@@ -74,8 +80,22 @@ def worker(a):
         candidate='Centered closed-form count with analog exceptions at both readout inputs',trained=False,timing_valid=False,
         boundary='One candidate frozen before full validation; no scale/T/phase search. Count execution plus analog bypass, not sparse IF kernel. Instrumentation and first32 reference work invalidate timing and deployment peak-memory claims.'))
     measured=MeasuredReadout(model,reference,gold,out);a.stage='full'
+    spatial_handles=[]
+    if a.spatial_reference:
+        spatial_source=Path(a.spatial_reference);spatial_report=json.loads(spatial_source.read_text())
+        assert spatial_report['status']=='COMPLETED' and spatial_report['scans']==5794
+        assert spatial_report['checkpoint_sha256']==gate['checkpoint_sha256'] and spatial_report['scale_sha256']==gate['scale_sha256']
+        measured.spatial_gold=[json.loads(x) for x in (spatial_source.parent/'frames.jsonl').read_text().splitlines()]
+        assert len(measured.spatial_gold)==5794
+        spatial_handles=attach_spatial_event_audit(model.core.readout)
+        write_json(out/'spatial_contract.json',dict(source_sha256=digest(spatial_source),source=str(spatial_source),
+            geometry='3x3 stride1 dilation1 groups1 zero pad1; exact valid fanout',
+            scope='Read-only counting; event AC and sparse-count MAC are hypothetical alternatives, not GPU operations',
+            tuning=False,timing_valid=False))
     try:report=evaluate(a,teacher,cfg,rows,out,measured)
-    finally:measured.close()
+    finally:
+        measured.close()
+        for handle in spatial_handles:handle.remove()
     assert len(measured.records)==5794 and report['labels']==1738
     sites={}
     for site in ('input','middle'):
@@ -86,6 +106,14 @@ def worker(a):
             max_single_call_bypass_mask_bytes=max(v['bypass_mask_bytes'] for v in values),
             count_execution_if_updates=sum(v['if_neuron_updates'] for v in values),
             equivalent_full_explicit_if_updates=8*elements,emission_rate=sum(v['spike_count'] for v in values)/(8*elements))
+        if a.spatial_reference:
+            keys=('event_ac_exact','event_ac_upper','analog_mac_exact','analog_mac_upper','sparse_count_mac_exact','spike_count','active_count_elements')
+            sites[site]['spatial_totals']={k:sum(v['spatial_cost'][k] for v in values) for k in keys}
+            sites[site]['spatial_mean_per_frame']={k:sites[site]['spatial_totals'][k]/len(values) for k in keys}
+            sites[site]['shape']=values[0]['spatial_cost']['shape']
+    if a.spatial_reference:
+        assert all(abs(report['metrics'][k]-v)<1e-8 for k,v in spatial_report['metrics'].items())
+        report['spatial_source_ap_and_coding_equal']=True
     report.update(scope='Frozen centered count+analog-tail readout full validation',checkpoint_sha256=gate['checkpoint_sha256'],
         scale_sha256=gate['scale_sha256'],timing_valid=False,core_and_refresh_identity_to_strict_all=True,
         validation_if_count_exact_frames=32,sites=sites,strict_baseline_ap70=prior['metrics']['bev_ap70'],
@@ -109,6 +137,7 @@ def worker(a):
 def main():
     p=argparse.ArgumentParser()
     for key in ('root','output','checkpoint','diagnostic-report','strict-report'):p.add_argument('--'+key,required=True)
+    p.add_argument('--spatial-reference',help='Completed uninstrumented-coding reference report for read-only spatial budget audit')
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('1h frozen full-validation budget')));signal.alarm(3600)
