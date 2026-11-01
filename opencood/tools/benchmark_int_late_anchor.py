@@ -11,6 +11,7 @@ import numpy as np
 import torch
 from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
 from opencood.models.sub_modules.int_pyramid_anchor import AnchoredLatePyramidDetector
+from opencood.models.sub_modules.int_pyramid_anchor_patch import PatchedLatePyramidDetector
 from opencood.tools.run_int_cache_repair import setup
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
@@ -25,6 +26,14 @@ def worker(a):
     assert report['scans']==5794 and report['labels']==1738 and report['max_age']==.25
     assert report['checkpoint_sha256']==digest(Path(a.checkpoint))
     with (source.parent/'frames.jsonl').open() as stream:reference=[json.loads(next(stream)) for _ in range(a.frames)]
+    patch_reference=None;patch_report=None
+    if a.patch_report:
+        patch_source=Path(a.patch_report);patch_report=json.loads(patch_source.read_text())
+        assert patch_report['status']=='COMPLETED' and patch_report['coverage']=='patch'
+        assert patch_report['scans']==5794 and patch_report['labels']==1738
+        assert patch_report['period']==2 and patch_report['max_age']==.25
+        assert patch_report['checkpoint_sha256']==report['checkpoint_sha256']
+        with (patch_source.parent/'frames.jsonl').open() as stream:patch_reference=[json.loads(next(stream)) for _ in range(a.frames)]
     a.mode='gru';a.stage='pilot';a.content_calibration=None;a.periodic_last=0;a.max_age=.25
     teacher,cfg,rows,provenance=setup(a);write_json(out/'provenance.json',provenance)
     base=PyramidStateDetector(teacher,cfg).cuda().eval();saved=torch.load(a.checkpoint,map_location='cpu')
@@ -33,12 +42,15 @@ def worker(a):
     base.load_state_dict(saved['model'],strict=True)
     models=dict(dense=base,period1=AnchoredLatePyramidDetector(base,period=1),
                 period2=AnchoredLatePyramidDetector(base,period=2,coverage='strict',max_age=.25))
+    if patch_reference is not None:models['patch']=PatchedLatePyramidDetector(base)
     for module in base.modules():assert not module._forward_hooks and not module._forward_pre_hooks
-    names=list(models);orders=[names[i:]+names[:i] for i in range(3)];timings={name:[] for name in names};rounds=[]
+    names=list(models);orders=[names[i:]+names[:i] for i in range(len(names))];timings={name:[] for name in names};rounds=[]
     grouped={};all_timings={name:[] for name in names}
     write_json(out/'contract.json',dict(checkpoint_sha256=report['checkpoint_sha256'],source_report_sha256=digest(source),
-        frames=a.frames,full_stream=a.frames==5794,rounds=3,orders=orders,warmup=16,period2_coverage='strict',max_age=.25,
+        frames=a.frames,full_stream=a.frames==5794,rounds=len(orders),orders=orders,warmup=16,period2_coverage='strict',max_age=.25,
         source_ap70=report['metrics']['bev_ap70'],source_ap_scope='R072 frozen full validation, no AP recomputation here',
+        patch_source_sha256=digest(Path(a.patch_report)) if a.patch_report else None,
+        patch_ap70=patch_report['metrics']['bev_ap70'] if patch_report else None,
         timing_scope='Synchronized model.step wall time includes Pillar, warp, refresh decisions, dense/skip deep, decoder and heads; excludes IO/H2D/postprocess',
         instrumentation='No forward/count hooks; comparisons and occupancy sampling outside timed interval'))
     with torch.no_grad(),(out/'timings.jsonl').open('x',buffering=1) as log:
@@ -62,11 +74,21 @@ def worker(a):
                 assert actual['late_refresh'] is not None or actual['uncovered_fraction']==0
                 assert all(torch.isfinite(v).all() for v in preds['period2'].values())
                 group=actual['late_refresh'] or 'reuse'
+                patch_group=None
+                if patch_reference is not None:
+                    observed=infos['patch'];wanted=patch_reference[index]
+                    assert wanted['frame']==meta['frame'] and bool(wanted['supervised'])==bool(meta['supervised'])
+                    for key in ('reset','late_refresh','anchor_timestamp_us','cache_bytes','repair'):
+                        assert observed[key]==wanted[key],(key,meta['frame'])
+                    assert all(torch.isfinite(v).all() for v in preds['patch'].values())
+                    patch_group=observed['late_refresh'] or ('patch' if observed['repair']['active'] else 'reuse')
+                    group=group+'|'+patch_group
                 if index>=16:
                     bucket=grouped.setdefault(group,{name:[] for name in names})
                     for name in names:bucket[name].append(elapsed[name])
                 log.write(json.dumps(dict(round=repeat,frame=meta['frame'],order=order,warmup=index<16,ms=elapsed,
                     period1_dense_exact=True,period2_schedule_matches=True,late_refresh=actual['late_refresh'],
+                    patch_schedule_matches=patch_reference is not None,patch_group=patch_group,
                     reset=actual['reset'],anchor_timestamp_us=actual['anchor_timestamp_us'],
                     uncovered_fraction=actual['uncovered_fraction'],supervised=bool(meta['supervised']),
                     cache_bytes=actual['cache_bytes']))+'\n')
@@ -87,10 +109,13 @@ def worker(a):
         checkpoint_sha256=report['checkpoint_sha256'],period1_dense_exact_all=True,period2_schedule_matches_full_validation=True,
         period2_to_dense_time=summary['period2']['mean_ms']/summary['dense']['mean_ms'],
         period2_to_period1_time=summary['period2']['mean_ms']/summary['period1']['mean_ms'],cache_bytes=report['cache_bytes'],
+        patch_to_dense_time=summary['patch']['mean_ms']/summary['dense']['mean_ms'] if 'patch' in summary else None,
+        patch_to_strict_time=summary['patch']['mean_ms']/summary['period2']['mean_ms'] if 'patch' in summary else None,
+        patch_schedule_matches_full_validation=patch_reference is not None,
         caveats=[('Full-stream model timing, not end-to-end latency.' if a.frames==5794 else 'Prefix model timing, not full-stream/end-to-end latency.')+
                  ' Same GPU, shared frozen weights, independent state per arm.',
                  'Exclusivity sampled every 64 frames and round boundaries; not continuous monitoring.',
-                 'Period1 outputs match dense; period2 follows full-validation schedule, its AP comes from R072 not this benchmark.',
+                 'Period1 outputs match dense; strict/patch follow their full-validation schedules, AP is not recomputed here.',
                  'Warmup first16 frames each round excluded; IO/H2D/postprocess and comparisons excluded from timings.']))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
@@ -99,8 +124,10 @@ def main():
     p=argparse.ArgumentParser()
     for key in ('root','output','checkpoint','source-report'):p.add_argument('--'+key,required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--frames',type=int,default=512);p.add_argument('--worker',action='store_true')
+    p.add_argument('--patch-report')
     a=p.parse_args();out=Path(a.output)
     if not (64<=a.frames<=512 or a.frames==5794):p.error('64 to 512 prefix frames or exactly5794 full-stream frames allowed')
+    if a.patch_report and a.frames>512:p.error('Four-arm patch timing currently limited to512-frame prefix')
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('1h anchor timing budget')));signal.alarm(3600)
         try:worker(a)
