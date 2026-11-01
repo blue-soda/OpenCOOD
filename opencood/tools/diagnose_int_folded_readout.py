@@ -32,6 +32,7 @@ def worker(a):
     assert contract['steps']==8 and contract['quantum']==65536 and contract['centered']
     gold=[json.loads(x) for x in (source.parent/'frames.jsonl').read_text().splitlines()]
     full_source=Path(a.validation_reference) if a.validation_reference else None
+    compact_bitplane=bool(a.bitplane and full_source)
     if full_source:
         full_prior=json.loads(full_source.read_text())
         assert full_prior['status']=='COMPLETED' and full_prior['scans']==5794 and full_prior['labels']==1738
@@ -44,6 +45,9 @@ def worker(a):
         if a.integer_accum:
             expected|={'folded_count_int8_i32','event8_int8_i32'}
             assert training_report['integer_predictions_exact_all'] and training_report['original_five_control_ap_records_equal']
+        if a.bitplane:
+            expected.add('bitplane_int8_i32')
+            assert training_report['bitplane_predictions_exact_all'] and training_report['original_seven_control_ap_records_equal']
         assert set(training_report['metrics'])==expected
         if a.int8_weights:
             assert training_report['fp32_control_ap_records_equal']
@@ -61,6 +65,7 @@ def worker(a):
     names=['reference','folded_count','event8']+(['folded_count_int8','event8_int8'] if a.int8_weights else [])
     if a.integer_accum:names+=['folded_count_int8_i32','event8_int8_i32']
     if a.bitplane:names+=['bitplane_int8_i32']
+    if compact_bitplane:names=['reference','folded_count_int8_i32','bitplane_int8_i32']
     models={name:readout_coded_anchor(base,contract['scales'],'count',8,True,32768) for name in names}
     for name in names[1:]:
         mode=name.replace('_i32','').replace('_int8','')
@@ -74,20 +79,25 @@ def worker(a):
         for name in [n for n in names if '_int8' in n]:
             block=models[name].core.readout.body.layers[0].double_conv
             quantization[name]={site:block[index].quantization for site,index in [('input',0),('middle',3)]}
-        assert quantization['folded_count_int8']==quantization['event8_int8']
-        assert all(value==quantization['folded_count_int8'] for value in quantization.values())
-        if full_source:assert quantization==training_report['quantization']==training_contract['quantization']
+        same_quantization=next(iter(quantization.values()))
+        assert all(value==same_quantization for value in quantization.values())
+        if full_source:
+            assert training_report['quantization']==training_contract['quantization']
+            assert all(value==training_report['quantization'][name] for name,value in quantization.items())
     if a.integer_accum:
         int8_prior=json.loads(Path(a.int8_reference).read_text())
         assert int8_prior['status']=='COMPLETED' and int8_prior['split']==split and int8_prior['scans']==frames
         assert int8_prior['checkpoint_sha256']==prior['checkpoint_sha256'] and int8_prior['scale_sha256']==prior['scale_sha256']
-        assert all(quantization[name]==value for name,value in int8_prior['quantization'].items())
+        assert all(value==same_quantization for value in int8_prior['quantization'].values())
     if a.bitplane:
         integer_prior=json.loads(Path(a.integer_reference).read_text())
         assert integer_prior['status']=='COMPLETED' and integer_prior['split']==split and integer_prior['scans']==frames
         assert integer_prior['integer_predictions_exact_all'] and integer_prior['original_five_control_ap_records_equal']
         assert integer_prior['checkpoint_sha256']==prior['checkpoint_sha256'] and integer_prior['scale_sha256']==prior['scale_sha256']
-        assert all(quantization[n]==v for n,v in integer_prior['quantization'].items())
+        assert all(v==same_quantization for v in integer_prior['quantization'].values())
+        if compact_bitplane:
+            integer_gold=[json.loads(x) for x in (Path(a.integer_reference).parent/'frames.jsonl').read_text().splitlines()]
+            assert len(integer_gold)==frames
     params={name:sum(p.numel() for p in model.parameters()) for name,model in models.items()}
     assert len(set(params.values()))==1
     write_json(out/'contract.json',dict(source_sha256=digest(source),checkpoint_sha256=digest(Path(a.checkpoint)),
@@ -99,10 +109,11 @@ def worker(a):
         weight_bits=8 if a.int8_weights else None,quantization=quantization,
         integer_accum=a.integer_accum,int8_source_sha256=digest(Path(a.int8_reference)) if a.integer_accum else None,
         bitplane=a.bitplane,integer_reference_sha256=digest(Path(a.integer_reference)) if a.bitplane else None,
+        compact_bitplane_full=compact_bitplane,
         integer_boundary='Bounded integer dot via dense FP32 GEMM with TF32 off; checked integer outputs converted to INT32; real INT32 time-block adds; one FP32 output scale; analog tail/bias/BN FP32. Not native INT8 kernel.' if a.integer_accum else None,
         fp32_source_sha256=digest(Path(a.fp32_reference)) if a.int8_weights else None,
         actual_model_buffer_bytes={name:sum(b.numel()*b.element_size() for b in model.buffers()) for name,model in models.items()},
-        scope='Dense GPU numerical emulation. Folded count uses two Conv per site; event8 uses nine. Bias once, unchanged BN.',
+        scope='Dense GPU numerical emulation. Folded count uses two Conv/GEMM per site; event8 nine; bitplane five. Bias once, unchanged BN.',
         boundary='Library chooses within-Conv summation. Not per-synapse hardware arithmetic, sparse kernel, speed or energy evidence.',
         trained=False,tuned=False,timing_valid=False))
     states={name:None for name in models};base_state=None;records=[]
@@ -130,10 +141,13 @@ def worker(a):
                 entry['arms'][name]=dict(core_conv_flops=cost,functional_conv_flops=functional_flops,sites=sites,
                     max_abs_error={k:float((pred[k]-preds['reference'][k]).abs().max()) for k in pred},
                     relative_mse={k:float((pred[k]-preds['reference'][k]).square().mean()/(preds['reference'][k].square().mean()+1e-12)) for k in pred})
-            if a.integer_accum:
+            if a.integer_accum and not compact_bitplane:
                 assert all(torch.equal(preds['folded_count_int8_i32'][k],preds['event8_int8_i32'][k]) for k in preds['reference'])
             if a.bitplane:
                 assert all(torch.equal(preds['bitplane_int8_i32'][k],preds['folded_count_int8_i32'][k]) for k in preds['reference'])
+            if compact_bitplane:
+                assert entry['frame']==integer_gold[index]['frame']
+                assert all(entry['arms'][n]==integer_gold[index]['arms'][n] for n in names[:2])
             if meta['supervised']:
                 data=dict(ego=ego);gt=dataset.post.generate_gt_bbx(data)
                 for name,pred in preds.items():
@@ -150,13 +164,13 @@ def worker(a):
     else:assert ap['reference'][.7]==old_ap['count8_centered']['0.7']
     if a.int8_weights:
         fp32_ap=json.loads((Path(a.fp32_reference).parent/'ap_records.json').read_text())
-        assert all(ap[name][t]==fp32_ap[name][str(t)] for name in names[:3] for t in (.5,.7))
+        assert all(ap[name][t]==fp32_ap[name][str(t)] for name in (names[:1] if compact_bitplane else names[:3]) for t in (.5,.7))
     if a.integer_accum:
         int8_ap=json.loads((Path(a.int8_reference).parent/'ap_records.json').read_text())
-        assert all(ap[name][t]==int8_ap[name][str(t)] for name in names[:5] for t in (.5,.7))
+        assert all(ap[name][t]==int8_ap[name][str(t)] for name in (names[:1] if compact_bitplane else names[:5]) for t in (.5,.7))
     if a.bitplane:
         integer_ap=json.loads((Path(a.integer_reference).parent/'ap_records.json').read_text())
-        assert all(ap[name][t]==integer_ap[name][str(t)] for name in names[:7] for t in (.5,.7))
+        assert all(ap[name][t]==integer_ap[name][str(t)] for name in (names[:2] if compact_bitplane else names[:7]) for t in (.5,.7))
     metrics={name:dict(parameters=params[name],ap50=eval_utils.calculate_ap(ap[name],.5)[0],ap70=eval_utils.calculate_ap(ap[name],.7)[0],
         core_conv_flops_mean=sum(r['arms'][name]['core_conv_flops'] for r in records)/frames,
         max_abs_error={k:max(r['arms'][name]['max_abs_error'][k] for r in records) for k in preds[name]},
@@ -166,10 +180,12 @@ def worker(a):
     write_json(out/'report.json',dict(status='COMPLETED',split=split,scans=frames,labels=sum(r['supervised'] for r in records),
         checkpoint_sha256=digest(Path(a.checkpoint)),scale_sha256=prior['scale_sha256'],source_sha256=digest(source),
         metrics=metrics,quantization=quantization,fp32_control_ap_records_equal=True if a.int8_weights else None,
-        integer_predictions_exact_all=True if a.integer_accum else None,
-        original_five_control_ap_records_equal=True if a.integer_accum else None,
+        integer_predictions_exact_all=True if a.integer_accum and not compact_bitplane else None,
+        original_five_control_ap_records_equal=True if a.integer_accum and not compact_bitplane else None,
         bitplane_predictions_exact_all=True if a.bitplane else None,
-        original_seven_control_ap_records_equal=True if a.bitplane else None,
+        original_seven_control_ap_records_equal=True if a.bitplane and not compact_bitplane else None,
+        replayed_integer_reference_frames_exact=True if compact_bitplane else None,
+        replayed_integer_reference_arms=names[:2] if compact_bitplane else None,
         reference_ap70_records_equal_R088=True if not full_source else None,
         reference_raw_ap_equal_R089=True if full_source else None,all_cache_states_equal=True,timing_valid=False,
         caveat='Frozen numerical diagnostic; split explicitly recorded, validation-selected seed303 not independent test. Dense repeated Conv/GEMM FLOPs include simulation overhead; integer adds/scaling separately in frame sites; no sparse hardware claim. Pillar computed once for shared spatial inputs and excluded from per-arm core budgets.'))
@@ -184,8 +200,8 @@ def main():
     p.add_argument('--int8-weights',action='store_true');p.add_argument('--fp32-reference')
     p.add_argument('--integer-accum',action='store_true');p.add_argument('--int8-reference')
     p.add_argument('--bitplane',action='store_true');p.add_argument('--integer-reference');a=p.parse_args();out=Path(a.output)
-    if a.bitplane and (not a.integer_accum or not a.integer_reference or a.validation_reference):
-        p.error('Bitplane study currently requires train256 and completed integer reference')
+    if a.bitplane and (not a.integer_accum or not a.integer_reference):
+        p.error('Bitplane study requires completed integer reference on the same split')
     if a.integer_accum and (not a.int8_weights or not a.int8_reference):
         p.error('Integer study requires INT8 controls and completed INT8 reference on the same split')
     if a.int8_weights and not a.fp32_reference:p.error('INT8 study requires a completed FP32 diagnostic on the same split')
