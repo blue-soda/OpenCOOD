@@ -49,15 +49,30 @@ def worker(a):
     assert saved['contract']['teacher_sha256']==provenance['checkpoint']['sha256']
     assert saved['contract']['data_contract']==provenance['contract'] and saved['contract']['version']==base.version
     base.load_state_dict(saved['model'],strict=True)
-    models={name:readout_coded_anchor(base,contract['scales'],'count',8,True,32768) for name in ('reference','folded_count','event8')}
-    for name in ('folded_count','event8'):models[name].core.readout=folded_readout(models[name].core.readout,name)
+    names=['reference','folded_count','event8']+(['folded_count_int8','event8_int8'] if a.int8_weights else [])
+    models={name:readout_coded_anchor(base,contract['scales'],'count',8,True,32768) for name in names}
+    for name in names[1:]:
+        mode=name.replace('_int8','')
+        models[name].core.readout=folded_readout(models[name].core.readout,mode,8 if name.endswith('_int8') else None)
+    quantization={}
+    if a.int8_weights:
+        fp32_source=Path(a.fp32_reference);fp32_prior=json.loads(fp32_source.read_text())
+        assert fp32_prior['status']=='COMPLETED' and fp32_prior['split']=='train' and fp32_prior['scans']==256
+        assert fp32_prior['checkpoint_sha256']==prior['checkpoint_sha256'] and fp32_prior['scale_sha256']==prior['scale_sha256']
+        for name in names[-2:]:
+            block=models[name].core.readout.body.layers[0].double_conv
+            quantization[name]={site:block[index].quantization for site,index in [('input',0),('middle',3)]}
+        assert quantization['folded_count_int8']==quantization['event8_int8']
     params={name:sum(p.numel() for p in model.parameters()) for name,model in models.items()}
     assert len(set(params.values()))==1
     write_json(out/'contract.json',dict(source_sha256=digest(source),checkpoint_sha256=digest(Path(a.checkpoint)),
         scale_sha256=prior['scale_sha256'],split=split,frames=frames,steps=8,quantum=65536,initial_membrane_units=32768,
         validation_reference_sha256=digest(full_source) if full_source else None,
         training_gate_sha256=digest(Path(a.training_gate)) if full_source else None,
-        modes=list(models),parameters=params,precision='FP32 weights/convolution outputs/time-block accumulator; TF32 disabled',
+        modes=list(models),parameters=params,precision='INT8 storage roundtrip, FP32 dequantized convolution and accumulation; controls FP32; TF32 disabled' if a.int8_weights else 'FP32 weights/convolution outputs/time-block accumulator; TF32 disabled',
+        weight_bits=8 if a.int8_weights else None,quantization=quantization,
+        fp32_source_sha256=digest(Path(a.fp32_reference)) if a.int8_weights else None,
+        actual_model_buffer_bytes={name:sum(b.numel()*b.element_size() for b in model.buffers()) for name,model in models.items()},
         scope='Dense GPU numerical emulation. Folded count uses two Conv per site; event8 uses nine. Bias once, unchanged BN.',
         boundary='Library chooses within-Conv summation. Not per-synapse hardware arithmetic, sparse kernel, speed or energy evidence.',
         trained=False,tuned=False,timing_valid=False))
@@ -82,7 +97,7 @@ def worker(a):
                     assert cost==(gold[index]['core_conv_flops'] if full_source else gold[index]['arms']['ann']['core_flops'])
                 else:
                     readout_flops=sum(v['reference_conv_flops'] for v in sites.values())
-                    assert cost==entry['arms']['reference']['core_conv_flops']+readout_flops*(1 if name=='folded_count' else 8)
+                    assert cost==entry['arms']['reference']['core_conv_flops']+readout_flops*(1 if name.startswith('folded_count') else 8)
                 entry['arms'][name]=dict(core_conv_flops=cost,functional_conv_flops=functional_flops,sites=sites,
                     max_abs_error={k:float((pred[k]-preds['reference'][k]).abs().max()) for k in pred},
                     relative_mse={k:float((pred[k]-preds['reference'][k]).square().mean()/(preds['reference'][k].square().mean()+1e-12)) for k in pred})
@@ -100,6 +115,9 @@ def worker(a):
     if full_source:
         assert all(ap['reference'][t]==old_ap[str(t)] for t in (.5,.7))
     else:assert ap['reference'][.7]==old_ap['count8_centered']['0.7']
+    if a.int8_weights:
+        fp32_ap=json.loads((Path(a.fp32_reference).parent/'ap_records.json').read_text())
+        assert all(ap[name][t]==fp32_ap[name][str(t)] for name in names[:3] for t in (.5,.7))
     metrics={name:dict(parameters=params[name],ap50=eval_utils.calculate_ap(ap[name],.5)[0],ap70=eval_utils.calculate_ap(ap[name],.7)[0],
         core_conv_flops_mean=sum(r['arms'][name]['core_conv_flops'] for r in records)/frames,
         max_abs_error={k:max(r['arms'][name]['max_abs_error'][k] for r in records) for k in preds[name]},
@@ -108,7 +126,8 @@ def worker(a):
         extra_folded_weight_bytes=0 if name=='reference' else sum(v['folded_weight_bytes'] for v in records[0]['arms'][name]['sites'].values())) for name in models}
     write_json(out/'report.json',dict(status='COMPLETED',split=split,scans=frames,labels=sum(r['supervised'] for r in records),
         checkpoint_sha256=digest(Path(a.checkpoint)),scale_sha256=prior['scale_sha256'],source_sha256=digest(source),
-        metrics=metrics,reference_ap70_records_equal_R088=True if not full_source else None,
+        metrics=metrics,quantization=quantization,fp32_control_ap_records_equal=True if a.int8_weights else None,
+        reference_ap70_records_equal_R088=True if not full_source else None,
         reference_raw_ap_equal_R089=True if full_source else None,all_cache_states_equal=True,timing_valid=False,
         caveat='FP32 summation-order diagnostic; split explicitly recorded, validation-selected seed303 not independent test. Dense repeated Conv FLOPs include simulation overhead; no sparse hardware claim. Pillar computed once for shared spatial inputs and excluded from per-arm core budgets.'))
     write_json(out/'status.json',dict(status='COMPLETED'))
@@ -118,7 +137,9 @@ def main():
     p=argparse.ArgumentParser()
     for name in ('root','source','checkpoint','output'):p.add_argument('--'+name,required=True)
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true')
-    p.add_argument('--validation-reference');p.add_argument('--training-gate');a=p.parse_args();out=Path(a.output)
+    p.add_argument('--validation-reference');p.add_argument('--training-gate')
+    p.add_argument('--int8-weights',action='store_true');p.add_argument('--fp32-reference');a=p.parse_args();out=Path(a.output)
+    if a.int8_weights and (not a.fp32_reference or a.validation_reference):p.error('INT8 study requires FP32 train reference and is limited to train256 until separately gated')
     if a.validation_reference and not a.training_gate:p.error('Full validation requires completed frozen three-arm training diagnostic')
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('1h frozen FP32 diagnostic budget')));signal.alarm(3600)
