@@ -47,3 +47,25 @@ class TemporalRefreshController:
         new=dict(membrane=membrane,timestamp_us=timestamp_us,scene=scene)
         return triggered,new,dict(reason='evidence' if triggered else None,
             spike=self.mode=='event' and triggered,pre_reset_membrane=potential,dt=dt)
+
+
+def replay_refresh_trace(rows, mode, threshold, tau=.2):
+    """Replay own-anchor coverage from a causal pairwise geometry trace.
+
+    Coarse states are independent of deep refresh decisions in this pyramid.
+    Geometry is indexed by each candidate's actual anchor, never baseline flags.
+    """
+    policy=TemporalRefreshController(mode=mode,threshold=threshold,tau=tau)
+    state=None;anchor=None;records=[]
+    for index,row in enumerate(rows):
+        forced=row['reset']
+        if anchor is None:forced=forced or 'initial'
+        elif forced is None:
+            age=(row['timestamp_us']-rows[anchor]['timestamp_us'])/1e6
+            if age>=.25-1e-6:forced='age'
+            elif row['coverage_by_anchor'][str(anchor)]>0:forced='coverage'
+        fired,state,info=policy.step(row['evidence'],row['timestamp_us'],row['segment'],state,forced is not None)
+        reason=forced or ('evidence' if fired else None)
+        if reason is not None:anchor=index
+        records.append(dict(refresh=reason,anchor_index=anchor,membrane=state['membrane'],spike=info['spike']))
+    return records

@@ -24,6 +24,17 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
     def reuse_deep(self, current, old, valid):
         return old, None
 
+    def observe_coarse(self, current, old, valid, reset):
+        return None
+
+    def decide_refresh(self, state, meta, reason, age, uncovered, count, evidence):
+        refresh=reason
+        if refresh is None:
+            if count>=self.period:refresh='period'
+            elif age>=self.max_age-1e-6:refresh='age'
+            elif self.coverage=='strict' and uncovered>0:refresh='coverage'
+        return refresh,None,None
+
     def step_spatial(self, spatial, state, meta, detach_state=True, requests=None):
         if self.training or torch.is_grad_enabled() or spatial.shape[0]!=1 or requests is not None:
             raise ValueError('Frozen single stream, no spatial masks')
@@ -44,6 +55,7 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
                 bounds=block_lidar_range(self.bounds,spatial.shape[-2:],current.shape[-2:],scale)
                 old,valid=warp_bev(state[key],state['pose'],meta['pose'],bounds)
             x=update(current,old,valid);values.append(x)
+        evidence=self.observe_coarse(x,old,valid,reason)
         shape=((x.shape[-2]+1)//2,(x.shape[-1]+1)//2)
         bounds=block_lidar_range(self.bounds,spatial.shape[-2:],shape,8)
         refresh=reason;age=0.;uncovered=0.;count=0
@@ -55,9 +67,7 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
             if age<=0:raise ValueError('Noncausal anchor')
             old,valid=warp_bev(anchor['value'],anchor['pose'],meta['pose'],bounds)
             uncovered=float((~valid).float().mean())
-            if count>=self.period:refresh='period'
-            elif age>=self.max_age-1e-6:refresh='age'
-            elif self.coverage=='strict' and bool((~valid).any()):refresh='coverage'
+        refresh,controller_state,controller_info=self.decide_refresh(state,meta,reason,age,uncovered,count,evidence)
         repair = None
         if refresh:
             deep=self.core.deep_update(self.core.deep_encoder(x),old,valid)
@@ -71,8 +81,10 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
         if self.core.dir_head is not None:pred['dm']=self.core.dir_head(features)
         new=dict(value=values[0].detach(),coarse=values[1].detach(),anchor=anchor,
             pose=copy.deepcopy(meta['pose']),scene=meta['segment'],timestamp_us=stamp)
+        if controller_state is not None:new['controller']=controller_state
         size=sum(v.numel()*v.element_size() for v in (new['value'],new['coarse'],anchor['value']))
         return pred,new,dict(reset=reason,late_refresh=refresh,repair=repair,anchor_timestamp_us=anchor['timestamp_us'],
+            refresh_evidence=evidence,controller=controller_info,
             anchor_age_before_refresh=age,uncovered_fraction=uncovered,state_bytes=size,cache_bytes=size,
             cache_stages=[dict(actual_write_fraction=1.,executed_input_area_ratio=1.) for _ in range(2)]+
                          [dict(actual_write_fraction=repair['actual_write_fraction'],
