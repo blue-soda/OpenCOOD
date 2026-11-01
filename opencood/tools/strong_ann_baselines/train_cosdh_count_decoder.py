@@ -34,7 +34,10 @@ def main():
     p.add_argument('--checkpoint-name', default='net_epoch11.pth')
     p.add_argument('--readout-thresholds')
     p.add_argument('--readout-mode', choices=('identity', 'clip', 'count4', 'count16'))
+    p.add_argument('--membrane-mode', choices=('identity', 'fixed', 'local'))
     a = p.parse_args()
+    if a.membrane_mode and a.readout_mode not in ('count4', 'count16'):
+        p.error('Membrane adaptation requires calibrated count readout')
     if bool(a.readout_thresholds) != bool(a.readout_mode):
         p.error('Readout thresholds and mode required together')
     if a.readout_mode and a.steps != 8:
@@ -75,6 +78,10 @@ def main():
     if a.readout_mode:
         from cosdh_readout import CoSDHReadout
         readout = CoSDHReadout(model, a.readout_thresholds, a.readout_mode, surrogate=True)
+    membrane = None
+    if a.membrane_mode:
+        from cosdh_membrane import CoSDHMembrane
+        membrane = CoSDHMembrane(model, a.readout_thresholds, a.membrane_mode, int(a.readout_mode[5:]))
     dataset = build_dataset(cfg, visualize=False, train=False)
     assert list(dataset.split_info) == train_ids
     contract = dict(epochs=3, batch_size=1, seed=303, lr=1e-5, weight_decay=1e-4, optimizer='AdamW',
@@ -84,6 +91,7 @@ def main():
         selection='Last epoch3 only; no intermediate AP selection; pre-adaptation references retained',
         checkpoint_sha256=sha(checkpoint), train_split_sha256=sha(a.train_split), val_split_sha256=sha(a.val_split),
         thresholds_sha256=sha(a.thresholds), source_sha256=sha(__file__), no_wire=True,
+        membrane_mode=a.membrane_mode, membrane_parameters=0,
         readout_mode=a.readout_mode, readout_thresholds_sha256=sha(a.readout_thresholds) if readout else None,
         readout_surrogate='Unit derivative on [0,scale], zero outside; exact IF forward' if readout and a.readout_mode.startswith('count') else None)
     write(root/'contract.json', contract)
@@ -101,10 +109,12 @@ def main():
             assert batch['ego']['record_len'].tolist() == [2]
             if counts: counts.begin()
             if readout: readout.begin()
+            if membrane: membrane.begin()
             optimizer.zero_grad(set_to_none=True)
             output = model(batch['ego'])
             if counts: counts.finish()
             if readout: readout.finish()
+            membrane_diagnostic = membrane.finish() if membrane else None
             loss = criterion(output, batch['ego']['label_dict'])
             assert torch.isfinite(loss)
             loss.backward()
@@ -115,6 +125,7 @@ def main():
                 row = dict(state='training', epoch=epoch, batch=batch_index, batches=len(order),
                     optimizer_steps=updates, loss=float(loss.detach()), gradient_norm=float(norm),
                     elapsed_seconds=time.time()-start, order_sha256=order_hash)
+                if membrane_diagnostic: row['membrane'] = membrane_diagnostic
                 write(root/'progress.json', row)
                 with (root/'steps.jsonl').open('a') as f: f.write(json.dumps(row)+'\n')
             del output, loss, batch
