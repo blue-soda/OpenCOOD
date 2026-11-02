@@ -106,7 +106,11 @@ compute optimization, and no new receiver accuracy mechanism is claimed.
     if hasattr(receiver, 'snapshot_pyramid'):
         current, supported = receiver.snapshot_pyramid(membrane, decoded, current, supported, coverage)
     local_counts = count_readout(membrane)
-    fused_counts = torch.where(supported, count_readout(membrane + current), local_counts)
+    if hasattr(receiver, 'snapshot_receive_mode'):
+        from opencood.models.fuse_modules.e3dsnn_receiver_probe import receive
+        fused_counts = receive(membrane, current, supported, receiver.snapshot_receive_mode)
+    else:
+        fused_counts = torch.where(supported, count_readout(membrane + current), local_counts)
     observer = getattr(receiver, 'snapshot_readout_observer', None)
     if observer is not None:
         observer(local_counts, fused_counts)
