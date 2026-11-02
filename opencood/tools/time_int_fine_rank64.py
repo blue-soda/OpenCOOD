@@ -1,0 +1,110 @@
+"""StrictFP32 three-arm protected fine-cache frozen timing before adaptation."""
+import argparse
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import time
+import sys
+import numpy as np
+import torch
+from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
+from opencood.models.sub_modules.int_multiscale_refresh import TemporalPyramidDetector,ProtectedMultiscaleRefreshDetector
+from opencood.tools.check_int_temporal_feature import model_digest
+from opencood.tools.run_int_cache_repair import setup
+from opencood.tools.run_int_ego import loader,to_device,write_json
+from opencood.tools.launch_int_memory import digest
+from opencood.tools.diagnose_int_cached_state import load_targets
+from opencood.models.sub_modules.int_factorized_readout import compact_readout
+from opencood.models.sub_modules.int_fine_refresh import FineRefreshDetector
+
+
+def exclusive(uuid):
+    rows=subprocess.check_output(['nvidia-smi','--query-compute-apps=pid,gpu_uuid','--format=csv,noheader,nounits']).decode().strip().splitlines()
+    peers=[int(r.split(',')[0]) for r in rows if r.split(',')[-1].strip()==uuid and int(r.split(',')[0])!=os.getpid()]
+    if peers:raise RuntimeError('Timing contaminated by other GPU processes: '+str(peers))
+
+
+def worker(a):
+    torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
+    out=Path(a.output);uuid=os.environ['CUDA_VISIBLE_DEVICES'];exclusive(uuid)
+    audit=json.loads(Path(a.audit).read_text());gate=json.loads(Path(a.gate_verification).read_text())
+    assert audit['status']==gate['status']=='VERIFIED' and gate['run']=='R-139'
+    assert gate['checkpoint_sha256']==digest(Path(a.checkpoint))
+    for row in audit['files']:assert digest(Path(row['relocated_path']))==row['sha256']
+    tests=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    (out/'unit_tests.log').write_bytes(tests.stdout);assert tests.returncode==0
+    torch.cuda.set_per_process_memory_fraction(.5)
+    a.mode='gru';a.stage='calibrate';a.content_calibration=None;a.periodic_last=0;a.max_age=.25
+    teacher,cfg,rows,provenance=setup(a);rows=rows[512:768];write_json(out/'provenance.json',provenance)
+    base=PyramidStateDetector(teacher,cfg).cuda().eval();saved=torch.load(a.checkpoint,map_location='cpu')
+    assert saved['contract']['teacher_sha256']==provenance['checkpoint']['sha256']
+    assert saved['contract']['data_contract']==provenance['contract'] and saved['contract']['version']==base.version
+    base.load_state_dict(saved['model'],strict=True)
+    compact_gate=json.loads(Path(a.compact_verification).read_text());assert compact_gate['status']=='VERIFIED' and compact_gate['run']=='R-145'
+    assert digest(Path(a.initialization))==compact_gate['rank128_checkpoint_sha256']
+    source=ProtectedMultiscaleRefreshDetector(base,True).cuda().eval();load_targets(source,Path(a.trained)/'protected_light_final.pth',gate['training']['protected_light']['checkpoint_sha256'])
+    source.core.readout,_=compact_readout(base.core.readout,128);source.core.readout.load_state_dict(torch.load(a.initialization,map_location='cpu')['readout']);source.eval();models=dict(control=source)
+    fine_gate=json.loads(Path(a.fine_verification).read_text());assert fine_gate['status']=='VERIFIED' and fine_gate['run']=='R-167'
+    assert digest(Path(a.fine_initialization))==fine_gate['initialization_sha256'] and fine_gate['checkpoint_sha256']==gate['checkpoint_sha256']
+    initial_fine=torch.load(a.fine_initialization,map_location='cpu')
+    for n,light in (('fine_dense',False),('fine_light',True)):
+        m=FineRefreshDetector(source,light).cuda().eval();m.core.fine_light,_=compact_readout(source.core.observation,64);m.eval();m.core.fine_update.load_state_dict(initial_fine['fine_update']);m.core.fine_light.load_state_dict(initial_fine['fine_light']);models[n]=m
+    del teacher,saved
+    for m in models.values():
+        for p in m.parameters():p.requires_grad_(False)
+    hashes={n:model_digest(m) for n,m in models.items()}
+    write_json(out/'contract.json',dict(checkpoint_sha256=digest(Path(a.checkpoint)),gate_verification_sha256=digest(Path(a.gate_verification)),
+        uuid=uuid,device=torch.cuda.get_device_name(),torch_version=torch.__version__,code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
+        frames=[r['frame'] for r in rows],passes=2,warmup_scans_per_pass=16,seed=303,source_trained_sha256=dict(protected_light=gate['training']['protected_light']['checkpoint_sha256']),initialization_sha256=digest(Path(a.initialization)),fine_verification_sha256=digest(Path(a.fine_verification)),fine_initialization_sha256=digest(Path(a.fine_initialization)),precision=dict(matmul_tf32=False,cudnn_tf32=False),
+        initial_model_hashes=hashes,timing='torch.cuda.synchronize before/after model.step, includes pillar/warp/readout/heads, excludes loader/H2D/postprocess; no Conv hooks',
+        boundary='Fixed R139 cache plus R145 rank128 and R167 parent-SVD rank64 fine initialization. Fine variants quality UNMEASURED; no optimizer/AP. GPU exclusive but node shared. Repeat trained timing after any adaptation; do not treat initialization timing as trained result. StrictFP32, train256 timing only.'))
+    records=[]
+    with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
+        for repeat in range(2):
+            states={n:None for n in models};_,stream=loader(rows,cfg,2,303)
+            for i,sample in enumerate(stream):
+                if i%32==0:exclusive(uuid)
+                meta=sample['meta'];ego=to_device(sample['ego'],torch.device('cuda'))
+                names=list(models);offset=i%len(names);order=names[offset:]+names[:offset]
+                if repeat%2:order=list(reversed(order))
+                entry=dict(repeat=repeat,index=i,frame=meta['frame'],included=i>=16,execution_order=order,arms={})
+                for n in order:
+                    torch.cuda.synchronize();start=time.perf_counter()
+                    pred,states[n],info=models[n].step(ego,states[n],meta)
+                    torch.cuda.synchronize();elapsed=(time.perf_counter()-start)*1000
+                    assert all(bool(torch.isfinite(v).all()) for v in pred.values())
+                    cost=231067468800 if info['full_refresh'] else 105679929600+(1245081600 if n.startswith('fine_') else 0)-(17960140800 if n=='fine_light' else 0)
+                    entry['arms'][n]=dict(model_step_ms=elapsed,full_refresh=info['full_refresh'],
+                        reset=info['reset'],core_conv_flops_reconstructed=cost)
+                log.write(json.dumps(entry)+'\n');records.append(entry)
+                if (i+1)%32==0:write_json(out/'status.json',dict(status='RUNNING',phase='timing',repeat=repeat,scans=i+1,total=256))
+    exclusive(uuid);assert all(model_digest(m)==hashes[n] for n,m in models.items())
+    metrics={}
+    for n,m in models.items():
+        values=[r['arms'][n]['model_step_ms'] for r in records if r['included']]
+        assert len(values)==480
+        metrics[n]=dict(parameters=sum(p.numel() for p in m.parameters()),model_step_ms_mean=float(np.mean(values)),
+            model_step_ms_p50=float(np.median(values)),model_step_ms_p95=float(np.percentile(values,95)),samples=480,
+            per_pass_ms=[float(np.mean([r['arms'][n]['model_step_ms'] for r in records if r['included'] and r['repeat']==rep])) for rep in range(2)],
+            core_conv_flops_mean=sum(r['arms'][n]['core_conv_flops_reconstructed'] for r in records if r['included'])/480,
+            ap50=None,ap70=None,scope='No hooks during timing; core FLOPs reconstructed from actual refresh/patch schedule and independently validated constant-grid module costs')
+    write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,timing_valid=True,trained=False,ap_evaluated=False,
+        relative_to='control',
+        relative_changes={n:m['model_step_ms_mean']/metrics['control']['model_step_ms_mean']-1 for n,m in metrics.items()},
+        boundary='Parent-SVD initialization fixed, same-card counterbalanced train256 timing; candidate AP unmeasured. No trained quality-latency claim.'))
+    write_json(out/'status.json',dict(status='COMPLETED'))
+
+
+def main():
+    p=argparse.ArgumentParser()
+    for n in ('root','checkpoint','audit','gate-verification','trained','compact-verification','initialization','fine-verification','fine-initialization','output'):p.add_argument('--'+n,required=True)
+    a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
+    write_json(out/'status.json',dict(status='RUNNING',phase='identity'))
+    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('45min independent timing budget')));signal.alarm(2700)
+    try:worker(a)
+    except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc),timing_valid=False));raise
+
+
+if __name__=='__main__':main()
