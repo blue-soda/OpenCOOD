@@ -78,7 +78,7 @@ def worker(a):
                     assert torch.equal(request,written)
                     expected=torch.where(request,reference,old)
                     assert torch.allclose(actual,expected,atol=1e-4,rtol=1e-4)
-                    entry['arms']['%s_t%d_f%s'%(n,tile,fraction)]=dict(**stats,conv_flops=2*macs[0],
+                    entry['arms']['%s_t%d_f%s'%(n,tile,fraction)]=dict(stats,conv_flops=2*macs[0],
                         max_error=float((actual-expected).abs().max()),requested_fraction=float(request.float().mean()),
                         holes_fraction=float((~valid).float().mean()))
             records.append(entry);log.write(json.dumps(entry)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=i+1,total=32))
