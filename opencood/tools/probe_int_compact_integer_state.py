@@ -78,8 +78,9 @@ def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','event-verification','calibration','reference-verification','integer-verification','integer-source','output'):p.add_argument('--'+n,required=True)
     p.add_argument('--validation-prefix',type=int,default=0)
-    a=p.parse_args();assert a.validation_prefix in (0,512);a.full=bool(a.validation_prefix);out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
-    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('45min frozen integer nonlinear readout stream')));signal.alarm(2700)
+    a=p.parse_args();assert a.validation_prefix in (0,512,5794);a.full=bool(a.validation_prefix);out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
+    timeout=7200 if a.validation_prefix==5794 else 2700
+    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('Frozen integer nonlinear stream exceeded fixed budget')));signal.alarm(timeout)
     try:worker(a,out)
     except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
 
