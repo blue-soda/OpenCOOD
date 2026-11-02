@@ -8,6 +8,8 @@ def make_optimizer(cfg, model):
     prefix = opts.get('new_parameter_prefix')
     if not prefix:
         return train_utils.setup_optimizer(cfg, model)
+    if isinstance(prefix, list):
+        prefix = tuple(prefix)
     base, new = [], []
     for name, parameter in model.named_parameters():
         if parameter.requires_grad:

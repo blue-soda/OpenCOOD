@@ -73,6 +73,7 @@ def run(a):
             if cfg['model']['core_method']=='e3dsnn_snapshot_pyramid':
                 assert any(torch.count_nonzero(v)>0 for k,v in gradients.items() if k.startswith('joint_receiver.snapshot_pyramid.'))
             prefix=cfg['optimizer'].get('new_parameter_prefix')
+            if isinstance(prefix,list):prefix=tuple(prefix)
             if prefix:
                 assert any(torch.count_nonzero(v)>0 for k,v in gradients.items() if k.startswith(prefix))
             norm=torch.nn.utils.clip_grad_norm_(model.parameters(),10.);optimizer.step()
@@ -82,6 +83,7 @@ def run(a):
             gradient_tensors=len(gradients),seconds=seconds,encode_calls=0,decode_calls=0))
     assert any(not torch.equal(v.cpu(),initial[k]) for k,v in model.state_dict().items())
     prefix=cfg['optimizer'].get('new_parameter_prefix')
+    if isinstance(prefix,list):prefix=tuple(prefix)
     if prefix:
         assert any(not torch.equal(v.cpu(),initial[k]) for k,v in model.state_dict().items() if k.startswith(prefix))
     report.update(passed=True,audit_updates_discarded=True,
