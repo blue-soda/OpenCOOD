@@ -14,6 +14,8 @@ from opencood.tools.launch_int_memory import digest
 
 
 def worker(a,out):
+    original_precision=dict(matmul_tf32=torch.backends.cuda.matmul.allow_tf32,cudnn_tf32=torch.backends.cudnn.allow_tf32)
+    torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     tests=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT);(out/'unit_tests.log').write_bytes(tests.stdout);assert tests.returncode==0
     audit=json.loads(Path(a.audit).read_text());assert audit['status']=='VERIFIED'
     for r in audit['files']:assert digest(Path(r['relocated_path']))==r['sha256']
@@ -25,8 +27,8 @@ def worker(a,out):
     for m in models.values():
         for p in m.parameters():p.requires_grad_(False)
     hashes={n:model_digest(m) for n,m in models.items()};states={n:None for n in models};base_state=None;records=[];captures={}
-    handles=[m.core.readout.register_forward_hook(lambda mod,args,result,n=n:captures.update({n:result})) for n,m in models.items()]
-    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),frames=[r['frame'] for r in rows],rank128_fixed=True,factorizations=changes,code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
+    handles=[m.core.readout.register_forward_hook(lambda mod,args,result,n=n:captures.update({n:result,n+'_input':args[0]})) for n,m in models.items()]
+    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),frames=[r['frame'] for r in rows],rank128_fixed=True,factorizations=changes,original_precision=original_precision,actual_precision=dict(matmul_tf32=False,cudnn_tf32=False),code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         boundary='Every frame current-feature compact readout, no extra temporal state. SVD only initializes from parent; full-rank is equivalence control with MORE parameters/cost. Rank128 is untrained approximation, no AP or valid timing, not combined with protected cache yet.')
     write_json(out/'contract.json',contract);_,stream=loader(rows,cfg,0,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
@@ -38,8 +40,15 @@ def worker(a,out):
             for n in ('full_rank','rank128'):
                 assert all(torch.equal(states[n][k],states['dense'][k]) for k in base.state_keys)
                 error=captures[n]-captures['dense'];entry['arms'][n].update(readout_nmse=float(error.square().mean()/(captures['dense'].square().mean()+1e-6)),prediction_max_error=max(float((preds[n][k]-preds['dense'][k]).abs().max()) for k in preds[n]))
-            assert all(torch.allclose(preds['full_rank'][k],preds['dense'][k],atol=5e-4,rtol=1e-4) for k in preds['dense'])
             records.append(entry);log.write(json.dumps(entry)+'\n')
+            if i==0:
+                joined=captures['dense_input'];diagnostic={}
+                for label,flags in (('source_defaults',original_precision),('strict_fp32',dict(matmul_tf32=False,cudnn_tf32=False))):
+                    torch.backends.cuda.matmul.allow_tf32=flags['matmul_tf32'];torch.backends.cudnn.allow_tf32=flags['cudnn_tf32']
+                    dense=models['dense'].core.readout(joined);full=models['full_rank'].core.readout(joined);difference=full-dense
+                    diagnostic[label]=dict(flags=flags,readout_max_error=float(difference.abs().max()),readout_nmse=float(difference.square().mean()/(dense.square().mean()+1e-6)))
+                write_json(out/'precision_diagnostic.json',diagnostic)
+            assert all(torch.allclose(preds['full_rank'][k],preds['dense'][k],atol=5e-4,rtol=1e-4) for k in preds['dense'])
     for h in handles:h.remove()
     assert all(model_digest(m)==hashes[n] for n,m in models.items())
     path=out/'rank128_readout.pth';torch.save(dict(readout=models['rank128'].core.readout.state_dict(),contract=contract),path)
