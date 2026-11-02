@@ -93,7 +93,8 @@ def evaluation_arms(strict,models):
     return arms
 
 
-def evaluate(models,base,cfg,rows,out,tag,identity=False):
+def evaluate(models,base,cfg,rows,out,tag,identity=False,reference_rows=None):
+    if reference_rows is not None:assert len(reference_rows)==len(rows)
     states={n:None for n in models};base_state=None;records=[]
     ap={n:{t:dict(tp=[],fp=[],score=[],gt=0) for t in (.5,.7)} for n in models}
     hashes={n:model_digest(m) for n,m in models.items()}
@@ -125,6 +126,10 @@ def evaluate(models,base,cfg,rows,out,tag,identity=False):
                 expected=22579200+(0 if name in ('strict','ann') else (25804800 if name.endswith('_fp32') else 12902400))
                 assert info['cache_bytes']==expected
                 record['arms'][name]=entry
+            if reference_rows is not None:
+                gold=reference_rows[i]
+                assert record['frame']==gold['frame'] and record['supervised']==gold['supervised']
+                assert record['arms']['strict']==gold['arms']['strict']
             if meta['supervised']:
                 data=dict(ego=ego);gt=dataset.post.generate_gt_bbx(data)
                 for name,pred in preds.items():
@@ -132,7 +137,7 @@ def evaluate(models,base,cfg,rows,out,tag,identity=False):
                     for threshold in (.5,.7):eval_utils.caluclate_tp_fp(boxes,scores,gt,ap[name],threshold)
             records.append(record);log.write(json.dumps(record)+'\n')
             if (i+1)%32==0:write_json(out/'status.json',dict(status='RUNNING',phase=tag+'_evaluation',scans=i+1,total=len(rows)))
-    assert len(records)==len(rows)==256
+    assert len(records)==len(rows) and len(rows)>0
     assert all(model_digest(m)==hashes[n] for n,m in models.items())
     write_json(out/(tag+'_ap_records.json'),ap)
     metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),adaptation_parameters=0 if n=='strict' else 1475072,
