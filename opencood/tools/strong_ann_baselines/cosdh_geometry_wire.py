@@ -10,7 +10,14 @@ from pathlib import Path
 import numpy as np
 from cosdh_count_wire import CoSDHCountWire, encode_counts, decode_counts
 from cosdh_wire import HEADER
-from infocom_wire import ENVELOPE, envelope
+ENVELOPE = struct.Struct('<QII16d')
+
+
+def envelope(frame_id, sender, pose):
+    transform = np.asarray(pose, dtype='<f8')
+    if transform.shape != (4, 4) or not np.isfinite(transform).all():
+        raise ValueError('Finite 4x4 pose required')
+    return ENVELOPE.pack(int(frame_id), sender, 0, *transform.reshape(-1))
 
 
 CONTAINER = struct.Struct('<4sI')
@@ -41,7 +48,7 @@ def decode_response(packet):
         offset = end
     if offset != len(packet):
         raise ValueError('Trailing geometry response bytes')
-    pose = np.asarray(header[3:], dtype='f4').reshape(4, 4)
+    pose = np.asarray(header[3:], dtype='f8').reshape(4, 4)
     if not np.isfinite(pose).all():
         raise ValueError('Nonfinite pose')
     return header[0], pose, stages
@@ -60,7 +67,7 @@ class CoSDHGeometryCountWire(CoSDHCountWire):
         import torch
         super().begin(batch, frame_id)
         self.prefix = envelope(frame_id, 1, self.pose)
-        restored = np.asarray(ENVELOPE.unpack(self.prefix)[3:], dtype='f4').reshape(4, 4)
+        restored = np.asarray(ENVELOPE.unpack(self.prefix)[3:], dtype='f8').reshape(4, 4)
         assert np.array_equal(restored, self.pose), 'Envelope changed receiver pose'
         # The actual downstream normalization/warp consumes the decoded pose.
         transform = batch['ego']['pairwise_t_matrix']
@@ -94,7 +101,7 @@ def self_test():
         arrays = [np.zeros((2, 3, 5), dtype='u1'), rng.randint(0, steps+1, (3, 2, 7)),
                   np.full((1, 4, 3), steps, dtype='u1')]
         scales = [np.linspace(.1, 2., len(x)).astype('f4') for x in arrays]
-        pose = np.eye(4, dtype='f4'); pose[0, 3] = 1.25
+        pose = np.eye(4, dtype='f8'); pose[0, 3] = 1.25 + 2.**-40
         parts = [encode_counts(i, x, scales[i], steps) for i, x in enumerate(arrays)]
         prefix = envelope('000123', 1, pose)
         packet = prefix + CONTAINER.pack(b'CGW1', 3) + b''.join(parts)
@@ -102,7 +109,7 @@ def self_test():
         assert frame == 123 and np.array_equal(pose, got_pose)
         for i, (t, x, s) in enumerate(got):
             assert t == steps and np.array_equal(x, arrays[i]) and np.array_equal(s, scales[i])
-        assert len(packet) == 80 + 8 + sum(map(len, parts))
+        assert len(packet) == 144 + 8 + sum(map(len, parts))
         for bad in (packet[:-1], packet+b'x', prefix+CONTAINER.pack(b'CGW1', 3)+b''.join(parts[::-1])):
             try:
                 decode_response(bad)

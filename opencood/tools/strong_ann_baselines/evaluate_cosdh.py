@@ -537,7 +537,7 @@ def main():
         if args.count_wire:
             summary['wire_note']='Actual sparse integer counts with per-channel FP32 scales, three exact masks, one reused request and 160B metadata; no FP16 features/late boxes; link/IP overhead excluded'
             if geometry:
-                summary['wire_note']='Actual one-way three-stage sparse integer counts, indices, FP32 channel scales, 80B pose/frame envelope and 8B container; geometric support derived locally; no request, transmitted mask or late boxes; link/IP overhead excluded; diagnostic codec timing is not an efficiency claim'
+                summary['wire_note']='Actual one-way three-stage sparse integer counts, indices, FP32 channel scales, 144B FP64 pose/frame envelope and 8B container; geometric support derived locally; no request, transmitted mask or late boxes; link/IP overhead excluded; diagnostic codec timing is not an efficiency claim'
         if args.ego_only:
             summary['actual_communication_bytes'] = 0
             summary['single_agent_frames'] = len(rows)
