@@ -21,7 +21,9 @@ def upstream_class():
     path = Path(__file__).resolve().parents[2] / 'third_party/INT/voxelnet.py.txt'
     tree = ast.parse(path.read_text())
     node = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'FusionModule')
-    isolated = ast.Module(body=[node])  # Python 3.7 server runtime
+    # Retain version-specific Module fields (e.g. type_ignores on Python3.8+).
+    tree.body = [node]
+    isolated = tree
     scope = dict(nn=nn, torch=torch, np=np, Sequential=INTLayer,
                  build_norm_layer=lambda cfg, c: ('bn', nn.BatchNorm2d(c, eps=cfg['eps'], momentum=cfg['momentum'])))
     exec(compile(isolated, str(path), 'exec'), scope)
