@@ -17,7 +17,8 @@ class SingleGateStateUpdate(nn.Module):
         self.gate=nn.Sequential(nn.Conv2d(2*channels+2,gate_width,1),nn.ReLU(),nn.Conv2d(gate_width,channels,1))
         nn.init.zeros_(self.gate[-1].weight);nn.init.zeros_(self.gate[-1].bias)
 
-    def forward(self,current,old,valid,dt=.1):
+    def forward(self,current,old,valid,dt=None):
+        dt=getattr(self,'delta_t',.1) if dt is None else dt
         if not 0<=dt<=.25:raise ValueError('Reset state before processing a gap')
         old=torch.where(valid,old,torch.zeros_like(old))
         candidate=self.candidate(current,old,valid)
