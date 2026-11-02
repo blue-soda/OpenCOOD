@@ -19,7 +19,7 @@ from opencood.tools.run_int_cache_repair import setup
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
 
-from opencood.models.sub_modules.int_integer_readout import IntegerReadoutDetector
+from opencood.models.sub_modules.int_causal_integer_readout import IntegerReadoutDetector
 import numpy as np
 from opencood.utils import eval_utils
 from opencood.tools.int_artifact_paths import artifact_path
