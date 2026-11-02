@@ -10,7 +10,7 @@ class SparseChangeEncodedReadout(ChangeEncodedReadout):
 
     def forward(self,x):
         self.next_accumulators=[];self.execution=[]
-        return super().forward(x)
+        result=super().forward(x);self.statistics['backend']='sparse_channel_event_delta';return result
 
     def convolve(self,layer,q,index):
         if self.refresh or self.previous is None:

@@ -60,22 +60,29 @@ def worker(a,out):
             row['prediction_max_abs_error']=max(float((preds['dense'][k]-preds['sparse'][k]).abs().max()) for k in preds['dense'])
             row['prediction_allclose']=all(torch.allclose(preds['dense'][k],preds['sparse'][k],atol=5e-4,rtol=1e-4) for k in preds['dense'])
             row['sending_max_abs_error']=max(float((a-b).abs().max()) for a,b in zip(states['dense']['readout'],states['sparse']['readout']))
+            if a.diagnose_drift:
+                row['drift_layers']=[]
+                convs=[layer for layer in models['sparse'].core.readout.layers if isinstance(layer,nn.Conv2d)]
+                for i,(conv,qd,qs,acc) in enumerate(zip(convs,states['dense']['readout'],states['sparse']['readout'],states['sparse']['readout_accumulators'])):
+                    own_reference=conv(qs);difference=(qd-qs).abs();quantum=getattr(models['sparse'].core.readout,'quantum_%d'%i)
+                    row['drift_layers'].append(dict(layer=i,sending_mismatches=int((qd!=qs).sum()),input_elements=qs.numel(),max_sending_error_in_quanta=float((difference/quantum).max()),own_accumulator_max_error=float((acc-own_reference).abs().max()),own_accumulator_allclose=bool(torch.allclose(acc,own_reference,atol=5e-4,rtol=1e-4))))
             f.write(json.dumps(row)+'\n');records.append(row)
             assert all(torch.equal(states['dense'][k],states['sparse'][k]) for k in base.state_keys)
             assert row['arms']['dense']['refresh']==row['arms']['sparse']['refresh'] and row['arms']['dense']['readout_dense_conv_calls']==4
             assert row['arms']['sparse']['readout_dense_conv_calls']==(4 if row['arms']['sparse']['refresh'] else 0)
             if row['arms']['dense']['refresh']:assert all(torch.equal(preds['dense'][k],preds['sparse'][k]) for k in preds['dense'])
             if not row['arms']['sparse']['refresh']:assert row['arms']['sparse']['sparse_weighted_macs']==sum(v['weighted_event_mac'] for v in row['arms']['sparse']['events']['layers'])
-            assert row['prediction_allclose'], 'Integrated nonlinear event stream exceeds original prediction tolerance'
+            if not a.diagnose_drift:assert row['prediction_allclose'], 'Integrated nonlinear event stream exceeds original prediction tolerance'
             write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=32))
     assert len(records)==32 and all(model_digest(m)==hashes[n] for n,m in models.items())
     metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),core_conv_flops_mean=sum(r['arms'][n]['core_conv_flops'] for r in records)/32,cache_bytes=records[0]['arms'][n]['cache_bytes'],model_step_ms_mean=None,ap50=None,ap70=None) for n,m in models.items()}
-    write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,scans=32,weights_unchanged=True,paired_task_states_exact=True,refresh_predictions_exact=True,original_prediction_tolerance_passed=True,trained=False,ap_evaluated=False,timing_valid=False));write_json(out/'status.json',dict(status='COMPLETED'))
+    write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,scans=32,weights_unchanged=True,paired_task_states_exact=True,refresh_predictions_exact=True,drift_diagnostic=a.diagnose_drift,original_prediction_tolerance_passed=all(r['prediction_allclose'] for r in records),prediction_tolerance_failures=sum(not r['prediction_allclose'] for r in records),trained=False,ap_evaluated=False,timing_valid=False));write_json(out/'status.json',dict(status='COMPLETED'))
 
 
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','event-verification','calibration','reference-verification','output'):p.add_argument('--'+n,required=True)
+    p.add_argument('--diagnose-drift',action='store_true',help='Preserve original tolerance failures and characterize them without claiming equivalence')
     a=p.parse_args();a.full=False;out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('30min frozen32-frame integrated sparse readout')));signal.alarm(1800)
     try:worker(a,out)
