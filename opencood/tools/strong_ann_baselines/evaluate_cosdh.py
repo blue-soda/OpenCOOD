@@ -98,8 +98,8 @@ def main():
     if args.geometry_backend and args.selection_mode!='geometry_only':
         parser.error('Streamlined backend requires the fixed geometry-only selection study')
     if args.selection_mode and (args.pillar_mode!='count32' or args.pillar_initial_voltage!=.5 or
-                               (args.count_wire and not args.geometry_backend) or args.count_event_quotas is not None):
-        parser.error('Selection study fixes half-init PFN Count32 and unlimited counts; wire requires the geometry backend')
+                               ((args.count_wire or args.count_event_quotas is not None) and not args.geometry_backend)):
+        parser.error('Selection study fixes half-init PFN Count32; count wire/quotas require the geometry backend')
     if bool(args.pillar_thresholds)!=bool(args.pillar_mode):
         parser.error('Pillar thresholds and mode required together')
     if args.pillar_mode and (args.third_mode!='count32' or args.third_initial_voltage!=0.):
