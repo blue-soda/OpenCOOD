@@ -39,6 +39,7 @@ def train_one(model,teacher,cfg,rows,out,name,criterion,contract,preflight=False
             meta=sample['meta'];ego=to_device(sample['ego'],torch.device('cuda'));assert meta['frame']==rows[i]['frame']
             with torch.no_grad():x,teacher_state=capture(teacher,ego,teacher_state,meta)
             pred,state,info=model.step_spatial(x,state,meta,detach_state=False)
+            if 'expected_refresh_reasons' in contract:assert info['full_refresh']==contract['expected_refresh_reasons'][i]
             light_frames+=int(not bool(info['full_refresh']))
             # Teacher states are loss targets only. Student history is always its own.
             kd=torch.stack([(state[k]-teacher_state[k]).square().mean()/(teacher_state[k].square().mean()+1e-6) for k in ('coarse','deep')]).mean()
@@ -48,7 +49,7 @@ def train_one(model,teacher,cfg,rows,out,name,criterion,contract,preflight=False
                 loss=criterion(pred,ego['label_dict']);assert bool(torch.isfinite(loss));detection.append(loss);labels+=1
                 row['detection_loss']=float(loss.detach())
             if i in ends:
-                if detection:
+                if detection and (light_frames or not contract.get('skip_refresh_only_windows',False)):
                     objective=torch.stack(detection).mean()+torch.stack(local).mean();objective.backward()
                     assert all(p.grad is None for p in model.parameters() if not p.requires_grad)
                     for parameter_name,p in model.named_parameters():
@@ -71,12 +72,14 @@ def train_one(model,teacher,cfg,rows,out,name,criterion,contract,preflight=False
                         out/('%s_update_%03d.pth'%(name,len(updates))))
             log.write(json.dumps(row)+'\n')
             if (i+1)%32==0:write_json(out/'status.json',dict(status='RUNNING',phase=tag,scans=i+1,total=512,updates=len(updates)))
-    assert not preflight and len(updates)==71 and updates==expected_updates(rows) and labels==232
+    expected=contract['expected_update_frames'] if contract.get('skip_refresh_only_windows',False) else expected_updates(rows)
+    assert not preflight and updates==expected and labels==232
+    if not contract.get('skip_refresh_only_windows',False):assert len(updates)==71
     assert frozen_digest(model)==before and model_digest(teacher)==teacher_hash and model_digest(model)!=initial
     path=out/(name+'_final.pth')
     torch.save(dict(targets={n:p.detach().cpu() for n,p in model.named_parameters() if p.requires_grad},optimizer=optimizer.state_dict(),
         contract=contract,mode=name,updates=updates,rng_cpu=torch.get_rng_state(),rng_cuda=torch.cuda.get_rng_state(),resume='Completed fixed pass; continuation separately registered'),path)
-    return dict(scans=512,labels=232,updates=71,update_frames=updates,checkpoint_sha256=digest(path),frozen_weights_bn_unchanged=True,
+    return dict(scans=512,labels=232,updates=len(updates),update_frames=updates,checkpoint_sha256=digest(path),frozen_weights_bn_unchanged=True,
         teacher_unchanged=True,mean_window_loss=sum(values)/len(values))
 
 
