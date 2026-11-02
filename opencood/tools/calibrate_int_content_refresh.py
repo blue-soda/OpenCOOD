@@ -26,7 +26,7 @@ def worker(a,out):
     probe=ContentRefreshDetector(source).cuda().eval()
     for m in (base,source,probe):
         for p in m.parameters():p.requires_grad_(False)
-    initial=model_digest(source);contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),verification_sha256=digest(Path(a.verification)),trained_sha256=digest(path),frames=[r['frame'] for r in rows],code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
+    initial=model_digest(source);contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),verification_sha256=digest(Path(a.verification)),trained_sha256=digest(path),audit_sha256=digest(Path(a.audit)),frames=[r['frame'] for r in rows],code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),runtime=dict(torch_version=torch.__version__,device=torch.cuda.get_device_name(),matmul_tf32=torch.backends.cuda.matmul.allow_tf32,cudnn_tf32=torch.backends.cudnn.allow_tf32),
         evidence='Sum abs(current fine task state - aligned previous fine) / (sum abs(current fine)+sum abs(aligned previous fine)+1e-6), includes holes as zero history; fine independent of middle/deep refresh.',
         calibration='All unique observed training scores plus zero and max+epsilon; minimize abs(refresh count - P4 count), ties prefer underbudget then highest threshold. No labels/AP used.',
         policy='P4/.45 reference versus threshold plus max6/.65; scene/gap resets forced. Score computed after fine and before expensive middle/deep.',
