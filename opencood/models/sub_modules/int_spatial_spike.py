@@ -18,7 +18,7 @@ def deliveries3x3(active,out_channels):
 
 
 class SpatialActivationMemory(nn.Module):
-    def __init__(self,mode,scale,bounds,tau=.2,collect_statistics=True):
+    def __init__(self,mode,scale,bounds,tau=.2,collect_statistics=True,storage_dtype=torch.float32):
         super().__init__()
         if mode not in ('ann','lif','leaky') or not math.isfinite(tau) or tau<=0:raise ValueError('Invalid dynamics')
         scale=torch.as_tensor(scale,dtype=torch.float32).reshape(1,-1,1,1)
@@ -27,6 +27,8 @@ class SpatialActivationMemory(nn.Module):
         # Runtime mode changes diagnostics only, never the membrane computation.
         # Callers must check finite outputs/state outside timed intervals.
         self.collect_statistics=collect_statistics
+        if storage_dtype not in (torch.float32,torch.float16):raise ValueError('Unsupported membrane storage dtype')
+        self.storage_dtype=storage_dtype
 
     def step(self,a,state,meta,reset=False,detach_state=True):
         if a.shape[0]!=1 or a.shape[1]!=self.scale.shape[1]:raise ValueError('One matching stream required')
@@ -39,13 +41,26 @@ class SpatialActivationMemory(nn.Module):
                 if dt<=0:raise ValueError('Noncausal activation state')
                 if dt>.25:reason='gap'
         if reset:reason='explicit'
-        if reason is None:past,_=warp_bev(state['value'],state['pose'],meta['pose'],self.bounds)
+        if self.storage_dtype==torch.float16 and a.dtype!=torch.float32:raise ValueError('FP16 storage requires FP32 dynamics')
+        if state is not None and state['value'].dtype!=self.storage_dtype:raise ValueError('Membrane storage dtype changed')
+        # Decode before warping: grid sampling and membrane arithmetic remain FP32.
+        if reason is None:past,_=warp_bev(state['value'].float(),state['pose'],meta['pose'],self.bounds)
         else:past=torch.zeros_like(a)
         v=math.exp(-dt/self.tau)*past+a/self.scale
         if self.mode=='lif':emission=SurrogateSpike.apply(v-1.);u=v-emission
         else:emission=torch.relu(v);u=v
         output=self.scale*emission
-        info=dict(state_bytes=u.numel()*u.element_size(),reset=reason,warp=reason is None,delta_t=dt)
+        stored=u.to(self.storage_dtype)
+        if self.storage_dtype==torch.float16 and not bool(torch.isfinite(stored).all()):
+            raise RuntimeError('FP16 membrane storage overflow or nonfinite; no clipping')
+        info=dict(state_bytes=stored.numel()*stored.element_size(),reset=reason,warp=reason is None,delta_t=dt)
+        if self.collect_statistics and self.storage_dtype==torch.float16:
+            with torch.no_grad():
+                error=stored.float()-u
+                info.update(storage_quantization_abs_max=float(error.abs().max()),storage_quantization_mse=float(error.square().mean()),
+                    decode_fp32_tensor_bytes=u.numel()*4 if reason is None else 0,
+                    # Logical tensor read/write counts, not measured hardware traffic.
+                    storage_cast_logical_bytes=u.numel()*6*(1+int(reason is None)))
         if self.collect_statistics:
             with torch.no_grad():
                 if not bool(torch.isfinite(u).all()) or not bool(torch.isfinite(output).all()):raise RuntimeError('Nonfinite activation memory')
@@ -53,7 +68,7 @@ class SpatialActivationMemory(nn.Module):
                     emission_nonzero_per_channel=(emission!=0).float().mean((0,2,3)).cpu().tolist(),
                     membrane_abs_max=float(u.abs().max()),membrane_ge_threshold_fraction=float((u>=1).float().mean()),
                     membrane_abs_max_per_channel=u.abs().amax((0,2,3)).cpu().tolist())
-        new=dict(value=u.detach() if detach_state else u,scene=meta['segment'],pose=copy.deepcopy(meta['pose']),timestamp_us=int(meta['timestamp_us']))
+        new=dict(value=stored.detach() if detach_state else stored,scene=meta['segment'],pose=copy.deepcopy(meta['pose']),timestamp_us=int(meta['timestamp_us']))
         return output,new,info
 
 
