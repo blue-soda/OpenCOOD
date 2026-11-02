@@ -57,5 +57,18 @@ class FineRefreshTests(unittest.TestCase):
             self.assertGreater(sum(float(p.grad.abs().sum()) for p in module.parameters()), 0)
         self.assertTrue(all(p.grad is None for p in model.core.refresh_updates.parameters()))
 
+    def test_scene_reset_does_not_erase_earlier_window_loss_graph(self):
+        model = FineRefreshDetector(ProtectedMultiscaleRefreshDetector(fixture()))
+        for name, p in model.named_parameters():p.requires_grad_(name.startswith(('core.fine_light.', 'core.fine_update.')))
+        state=None;losses=[]
+        for i, scene in enumerate(('a','a','a','b')):
+            pred,state,info=model.step_spatial(torch.randn(1,64,24,32),state,
+                dict(timestamp_us=i*100000,segment=scene,pose=np.eye(4)),detach_state=False)
+            if not info['full_refresh']:losses.append(pred['psm'].square().mean())
+        self.assertEqual(info['reset'],'scene')
+        self.assertIsNone(state['value'].grad_fn)
+        torch.stack(losses).mean().backward()
+        self.assertGreater(sum(float(p.grad.abs().sum()) for p in model.core.fine_light.parameters()),0)
+
 
 if __name__ == '__main__':unittest.main()

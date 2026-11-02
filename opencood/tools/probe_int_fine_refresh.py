@@ -68,15 +68,20 @@ def worker(a,out):
     for n in ('fine_dense_p4','fine_light_p4'):
         model=models[n];prefixes=('core.fine_update.',)+(('core.fine_light.',) if n=='fine_light_p4' else ())
         for name,p in model.named_parameters():p.requires_grad_(name.startswith(prefixes))
-        state=None
-        for x,meta in first:pred,state,info=model.step_spatial(x,state,meta,detach_state=False)
-        sum(v.square().mean() for v in pred.values()).backward();norms={}
+        state=None;objectives=[];loss_frames=[];own_graph=False
+        for x,meta in first:
+            pred,state,info=model.step_spatial(x,state,meta,detach_state=False)
+            if not info['full_refresh']:
+                objectives.append(sum(v.square().mean() for v in pred.values()));loss_frames.append(meta['frame'])
+                own_graph |= state['value'].grad_fn is not None
+        assert objectives and own_graph
+        torch.stack(objectives).mean().backward();norms={}
         for name,p in model.named_parameters():
             if p.requires_grad:
                 assert p.grad is not None and torch.isfinite(p.grad).all();norms[name]=float(p.grad.abs().sum())
             else:assert p.grad is None
         for prefix in prefixes:assert sum(value for name,value in norms.items() if name.startswith(prefix))>0
-        assert state['value'].grad_fn is not None;gradients[n]=dict(status='PASSED',parameter_l1_gradients=norms,own_fine_state_has_graph=True,no_optimizer_step=True)
+        gradients[n]=dict(status='PASSED',parameter_l1_gradients=norms,own_fine_state_has_graph=own_graph,loss_frames=loss_frames,no_optimizer_step=True)
         model.zero_grad(set_to_none=True)
         for p in model.parameters():p.requires_grad_(False)
     assert all(model_digest(m)==hashes[n] for n,m in models.items())
