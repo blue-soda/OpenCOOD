@@ -236,7 +236,7 @@ def worker(a):
         train_frames=prior_contract['train_frames'],evaluation_frames=prior_contract['evaluation_frames'],expected_update_frames=expected,
         split='train',seed=303,epochs=1,tbptt=4,optimizer='AdamW',lr=.0003,weight_decay=.0001,clip_norm=10.,local_loss_weight=1.,local_loss_epsilon=1e-6,loss_scale=4096.,
         loss='Labelled-frame detection mean plus all-window-frame mean readout last-conv pre-BN normalized MSE; independent detached strict teacher. Context-only windows do not update.',
-        parameters=32756052,adaptation_parameters=1475072,targets=TARGETS,tau=.2,threshold=1.,scale=cal['scale'],storage_dtype='float16',compute_dtype='float32',
+        parameters=32756052,adaptation_parameters=1475072,targets=list(TARGETS),tau=.2,threshold=1.,scale=cal['scale'],storage_dtype='float16',compute_dtype='float32',
         schedule='Sequential ann, lif, leaky on one GPU; 512 scans each; identical71 supervised update frames; no search/skip/continuation',
         evaluation='Disjoint train scan prefixes, possibly correlated scenes; empty own state. Reset only auxiliary membrane. FP32 controls share respective learned weights, no separate training.',timing_valid=False)
     write_json(out/'contract.json',contract)

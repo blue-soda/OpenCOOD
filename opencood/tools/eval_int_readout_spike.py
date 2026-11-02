@@ -56,7 +56,10 @@ def worker(a):
     for mode in ('ann','lif','leaky'):
         path=pilot/(mode+'_readout.pth')
         assert digest(path)==pr['training'][mode]['checkpoint_sha256']==weights['checkpoints'][mode]['sha256']
-        target=torch.load(path,map_location='cpu');assert target['contract']==pc and target['mode']==mode and target['updates']==71
+        target=torch.load(path,map_location='cpu')
+        # Older pilot checkpoints kept tuple names; JSON preserves them as lists.
+        target_contract=dict(target['contract'],targets=list(target['contract']['targets']))
+        assert target_contract==pc and target['mode']==mode and target['updates']==71
         model=ReadoutSpikeAnchor(base,mode,pc['scale'],torch.float16).cuda().eval()
         assert set(target['targets'])==set(TARGETS) and torch.equal(target['scale'].reshape(-1),torch.tensor(pc['scale']))
         with torch.no_grad():
