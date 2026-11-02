@@ -5,7 +5,7 @@ import torch
 from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
 from opencood.models.sub_modules.int_multiscale_refresh import reset_reason
 from opencood.models.sub_modules.int_task_membrane import TaskPotentialEvents
-from opencood.models.sub_modules.int_event_projection import sparse_deconv_events
+from opencood.models.sub_modules.int_event_projection import sparse_deconv_events,warp_projection_phases
 from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.models.sub_modules.int_block_cache import block_lidar_range
 from opencood.tools.probe_int_mechanisms import measured
@@ -31,10 +31,13 @@ def worker(a,out):
         for p in m.parameters():p.requires_grad_(False)
     hashes=[model_digest(base),model_digest(cell)];rows=rows[512:544];state=base_state=None;records=[]
     contract=dict(frames=[r['frame'] for r in rows],checkpoint_sha256=digest(Path(a.checkpoint)),verification_sha256=digest(Path(a.verification)),
-        quantum=.25,tau=.2,projection_period=4,max_age=.45,code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
+        quantum=.25,tau=.2,projection_period=4,max_age=.45,phase_warp=a.phase_warp,code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         boundary='Single task-state module on parent observations, no network AP/training/timing. Exact candidate really computes dense alignment correction plus sparse signed projection events; naive no-correction path is an invalid-cost comparison.',
         equation='D(s_new)=Wout(z_prev)+[D(Win(s_prev))-Wout(z_prev)]+D(delta). Bracketed correction requires dense D for general poses; not free.',
         state='Candidate retains potential, sent input, linear projection accumulator; naive accumulator is a separate diagnostic-only buffer, not candidate state.')
+    if a.phase_warp:
+        contract.update(boundary='Single task-state module, no AP/training/timing. Candidate executes input-grid phase-preserving output warp plus actual sparse signed projection events. Full current projection is audit-only.',
+            equation='D(s_new)=Wphase(z_prev)+D_sparse(delta); Wphase(D(s))=D(Win(s)) for this non-overlapping bias-free 2x2/stride2 projection. Dense phase warp/reshapes, BN/ReLU and memory traffic are not free.')
     write_json(out/'contract.json',contract);_,stream=loader(rows,cfg,0,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
         for i,sample in enumerate(stream):
@@ -61,11 +64,14 @@ def worker(a,out):
                 output_bounds=block_lidar_range(base.bounds,cap['spatial'].shape[-2:],state['z'].shape[-2:],2)
                 warped,_=warp_bev(state['z'],state['pose'],meta['pose'],output_bounds)
                 naive_warped,_=warp_bev(state['naive_z'],state['pose'],meta['pose'],output_bounds)
-                aligned_projection,full_flops=measured(conv,ms)
+                if a.phase_warp:
+                    aligned_projection,pvalid=warp_projection_phases(state['z'],state['pose'],meta['pose'],bounds)
+                    assert torch.equal(valid,pvalid);full_flops=0
+                else:aligned_projection,full_flops=measured(conv,ms)
                 correction=aligned_projection-warped
                 delta,stats=sparse_deconv_events(conv,.25*counts);event_macs=stats['weighted_event_macs']
                 assert stats['active_elements']==events['active_elements']
-                z=warped+correction+delta;naive_z=naive_warped+delta
+                z=aligned_projection+delta if a.phase_warp else warped+correction+delta;naive_z=naive_warped+delta
                 correction_max=float(correction.abs().max());commutator_nmse=float(correction.square().mean()/(aligned_projection.square().mean()+1e-6))
                 naive_one_error=float((tail(warped+delta)-tail(reference)).square().mean()/(tail(reference).square().mean()+1e-6))
             actual=tail(z);target=tail(reference);naive=tail(naive_z)
@@ -98,6 +104,7 @@ def worker(a,out):
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','verification','output'):p.add_argument('--'+n,required=True)
+    p.add_argument('--phase-warp',action='store_true')
     a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('30min event alignment engineering')));signal.alarm(1800)
     try:worker(a,out)

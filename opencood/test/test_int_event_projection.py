@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import torch
 from torch import nn
-from opencood.models.sub_modules.int_event_projection import sparse_deconv_events
+from opencood.models.sub_modules.int_event_projection import sparse_deconv_events,warp_projection_phases
 from opencood.models.sub_modules.int_feature_memory import warp_bev
 
 
@@ -44,6 +44,26 @@ class EventProjectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):sparse_deconv_events(conv,x)
         with torch.no_grad():
             with self.assertRaises(ValueError):sparse_deconv_events(nn.ConvTranspose2d(4,3,2,2),x)
+
+    def test_phase_warp_commutes_fractional_translation_and_rotation(self):
+        torch.manual_seed(314);conv=nn.ConvTranspose2d(4,3,2,2,bias=False);x=torch.randn(1,4,9,13)
+        a=np.eye(4);b=np.eye(4);angle=.17;b[:2,:2]=[[np.cos(angle),-np.sin(angle)],[np.sin(angle),np.cos(angle)]];b[0,3]=.67;b[1,3]=-.43
+        with torch.no_grad():
+            for mode in ('nearest','bilinear'):
+                aligned,valid=warp_bev(x,a,b,[-4,-3,-1,6,3,1],mode=mode)
+                projected,pvalid=warp_projection_phases(conv(x),a,b,[-4,-3,-1,6,3,1],mode)
+                self.assertTrue(torch.equal(valid,pvalid));self.assertTrue(torch.allclose(projected,conv(aligned),atol=1e-6,rtol=1e-5))
+
+    def test_phase_warp_closed_loop_sparse_events(self):
+        torch.manual_seed(315);conv=nn.ConvTranspose2d(4,3,2,2,bias=False);x=torch.randn(1,4,9,13);pose=np.eye(4)
+        with torch.no_grad():
+            z=conv(x)
+            for i in range(12):
+                nxt=pose.copy();nxt[0,3]+=.37;nxt[1,3]-=.24
+                aligned,_=warp_bev(x,pose,nxt,[-4,-3,-1,6,3,1]);prior,_=warp_projection_phases(z,pose,nxt,[-4,-3,-1,6,3,1])
+                delta=torch.randn_like(x)*(torch.rand_like(x)<.1);event,_=sparse_deconv_events(conv,delta)
+                x=aligned+delta;z=prior+event;pose=nxt
+                self.assertTrue(torch.allclose(z,conv(x),atol=2e-6,rtol=1e-5))
 
 
 if __name__=='__main__':unittest.main()

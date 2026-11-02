@@ -1,6 +1,20 @@
 """Actual signed, element-sparse 2x2 transposed-convolution execution."""
 import torch
 from torch import nn
+from torch.nn import functional as F
+from opencood.models.sub_modules.int_feature_memory import warp_bev
+
+
+def warp_projection_phases(projected,past_pose,current_pose,input_bounds,mode='nearest'):
+    """Align each 2x2 output phase on the INPUT grid, preserving linearity.
+
+    Valid for the non-overlapping 2x2 stride2 bias-free projection above.
+    This is not the ordinary geometric warp of the high-resolution output.
+    Reshaping and the dense warp remain memory/compute overhead.
+    """
+    phases=F.pixel_unshuffle(projected,2)
+    aligned,valid=warp_bev(phases,past_pose,current_pose,input_bounds,mode=mode)
+    return F.pixel_shuffle(aligned,2),valid
 
 
 def sparse_deconv_events(conv,delta):
