@@ -6,8 +6,8 @@ from opencood.models.sub_modules.int_pyramid_regions import coalesced_refresh
 
 
 class PatchedLatePyramidDetector(AnchoredLatePyramidDetector):
-    def __init__(self, base, period=2, dense_reference=False):
-        super().__init__(base,period=period,coverage='zero',max_age=.25)
+    def __init__(self, base, period=2, dense_reference=False, max_age=.25):
+        super().__init__(base,period=period,coverage='zero',max_age=max_age)
         self.patch_stage=PackedPyramidStage(self.core.deep_encoder,self.core.deep_update).eval()
         self.dense_reference=dense_reference
 

@@ -13,7 +13,9 @@ class AnchoredLatePyramidDetector(PyramidStateDetector):
         nn.Module.__init__(self)
         if type(base) is not PyramidStateDetector or base.memory_policy!='recurrent':
             raise ValueError('Ungated recurrent pyramid required')
-        if type(period) is not int or not 1<=period<=3 or not math.isfinite(max_age) or not 0<max_age<=.25:
+        # Anchor lifetime is independent of the adjacent-scan gap guard (.25s).
+        # P4/.45 and P6/.65 are registered long-period research controls.
+        if type(period) is not int or not 1<=period<=6 or not math.isfinite(max_age) or not 0<max_age<=.65:
             raise ValueError('Invalid period/age')
         if coverage not in ('strict','zero'):raise ValueError('Invalid coverage policy')
         self.core,self.pillar_vfe,self.scatter=base.core,base.pillar_vfe,base.scatter
