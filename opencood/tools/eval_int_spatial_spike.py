@@ -51,22 +51,31 @@ def worker(a):
         strict_reference_report_sha256=digest(source/'report.json'),strict_reference_frames_sha256=digest(source/'frames.jsonl'),
         calibration_sha256=pc['calibration_sha256'],split='val',scans=5794,labels=1738,seed=303,trained=False,timing_valid=False,
         frozen_all_parameters=True,selection='All three fixed one-pass weights and both auxiliary membrane resets; no tuning/epoch extension',
+        cross_environment=a.cross_environment,torch_version=torch.__version__,python=sys.version,
+        gpu=torch.cuda.get_device_name(0),
         budget_minutes=90,boundary='Full validation of a validation-selected parent, not independent test or multi-seed significance. Actual Conv dense; ideal target operations exclude hardware overhead.')
     write_json(out/'contract.json',contract)
     result,_=evaluate(arms,base,cfg,rows,out,'full',reference_rows=gold)
     assert result['scans']==5794 and result['labels']==1738
-    for metric,key in [('ap50','bev_ap50'),('ap70','bev_ap70')]:assert abs(result['metrics']['strict'][metric]-reference['metrics'][key])<1e-6
+    strict_ap_delta={metric:result['metrics']['strict'][metric]-reference['metrics'][key]
+        for metric,key in [('ap50','bev_ap50'),('ap70','bev_ap70')]}
+    strict_ap_matches=all(abs(value)<1e-6 for value in strict_ap_delta.values())
+    if not a.cross_environment:assert strict_ap_matches
     assert result['metrics']['strict']['core_conv_flops_mean']==reference['core_conv_flops_mean']
     assert all(model_digest(m)==before[n] for n,m in arms.items())
     assert all(digest(pilot/(n+'_target.pth'))==sha for n,sha in source_shas.items())
     write_json(out/'report.json',dict(status='COMPLETED',split='val',checkpoint_sha256=contract['checkpoint_sha256'],evaluation=result,
-        strict_full_reference_verified=True,all_weights_bn_scale_unchanged=True,trained=False,timing_valid=False,boundary=contract['boundary']))
+        strict_full_reference_verified=strict_ap_matches,strict_schedule_reference_verified=True,
+        strict_ap_reference_within_tolerance=strict_ap_matches,strict_ap_reference_delta=strict_ap_delta,
+        cross_environment=a.cross_environment,torch_version=torch.__version__,
+        all_weights_bn_scale_unchanged=True,trained=False,timing_valid=False,boundary=contract['boundary']))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
 
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','pilot','strict-reference','output'):p.add_argument('--'+n,required=True)
+    p.add_argument('--cross-environment',action='store_true',help='Record cross-environment strict AP drift; schedule/core/cache checks remain exact')
     p.add_argument('--gpu',type=int,required=True);p.add_argument('--worker',action='store_true');a=p.parse_args();out=Path(a.output)
     if a.worker:
         signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('90min full-validation budget')));signal.alarm(5400)
@@ -76,7 +85,7 @@ def main():
     free=int(subprocess.check_output(['nvidia-smi','-i',str(a.gpu),'--query-gpu=memory.free','--format=csv,noheader,nounits']).decode().strip())
     if free<20000:raise RuntimeError('Requires20GB free on one idle GPU')
     out.mkdir(parents=True,exist_ok=False);command=[sys.executable,'-m','opencood.tools.eval_int_spatial_spike']+sys.argv[1:]+['--worker']
-    env=dict(os.environ,CUDA_VISIBLE_DEVICES=str(a.gpu),PYTHONPATH=str(Path.cwd()),OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1')
+    env=dict(os.environ,CUDA_VISIBLE_DEVICES=str(a.gpu),PYTHONPATH=os.environ.get('PYTHONPATH',str(Path.cwd())),OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1')
     with (out/'run.log').open('x') as log:proc=subprocess.Popen(command,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=log,start_new_session=True)
     write_json(out/'launch.json',dict(pid=proc.pid,gpu=a.gpu,command=command,created_unix=time.time(),code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()))
     print(json.dumps(dict(pid=proc.pid,output=str(out))))

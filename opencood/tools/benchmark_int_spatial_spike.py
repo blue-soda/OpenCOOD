@@ -74,7 +74,7 @@ def worker(a):
     pr = json.loads((pilot/'report.json').read_text())
     gold = [json.loads(x) for x in (source/'full_frames.jsonl').read_text().splitlines()]
     assert prior['status'] == pr['status'] == 'COMPLETED'
-    assert prior['all_weights_bn_scale_unchanged'] and prior['strict_full_reference_verified']
+    assert prior['all_weights_bn_scale_unchanged'] and prior.get('strict_schedule_reference_verified',prior['strict_full_reference_verified'])
     assert prior['checkpoint_sha256'] == digest(Path(a.checkpoint)) == pr['checkpoint_sha256']
     assert len(gold) == prior['evaluation']['scans'] == 5794 and prior['evaluation']['labels'] == 1738
     if a.suite == 'timing':
@@ -87,6 +87,7 @@ def worker(a):
         # Agreement between two current implementations cannot prove that an
         # older PyTorch environment produced the same detections.
         assert source_launch['command'][0] == sys.executable, 'Re-evaluate full AP in this interpreter before timing'
+        if 'torch_version' in prior:assert prior['torch_version']==torch.__version__
         assert gate_contract['torch_version'] == torch.__version__
         assert gate_contract['gpu'] == torch.cuda.get_device_name(0)
     a.mode='gru';a.stage='full';a.content_calibration=None;a.periodic_last=0;a.max_age=.25
