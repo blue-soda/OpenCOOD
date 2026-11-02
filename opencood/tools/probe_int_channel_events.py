@@ -1,0 +1,78 @@
+"""Bounded channel-event Conv backend proof on fixed causal readout streams."""
+import argparse,copy,json,signal,subprocess,sys
+from pathlib import Path
+from collections import defaultdict
+from opencood.models.sub_modules.int_readout_events import ReadoutEventDetector
+from opencood.tools.check_int_pyramid_cache import measured_step
+from torch.nn import functional as F
+import torch
+from torch import nn
+from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
+from opencood.models.sub_modules.int_multiscale_refresh import ProtectedMultiscaleRefreshDetector
+from opencood.models.sub_modules.int_fine_refresh import FineRefreshDetector
+from opencood.models.sub_modules.int_factorized_readout import compact_readout
+from opencood.tools.diagnose_int_cached_state import load_targets
+from opencood.tools.check_int_temporal_feature import model_digest
+from opencood.tools.calibrate_int_event_refresh import capture
+from opencood.tools.profile_int_compact_cache import group
+from opencood.tools.run_int_cache_repair import setup
+from opencood.tools.run_int_ego import loader,to_device,write_json
+from opencood.tools.launch_int_memory import digest
+
+from opencood.models.sub_modules.int_channel_events import channel_event_delta
+import numpy as np
+from opencood.utils import eval_utils
+from opencood.tools.int_artifact_paths import artifact_path
+
+
+def worker(a,out):
+    torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
+    tests=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT);(out/'unit_tests.log').write_bytes(tests.stdout);assert tests.returncode==0
+    audit=json.loads(Path(a.audit).read_text());gate=json.loads(Path(a.verification).read_text());cv=json.loads(Path(a.compact_verification).read_text())
+    assert (audit.get('status')=='VERIFIED' if not a.full else audit['frames']==5794 and len(audit['files'])==7532);assert gate['status']==cv['status']=='VERIFIED' and gate['run']=='R-139' and cv['run']=='R-145'
+    assert digest(Path(a.checkpoint))==gate['checkpoint_sha256'] and digest(Path(a.initialization))==cv['rank128_checkpoint_sha256']
+    for r in audit['files']:
+        path=Path(artifact_path(r['path'])) if a.full else Path(r['relocated_path']);assert digest(path)==r['sha256']
+    a.mode='gru';a.stage='full' if a.full else 'calibrate';a.content_calibration=None;a.periodic_last=0;a.max_age=.25
+    teacher,cfg,rows,prov=setup(a);write_json(out/'provenance.json',prov);base=PyramidStateDetector(teacher,cfg).cuda().eval();saved=torch.load(a.checkpoint,map_location='cpu')
+    assert saved['contract']['teacher_sha256']==prov['checkpoint']['sha256'] and saved['contract']['data_contract']==prov['contract'];base.load_state_dict(saved['model']);del teacher,saved
+    source=ProtectedMultiscaleRefreshDetector(base,True).cuda().eval();load_targets(source,Path(a.trained)/'protected_light_final.pth',gate['training']['protected_light']['checkpoint_sha256'])
+    source.core.readout,_=compact_readout(base.core.readout,128);source.core.readout.load_state_dict(torch.load(a.initialization,map_location='cpu')['readout']);source.eval()
+    ev=json.loads(Path(a.event_verification).read_text());rv=json.loads(Path(a.reference_verification).read_text());assert ev['status']==rv['status']=='VERIFIED' and ev['run']=='R-172' and rv['run']==('R-148' if a.full else 'R-168')
+    event_contract=Path(a.calibration).parent/'contract.json';assert digest(event_contract)==ev['source_sha256']['contract.json'];ec=json.loads(event_contract.read_text());assert ec['verification_sha256']==digest(Path(a.verification)) and ec['initialization_sha256']==digest(Path(a.initialization)) and ev['checkpoint_sha256']==gate['checkpoint_sha256']
+    assert ev['calibration_sha256']==digest(Path(a.calibration));calibration=json.loads(Path(a.calibration).read_text());assert calibration['relative_quantum']==.125 and calibration['floor']==1e-4
+    rows=rows[512:516];model=ReadoutEventDetector(source,calibration['quanta']).cuda().eval()
+    for m in (base,model):
+        for parameter in m.parameters():parameter.requires_grad_(False)
+    before_hash=model_digest(model);state=base_state=None;records=[]
+    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),verification_sha256=digest(Path(a.verification)),event_verification_sha256=digest(Path(a.event_verification)),calibration_sha256=digest(Path(a.calibration)),initialization_sha256=digest(Path(a.initialization)),frames=[r['frame'] for r in rows],code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),atol=5e-4,rtol=1e-4,chunk_events=32768,boundary='Four fixed real frames, no AP or timing. Dense causal emulator supplies old/new sending references. Only Conv delta backend executed sparsely: weighted channel events, not unit AC. Diagnostic dense reference outside backend excluded from backend operations. Not an integrated sparse detector or GPU acceleration claim.')
+    write_json(out/'contract.json',contract);_,stream=loader(rows,cfg,0,303)
+    with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as f:
+        for sample in stream:
+            ego=to_device(sample['ego'],torch.device('cuda'));meta=sample['meta'];x,base_state=capture(base,ego,base_state,meta);old=state;_,state,info=model.step_spatial(x,state,meta)
+            row=dict(frame=meta['frame'],refresh=info['full_refresh'],layers=[])
+            if not info['full_refresh']:
+                convs=[m for m in model.core.readout.layers if isinstance(m,nn.Conv2d)]
+                for i,(conv,previous,current) in enumerate(zip(convs,old['readout'],state['readout'])):
+                    calls=[];handle=conv.register_forward_hook(lambda *_:calls.append(1));delta=current-previous
+                    sparse,stats=channel_event_delta(conv,delta,32768);handle.remove();assert not calls
+                    reference=F.conv2d(delta,conv.weight,None,padding=conv.padding);before=conv(previous);after=conv(current)
+                    err_delta=float((sparse-reference).abs().max());err_output=float((before+sparse-after).abs().max())
+                    torch.cuda.synchronize();stats.update(layer=i,delta_max_abs_error=err_delta,output_max_abs_error=err_output,dense_conv_calls_inside_backend=len(calls),delta_allclose=bool(torch.allclose(sparse,reference,atol=5e-4,rtol=1e-4)),output_allclose=bool(torch.allclose(before+sparse,after,atol=5e-4,rtol=1e-4)),declared_event_mac=info['readout_events']['layers'][i]['weighted_event_mac'])
+                    row['layers'].append(stats);write_json(out/'last_layer.json',dict(frame=meta['frame'],**stats));assert stats['delta_allclose'] and stats['output_allclose'];assert stats['executed_macs']==stats['declared_event_mac']
+            records.append(row);f.write(json.dumps(row)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=4))
+    assert len(records)==4 and sum(len(row['layers']) for row in records)==8 and model_digest(model)==before_hash
+    layers=[v for row in records for v in row['layers']];metrics=dict(parameters=sum(p.numel() for p in model.parameters()),core_conv_flops_mean=None,backend_conv_flops_total=2*sum(v['executed_macs'] for v in layers),reference_conv_flops_total=2*sum(v['dense_macs'] for v in layers),model_step_ms_mean=None,ap50=None,ap70=None)
+    write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,scans=4,ordinary_frames=2,linear_checks=8,weights_unchanged=True,no_dense_conv_inside_backend=True,original_tolerance_passed=True,trained=False,ap_evaluated=False,timing_valid=False));write_json(out/'status.json',dict(status='COMPLETED'))
+
+
+def main():
+    p=argparse.ArgumentParser()
+    for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','event-verification','calibration','reference-verification','output'):p.add_argument('--'+n,required=True)
+    a=p.parse_args();a.full=False;out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
+    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('30min four-frame channel backend proof')));signal.alarm(1800)
+    try:worker(a,out)
+    except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
+
+
+if __name__=='__main__':main()
