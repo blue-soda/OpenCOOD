@@ -32,13 +32,14 @@ def train_one(model,teacher,cfg,rows,out,name,criterion,contract,preflight=False
     before=frozen_digest(model);initial=model_digest(model);teacher_hash=model_digest(teacher)
     opened=[p for p in model.parameters() if p.requires_grad]
     optimizer=torch.optim.AdamW(opened,lr=1e-4,weight_decay=1e-4);optimizer.zero_grad(set_to_none=True)
-    state=teacher_state=None;detection=[];local=[];updates=[];values=[];labels=0;ends=window_ends(rows,4)
+    state=teacher_state=None;detection=[];local=[];updates=[];values=[];labels=0;ends=window_ends(rows,4);light_frames=0
     _,stream=loader(rows,cfg,2,303);tag=name+('_preflight' if preflight else '_train')
     with (out/(tag+'_frames.jsonl')).open('x',buffering=1) as log:
         for i,sample in enumerate(stream):
             meta=sample['meta'];ego=to_device(sample['ego'],torch.device('cuda'));assert meta['frame']==rows[i]['frame']
             with torch.no_grad():x,teacher_state=capture(teacher,ego,teacher_state,meta)
             pred,state,info=model.step_spatial(x,state,meta,detach_state=False)
+            light_frames+=int(not bool(info['full_refresh']))
             # Teacher states are loss targets only. Student history is always its own.
             kd=torch.stack([(state[k]-teacher_state[k]).square().mean()/(teacher_state[k].square().mean()+1e-6) for k in ('coarse','deep')]).mean()
             assert bool(torch.isfinite(kd));local.append(kd)
@@ -50,16 +51,19 @@ def train_one(model,teacher,cfg,rows,out,name,criterion,contract,preflight=False
                 if detection:
                     objective=torch.stack(detection).mean()+torch.stack(local).mean();objective.backward()
                     assert all(p.grad is None for p in model.parameters() if not p.requires_grad)
-                    assert all(p.grad is not None and bool(torch.isfinite(p.grad).all()) for p in opened)
+                    for parameter_name,p in model.named_parameters():
+                        if not p.requires_grad:continue
+                        unused_light=parameter_name.startswith(('core.coarse_light.','core.deep_light.')) and light_frames==0
+                        assert (p.grad is None and unused_light) or (p.grad is not None and bool(torch.isfinite(p.grad).all()))
                     norm=torch.nn.utils.clip_grad_norm_(opened,10.);assert bool(torch.isfinite(norm)) and float(norm)>0
-                    row.update(window_loss=float(objective.detach()),gradient_norm_before_clip=float(norm))
+                    row.update(window_loss=float(objective.detach()),gradient_norm_before_clip=float(norm),light_frames_in_window=light_frames)
                     if preflight:
                         log.write(json.dumps(row)+'\n');assert model_digest(model)==initial
                         model.zero_grad(set_to_none=True)
                         return dict(status='PASSED',first_update_frame=meta['frame'],gradient_norm=float(norm),weights_unchanged=True)
                     optimizer.step();updates.append(meta['frame']);values.append(float(objective.detach()));row['optimizer_step']=True
                     assert all(bool(torch.isfinite(p).all()) for p in opened)
-                optimizer.zero_grad(set_to_none=True);detection=[];local=[];state=detach_state(state)
+                optimizer.zero_grad(set_to_none=True);detection=[];local=[];light_frames=0;state=detach_state(state)
                 if not preflight and row['optimizer_step'] and len(updates)%16==0:
                     torch.save(dict(targets={n:p.detach().cpu() for n,p in model.named_parameters() if p.requires_grad},
                         optimizer=optimizer.state_dict(),own_state=detach_state(state,cpu=True),teacher_state=detach_state(teacher_state,cpu=True),
