@@ -26,8 +26,13 @@ def run(a):
     if cfg['model']['core_method'] != 'e3dsnn_snapshot_shallow_message':
         raise ValueError('This diagnosis measures the actual shallow height-max path')
     # Training IDs with inference preprocessing, no random augmentation or AP.
-    cfg['validate_dir'] = cfg['root_dir']; cfg['test_dir'] = cfg['root_dir']
     data = build_dataset(cfg, train=False)
+    training_split = data.manifest['splits']['train']
+    if hashlib.sha256(Path(cfg['root_dir']).read_bytes()).hexdigest() != training_split['source_sha256']:
+        raise ValueError('Training IDs must match the existing paired data audit')
+    # Keep the validated inference preprocessor and select the independently
+    # audited training IDs; do not mislabel a training file as the val split.
+    data.data = list(training_split['valid_ids'])
     indices = np.linspace(0, len(data)-1, a.frames, dtype=np.int64).tolist()
     if a.frames < 2 or len(set(indices)) != a.frames:
         raise ValueError('Expected distinct evenly spaced training frames')
