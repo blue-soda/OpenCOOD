@@ -169,7 +169,8 @@ def worker(a):
             model_step_ms_mean=float(np.mean(timings[n])) if timings[n] else None,
             ap50=old['ap50'] if a.suite=='timing' else None,ap70=old['ap70'] if a.suite=='timing' else None,
             cache_bytes=old['cache_bytes'],scale_buffer_bytes=0 if n=='strict' else 1024,
-            samples=len(timings[n]),ap_source='R109, inherited after full-stream parity' if a.suite=='timing' else 'Not measured; prefix parity does not establish full AP')
+            samples=len(timings[n]),ap_source=str(source/'report.json') if a.suite=='timing' else 'Not measured; prefix parity does not establish full AP',
+            ap_source_sha256=contract['source_report_sha256'],ap_inherited_after_full_stream_parity=a.suite=='timing')
     write_json(out/'report.json',dict(status='COMPLETED',suite=a.suite,source_report_sha256=contract['source_report_sha256'],
         checkpoint_sha256=prior['checkpoint_sha256'],exact_frames=frames,metrics=metrics,rounds=rounds,
         all_weights_bn_scale_unchanged=True,timing_valid=a.suite=='timing',trained=False,ap_recomputed=False,
