@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 import numpy as np
 import torch
 from opencood.models.sub_modules.int_spatial_spike import SpatialActivationMemory,SpatialSpikeAnchor,deliveries3x3
@@ -10,6 +11,49 @@ def meta(t,scene='s'):return dict(timestamp_us=t,segment=scene,pose=np.eye(4).to
 
 class SpatialSpikeTests(unittest.TestCase):
     def memory(self,mode):return SpatialActivationMemory(mode,[1.],[0,0,-1,4,2,1])
+
+    def test_statistics_switch_preserves_dynamics_metadata_and_gradient(self):
+        for mode in ('ann','lif','leaky'):
+            full=self.memory(mode);fast=self.memory(mode);fast.collect_statistics=False
+            sa=sb=None;xa=torch.full((1,1,2,4),.8,requires_grad=True);xb=xa.detach().clone().requires_grad_(True)
+            for i,(stamp,scene,reset) in enumerate([(1000000,'s',False),(1100000,'s',False),
+                    (1200000,'s',True),(1600000,'s',False),(10,'other',False)]):
+                m=meta(stamp,scene);m['pose'][0][3]=.25*i
+                a,sa,ia=full.step(xa,sa,m,reset,detach_state=False)
+                with mock.patch('torch.isfinite',side_effect=AssertionError('Runtime diagnostic reduction')):
+                    b,sb,ib=fast.step(xb,sb,m,reset,detach_state=False)
+                self.assertTrue(torch.equal(a,b));self.assertEqual(ib,{k:ia[k] for k in ib})
+                self.assertNotIn('emission_nonzero_fraction',ib)
+                if sa is not None:
+                    self.assertTrue(torch.equal(sa['value'],sb['value']))
+                    self.assertEqual({k:v for k,v in sa.items() if k!='value'},
+                                     {k:v for k,v in sb.items() if k!='value'})
+                a.sum().backward(retain_graph=True);b.sum().backward(retain_graph=True)
+                self.assertTrue(torch.equal(xa.grad,xb.grad))
+            if mode!='ann':
+                with self.assertRaises(ValueError):fast.step(xb,sb,meta(10,'other'),reset=True)
+
+    def test_runtime_wrapper_preserves_all_states_across_resets(self):
+        from test_int_pyramid_state import make_pair
+        def exact(a,b):
+            if torch.is_tensor(a):self.assertTrue(torch.equal(a,b))
+            elif isinstance(a,dict):
+                self.assertEqual(set(a),set(b))
+                for k in a:exact(a[k],b[k])
+            else:self.assertEqual(a,b)
+        torch.manual_seed(303);_,base=make_pair()
+        for mode in ('ann','lif','leaky'):
+            full=SpatialSpikeAnchor(base,mode,torch.ones(256))
+            fast=SpatialSpikeAnchor(base,mode,torch.ones(256),collect_statistics=False)
+            exact(full.state_dict(),fast.state_dict());sa=sb=None
+            with torch.no_grad():
+                for i,(t,s) in enumerate([(1000000,'s'),(1100000,'s'),(1500000,'s'),(10,'other'),(100010,'other')]):
+                    m=meta(t,s);m['reset_before']=i==4;x=torch.rand(1,64,24,32)
+                    a,sa,ia=full.step_spatial(x,sa,m);b,sb,ib=fast.step_spatial(x,sb,m)
+                    exact(a,b);exact(sa,sb)
+                    self.assertEqual(ib['spatial_activation'],{k:ia['spatial_activation'][k] for k in ib['spatial_activation']})
+                    ia.pop('spatial_activation');ib.pop('spatial_activation');self.assertEqual(ia,ib)
+                    self.assertFalse(any(m._forward_pre_hooks for m in fast.modules()))
 
     def test_exact_fanout_including_degenerate_shapes(self):
         for h,w in [(1,1),(1,4),(2,4),(5,7)]:

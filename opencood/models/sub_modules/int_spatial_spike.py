@@ -18,12 +18,15 @@ def deliveries3x3(active,out_channels):
 
 
 class SpatialActivationMemory(nn.Module):
-    def __init__(self,mode,scale,bounds,tau=.2):
+    def __init__(self,mode,scale,bounds,tau=.2,collect_statistics=True):
         super().__init__()
         if mode not in ('ann','lif','leaky') or not math.isfinite(tau) or tau<=0:raise ValueError('Invalid dynamics')
         scale=torch.as_tensor(scale,dtype=torch.float32).reshape(1,-1,1,1)
         if not bool(torch.isfinite(scale).all()) or not bool((scale>0).all()):raise ValueError('Invalid scale')
         self.register_buffer('scale',scale.clone());self.mode=mode;self.bounds=bounds;self.tau=tau
+        # Runtime mode changes diagnostics only, never the membrane computation.
+        # Callers must check finite outputs/state outside timed intervals.
+        self.collect_statistics=collect_statistics
 
     def step(self,a,state,meta,reset=False,detach_state=True):
         if a.shape[0]!=1 or a.shape[1]!=self.scale.shape[1]:raise ValueError('One matching stream required')
@@ -42,13 +45,14 @@ class SpatialActivationMemory(nn.Module):
         if self.mode=='lif':emission=SurrogateSpike.apply(v-1.);u=v-emission
         else:emission=torch.relu(v);u=v
         output=self.scale*emission
-        with torch.no_grad():
-            if not bool(torch.isfinite(u).all()) or not bool(torch.isfinite(output).all()):raise RuntimeError('Nonfinite activation memory')
-            info=dict(state_bytes=u.numel()*u.element_size(),reset=reason,warp=reason is None,delta_t=dt,
-                emission_nonzero_fraction=float((emission!=0).float().mean()),emission_mean=float(emission.mean()),
-                emission_nonzero_per_channel=(emission!=0).float().mean((0,2,3)).cpu().tolist(),
-                membrane_abs_max=float(u.abs().max()),membrane_ge_threshold_fraction=float((u>=1).float().mean()),
-                membrane_abs_max_per_channel=u.abs().amax((0,2,3)).cpu().tolist())
+        info=dict(state_bytes=u.numel()*u.element_size(),reset=reason,warp=reason is None,delta_t=dt)
+        if self.collect_statistics:
+            with torch.no_grad():
+                if not bool(torch.isfinite(u).all()) or not bool(torch.isfinite(output).all()):raise RuntimeError('Nonfinite activation memory')
+                info.update(emission_nonzero_fraction=float((emission!=0).float().mean()),emission_mean=float(emission.mean()),
+                    emission_nonzero_per_channel=(emission!=0).float().mean((0,2,3)).cpu().tolist(),
+                    membrane_abs_max=float(u.abs().max()),membrane_ge_threshold_fraction=float((u>=1).float().mean()),
+                    membrane_abs_max_per_channel=u.abs().amax((0,2,3)).cpu().tolist())
         new=dict(value=u.detach() if detach_state else u,scene=meta['segment'],pose=copy.deepcopy(meta['pose']),timestamp_us=int(meta['timestamp_us']))
         return output,new,info
 
@@ -56,9 +60,9 @@ class SpatialActivationMemory(nn.Module):
 class SpatialSpikeAnchor(AnchoredLatePyramidDetector):
     differentiable_state=True
 
-    def __init__(self,base,mode,scale,reset_memory=False):
+    def __init__(self,base,mode,scale,reset_memory=False,collect_statistics=True):
         super().__init__(base);self.core=copy.deepcopy(base.core)
-        self.activation_memory=SpatialActivationMemory(mode,scale,self.bounds)
+        self.activation_memory=SpatialActivationMemory(mode,scale,self.bounds,collect_statistics=collect_statistics)
         self.reset_activation_memory=reset_memory
         target=self.core.coarse_encoder[3].conv2
         if target.in_channels!=256 or target.out_channels!=256 or target.kernel_size!=(3,3) or target.stride!=(1,1):raise ValueError('Unexpected target convolution')
