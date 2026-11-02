@@ -61,7 +61,7 @@ def worker(a,out):
                     row['layers'].append(stats);write_json(out/'last_layer.json',dict(frame=meta['frame'],**stats));assert equal
             records.append(row);f.write(json.dumps(row)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=4))
     assert len(records)==4 and sum(len(row['layers']) for row in records)==8 and model_digest(model)==before_hash
-    layers=[v for row in records for v in row['layers']];metrics=dict(parameters=sum(p.numel() for p in model.parameters()),core_conv_flops_mean=None,backend_conv_flops_total=2*sum(v['executed_macs'] for v in layers),reference_conv_flops_total=2*sum(v['dense_macs'] for v in layers),model_step_ms_mean=None,ap50=None,ap70=None)
+    layers=[v for row in records for v in row['layers']];metrics=dict(parameters=sum(p.numel() for p in model.parameters()),core_conv_flops_mean=None,integer_backend_macs_total=sum(v['executed_macs'] for v in layers),integer_backend_operations_total=2*sum(v['executed_macs'] for v in layers),dense_reference_flops_total=2*sum(v['dense_macs'] for v in layers),model_step_ms_mean=None,ap50=None,ap70=None)
     write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,scans=4,ordinary_frames=2,linear_checks=8,weights_unchanged=True,no_dense_conv_inside_backend=True,integer_bit_exact=True,trained=False,ap_evaluated=False,timing_valid=False));write_json(out/'status.json',dict(status='COMPLETED'))
 
 
