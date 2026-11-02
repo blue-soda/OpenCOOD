@@ -12,16 +12,17 @@ from opencood.models.sub_modules.e3dsnn.backbone_3d import Multispike
 class E3dsnnSnapshotEarlyMessage(E3dsnnSnapshotShallowMessage):
     def __init__(self, args):
         super().__init__(args)
-        if not isinstance(self.backbone_3d.conv4.down[0], Multispike):
+        if (len(self.backbone_3d.conv4.down) != 3 or
+                not isinstance(self.backbone_3d.conv4.down[0], Multispike) or
+                not isinstance(self.backbone_3d.conv4.down[2], torch.nn.BatchNorm1d)):
             raise ValueError('Expected preactivation Count4 at the conv4 entrance')
         self._ego_indices = None
 
     def _deep_from_counts(self, counts):
         # The fused input has already passed Count4. Applying it again changes
         # its surrogate at integer 0/4, so skip precisely that activation.
-        x = counts
-        for layer in list(self.backbone_3d.conv4.down)[1:]:
-            x = layer(x)
+        x = self.backbone_3d.conv4.down[1](counts)
+        x = x.replace_feature(self.backbone_3d.conv4.down[2](x.features))
         for block in self.backbone_3d.conv4.blocks:
             x = block(x)
         return self.backbone_3d.conv_out(x)
