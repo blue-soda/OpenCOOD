@@ -63,12 +63,15 @@ class ChangeEncodedReadout(nn.Module):
                 weighted_event_mac=weighted,unit_spike_ac=ac,nonzero_events=events,unit_spikes=units,
                 active_input_positions=int(spatial.sum()),active_output_positions=int(active_output.sum()),
                 input_elements=x.numel(),output_elements=h*w*layer.out_channels,quantization_error_in_quanta=error))
-            states.append(q.detach());x=layer(q);index+=1
+            states.append(q.detach());x=self.convolve(layer,q,index);index+=1
         self.next_state=states;self.statistics=dict(layers=records,nonlinear_elements=nonlinear_elements,
             sending_reference_bytes=sum(q.numel()*q.element_size() for q in states),
             quantum_bytes=sum(getattr(self,'quantum_%d'%i).numel()*4 for i in range(index)),
             hypothetical_accumulator_bytes=sum(r['output_elements']*4 for r in records),backend='dense_conv_of_change_encoded_input')
         return x
+
+    def convolve(self,layer,q,index):
+        return layer(q)
 
 
 class ReadoutEventDetector(ProtectedMultiscaleRefreshDetector):
