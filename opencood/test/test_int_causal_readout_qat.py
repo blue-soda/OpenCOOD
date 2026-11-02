@@ -7,6 +7,16 @@ from opencood.models.sub_modules.int_causal_integer_readout import IntegerReadou
 
 
 class CausalQATTests(unittest.TestCase):
+    def test_fast_eval_preserves_output_and_training_stays_fp64(self):
+        torch.manual_seed(303);source=nn.Sequential(nn.Conv2d(2,3,3,padding=1),nn.ReLU(),nn.Conv2d(3,2,1)).eval();q=[[.125]*2,[.125]*3];fast=CausalReadoutQAT(source,q,True,True);slow=CausalReadoutQAT(source,q,True);x=torch.randn(1,2,4,5)
+        for step in range(2):
+            with torch.no_grad():
+                slow.load_state_dict(fast.state_dict());self.assertTrue(torch.equal(fast(x),slow(x)));self.assertEqual(fast.last_reference_flops,0);self.assertGreater(fast.last_fp32_reference_flops,0)
+            fast(x).square().mean().backward();self.assertGreater(fast.last_reference_flops,0);self.assertEqual(fast.last_fp32_reference_flops,0)
+            with torch.no_grad():
+                for p in fast.parameters():self.assertTrue(bool(torch.isfinite(p.grad).all()));p.add_(p.grad,alpha=-1e-4)
+            fast.zero_grad(set_to_none=True)
+
     def test_ann_flattening_and_frozen_bn(self):
         torch.manual_seed(303);source=nn.Sequential(nn.Conv2d(2,3,3,padding=1),nn.BatchNorm2d(3),nn.ReLU(),nn.Conv2d(3,2,1)).eval();model=CausalReadoutQAT(source,[[.125]*2,[.125]*3],False);x=torch.randn(1,2,4,5)
         self.assertTrue(torch.equal(source(x),model(x)));self.assertEqual(model.last_reference_flops,0)

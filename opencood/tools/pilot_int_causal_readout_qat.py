@@ -117,7 +117,7 @@ def evaluate(models,base,cfg,rows,out,tag,identity=False):
             for n,m in models.items():
                 (pred,states[n],info),cost=measured_step(m,x,states[n],meta)
                 assert all(bool(torch.isfinite(v).all()) for v in pred.values())
-                fp64=getattr(m.core.readout,'last_reference_flops',0);predictions[n]=pred;entry['arms'][n]=dict(core_conv_flops=cost+fp64,core_fp32_conv_flops=cost,readout_fp64_reference_flops=fp64,cache_bytes=info['cache_bytes'],reset=info['reset'])
+                fp64=getattr(m.core.readout,'last_reference_flops',0);fp32_reference=getattr(m.core.readout,'last_fp32_reference_flops',0);logical=getattr(m.core.readout,'last_logical_reference_flops',0);predictions[n]=pred;entry['arms'][n]=dict(core_conv_flops=cost+fp64+fp32_reference,core_fp32_conv_flops=cost+fp32_reference,readout_fp32_reference_flops=fp32_reference,logical_core_conv_flops=cost+logical,readout_fp64_reference_flops=fp64,cache_bytes=info['cache_bytes'],reset=info['reset'])
             if identity:assert all(torch.equal(v,predictions['ann'][k]) for k,v in predictions['frozen'].items())
             assert all(torch.equal(states[n][k],states['frozen'][k]) for n in models for k in base.state_keys)
             if meta['supervised']:
@@ -132,7 +132,7 @@ def evaluate(models,base,cfg,rows,out,tag,identity=False):
     write_json(out/(tag+'_ap_records.json'),ap)
     return dict(scans=256,labels=192,metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),
         trainable_parameters=sum(p.numel() for p in m.parameters() if p.requires_grad),
-        core_conv_flops_mean=sum(r['arms'][n]['core_conv_flops'] for r in records)/256,core_fp32_conv_flops_mean=sum(r['arms'][n]['core_fp32_conv_flops'] for r in records)/256,readout_fp64_reference_flops_mean=sum(r['arms'][n]['readout_fp64_reference_flops'] for r in records)/256,cache_bytes=records[0]['arms'][n]['cache_bytes'],
+        core_conv_flops_mean=sum(r['arms'][n]['core_conv_flops'] for r in records)/256,core_fp32_conv_flops_mean=sum(r['arms'][n]['core_fp32_conv_flops'] for r in records)/256,readout_fp32_reference_flops_mean=sum(r['arms'][n]['readout_fp32_reference_flops'] for r in records)/256,logical_core_conv_flops_mean=sum(r['arms'][n]['logical_core_conv_flops'] for r in records)/256,readout_fp64_reference_flops_mean=sum(r['arms'][n]['readout_fp64_reference_flops'] for r in records)/256,cache_bytes=records[0]['arms'][n]['cache_bytes'],
         model_step_ms_mean=None,ap50=eval_utils.calculate_ap(ap[n],.5)[0],ap70=eval_utils.calculate_ap(ap[n],.7)[0]) for n,m in models.items()}),ap
 
 
@@ -157,15 +157,18 @@ def worker(a,out):
     qv=json.loads(Path(a.qat_verification).read_text());assert qv['status']=='VERIFIED' and qv['run']=='R-183';qcp=Path(a.qat_source)/'contract.json';assert digest(qcp)==qv['source_sha256']['contract.json']
     qc=json.loads(qcp.read_text());assert qc['calibration_sha256']==ev['calibration_sha256'] and qc['checkpoint_sha256']==gate['checkpoint_sha256']
     quality=json.loads(Path(a.quality_verification).read_text());assert quality['status']=='VERIFIED' and quality['run']=='R-182';rp=Path(a.quality_source)/'ap_records.json';assert digest(rp)==quality['source_sha256']['ap_records.json'];gold=json.loads(rp.read_text())
+    if a.fast_eval:
+        fv=json.loads(Path(a.fast_verification).read_text());assert fv['status']=='VERIFIED' and fv['run']=='R-188';fcp=Path(a.fast_source)/'contract.json';assert digest(fcp)==fv['source_sha256']['contract.json'];fc=json.loads(fcp.read_text());assert fc['checkpoint_sha256']==gate['checkpoint_sha256'] and fc['calibration_sha256']==ev['calibration_sha256']
     models=dict(frozen=source)
     for name,enabled in (('ann',False),('qat',True)):
-        model=copy.deepcopy(source);model.core.readout=CausalReadoutQAT(source.core.readout,calibration['quanta'],enabled);models[name]=model.cuda().eval()
+        model=copy.deepcopy(source);model.core.readout=CausalReadoutQAT(source.core.readout,calibration['quanta'],enabled,fast_eval=a.fast_eval and enabled);models[name]=model.cuda().eval()
     for n,m in models.items():
         for name,p in m.named_parameters():p.requires_grad_(n!='frozen' and name.startswith(PREFIX))
     training,evaluation=rows[:512],rows[512:768];assert len(expected_updates(training))==71 and sum(r['supervised'] for r in training)==232
     contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),verification_sha256=digest(Path(a.verification)),initialization_sha256=digest(Path(a.initialization)),qat_verification_sha256=digest(Path(a.qat_verification)),quality_verification_sha256=digest(Path(a.quality_verification)),calibration_sha256=digest(Path(a.calibration)),protected_trained_sha256=gate['training']['protected_light']['checkpoint_sha256'],train_frames=[r['frame'] for r in training],evaluation_frames=[r['frame'] for r in evaluation],expected_update_frames=expected_updates(training),seed=303,tbptt=4,epochs=1,optimizer='AdamW',lr=1e-5,weight_decay=1e-4,clip_norm=10.,precision=dict(matmul_tf32=False,cudnn_tf32=False),code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),trainable_prefix=PREFIX,
         loss='Same mean labelled-frame detection loss in4-frame update windows. Frozen upstream/head/BN statistics and fixed activation quanta. ANN versus QAT readout-only parameters, no teacher history or teacher loss.',
         boundary='Fixed512/232 labels/71 updates each, lower predeclared1e-5 learning rate after prior R1471e-4 readout pilot degraded; not an LR search. QAT uses exact integer-grid/int16 forward with STE derivatives and per-output scale detached from gradients. All initial/final arms retained; no best-epoch selection. Eval train256 not fullval or independent test; no valid timing. No assertion of sparse deployment speed; no-step real gradient gate precedes optimization.')
+    contract.update(training_reference='FP64 integer-exact STE',evaluation_reference='bounded FP32 radix' if a.fast_eval else 'FP64',fast_verification_sha256=digest(Path(a.fast_verification)) if a.fast_eval else None)
     write_json(out/'contract.json',contract);criterion=PointPillarDirLoss(cfg['loss']['args']).cuda();names=('ann','qat')
     preflight={n:train_one(models[n],cfg,training,out,n,criterion,contract,True) for n in names};write_json(out/'preflight.json',preflight)
     initial,raw0=evaluate(models,base,cfg,evaluation,out,'initial',True);assert raw0['frozen']==raw0['ann']==gold['control'] and raw0['qat']==gold['integer_dense']
@@ -178,6 +181,7 @@ def worker(a,out):
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','event-verification','calibration','reference-verification','integer-verification','integer-source','qat-verification','qat-source','quality-verification','quality-source','output'):p.add_argument('--'+n,required=True)
+    p.add_argument('--fast-eval',action='store_true');p.add_argument('--fast-verification');p.add_argument('--fast-source')
     a=p.parse_args();a.full=False;out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('120min matched fixed512 ANN/QAT readout adaptation')));signal.alarm(7200)
     try:worker(a,out)
