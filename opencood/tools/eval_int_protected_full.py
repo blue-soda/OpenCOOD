@@ -64,6 +64,7 @@ def worker(a,out):
             for n,m in models.items():
                 (pred,states[n],info),cost=measured_step(m,x,states[n],meta);assert all(bool(torch.isfinite(v).all()) for v in pred.values())
                 refresh=info.get('full_refresh',info.get('late_refresh'))
+                if n=='frozen':refresh='dense'
                 entry['arms'][n]=dict(core_conv_flops=cost,cache_bytes=info['cache_bytes'],refresh=refresh,reset=info['reset'])
                 if n=='strict_replay':
                     prior=gold[i]['arms']['strict'];assert cost==prior['core_conv_flops'] and refresh==prior['refresh'] and info['cache_bytes']==prior['cache_bytes']
