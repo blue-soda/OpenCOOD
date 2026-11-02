@@ -85,11 +85,13 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
             ('value',self.core.observation,None,self.core.fine_update,2),
             ('coarse',self.core.coarse_encoder,self.core.coarse_light,self.core.coarse_update,4),
             ('deep',self.core.deep_encoder,self.core.deep_light,self.core.deep_update,8)):
-            current=(encoder if refresh or light is None else light)(x)
+            current=(encoder if refresh or light is None or not getattr(self,'light_observations',True) else light)(x)
             if reason:old=torch.zeros_like(current);valid=torch.zeros_like(current[:,:1],dtype=torch.bool)
             else:
                 bounds=block_lidar_range(self.bounds,spatial.shape[-2:],current.shape[-2:],stride)
                 old,valid=warp_bev(state[key],state['pose'],meta['pose'],bounds)
+            if refresh and hasattr(self.core,'refresh_updates') and key in self.core.refresh_updates:
+                update=self.core.refresh_updates[key]
             update.delta_t=dt;x=update(current,old,valid);values.append(x)
         features=self.core.readout(torch.cat([m(v) for m,v in zip(self.core.deblocks,values)],1))
         pred=dict(psm=self.core.cls_head(features),rm=self.core.reg_head(features))
@@ -100,4 +102,18 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
             since_refresh=0 if refresh else state['since_refresh']+1)
         return pred,new,dict(reset=reason,full_refresh=refresh,
             cache_bytes=sum(new[k].numel()*new[k].element_size() for k in self.state_keys),
-            middle_deep_encoder_executed=bool(refresh),state_updates_executed=True)
+            middle_deep_encoder_executed=bool(refresh) or not getattr(self,'light_observations',True),state_updates_executed=True)
+
+
+class ProtectedMultiscaleRefreshDetector(MultiscaleRefreshDetector):
+    """Protect full-refresh functions while learning separate ordinary updates.
+
+    The same recurrent state crosses refresh boundaries; this is not an oracle
+    state reset. Full encoders/updates are copied and frozen. A dense-observation
+    control retains the same periodic update rules while executing both encoders.
+    """
+    def __init__(self,base,light_observations=True,period=4,max_age=.45):
+        super().__init__(base,'gate',period,max_age)
+        self.core.refresh_updates=nn.ModuleDict(dict(coarse=copy.deepcopy(base.core.coarse_update),deep=copy.deepcopy(base.core.deep_update)))
+        for p in self.core.refresh_updates.parameters():p.requires_grad_(False)
+        self.light_observations=bool(light_observations);self.variant='protected_middle_deep_light' if light_observations else 'protected_middle_deep_dense'
