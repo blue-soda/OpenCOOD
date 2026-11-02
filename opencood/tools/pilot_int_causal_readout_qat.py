@@ -171,7 +171,9 @@ def worker(a,out):
     contract.update(training_reference='FP64 integer-exact STE',evaluation_reference='bounded FP32 radix' if a.fast_eval else 'FP64',fast_verification_sha256=digest(Path(a.fast_verification)) if a.fast_eval else None)
     write_json(out/'contract.json',contract);criterion=PointPillarDirLoss(cfg['loss']['args']).cuda();names=('ann','qat')
     preflight={n:train_one(models[n],cfg,training,out,n,criterion,contract,True) for n in names};write_json(out/'preflight.json',preflight)
-    initial,raw0=evaluate(models,base,cfg,evaluation,out,'initial',True);assert raw0['frozen']==raw0['ann']==gold['control'] and raw0['qat']==gold['integer_dense']
+    initial,raw0=evaluate(models,base,cfg,evaluation,out,'initial',True)
+    saved_raw0=json.loads((out/'initial_ap_records.json').read_text())
+    assert saved_raw0['frozen']==saved_raw0['ann']==gold['control'] and saved_raw0['qat']==gold['integer_dense']
     learned={n:train_one(models[n],cfg,training,out,n,criterion,contract) for n in names};final,raw1=evaluate(models,base,cfg,evaluation,out,'final');assert raw0['frozen']==raw1['frozen']
     write_json(out/'checkpoint_manifest.json',dict(files=[dict(name=p.name,bytes=p.stat().st_size,sha256=digest(p)) for p in sorted(out.glob('*.pth'))],resume_rehearsed=False))
     write_json(out/'sort_orders.json',dict(numpy_version=np.__version__,source_sha256={tag:digest(out/(tag+'_ap_records.json')) for tag in ('initial','final')},orders={tag:{n:{str(t):np.argsort(-np.asarray(b['score'])).tolist() for t,b in buckets.items()} for n,buckets in raw.items()} for tag,raw in (('initial',raw0),('final',raw1))}))
