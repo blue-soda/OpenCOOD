@@ -49,7 +49,8 @@ class TemporalPyramidDetector(PyramidStateDetector):
         self.core.coarse_update=replace_update(base.core.coarse_update,256,mode)
         self.update_mode=mode;self.train(False)
 
-    def step_spatial(self,spatial,state,meta,detach_state=True):
+    def step_spatial(self,spatial,state,meta,detach_state=True,requests=None):
+        if requests is not None:raise ValueError('No spatial masks in the temporal control')
         _,dt=reset_reason(state,meta)
         self.core.coarse_update.delta_t=dt
         return super().step_spatial(spatial,state,meta,detach_state=detach_state)
