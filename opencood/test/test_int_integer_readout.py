@@ -1,69 +1,32 @@
 import unittest
+import numpy as np
 import torch
-from opencood.models.sub_modules.int_integer_readout import bounded_integer_conv,IntegerCodeConv,bitplane_cost
+from torch import nn
+from test_int_pyramid_cache import fixture
+from opencood.models.sub_modules.int_multiscale_refresh import ProtectedMultiscaleRefreshDetector
+from opencood.models.sub_modules.int_integer_readout import IntegerReadout,IntegerReadoutDetector
 
 
 class IntegerReadoutTests(unittest.TestCase):
-    def test_dense_gemm_matches_explicit_int64_spatial_reference(self):
-        x=(torch.arange(2*3*4).reshape(1,2,3,4)%9).int()
-        q=((torch.arange(3*2*3*3).reshape(3,2,3,3)%255)-127).to(torch.int8)
-        actual,_=bounded_integer_conv(x,q,8,1)
-        expected=torch.zeros_like(actual,dtype=torch.int64)
-        for o in range(3):
-            for y in range(3):
-                for z in range(4):
-                    for c in range(2):
-                        for ky in range(3):
-                            for kx in range(3):
-                                iy,ix=y+ky-1,z+kx-1
-                                if 0<=iy<3 and 0<=ix<4:
-                                    expected[0,o,y,z]+=int(x[0,c,iy,ix])*int(q[o,c,ky,kx])
-        self.assertTrue(torch.equal(actual.long(),expected))
+    def test_independent_nonlinear_stream_bit_exact_and_reset(self):
+        torch.manual_seed(303);source=nn.Sequential(nn.Conv2d(2,3,3,padding=1),nn.BatchNorm2d(3),nn.ReLU(),nn.Conv2d(3,2,1)).eval();quanta=[[.125]*2,[.125]*3]
+        dense=IntegerReadout(source,quanta,False);sparse=IntegerReadout(source,quanta,True)
+        with torch.no_grad():
+            for i in range(8):
+                dense.refresh=sparse.refresh=i in (0,4);x=torch.randn(1,2,4,5);a=dense(x);b=sparse(x);self.assertTrue(torch.equal(a,b))
+                self.assertTrue(all(torch.equal(a,b) for a,b in zip(dense.next_state,sparse.next_state)));self.assertTrue(all(torch.equal(a,b) for a,b in zip(dense.next_accumulators,sparse.next_accumulators)))
+                self.assertEqual(sum(v['dense_reference_calls'] for v in sparse.statistics['layers']),2 if sparse.refresh else 0)
+                for m in (dense,sparse):m.previous=m.next_state;m.previous_accumulators=m.next_accumulators
 
-    def test_worst_case_bound_reached_without_overflow(self):
-        x=torch.full((1,384,3,3),8,dtype=torch.int32)
-        for sign in (-1,1):
-            q=torch.full((1,384,3,3),127*sign,dtype=torch.int8)
-            actual,_=bounded_integer_conv(x,q,8,0)
-            self.assertEqual(int(actual[0,0,1,1]),sign*3511296)
-
-    def test_integer_count_and_event_outputs_exact_with_analog_tail(self):
-        torch.manual_seed(303)
-        conv=torch.nn.Conv2d(2,3,3,padding=1)
-        scales=torch.tensor([.3,1.7]).reshape(1,2,1,1)
-        count=IntegerCodeConv(conv,scales,'folded_count').eval()
-        event=IntegerCodeConv(conv,scales,'event8').eval()
-        x=torch.randn(1,2,4,5)
-        with torch.no_grad():a=count(x);b=event(x)
-        self.assertTrue(torch.equal(a,b))
-        self.assertEqual(count.quantization,event.quantization)
-        self.assertEqual(event.last_stats['integer_time_block_additions'],7*a.numel())
-
-    def test_bitplane_all_counts_negative_weights_and_tail(self):
-        conv=torch.nn.Conv2d(1,2,3,padding=1)
-        with torch.no_grad():conv.weight[0].fill_(-.7);conv.weight[1].fill_(.3)
-        scales=torch.ones(1,1,1,1)
-        count=IntegerCodeConv(conv,scales,'folded_count').eval()
-        bits=IntegerCodeConv(conv,scales,'bitplane').eval()
-        x=torch.arange(12).float().reshape(1,1,3,4)/8
-        with torch.no_grad():a=count(x);b=bits(x)
-        self.assertTrue(torch.equal(a,b))
-        self.assertEqual(count.quantization,bits.quantization)
-        self.assertEqual(bits.last_stats['integer_bit_shifts'],3*a.numel())
-
-    def test_bitplane_delivery_histogram_matches_explicit_fanout(self):
-        for h,w in ((1,1),(1,9),(3,3)):
-            x=(torch.arange(h*w).reshape(1,1,h,w)%9).int()
-            actual=bitplane_cost(x,2)
-            expected=[0]*9
-            for y in range(h):
-                for z in range(w):
-                    for dy in (-1,0,1):
-                        for dz in (-1,0,1):
-                            if 0<=y+dy<h and 0<=z+dz<w:expected[int(x[0,0,y,z])]+=2
-            self.assertEqual(actual['valid_delivery_histogram'],expected)
-            self.assertLessEqual(actual['bitplane_shifted_ac'],actual['unary_event_ac'])
-            self.assertGreaterEqual(actual['bitplane_shifted_ac'],actual['sparse_count_mac'])
+    def test_detector_external_integer_state_and_unchanged_task_memory(self):
+        torch.manual_seed(303);source=ProtectedMultiscaleRefreshDetector(fixture()).eval();q=[[.125]*m.in_channels for m in source.core.readout.modules() if isinstance(m,nn.Conv2d)];dense=IntegerReadoutDetector(source,q,False);sparse=IntegerReadoutDetector(source,q,True);a=b=plain=None
+        self.assertEqual(sum(p.numel() for p in dense.parameters()),sum(p.numel() for p in source.parameters()))
+        with torch.no_grad():
+            for i in range(6):
+                x=torch.randn(1,64,24,32);meta=dict(timestamp_us=i*100000,segment='a' if i<5 else 'b',pose=np.eye(4));_,plain,ip=source.step_spatial(x,plain,meta);pa,a,ia=dense.step_spatial(x,a,meta);pb,b,ib=sparse.step_spatial(x,b,meta)
+                self.assertTrue(all(torch.equal(pa[k],pb[k]) for k in pa));self.assertTrue(all(torch.equal(a[k],plain[k]) and torch.equal(b[k],plain[k]) for k in source.state_keys))
+                self.assertEqual(ia['cache_bytes'],ib['cache_bytes']);self.assertEqual(ia['cache_bytes']-ip['cache_bytes'],sum(t.numel()*8 for t in a['readout']+a['readout_accumulators']))
+                self.assertTrue(all(t.dtype==torch.int64 for t in b['readout']+b['readout_accumulators']))
 
 
 if __name__=='__main__':unittest.main()

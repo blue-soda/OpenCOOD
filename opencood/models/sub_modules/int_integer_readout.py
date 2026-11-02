@@ -1,117 +1,64 @@
-"""Bounded integer-dot reference using dense FP32 GEMM, then INT32 block sums.
+"""Integer-grid readout with matched dense and sparse causal execution.
 
-Not a native INT8 convolution kernel. TF32 must be disabled; outputs are checked
-against integer/bound invariants and sampled independent INT64 products.
+Refresh quantization changes the ANN. Dense integer Conv is certified FP64
+simulation, not an efficient deployed integer kernel.
 """
-import copy
 import torch
 from torch import nn
 from torch.nn import functional as F
-from opencood.models.sub_modules.int_folded_readout import FoldedCodeConv
+from opencood.models.sub_modules.int_readout_events import ChangeEncodedReadout,ReadoutEventDetector
+from opencood.models.sub_modules.int_integer_event_reference import folded_integer_weights,integer_input,dense_integer_reference,sparse_integer_delta
 
 
-def bitplane_cost(counts,out_channels):
-    """Ideal valid spatial deliveries, no skipping of zero weights; not GPU work."""
-    assert counts.dtype==torch.int32 and bool(((counts>=0)&(counts<=8)).all())
-    h,w=counts.shape[-2:]
-    y=torch.arange(h,device=counts.device);x=torch.arange(w,device=counts.device)
-    fy=sum(((y+d>=0)&(y+d<h)).long() for d in (-1,0,1))
-    fx=sum(((x+d>=0)&(x+d<w)).long() for d in (-1,0,1))
-    fanout=fy[:,None]*fx[None,:]*out_channels
-    histogram=[int((counts==v).sum()) for v in range(9)]
-    weighted=[int(((counts==v).long()*fanout).sum()) for v in range(9)]
-    pop=[bin(v).count('1') for v in range(9)]
-    return dict(count_histogram=histogram,valid_delivery_histogram=weighted,
-        unary_event_ac=sum(v*n for v,n in enumerate(weighted)),
-        sparse_count_mac=sum(weighted[1:]),bitplane_shifted_ac=sum(p*n for p,n in zip(pop,weighted)),
-        bitplane_source_packets=sum(p*n for p,n in zip(pop,histogram)),
-        unary_source_packets=sum(v*n for v,n in enumerate(histogram)),
-        count_source_packets=sum(histogram[1:]),
-        scope='Ideal nonzero activations, valid 3x3 fanout, all output channels, no zero-weight skipping; shift/routing/memory/neuron costs separate')
-
-
-def bounded_integer_conv(values,qweight,max_input=8,audit_seed=None):
-    assert values.dtype==torch.int32 and qweight.dtype==torch.int8
-    assert qweight.shape[1]==values.shape[1] and qweight.shape[2:]==(3,3)
-    assert bool((values>=0).all()) and bool((values<=max_input).all())
-    assert bool((qweight>=-127).all())
-    bound=values.shape[1]*9*127*max_input
-    assert bound<2**24 and bound<2**31
-    if values.is_cuda:assert not torch.backends.cuda.matmul.allow_tf32
-    columns=F.unfold(values.float(),3,padding=1)
-    weights=qweight.reshape(qweight.shape[0],-1).float()
-    raw=torch.matmul(weights,columns)
-    assert torch.equal(raw,torch.round(raw)) and bool((raw.abs()<=bound).all())
-    result=raw.to(torch.int32)
-    checks=0
-    if audit_seed is not None:
-        channel=(audit_seed*37)%qweight.shape[0]
-        positions=sorted({0,columns.shape[-1]//2,columns.shape[-1]-1})
-        expected=torch.stack([(columns[0,:,p].long()*weights[channel].long()).sum() for p in positions])
-        assert torch.equal(result[0,channel,positions].long(),expected)
-        checks=len(positions)
-    return result.reshape(values.shape[0],qweight.shape[0],values.shape[-2],values.shape[-1]),checks
-
-
-class IntegerCodeConv(FoldedCodeConv):
-    def __init__(self,source,scales,mode):
-        super().__init__(source,scales,'folded_count' if mode=='bitplane' else mode,8)
-        self.mode=mode
-        self.calls=0
+class IntegerReadout(ChangeEncodedReadout):
+    def __init__(self,source,quanta,sparse):
+        super().__init__(source,quanta);self.sparse=bool(sparse);self.previous_accumulators=None;self.next_accumulators=None
+        for i,conv in enumerate(m for m in self.layers if isinstance(m,nn.Conv2d)):
+            weight,scale=folded_integer_weights(conv,getattr(self,'quantum_%d'%i))
+            self.register_buffer('integer_weight_%d'%i,weight);self.register_buffer('output_scale_%d'%i,scale)
 
     def forward(self,x):
-        if self.training or torch.is_grad_enabled():raise ValueError('Frozen diagnostic only')
-        self.calls+=1
-        positive=x.clamp_min(0);overflow=positive>self.scales
-        drive=torch.floor(torch.minimum(positive,self.scales)/self.scales*65536).to(torch.int32).clamp_(0,65536)
-        drive.masked_fill_(overflow,0)
-        counts=torch.floor_divide(drive*8+32768,65536)
-        seed=self.calls if self.calls<=32 else None
-        checks=0
-        if self.mode=='folded_count':
-            accumulator,checks=bounded_integer_conv(counts,self.event_int8,8,seed)
-            calls=2;integer_adds=0
-        elif self.mode=='bitplane':
-            accumulator=None
-            for bit in range(4):
-                plane=(counts>>bit)&1
-                contribution,nchecks=bounded_integer_conv(plane,self.event_int8,1,seed)
-                contribution=contribution<<bit
-                accumulator=contribution if accumulator is None else accumulator+contribution
-                checks+=nchecks
-            calls=5;integer_adds=3*accumulator.numel()
-        else:
-            membrane=torch.full_like(drive,32768);emitted=torch.zeros_like(drive);accumulator=None
-            for _ in range(8):
-                membrane.add_(drive);spikes=(membrane>=65536).to(torch.int32)
-                membrane.sub_(spikes*65536);emitted.add_(spikes)
-                contribution,nchecks=bounded_integer_conv(spikes,self.event_int8,1,seed)
-                accumulator=contribution if accumulator is None else accumulator+contribution
-                checks+=nchecks
-            assert torch.equal(emitted,counts)
-            calls=9;integer_adds=7*accumulator.numel()
-        bound=self.source.in_channels*9*127*8
-        assert accumulator.dtype==torch.int32 and bool((accumulator.abs()<=bound).all())
-        output=accumulator.float()*self.event_weight_scale.reshape(1,-1,1,1)
-        tail=torch.where(overflow,positive,torch.zeros_like(positive))
-        output=output+F.conv2d(tail,self.tail_weight,None,1,1)
-        if self.source.bias is not None:output=output+self.source.bias.reshape(1,-1,1,1)
-        reference_flops=2*output.numel()*self.source.in_channels*9
-        self.last_stats=dict(functional_conv_flops=calls*reference_flops,reference_conv_flops=reference_flops,
-            dense_conv_calls=calls,spike_count=int(counts.sum()),analog_elements=int(overflow.sum()),
-            folded_weight_bytes=self.event_weight.numel()*self.event_weight.element_size(),
-            integer_dot_bound=bound,integer_time_block_additions=integer_adds,
-            post_accumulator_scale_muls=output.numel(),sampled_int64_dot_checks=checks,
-            accumulator_dtype='int32',dot_backend='dense unfold+FP32 GEMM with integer checks; not native INT8')
-        if self.mode=='bitplane':
-            self.last_stats['integer_bit_shifts']=3*accumulator.numel()
-            self.last_stats['ideal_spatial_cost']=bitplane_cost(counts,self.source.out_channels)
-        return output
+        if torch.is_grad_enabled() or self.training:raise ValueError('Frozen integer inference only')
+        if x.shape[0]!=1:raise ValueError('Single stream required')
+        states=[];accumulators=[];records=[];i=0;nonlinear=0
+        for layer in self.layers:
+            if not isinstance(layer,nn.Conv2d):x=layer(x);nonlinear+=x.numel();continue
+            quantum=getattr(self,'quantum_%d'%i);weight=getattr(self,'integer_weight_%d'%i);scale=getattr(self,'output_scale_%d'%i)
+            inputs=integer_input(x,quantum);h,w=x.shape[-2:];kernel=layer.kernel_size[0];dense_mac=h*w*layer.in_channels*layer.out_channels*kernel*kernel
+            refresh=self.refresh or self.previous is None
+            delta=torch.zeros_like(inputs) if refresh else inputs-self.previous[i]
+            if self.sparse and not refresh:
+                if self.previous_accumulators is None:raise ValueError('Missing integer accumulator state')
+                update,execution=sparse_integer_delta(layer,delta,weight);acc=self.previous_accumulators[i]+update
+                reference_bound=0;fp64_flops=0;integer_macs=execution['executed_macs'];reference_calls=0
+            else:
+                acc,reference_bound=dense_integer_reference(layer,inputs,weight);execution={};fp64_flops=2*dense_mac;integer_macs=0;reference_calls=1
+            # The previous and update absolute bounds are each below2**53;
+            # their int64 addition cannot overflow even before cancellation.
+            if bool((acc.abs()>=2**54).any()):raise ValueError('Integer accumulator state bound exceeded')
+            fanout=F.conv2d(x.new_ones(1,1,h,w),x.new_ones(1,1,kernel,kernel),padding=kernel//2).to(torch.int64)
+            active=delta!=0;weighted=int((active.to(torch.int64)*fanout).sum())*layer.out_channels;units=int((delta.abs()*fanout).sum())*layer.out_channels
+            records.append(dict(input_channels=layer.in_channels,output_channels=layer.out_channels,height=h,width=w,kernel=kernel,dense_mac=dense_mac,refresh=refresh,
+                refresh_dense_mac=dense_mac if refresh else 0,weighted_event_mac=weighted,unit_spike_ac=units,nonzero_events=int(active.sum()),unit_spikes=int(delta.abs().sum()),
+                actual_fp64_conv_flops=fp64_flops,actual_integer_macs=integer_macs,dense_reference_calls=reference_calls,reference_absolute_bound=reference_bound,
+                event_absolute_bound=execution.get('absolute_accumulation_bound',0),integer_weight_bytes=weight.numel()*weight.element_size(),scale_bytes=scale.numel()*scale.element_size(),
+                max_input_integer=int(inputs.abs().max()),quantization_error_in_quanta=float((x.double()/quantum.double()-inputs.double()).abs().max())))
+            if self.sparse and not refresh:assert integer_macs==weighted
+            states.append(inputs.detach());accumulators.append(acc.detach());x=(acc.double()*scale.reshape(1,-1,1,1)).to(x.dtype)
+            if layer.bias is not None:x=x+layer.bias.reshape(1,-1,1,1)
+            i+=1
+        self.next_state=states;self.next_accumulators=accumulators
+        self.statistics=dict(layers=records,nonlinear_elements=nonlinear,sending_reference_bytes=sum(q.numel()*q.element_size() for q in states),accumulator_bytes=sum(q.numel()*q.element_size() for q in accumulators),
+            quantum_bytes=sum(getattr(self,'quantum_%d'%j).numel()*4 for j in range(i)),derived_weight_bytes=sum(r['integer_weight_bytes'] for r in records),derived_scale_bytes=sum(r['scale_bytes'] for r in records),backend='sparse_int64_events' if self.sparse else 'bounded_fp64_integer_reference')
+        return x
 
 
-def integer_readout(source,mode):
-    result=copy.deepcopy(source);block=result.body.layers[0].double_conv
-    block[0]=IntegerCodeConv(block[0],source.input_codec.scales,mode)
-    block[3]=IntegerCodeConv(block[3],source.middle_codec.scales,mode)
-    result.input_codec=nn.Identity();block[2]=nn.Identity()
-    return result.eval()
+class IntegerReadoutDetector(ReadoutEventDetector):
+    def __init__(self,source,quanta,sparse=False):
+        super().__init__(source,quanta);self.core.readout=IntegerReadout(source.core.readout,quanta,sparse);self.variant='protected_integer_readout_sparse' if sparse else 'protected_integer_readout_dense';self.eval()
+
+    def step_spatial(self,spatial,state,meta,detach_state=True,requests=None):
+        readout=self.core.readout;readout.previous_accumulators=None if state is None else state['readout_accumulators']
+        pred,new,info=super().step_spatial(spatial,state,meta,detach_state,requests)
+        new['readout_accumulators']=readout.next_accumulators;info['cache_bytes']+=readout.statistics['accumulator_bytes']
+        readout.previous_accumulators=None;readout.next_accumulators=None;return pred,new,info
