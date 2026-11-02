@@ -54,18 +54,23 @@ def worker(a,out):
     jv=json.loads(Path(a.joint_verification).read_text());assert jv['status']=='VERIFIED' and jv['run']=='R-195' and jv['carry_checkpoint_sha256']==digest(path) and jv['calibration_sha256']==ev['calibration_sha256']
     jp=Path(a.joint_source)/'contract.json';assert digest(jp)==jv['source_sha256']['contract.json']
     models=dict(integer_sparse=CompactIntegerReadoutDetector(source,calibration['quanta'],True).cuda().eval(),implicit=ImplicitReferenceIntegerDetector(source,calibration['quanta'],True).cuda().eval(),joint_sparse=JointMembraneReadoutDetector(membrane,calibration['quanta'],True).cuda().eval())
-    joint=JointMembraneReadoutDetector(membrane,calibration['quanta'],True);joint.core.readout=ImplicitReferenceIntegerReadout(membrane.core.readout,calibration['quanta'],True);models['joint_implicit']=joint.cuda().eval();rows=rows[512:544]
+    joint=JointMembraneReadoutDetector(membrane,calibration['quanta'],True);joint.core.readout=ImplicitReferenceIntegerReadout(membrane.core.readout,calibration['quanta'],True);models['joint_implicit']=joint.cuda().eval();rows=rows if a.full else rows[512:544]
+    total=5794 if a.full else 32
+    if a.full:
+        proof=json.loads(Path(a.implicit_verification).read_text());assert proof['status']=='VERIFIED' and proof['run']=='R-201' and proof['checkpoint_sha256']==gate['checkpoint_sha256'] and proof['calibration_sha256']==ev['calibration_sha256']
+        models={n:models[n] for n in ('integer_sparse','implicit')}
+    pairs=[(old,new) for old,new in (('integer_sparse','implicit'),('joint_sparse','joint_implicit')) if old in models]
     for m in [base]+list(models.values()):
         for parameter in m.parameters():parameter.requires_grad_(False)
     hashes={n:model_digest(m) for n,m in models.items()};states={n:None for n in models};base_state=None;records=[]
-    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),learning_verification_sha256=digest(Path(a.learning_verification)),carry_checkpoint_sha256=digest(path),joint_verification_sha256=digest(Path(a.joint_verification)),calibration_sha256=digest(Path(a.calibration)),initialization_sha256=digest(Path(a.initialization)),
+    contract=dict(implicit_verification_sha256=digest(Path(a.implicit_verification)) if a.full else None,scans=total,full_original_only=a.full,checkpoint_sha256=digest(Path(a.checkpoint)),learning_verification_sha256=digest(Path(a.learning_verification)),carry_checkpoint_sha256=digest(path),joint_verification_sha256=digest(Path(a.joint_verification)),calibration_sha256=digest(Path(a.calibration)),initialization_sha256=digest(Path(a.initialization)),
         frames=[r['frame'] for r in rows],code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),precision=dict(matmul_tf32=False,cudnn_tf32=False),
-        boundary='Frozen32: original and carry compact sparse versus implicit internal sending references. Only n0 and all A persist; n1..n3 reconstructed through unchanged FP32 decode/bias/BN/ReLU/quantization. Pair outputs, task states, accumulators and external reference exact; restored previous internal inputs exact. Same event MAC, extra transient non-Conv reconstruction. No AP/model timing/optimization or full-flow deployment claim.')
+        boundary=('Full5794 original only' if a.full else 'Frozen32 original and carry')+': compact sparse versus implicit internal sending references. Only n0 and all A persist; n1..n3 reconstructed through unchanged FP32 decode/bias/BN/ReLU/quantization. Pair outputs, task states, accumulators and external reference exact; restored previous internal inputs exact. Same event MAC, extra transient non-Conv reconstruction. No AP/model timing/optimization/energy claim; execution coverage explicitly recorded.')
     write_json(out/'contract.json',contract);_,stream=loader(rows,cfg,0,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as f:
         for sample in stream:
             ego=to_device(sample['ego'],torch.device('cuda'));meta=sample['meta'];x,base_state=capture(base,ego,base_state,meta);row=dict(frame=meta['frame'],arms={});preds={}
-            for old,new in (('integer_sparse','implicit'),('joint_sparse','joint_implicit')):
+            for old,new in pairs:
                 if states[new] is not None:
                     restored=models[new].core.readout.reconstruct_references(states[new]['readout'],states[new]['readout_accumulators'])
                     assert all(torch.equal(a,b.to(a.dtype)) for a,b in zip(restored,states[old]['readout']))
@@ -73,24 +78,24 @@ def worker(a,out):
                 (pred,states[n],info),cost=measured_step(m,x,states[n],meta);preds[n]=pred;assert all(torch.isfinite(v).all() for v in pred.values())
                 e=info['readout_events'];fp64=sum(v['actual_fp64_conv_flops'] for v in e['layers']);mac=sum(v['actual_integer_macs'] for v in e['layers'])
                 row['arms'][n]=dict(core_fp32_conv_flops=cost,readout_fp64_reference_flops=fp64,readout_integer_macs=mac,core_conv_flops=cost+fp64,logical_core_conv_flops=cost+40461926400,cache_bytes=info['cache_bytes'],refresh=info['full_refresh'],events=e,membrane=info.get('membrane'))
-            for old,new in (('integer_sparse','implicit'),('joint_sparse','joint_implicit')):
+            for old,new in pairs:
                 assert all(torch.equal(preds[old][k],preds[new][k]) for k in preds[old])
                 assert all(torch.equal(states[old][k],states[new][k]) for k in base.state_keys)
                 assert all(torch.equal(a,b.to(a.dtype)) for a,b in zip(states[old]['readout_accumulators'],states[new]['readout_accumulators']))
                 assert len(states[new]['readout'])==1 and torch.equal(states[old]['readout'][0],states[new]['readout'][0])
                 assert row['arms'][old]['events']['layers']==row['arms'][new]['events']['layers']
-            records.append(row);f.write(json.dumps(row)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=32))
-    assert len(records)==32 and all(model_digest(m)==hashes[n] for n,m in models.items())
-    metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),**{k+'_mean':sum(r['arms'][n][k] for r in records)/32 for k in ('core_conv_flops','core_fp32_conv_flops','readout_fp64_reference_flops','readout_integer_macs','logical_core_conv_flops','cache_bytes')},cache_bytes_min=min(r['arms'][n]['cache_bytes'] for r in records),cache_bytes_max=max(r['arms'][n]['cache_bytes'] for r in records),reconstructed_reference_elements_mean=sum(r['arms'][n]['events'].get('reconstructed_reference_elements',0) for r in records)/32,model_step_ms_mean=None,ap50=None,ap70=None) for n,m in models.items()}
-    write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,scans=32,weights_unchanged=True,paired_task_states_exact=True,integer_predictions_bit_exact=True,integer_state_values_exact=True,reconstructed_references_exact=True,trained=False,ap_evaluated=False,timing_valid=False))
+            records.append(row);f.write(json.dumps(row)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=total))
+    assert len(records)==total and all(model_digest(m)==hashes[n] for n,m in models.items())
+    metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),**{k+'_mean':sum(r['arms'][n][k] for r in records)/total for k in ('core_conv_flops','core_fp32_conv_flops','readout_fp64_reference_flops','readout_integer_macs','logical_core_conv_flops','cache_bytes')},cache_bytes_min=min(r['arms'][n]['cache_bytes'] for r in records),cache_bytes_max=max(r['arms'][n]['cache_bytes'] for r in records),reconstructed_reference_elements_mean=sum(r['arms'][n]['events'].get('reconstructed_reference_elements',0) for r in records)/total,model_step_ms_mean=None,ap50=None,ap70=None) for n,m in models.items()}
+    write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,scans=total,weights_unchanged=True,paired_task_states_exact=True,integer_predictions_bit_exact=True,integer_state_values_exact=True,reconstructed_references_exact=True,trained=False,ap_evaluated=False,timing_valid=False))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
 
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','event-verification','calibration','reference-verification','integer-verification','integer-source','learning-verification','learning-source','joint-verification','joint-source','output'):p.add_argument('--'+n,required=True)
-    a=p.parse_args();a.full=False;out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
-    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('45min frozen implicit reference proof')));signal.alarm(2700)
+    p.add_argument('--full',action='store_true');p.add_argument('--implicit-verification');a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
+    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('Bounded frozen implicit reference proof')));signal.alarm(7200 if a.full else 2700)
     try:worker(a,out)
     except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
 if __name__=='__main__':main()
