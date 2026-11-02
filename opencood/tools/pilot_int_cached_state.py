@@ -32,6 +32,10 @@ def train_one(model,teacher,cfg,rows,out,name,criterion,contract,preflight=False
     before=frozen_digest(model);initial=model_digest(model);teacher_hash=model_digest(teacher)
     opened=[p for p in model.parameters() if p.requires_grad]
     optimizer=torch.optim.AdamW(opened,lr=1e-4,weight_decay=1e-4);optimizer.zero_grad(set_to_none=True)
+    if contract.get('resume_checkpoints'):
+        source=Path(contract['resume_checkpoints'][name]);assert digest(source)==contract['resume_checkpoint_sha256'][name]
+        recovery=torch.load(source,map_location='cpu');optimizer.load_state_dict(recovery['optimizer'])
+        torch.set_rng_state(recovery['rng_cpu']);torch.cuda.set_rng_state(recovery['rng_cuda']);del recovery
     state=teacher_state=None;detection=[];local=[];updates=[];values=[];labels=0;ends=window_ends(rows,4);light_frames=0
     _,stream=loader(rows,cfg,2,303);tag=name+('_preflight' if preflight else '_train')
     with (out/(tag+'_frames.jsonl')).open('x',buffering=1) as log:
@@ -71,15 +75,15 @@ def train_one(model,teacher,cfg,rows,out,name,criterion,contract,preflight=False
                         next_scan=i+1,updates=updates,contract=contract,mode=name,rng_cpu=torch.get_rng_state(),rng_cuda=torch.cuda.get_rng_state()),
                         out/('%s_update_%03d.pth'%(name,len(updates))))
             log.write(json.dumps(row)+'\n')
-            if (i+1)%32==0:write_json(out/'status.json',dict(status='RUNNING',phase=tag,scans=i+1,total=512,updates=len(updates)))
+            if (i+1)%32==0:write_json(out/'status.json',dict(status='RUNNING',phase=tag,scans=i+1,total=len(rows),updates=len(updates)))
     expected=contract['expected_update_frames'] if contract.get('skip_refresh_only_windows',False) else expected_updates(rows)
-    assert not preflight and updates==expected and labels==232
+    assert not preflight and updates==expected and labels==contract.get('training_labels',232)
     if not contract.get('skip_refresh_only_windows',False):assert len(updates)==71
     assert frozen_digest(model)==before and model_digest(teacher)==teacher_hash and model_digest(model)!=initial
     path=out/(name+'_final.pth')
     torch.save(dict(targets={n:p.detach().cpu() for n,p in model.named_parameters() if p.requires_grad},optimizer=optimizer.state_dict(),
         contract=contract,mode=name,updates=updates,rng_cpu=torch.get_rng_state(),rng_cuda=torch.cuda.get_rng_state(),resume='Completed fixed pass; continuation separately registered'),path)
-    return dict(scans=512,labels=232,updates=len(updates),update_frames=updates,checkpoint_sha256=digest(path),frozen_weights_bn_unchanged=True,
+    return dict(scans=len(rows),labels=labels,updates=len(updates),update_frames=updates,checkpoint_sha256=digest(path),frozen_weights_bn_unchanged=True,
         teacher_unchanged=True,mean_window_loss=sum(values)/len(values))
 
 
