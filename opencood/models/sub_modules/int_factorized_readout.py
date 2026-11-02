@@ -8,7 +8,9 @@ def factorize_conv(conv,rank):
     if not isinstance(conv,nn.Conv2d) or conv.groups!=1 or conv.padding_mode!='zeros':raise ValueError('Ungrouped zero-padded Conv2d required')
     maximum=min(conv.out_channels,conv.in_channels*conv.kernel_size[0]*conv.kernel_size[1])
     if type(rank) is not int or not 1<=rank<=maximum:raise ValueError('Invalid rank')
-    weight=conv.weight.detach().flatten(1);u,s,vh=torch.linalg.svd(weight,full_matrices=False)
+    # Compute initialization accurately before casting factors back to model dtype.
+    # GPU FP32 SVD reconstruction error can be amplified by readout BN/head layers.
+    weight=conv.weight.detach().flatten(1);u,s,vh=torch.linalg.svd(weight.cpu().double(),full_matrices=False)
     reduce=nn.Conv2d(conv.in_channels,rank,conv.kernel_size,conv.stride,conv.padding,conv.dilation,bias=False).to(weight.device,weight.dtype)
     expand=nn.Conv2d(rank,conv.out_channels,1,bias=conv.bias is not None).to(weight.device,weight.dtype)
     with torch.no_grad():

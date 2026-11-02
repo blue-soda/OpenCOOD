@@ -28,7 +28,7 @@ def worker(a,out):
         for p in m.parameters():p.requires_grad_(False)
     hashes={n:model_digest(m) for n,m in models.items()};states={n:None for n in models};base_state=None;records=[];captures={}
     handles=[m.core.readout.register_forward_hook(lambda mod,args,result,n=n:captures.update({n:result,n+'_input':args[0]})) for n,m in models.items()]
-    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),frames=[r['frame'] for r in rows],rank128_fixed=True,factorizations=changes,original_precision=original_precision,actual_precision=dict(matmul_tf32=False,cudnn_tf32=False),code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
+    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),frames=[r['frame'] for r in rows],rank128_fixed=True,factorizations=changes,svd_initialization='CPU float64 SVD then cast factors to source float32',original_precision=original_precision,actual_precision=dict(matmul_tf32=False,cudnn_tf32=False),code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         boundary='Every frame current-feature compact readout, no extra temporal state. SVD only initializes from parent; full-rank is equivalence control with MORE parameters/cost. Rank128 is untrained approximation, no AP or valid timing, not combined with protected cache yet.')
     write_json(out/'contract.json',contract);_,stream=loader(rows,cfg,0,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
