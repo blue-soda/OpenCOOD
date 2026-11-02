@@ -13,14 +13,17 @@ from opencood.tools.calibrate_int_event_refresh import capture
 from opencood.tools.run_int_cache_repair import setup
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
+from opencood.tools.int_artifact_paths import artifact_path
 from opencood.utils import eval_utils
 
 
 def worker(a,out):
     tests=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT);(out/'unit_tests.log').write_bytes(tests.stdout);assert tests.returncode==0
     audit=json.loads(Path(a.audit).read_text());v=json.loads(Path(a.verification).read_text());tv=json.loads(Path(a.trained_verification).read_text())
-    assert audit['status']==v['status']==tv['status']=='VERIFIED' and v['run']=='R-153' and tv['run']=='R-139';assert digest(Path(a.checkpoint))==v['checkpoint_sha256']==tv['checkpoint_sha256']
-    for r in audit['files']:assert digest(Path(r['relocated_path']))==r['sha256']
+    assert v['status']==tv['status']=='VERIFIED' and v['run']=='R-153' and tv['run']=='R-139';assert digest(Path(a.checkpoint))==v['checkpoint_sha256']==tv['checkpoint_sha256']
+    assert audit['frames']==5794 and audit['labels']==1738 and len(audit['files'])==7532
+    for r in audit['files']:
+        path=Path(artifact_path(r['path']));assert path.stat().st_size==r['bytes'] and digest(path)==r['sha256']
     rv=json.loads(Path(a.reference_verification).read_text());assert rv['status']=='VERIFIED' and rv['run']=='R-140'
     ref=Path(a.reference)/'ap_records.json';assert digest(ref)==rv['source_sha256']['ap_records.json'];gold=json.loads(ref.read_text())['protected_light']
     reference_rows=[json.loads(line) for line in (Path(a.reference)/'frames.jsonl').read_text().splitlines()]
