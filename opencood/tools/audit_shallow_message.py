@@ -41,14 +41,16 @@ def run(a):
         parity.append(dict(indices=indices, zero_message_source_bitwise=True))
     if candidate:
         captured = []
-        h = model.backbone_3d.conv3.register_forward_hook(lambda m, i, o: captured.append(o))
+        # Sparse kernels may emit the same spatial tensor in a different row
+        # order. Compare the actual coordinate-indexed message, not row order.
+        h = model.backbone_3d.conv3.register_forward_hook(
+            lambda m, i, o: captured.append(o.replace_feature(model.shallow_readout(o.features)).dense()))
         with torch.no_grad():
             E3dsnnSingle.encode_lidar(model, batch['ego']['road_lidar'], 2)
         h.remove()
         with torch.no_grad():
             prefix = model.encode_lidar(batch['ego']['road_lidar'], 2)
-            assert torch.equal(prefix.indices, captured[0].indices)
-            assert torch.equal(prefix.features, model.shallow_readout(captured[0].features))
+            assert torch.equal(prefix.dense(), captured[0])
         # Physical origin/step and direction, independent of the detection head.
         x = torch.zeros(1, 1, 5, 5, 5, device='cuda'); x[0, 0, 2, 2, 2] = 1
         pose = torch.eye(4, device='cuda').unsqueeze(0)
