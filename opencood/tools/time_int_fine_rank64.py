@@ -51,6 +51,12 @@ def worker(a):
     initial_fine=torch.load(a.fine_initialization,map_location='cpu')
     for n,light in (('fine_dense',False),('fine_light',True)):
         m=FineRefreshDetector(source,light).cuda().eval();m.core.fine_light,_=compact_readout(source.core.observation,64);m.eval();m.core.fine_update.load_state_dict(initial_fine['fine_update']);m.core.fine_light.load_state_dict(initial_fine['fine_light']);models[n]=m
+    adapted=None
+    if bool(a.adapted_verification)!=bool(a.adapted_trained):raise ValueError('Both adapted artifacts required')
+    if a.adapted_verification:
+        adapted=json.loads(Path(a.adapted_verification).read_text());assert adapted['status']=='VERIFIED' and adapted['run']=='R-168'
+        assert adapted['checkpoint_sha256']==gate['checkpoint_sha256'] and adapted['fine_initialization_sha256']==digest(Path(a.fine_initialization))
+        for n in ('fine_dense','fine_light'):load_targets(models[n],Path(a.adapted_trained)/(n+'_final.pth'),adapted['training'][n]['checkpoint_sha256'])
     del teacher,saved
     for m in models.values():
         for p in m.parameters():p.requires_grad_(False)
@@ -58,8 +64,9 @@ def worker(a):
     write_json(out/'contract.json',dict(checkpoint_sha256=digest(Path(a.checkpoint)),gate_verification_sha256=digest(Path(a.gate_verification)),
         uuid=uuid,device=torch.cuda.get_device_name(),torch_version=torch.__version__,code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         frames=[r['frame'] for r in rows],passes=2,warmup_scans_per_pass=16,seed=303,source_trained_sha256=dict(protected_light=gate['training']['protected_light']['checkpoint_sha256']),initialization_sha256=digest(Path(a.initialization)),fine_verification_sha256=digest(Path(a.fine_verification)),fine_initialization_sha256=digest(Path(a.fine_initialization)),precision=dict(matmul_tf32=False,cudnn_tf32=False),
+        adapted_verification_sha256=digest(Path(a.adapted_verification)) if adapted else None,adapted_checkpoint_sha256={n:t['checkpoint_sha256'] for n,t in adapted['training'].items()} if adapted else None,
         initial_model_hashes=hashes,timing='torch.cuda.synchronize before/after model.step, includes pillar/warp/readout/heads, excludes loader/H2D/postprocess; no Conv hooks',
-        boundary='Fixed R139 cache plus R145 rank128 and R167 parent-SVD rank64 fine initialization. Fine variants quality UNMEASURED; no optimizer/AP. GPU exclusive but node shared. Repeat trained timing after any adaptation; do not treat initialization timing as trained result. StrictFP32, train256 timing only.'))
+        boundary=('R168 predetermined402-update final dense/light, independently evaluated in R173. No new optimizer/AP, GPU exclusive but node shared; strictFP32 train256 timing, not full-val latency.' if adapted else 'Fixed R139 cache plus R145 rank128 and R167 parent-SVD rank64 fine initialization. Fine variants quality UNMEASURED; no optimizer/AP. GPU exclusive but node shared. Repeat trained timing after any adaptation; do not treat initialization timing as trained result. StrictFP32, train256 timing only.')))
     records=[]
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
         for repeat in range(2):
@@ -93,13 +100,14 @@ def worker(a):
     write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,timing_valid=True,trained=False,ap_evaluated=False,
         relative_to='control',
         relative_changes={n:m['model_step_ms_mean']/metrics['control']['model_step_ms_mean']-1 for n,m in metrics.items()},
-        boundary='Parent-SVD initialization fixed, same-card counterbalanced train256 timing; candidate AP unmeasured. No trained quality-latency claim.'))
+        boundary=('Fixed R168 final trained weights, same-card counterbalanced train256 timing, separate full quality R173. No AP recomputed; no full-val timing claim.' if adapted else 'Parent-SVD initialization fixed, same-card counterbalanced train256 timing; candidate AP unmeasured. No trained quality-latency claim.')))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
 
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','gate-verification','trained','compact-verification','initialization','fine-verification','fine-initialization','output'):p.add_argument('--'+n,required=True)
+    p.add_argument('--adapted-verification');p.add_argument('--adapted-trained')
     a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
     write_json(out/'status.json',dict(status='RUNNING',phase='identity'))
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('45min independent timing budget')));signal.alarm(2700)
