@@ -1,0 +1,64 @@
+"""Full paired validation of composed latent task state and integer readout."""
+from opencood.tools.pilot_int_causal_readout_qat import *
+from opencood.tools.int_artifact_paths import artifact_path
+from opencood.models.sub_modules.int_causal_integer_readout import IntegerReadoutDetector
+from opencood.models.sub_modules.int_compact_causal_integer_state import CompactIntegerReadoutDetector
+from torch import nn
+from opencood.models.sub_modules.int_causal_readout_qat import CausalReadoutQAT
+from opencood.models.sub_modules.int_subthreshold_membrane import SubthresholdMembraneDetector,quantize_ste
+
+def worker(a,out):
+    torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
+    tests=subprocess.run([sys.executable,'-m','unittest','discover','-s','opencood/test','-p','test_int*.py'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT);(out/'unit_tests.log').write_bytes(tests.stdout);assert tests.returncode==0
+    audit=json.loads(Path(a.audit).read_text());gate=json.loads(Path(a.verification).read_text());cv=json.loads(Path(a.compact_verification).read_text())
+    assert (audit.get('status')=='VERIFIED' if not a.full else audit['frames']==5794 and len(audit['files'])==7532);assert gate['status']==cv['status']=='VERIFIED' and gate['run']=='R-139' and cv['run']=='R-145'
+    assert digest(Path(a.checkpoint))==gate['checkpoint_sha256'] and digest(Path(a.initialization))==cv['rank128_checkpoint_sha256']
+    for r in audit['files']:
+        path=Path(artifact_path(r['path'])) if a.full else Path(r['relocated_path']);assert digest(path)==r['sha256']
+    a.mode='gru';a.stage='full' if a.full else 'calibrate';a.content_calibration=None;a.periodic_last=0;a.max_age=.25
+    teacher,cfg,rows,prov=setup(a);write_json(out/'provenance.json',prov);base=PyramidStateDetector(teacher,cfg).cuda().eval();saved=torch.load(a.checkpoint,map_location='cpu')
+    assert saved['contract']['teacher_sha256']==prov['checkpoint']['sha256'] and saved['contract']['data_contract']==prov['contract'];base.load_state_dict(saved['model']);del teacher,saved
+    source=ProtectedMultiscaleRefreshDetector(base,True).cuda().eval();load_targets(source,Path(a.trained)/'protected_light_final.pth',gate['training']['protected_light']['checkpoint_sha256'])
+    source.core.readout,_=compact_readout(base.core.readout,128);source.core.readout.load_state_dict(torch.load(a.initialization,map_location='cpu')['readout']);source.eval()
+    lv=json.loads(Path(a.learning_verification).read_text());assert lv['status']=='VERIFIED' and lv['run']=='R-192';lp=Path(a.learning_source);assert digest(lp/'contract.json')==lv['source_sha256']['contract.json'];lc=json.loads((lp/'contract.json').read_text());assert lc['checkpoint_sha256']==gate['checkpoint_sha256'] and lc['initialization_sha256']==cv['rank128_checkpoint_sha256'] and lc['quantum']==.25
+    rv=json.loads(Path(a.reference_verification).read_text());assert rv['status']=='VERIFIED' and rv['run']=='R-184';rp=Path(a.reference_source)/'ap_records.json';assert digest(rp)==rv['source_sha256']['ap_records.json'];gold=json.loads(rp.read_text())['integer_dense']
+    mv=json.loads(Path(a.membrane_verification).read_text());assert mv['status']=='VERIFIED' and mv['run']=='R-194';mp=Path(a.membrane_source)/'ap_records.json';assert digest(mp)==mv['source_sha256']['ap_records.json'];mem_gold=json.loads(mp.read_text())['carry_trained']
+    ev=json.loads(Path(a.event_verification).read_text());assert ev['status']=='VERIFIED' and ev['run']=='R-172' and ev['calibration_sha256']==digest(Path(a.calibration));calibration=json.loads(Path(a.calibration).read_text());assert calibration['relative_quantum']==.125 and calibration['floor']==1e-4
+    fg=json.loads(Path(a.fast_verification).read_text());assert fg['status']=='VERIFIED' and fg['run']=='R-196' and fg['calibration_sha256']==ev['calibration_sha256'];fc=Path(a.fast_source)/'contract.json';assert digest(fc)==fg['source_sha256']['contract.json']
+    path=lp/'carry_coarse_final.pth';assert digest(path)==lv['training']['carry']['checkpoint_sha256']==fg['carry_checkpoint_sha256']==mv['trained_checkpoint_sha256']['carry'];saved=torch.load(path,map_location='cpu');assert saved['contract']==lc and saved['mode']=='carry' and saved['updates']==lc['expected_update_frames']
+    carry=SubthresholdMembraneDetector(source,'carry',.25).cuda().eval();carry.core.coarse_update.load_state_dict(saved['coarse']);models=dict(carry_float=carry)
+    for n,m in (('integer_initial',source),('joint_integer',carry)):
+        model=copy.deepcopy(m);model.core.readout=CausalReadoutQAT(m.core.readout,calibration['quanta'],True,True);models[n]=model.cuda().eval()
+    for m in [base]+list(models.values()):
+        for p in m.parameters():p.requires_grad_(False)
+    assert len(rows)==5794 and sum(r['supervised'] for r in rows)==1738
+    hashes={n:model_digest(m) for n,m in models.items()};states={n:None for n in models};base_state=None;records=[];ap={n:{t:dict(tp=[],fp=[],score=[],gt=0) for t in (.5,.7)} for n in models}
+    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),learning_verification_sha256=digest(Path(a.learning_verification)),reference_verification_sha256=digest(Path(a.reference_verification)),membrane_verification_sha256=digest(Path(a.membrane_verification)),fast_verification_sha256=digest(Path(a.fast_verification)),carry_checkpoint_sha256=digest(path),calibration_sha256=digest(Path(a.calibration)),initialization_sha256=digest(Path(a.initialization)),task_quantum=.25,readout_relative_quantum=.125,frames=[r['frame'] for r in rows],code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),precision=dict(matmul_tf32=False,cudnn_tf32=False),boundary='Full5794/1738 frozen paired composition: learned carry/float, original integer and learned carry/integer. R194 carry and R184 integer raw AP must replay exactly. No retuning, selection or training. Dense fast radix reference is an evaluation implementation with 22.5792MB task-only state; deployed integer n/A storage and event MAC require separate full proof. Actual FP32 radix cost separately counted, no measured model speed or independent test.')
+    write_json(out/'contract.json',contract);dataset,stream=loader(rows,cfg,0,303)
+    with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as f:
+        for sample in stream:
+            ego=to_device(sample['ego'],torch.device('cuda'));meta=sample['meta'];x,base_state=capture(base,ego,base_state,meta);row=dict(frame=meta['frame'],supervised=meta['supervised'],arms={})
+            for n,m in models.items():
+                (pred,states[n],info),cost=measured_step(m,x,states[n],meta);assert all(torch.isfinite(z).all() for z in pred.values())
+                ro=m.core.readout;fp32ref=getattr(ro,'last_fp32_reference_flops',0);logical=getattr(ro,'last_logical_reference_flops',0);assert getattr(ro,'last_reference_flops',0)==0
+                row['arms'][n]=dict(core_conv_flops=cost+fp32ref,readout_fp32_reference_flops=fp32ref,logical_core_conv_flops=cost+logical,cache_bytes=info['cache_bytes'],refresh=info['full_refresh'],membrane=info.get('membrane'),reference_bounds=getattr(ro,'last_bounds',[]))
+                if meta['supervised']:
+                    batch=dict(ego=ego);gt=dataset.post.generate_gt_bbx(batch);boxes,scores=dataset.post.post_process(batch,dict(ego=pred))
+                    for t in (.5,.7):eval_utils.caluclate_tp_fp(boxes,scores,gt,ap[n],t)
+            assert all(row['arms'][n]['logical_core_conv_flops']==row['arms']['carry_float']['core_conv_flops'] and row['arms'][n]['cache_bytes']==22579200 for n in models)
+            assert all(torch.equal(states['joint_integer'][k],states['carry_float'][k]) for k in base.state_keys)
+            records.append(row);f.write(json.dumps(row)+'\n')
+            if len(records)%32==0:write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=5794))
+    assert len(records)==5794 and all(model_digest(m)==hashes[n] for n,m in models.items());write_json(out/'ap_records.json',ap);saved=json.loads((out/'ap_records.json').read_text());assert saved['integer_initial']==gold and saved['carry_float']==mem_gold
+    write_json(out/'sort_orders.json',dict(source_sha256=digest(out/'ap_records.json'),numpy_version=np.__version__,orders={n:{str(t):np.argsort(-np.asarray(b['score'])).tolist() for t,b in buckets.items()} for n,buckets in ap.items()}))
+    metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),**{k+'_mean':sum(r['arms'][n][k] for r in records)/5794 for k in ('core_conv_flops','logical_core_conv_flops','readout_fp32_reference_flops')},cache_bytes=22579200,model_step_ms_mean=None,ap50=eval_utils.calculate_ap(ap[n],.5)[0],ap70=eval_utils.calculate_ap(ap[n],.7)[0]) for n,m in models.items()}
+    write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,scans=5794,labels=1738,weights_unchanged=True,reference_raw_ap_exact=True,paired_task_states_exact=True,trained=False,timing_valid=False));write_json(out/'status.json',dict(status='COMPLETED'))
+
+def main():
+    p=argparse.ArgumentParser()
+    for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','learning-verification','learning-source','reference-verification','reference-source','membrane-verification','membrane-source','event-verification','calibration','fast-verification','fast-source','output'):p.add_argument('--'+n,required=True)
+    a=p.parse_args();a.full=True;out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
+    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('120min paired joint full validation')));signal.alarm(7200)
+    try:worker(a,out)
+    except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
+if __name__=='__main__':main()

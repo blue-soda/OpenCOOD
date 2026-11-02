@@ -50,11 +50,12 @@ def worker(a,out):
     lv=json.loads(Path(a.learning_verification).read_text());assert lv['status']=='VERIFIED' and lv['run']=='R-192';lp=Path(a.learning_source);assert digest(lp/'contract.json')==lv['source_sha256']['contract.json'];lc=json.loads((lp/'contract.json').read_text());assert lc['checkpoint_sha256']==gate['checkpoint_sha256'] and lc['initialization_sha256']==cv['rank128_checkpoint_sha256'] and lc['quantum']==.25
     path=lp/'carry_coarse_final.pth';assert digest(path)==lv['training']['carry']['checkpoint_sha256'];saved=torch.load(path,map_location='cpu');assert saved['contract']==lc and saved['mode']=='carry'
     membrane=SubthresholdMembraneDetector(source,'carry',.25).cuda().eval();membrane.core.coarse_update.load_state_dict(saved['coarse'])
-    models=dict(control=membrane,integer_dense=JointMembraneReadoutDetector(membrane,calibration['quanta'],False).cuda().eval(),integer_sparse=JointMembraneReadoutDetector(membrane,calibration['quanta'],True).cuda().eval());rows=rows[512:544]
+    models=dict(control=membrane,integer_dense=JointMembraneReadoutDetector(membrane,calibration['quanta'],False).cuda().eval(),integer_sparse=JointMembraneReadoutDetector(membrane,calibration['quanta'],True).cuda().eval());rows=rows if a.full else rows[512:544]
+    total=5794 if a.full else 32;assert len(rows)==total
     for m in [base]+list(models.values()):
         for p in m.parameters():p.requires_grad_(False)
     hashes={n:model_digest(m) for n,m in models.items()};states={n:None for n in models};base_state=None;records=[]
-    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),learning_verification_sha256=digest(Path(a.learning_verification)),carry_checkpoint_sha256=digest(path),event_verification_sha256=digest(Path(a.event_verification)),calibration_sha256=digest(Path(a.calibration)),frames=[r['frame'] for r in rows],task_quantum=.25,readout_relative_quantum=.125,code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),precision=dict(matmul_tf32=False,cudnn_tf32=False),boundary='Frozen32 composition of R192 fixed carry task-state terminal and original fixed integer readout, no joint training. Latent task v replaces coarse slot; readout n/A are separate execution caches. Both integer arms bit-exact with each other, source task states must match control. No AP/model timing or extra memory benefit assumed; initial readout quanta reused without retuning. Dense analog task updates remain.')
+    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),learning_verification_sha256=digest(Path(a.learning_verification)),carry_checkpoint_sha256=digest(path),event_verification_sha256=digest(Path(a.event_verification)),calibration_sha256=digest(Path(a.calibration)),frames=[r['frame'] for r in rows],task_quantum=.25,readout_relative_quantum=.125,code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),precision=dict(matmul_tf32=False,cudnn_tf32=False),boundary=('Full5794' if a.full else 'Frozen32')+' composition of R192 fixed carry task-state terminal and original fixed integer readout, no joint training. Latent task v replaces coarse slot; readout n/A are separate execution caches. Both integer arms bit-exact with each other, source task states must match control. No AP/model timing or extra memory benefit assumed; initial readout quanta reused without retuning. Dense analog task updates remain.')
     write_json(out/'contract.json',contract);_,stream=loader(rows,cfg,0,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as f:
         for sample in stream:
@@ -67,16 +68,16 @@ def worker(a,out):
             assert all(torch.equal(a,b.to(a.dtype)) for key in ('readout','readout_accumulators') for a,b in zip(states['integer_dense'][key],states['integer_sparse'][key]))
             assert all(torch.equal(states[n][k],states['control'][k]) for n in models for k in base.state_keys)
             assert all(row['arms'][n]['logical_core_conv_flops']==row['arms']['control']['core_conv_flops'] for n in models)
-            records.append(row);f.write(json.dumps(row)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=32))
-    assert len(records)==32 and all(model_digest(m)==hashes[n] for n,m in models.items())
-    metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),**{key+'_mean':sum(r['arms'][n][key] for r in records)/32 for key in ('core_conv_flops','core_fp32_conv_flops','readout_fp64_reference_flops','readout_integer_macs','logical_core_conv_flops','cache_bytes')},cache_bytes_min=min(r['arms'][n]['cache_bytes'] for r in records),cache_bytes_max=max(r['arms'][n]['cache_bytes'] for r in records),model_step_ms_mean=None,ap50=None,ap70=None) for n,m in models.items()}
-    write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,scans=32,weights_unchanged=True,paired_task_states_exact=True,integer_predictions_bit_exact=True,integer_state_values_exact=True,trained=False,ap_evaluated=False,timing_valid=False));write_json(out/'status.json',dict(status='COMPLETED'))
+            records.append(row);f.write(json.dumps(row)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=total))
+    assert len(records)==total and all(model_digest(m)==hashes[n] for n,m in models.items())
+    metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),**{key+'_mean':sum(r['arms'][n][key] for r in records)/total for key in ('core_conv_flops','core_fp32_conv_flops','readout_fp64_reference_flops','readout_integer_macs','logical_core_conv_flops','cache_bytes')},cache_bytes_min=min(r['arms'][n]['cache_bytes'] for r in records),cache_bytes_max=max(r['arms'][n]['cache_bytes'] for r in records),model_step_ms_mean=None,ap50=None,ap70=None) for n,m in models.items()}
+    write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,scans=total,weights_unchanged=True,paired_task_states_exact=True,integer_predictions_bit_exact=True,integer_state_values_exact=True,trained=False,ap_evaluated=False,timing_valid=False));write_json(out/'status.json',dict(status='COMPLETED'))
 
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','event-verification','calibration','reference-verification','integer-verification','integer-source','learning-verification','learning-source','output'):p.add_argument('--'+n,required=True)
-    a=p.parse_args();a.full=False;out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
-    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('45min frozen joint task and integer execution proof')));signal.alarm(2700)
+    p.add_argument('--full',action='store_true');a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
+    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('Bounded frozen joint task and integer execution proof')));signal.alarm(7200 if a.full else 2700)
     try:worker(a,out)
     except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
 if __name__=='__main__':main()
