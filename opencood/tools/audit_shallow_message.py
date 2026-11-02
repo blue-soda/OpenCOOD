@@ -27,7 +27,8 @@ def run(a):
     base = train_utils.create_model(base_cfg).cuda()
     base.load_state_dict(source, strict=True)
     model.eval(); base.eval()
-    candidate = cfg['model']['core_method'] == 'e3dsnn_snapshot_shallow_message'
+    candidate = cfg['model']['core_method'] in (
+        'e3dsnn_snapshot_shallow_message', 'e3dsnn_snapshot_early_message')
     val = build_dataset(cfg, train=False)
     parity = []
     for indices in ([0], [1], [0, 1]):
