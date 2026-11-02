@@ -79,8 +79,16 @@ def worker(a):
     assert len(gold) == prior['evaluation']['scans'] == 5794 and prior['evaluation']['labels'] == 1738
     if a.suite == 'timing':
         gate = json.loads(Path(a.gate_report).read_text())
+        gate_contract = json.loads((Path(a.gate_report).parent/'contract.json').read_text())
+        source_launch = json.loads((source/'launch.json').read_text())
         assert gate['status'] == 'COMPLETED' and gate['suite'] == 'gate' and gate['exact_frames'] == 64
         assert gate['source_report_sha256'] == digest(source/'report.json')
+        # A new host/environment needs its own full AP reference and parity gate.
+        # Agreement between two current implementations cannot prove that an
+        # older PyTorch environment produced the same detections.
+        assert source_launch['command'][0] == sys.executable, 'Re-evaluate full AP in this interpreter before timing'
+        assert gate_contract['torch_version'] == torch.__version__
+        assert gate_contract['gpu'] == torch.cuda.get_device_name(0)
     a.mode='gru';a.stage='full';a.content_calibration=None;a.periodic_last=0;a.max_age=.25
     teacher, cfg, rows, provenance = setup(a);write_json(out/'provenance.json', provenance)
     assert [r['frame'] for r in rows] == [r['frame'] for r in gold]
