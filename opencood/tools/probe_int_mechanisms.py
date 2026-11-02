@@ -20,8 +20,10 @@ def write(path,data):
 
 def measured(module,*args):
     macs=[0]
-    def count(m,inputs,output):macs[0]+=output.numel()*(m.in_channels//m.groups)*m.kernel_size[0]*m.kernel_size[1]
-    handles=[m.register_forward_hook(count) for m in module.modules() if isinstance(m,nn.Conv2d)]
+    def count(m,inputs,output):
+        sites,channels=(inputs[0].numel(),m.out_channels//m.groups) if isinstance(m,nn.ConvTranspose2d) else (output.numel(),m.in_channels//m.groups)
+        macs[0]+=sites*channels*m.kernel_size[0]*m.kernel_size[1]
+    handles=[m.register_forward_hook(count) for m in module.modules() if isinstance(m,(nn.Conv2d,nn.ConvTranspose2d))]
     try:result=module(*args)
     finally:
         for h in handles:h.remove()
