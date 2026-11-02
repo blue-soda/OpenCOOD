@@ -49,7 +49,7 @@ def support_histogram(value):
     return result
 
 
-def evaluate(models,base,cfg,rows,out,tag,identity=False):
+def evaluate(models,base,cfg,rows,out,tag,identity=False,reference_rows=None):
     states={n:None for n in models};base_state=None;records=[]
     ap={n:{t:dict(tp=[],fp=[],score=[],gt=0) for t in (.5,.7)} for n in models}
     dataset,stream=loader(rows,cfg,2,303)
@@ -74,17 +74,21 @@ def evaluate(models,base,cfg,rows,out,tag,identity=False):
                 for name,pred in preds.items():
                     boxes,scores=dataset.post.post_process(data,dict(ego=pred))
                     for threshold in (.5,.7):eval_utils.caluclate_tp_fp(boxes,scores,gt,ap[name],threshold)
+            if reference_rows is not None:
+                gold=reference_rows[i];current=record['arms']['strict']
+                assert meta['frame']==gold['frame'] and meta['supervised']==gold['supervised']
+                assert current['core_conv_flops']==gold['core_conv_flops'] and current['cache_bytes']==gold['cache_bytes'] and current['refresh']==gold['late_refresh']
             records.append(record);log.write(json.dumps(record)+'\n')
-            if (i+1)%32==0:write_json(out/'status.json',dict(status='RUNNING',phase=tag+'_evaluation',scans=i+1,total=256))
-    assert len(records)==256
+            if (i+1)%32==0:write_json(out/'status.json',dict(status='RUNNING',phase=tag+'_evaluation',scans=i+1,total=len(rows)))
+    assert len(records)==len(rows) and len(records)>0
     write_json(out/(tag+'_ap_records.json'),ap)
     metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),adaptation_parameters=0 if n=='strict' else 589824,
-        core_conv_flops_mean=sum(r['arms'][n]['core_conv_flops'] for r in records)/256,cache_bytes=records[0]['arms'][n]['cache_bytes'],scale_buffer_bytes=0 if n=='strict' else 1024,
+        core_conv_flops_mean=sum(r['arms'][n]['core_conv_flops'] for r in records)/len(records),cache_bytes=records[0]['arms'][n]['cache_bytes'],scale_buffer_bytes=0 if n=='strict' else 1024,
         ap50=eval_utils.calculate_ap(ap[n],.5)[0],ap70=eval_utils.calculate_ap(ap[n],.7)[0],model_step_ms_mean=None,
-        timing_invalid_reason='Instrumented multi-arm train-subset evaluation; no valid timing') for n,m in models.items()}
+        timing_invalid_reason='Instrumented multi-arm evaluation; no valid timing') for n,m in models.items()}
     for name,model in models.items():
         if name!='strict':model.reset_activation_memory=False
-    return dict(scans=256,labels=sum(r['supervised'] for r in records),metrics=metrics),ap
+    return dict(scans=len(records),labels=sum(r['supervised'] for r in records),metrics=metrics),ap
 
 
 def train_one(model,teacher,base,cfg,rows,out,name,criterion,contract,expected_updates):
