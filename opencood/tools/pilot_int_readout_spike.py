@@ -203,6 +203,8 @@ def worker(a):
     gate=Path(a.gate);g=json.loads((gate/'report.json').read_text());cal=json.loads((gate/'calibration.json').read_text())
     verified=json.loads(Path(a.gate_verification).read_text())
     assert verified['status']=='VERIFIED' and verified['source_sha256']['report.json']==digest(gate/'report.json')
+    for name in ('contract.json','calibration.json','gradients.json'):
+        assert verified['source_sha256'][name]==digest(gate/name)
     assert g['status']=='COMPLETED' and g['gradient_gate_passed'] and g['common_input_exact']
     assert g['checkpoint_sha256']==cal['checkpoint_sha256']==digest(Path(a.checkpoint))
     reference=Path(a.reference);prior=json.loads((reference/'report.json').read_text());prior_contract=json.loads((reference/'contract.json').read_text())
@@ -224,7 +226,9 @@ def worker(a):
     models={n:ReadoutSpikeAnchor(base,n,cal['scale'],torch.float16).cuda().eval() for n in ('ann','lif','leaky')}
     assert all(torch.equal(v,models['ann'].state_dict()[k]) for model in models.values() for k,v in model.state_dict().items())
     contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),gate_report_sha256=digest(gate/'report.json'),calibration_sha256=digest(gate/'calibration.json'),gate_verification_sha256=digest(Path(a.gate_verification)),
-        data_audit_sha256=digest(Path(a.data_audit)),reference_report_sha256=digest(reference/'report.json'),train_frames=prior_contract['train_frames'],evaluation_frames=prior_contract['evaluation_frames'],expected_update_frames=expected,
+        data_audit_sha256=digest(Path(a.data_audit)),reference_report_sha256=digest(reference/'report.json'),
+        reference_files_sha256={n:digest(reference/n) for n in ('report.json','contract.json','lif_train_frames.jsonl','final_ap_records.json')},
+        train_frames=prior_contract['train_frames'],evaluation_frames=prior_contract['evaluation_frames'],expected_update_frames=expected,
         split='train',seed=303,epochs=1,tbptt=4,optimizer='AdamW',lr=.0003,weight_decay=.0001,clip_norm=10.,local_loss_weight=1.,local_loss_epsilon=1e-6,loss_scale=4096.,
         loss='Labelled-frame detection mean plus all-window-frame mean readout last-conv pre-BN normalized MSE; independent detached strict teacher. Context-only windows do not update.',
         parameters=32756052,adaptation_parameters=1475072,targets=TARGETS,tau=.2,threshold=1.,scale=cal['scale'],storage_dtype='float16',compute_dtype='float32',
