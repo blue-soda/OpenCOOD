@@ -97,8 +97,9 @@ def main():
         parser.error('Remote-current ablation requires the local-membrane geometry backend without wire accounting')
     if args.geometry_backend and args.selection_mode!='geometry_only':
         parser.error('Streamlined backend requires the fixed geometry-only selection study')
-    if args.selection_mode and (args.pillar_mode!='count32' or args.pillar_initial_voltage!=.5 or args.count_wire or args.count_event_quotas is not None):
-        parser.error('Selection study fixes half-init PFN Count32 and unlimited IF8 tensor transport, without wire')
+    if args.selection_mode and (args.pillar_mode!='count32' or args.pillar_initial_voltage!=.5 or
+                               (args.count_wire and not args.geometry_backend) or args.count_event_quotas is not None):
+        parser.error('Selection study fixes half-init PFN Count32 and unlimited counts; wire requires the geometry backend')
     if bool(args.pillar_thresholds)!=bool(args.pillar_mode):
         parser.error('Pillar thresholds and mode required together')
     if args.pillar_mode and (args.third_mode!='count32' or args.third_initial_voltage!=0.):
@@ -273,8 +274,12 @@ def main():
             from cosdh_wire import CoSDHWire
             wire=CoSDHWire(model,dataset,output,include_late_boxes=not args.feature_only)
         if args.count_wire:
-            from cosdh_count_wire import CoSDHCountWire
-            wire=CoSDHCountWire(model,counts,output)
+            if args.geometry_backend:
+                from cosdh_geometry_wire import CoSDHGeometryCountWire
+                wire=CoSDHGeometryCountWire(model,counts,output)
+            else:
+                from cosdh_count_wire import CoSDHCountWire
+                wire=CoSDHCountWire(model,counts,output)
         ids = list(dataset.split_info)
         source_ids = json.loads(split.read_text(encoding='utf-8'))
         if ids != source_ids or len(ids) != len(dataset):
@@ -340,6 +345,9 @@ def main():
         metadata['single_agent_boundary'] = 'Collaborative checkpoint with remote participants disabled; not independently trained single-agent' if args.ego_only else None
         metadata['wire_codec']='demand_sparse_latent_dependency_closure_late_boxes_v1' if args.wire_codec else None
         if args.count_wire:metadata['wire_codec']='sparse_integer_count_scale_mask_request_v1'
+        if args.count_wire and geometry:
+            metadata['wire_codec']='geometry_oneway_sparse_integer_count_scale_v1'
+            metadata['count_conversion']['scope']='Remote decoder-input counts; receiver-derived geometric support; no request, confidence mask or late boxes'
         if args.wire_codec and args.feature_only:
             metadata['wire_codec']='demand_sparse_latent_dependency_closure_v1'
         metadata['wire_compute_scope']='includes redundant diagnostic decode/warp, not optimized algorithmic cost' if args.wire_codec else None
@@ -528,6 +536,8 @@ def main():
             summary['wire_note']='Actual demand and three dependency-closed FP16 latent/mask sections; no late boxes; 160-byte two-way metadata included; link/IP overhead excluded'
         if args.count_wire:
             summary['wire_note']='Actual sparse integer counts with per-channel FP32 scales, three exact masks, one reused request and 160B metadata; no FP16 features/late boxes; link/IP overhead excluded'
+            if geometry:
+                summary['wire_note']='Actual one-way three-stage sparse integer counts, indices, FP32 channel scales, 80B pose/frame envelope and 8B container; geometric support derived locally; no request, transmitted mask or late boxes; link/IP overhead excluded; diagnostic codec timing is not an efficiency claim'
         if args.ego_only:
             summary['actual_communication_bytes'] = 0
             summary['single_agent_frames'] = len(rows)
