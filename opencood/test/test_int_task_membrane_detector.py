@@ -32,5 +32,14 @@ class TaskMembraneDetectorTests(unittest.TestCase):
             for k in ('coarse','sent','projection'):self.assertTrue(torch.equal(new[k],zero[k]))
             with self.assertRaises(ValueError):model.step_spatial(x,new,meta)
 
+    def test_matched_continuous_and_reset_candidate_tbptt_gradients(self):
+        for mode in ('continuous','reset'):
+            model=TaskMembraneDetector(fixture(),mode);state=None
+            for n,p in model.named_parameters():p.requires_grad_(n.startswith('core.coarse_update.'))
+            for i in range(3):pred,state,_=model.step_spatial(torch.randn(1,64,24,32),state,dict(timestamp_us=i*100000,segment='a',pose=np.eye(4)),detach_state=False)
+            self.assertIsNotNone(state['coarse'].grad_fn);pred['psm'].square().mean().backward()
+            opened=[p for p in model.parameters() if p.requires_grad];self.assertTrue(all(p.grad is not None and torch.isfinite(p.grad).all() for p in opened));self.assertGreater(sum(float(p.grad.abs().sum()) for p in opened),0)
+            self.assertTrue(all(p.grad is None for p in model.parameters() if not p.requires_grad))
+
 
 if __name__=='__main__':unittest.main()
