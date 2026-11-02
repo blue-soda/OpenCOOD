@@ -1,4 +1,4 @@
-"""Frozen task-subthreshold memory interface proof, no AP or real optimization."""
+"""Full all-arm validation of initial and learned subthreshold task states."""
 from opencood.tools.pilot_int_causal_readout_qat import *
 from opencood.tools.int_artifact_paths import artifact_path
 from opencood.models.sub_modules.int_causal_integer_readout import IntegerReadoutDetector
