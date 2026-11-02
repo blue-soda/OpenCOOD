@@ -14,6 +14,7 @@ from opencood.tools.check_int_temporal_feature import model_digest
 from opencood.tools.run_int_cache_repair import setup
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.launch_int_memory import digest
+from opencood.tools.eval_int_long_refresh import make_models as long_models
 
 
 def exclusive(uuid):
@@ -35,19 +36,25 @@ def worker(a):
     assert saved['contract']['teacher_sha256']==provenance['checkpoint']['sha256']
     assert saved['contract']['data_contract']==provenance['contract'] and saved['contract']['version']==base.version
     base.load_state_dict(saved['model'],strict=True)
-    # Reproduce the R125 construction order, which determines random new weights.
-    candidates={n:TemporalPyramidDetector(base,n).cuda().eval() for n in ('original','gate','leaky')}
-    candidates['dual_original']=MultiscaleRefreshDetector(base,'original').cuda().eval()
-    candidates['dual_gate']=MultiscaleRefreshDetector(base,'gate').cuda().eval()
-    models={n:candidates[n] for n in ('original','dual_gate')};del candidates,teacher,saved
+    if a.kind=='long':
+        verified=json.loads(Path(a.long_verification).read_text());assert verified['status']=='VERIFIED' and verified['run']=='R-124'
+        models=long_models(base,full=True)
+    else:
+        # Reproduce R125 construction order, which determines random new weights.
+        candidates={n:TemporalPyramidDetector(base,n).cuda().eval() for n in ('original','gate','leaky')}
+        candidates['dual_original']=MultiscaleRefreshDetector(base,'original').cuda().eval()
+        candidates['dual_gate']=MultiscaleRefreshDetector(base,'gate').cuda().eval()
+        models={n:candidates[n] for n in ('original','dual_gate')};del candidates
+    del teacher,saved
     for m in models.values():
         for p in m.parameters():p.requires_grad_(False)
     hashes={n:model_digest(m) for n,m in models.items()}
     write_json(out/'contract.json',dict(checkpoint_sha256=digest(Path(a.checkpoint)),gate_verification_sha256=digest(Path(a.gate_verification)),
         uuid=uuid,device=torch.cuda.get_device_name(),torch_version=torch.__version__,code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
-        frames=[r['frame'] for r in rows],passes=2,warmup_scans_per_pass=16,seed=303,period=4,
+        frames=[r['frame'] for r in rows],passes=2,warmup_scans_per_pass=16,seed=303,kind=a.kind,
+        long_verification_sha256=digest(Path(a.long_verification)) if a.kind=='long' else None,
         initial_model_hashes=hashes,timing='torch.cuda.synchronize before/after model.step, includes pillar/warp/readout/heads, excludes loader/H2D/postprocess; no Conv hooks',
-        boundary='Untrained lightweight projections and gates; engineering latency only, no AP or matched-quality speed claim'))
+        boundary='Frozen six-arm long-period timing; no new AP, quality recorded separately in R124' if a.kind=='long' else 'Untrained lightweight projections and gates; engineering latency only, no AP or matched-quality speed claim'))
     records=[]
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
         for repeat in range(2):
@@ -55,14 +62,20 @@ def worker(a):
             for i,sample in enumerate(stream):
                 if i%32==0:exclusive(uuid)
                 meta=sample['meta'];ego=to_device(sample['ego'],torch.device('cuda'))
-                order=['original','dual_gate'] if (i+repeat)%2==0 else ['dual_gate','original']
+                names=list(models);offset=i%len(names);order=names[offset:]+names[:offset]
+                if repeat%2:order=list(reversed(order))
                 entry=dict(repeat=repeat,index=i,frame=meta['frame'],included=i>=16,arms={})
                 for n in order:
                     torch.cuda.synchronize();start=time.perf_counter()
                     pred,states[n],info=models[n].step(ego,states[n],meta)
                     torch.cuda.synchronize();elapsed=(time.perf_counter()-start)*1000
                     assert all(bool(torch.isfinite(v).all()) for v in pred.values())
-                    entry['arms'][n]=dict(model_step_ms=elapsed,full_refresh=info.get('full_refresh'),reset=info['reset'])
+                    if a.kind=='long':
+                        repair=info['repair'];ratio=1. if info['late_refresh'] else (repair['stage_conv_ratio'] if repair and repair['active'] else 0.)
+                        cost=188539545600+76383820800*ratio
+                    else:cost=264923366400 if n=='original' else 265854355200 if info['full_refresh'] else 139535827200
+                    entry['arms'][n]=dict(model_step_ms=elapsed,full_refresh=info.get('full_refresh',info.get('late_refresh')),
+                        reset=info['reset'],core_conv_flops_reconstructed=cost)
                 log.write(json.dumps(entry)+'\n');records.append(entry)
                 if (i+1)%32==0:write_json(out/'status.json',dict(status='RUNNING',phase='timing',repeat=repeat,scans=i+1,total=256))
     exclusive(uuid);assert all(model_digest(m)==hashes[n] for n,m in models.items())
@@ -73,16 +86,19 @@ def worker(a):
         metrics[n]=dict(parameters=sum(p.numel() for p in m.parameters()),model_step_ms_mean=float(np.mean(values)),
             model_step_ms_p50=float(np.median(values)),model_step_ms_p95=float(np.percentile(values,95)),samples=480,
             per_pass_ms=[float(np.mean([r['arms'][n]['model_step_ms'] for r in records if r['included'] and r['repeat']==rep])) for rep in range(2)],
-            core_conv_flops_mean=None,ap50=None,ap70=None,scope='No hooks during timing; separate R125 core budget is real32, not this256 timing sample')
+            core_conv_flops_mean=sum(r['arms'][n]['core_conv_flops_reconstructed'] for r in records if r['included'])/480,
+            ap50=None,ap70=None,scope='No hooks during timing; core FLOPs reconstructed from actual refresh/patch schedule and independently validated constant-grid module costs')
     write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,timing_valid=True,trained=False,ap_evaluated=False,
-        relative_change=metrics['dual_gate']['model_step_ms_mean']/metrics['original']['model_step_ms_mean']-1,
-        boundary='Same-card counterbalanced engineering timing; unknown candidate AP, not matched-quality acceleration'))
+        relative_to='p2_a25_strict' if a.kind=='long' else 'original',
+        relative_changes={n:m['model_step_ms_mean']/metrics['p2_a25_strict' if a.kind=='long' else 'original']['model_step_ms_mean']-1 for n,m in metrics.items()},
+        boundary='Same-card frozen long-period timing, complete AP separately recorded in R124' if a.kind=='long' else 'Same-card counterbalanced engineering timing; unknown candidate AP, not matched-quality acceleration'))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
 
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','gate-verification','output'):p.add_argument('--'+n,required=True)
+    p.add_argument('--kind',choices=('light','long'),default='light');p.add_argument('--long-verification')
     a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
     write_json(out/'status.json',dict(status='RUNNING',phase='identity'))
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('45min independent timing budget')));signal.alarm(2700)
