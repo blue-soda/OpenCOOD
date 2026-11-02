@@ -44,11 +44,15 @@ def worker(a,out):
     assert ev['calibration_sha256']==digest(Path(a.calibration));calibration=json.loads(Path(a.calibration).read_text());assert calibration['relative_quantum']==.125 and calibration['floor']==1e-4
     iv=json.loads(Path(a.integer_verification).read_text());assert iv['status']=='VERIFIED' and iv['run']=='R-181'
     icp=Path(a.integer_source)/'contract.json';assert digest(icp)==iv['source_sha256']['contract.json'];ic=json.loads(icp.read_text());assert ic['checkpoint_sha256']==gate['checkpoint_sha256'] and ic['calibration_sha256']==ev['calibration_sha256']
-    rows=rows[512:544];models=dict(control=source,integer_dense=IntegerReadoutDetector(source,calibration['quanta'],False).cuda().eval(),integer_sparse=CompactIntegerReadoutDetector(source,calibration['quanta'],True).cuda().eval())
+    rows=rows[:a.validation_prefix] if a.validation_prefix else rows[512:544]
+    expected_scans=len(rows);assert expected_scans==(a.validation_prefix or 32)
+    models=dict(control=source,integer_dense=IntegerReadoutDetector(source,calibration['quanta'],False).cuda().eval(),integer_sparse=CompactIntegerReadoutDetector(source,calibration['quanta'],True).cuda().eval())
     for m in [base]+list(models.values()):
         for parameter in m.parameters():parameter.requires_grad_(False)
     hashes={n:model_digest(m) for n,m in models.items()};states={n:None for n in models};base_state=None;records=[]
     contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),verification_sha256=digest(Path(a.verification)),event_verification_sha256=digest(Path(a.event_verification)),integer_verification_sha256=digest(Path(a.integer_verification)),calibration_sha256=digest(Path(a.calibration)),initialization_sha256=digest(Path(a.initialization)),frames=[r['frame'] for r in rows],code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),integer_weight_bits=16,integer_arithmetic_bits=64,storage_policy='range-guarded reference int16/int32, accumulator int32/int64',precision=dict(matmul_tf32=False,cudnn_tf32=False),boundary='Frozen32 lossless compact-state own-state nonlinear stream. Dense integer and sparse integer must be bit-exact for predictions and numerically exact for sending references and accumulators across storage dtypes, including refresh. Fixed nearest integer-grid inputs at all frames and folded int16 weights change original ANN; original ANN only upstream task-state and cost control. FP32 dense core, FP64 diagnostic reference Conv and actual int64 MAC recorded separately. Packing/range reductions and conversions excluded from core arithmetic, no speed claim. No AP/new task-memory claim; no training.')
+    contract.update(frame_scope='validation_prefix' if a.validation_prefix else 'train512:544',scans=expected_scans)
+    contract['boundary']=contract['boundary'].replace('Frozen32','Frozen%d'%expected_scans)
     write_json(out/'contract.json',contract);_,stream=loader(rows,cfg,0,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as f:
         for sample in stream:
@@ -64,16 +68,17 @@ def worker(a,out):
             f.write(json.dumps(row)+'\n');records.append(row);assert row['integer_predictions_bit_exact'] and row['integer_state_values_exact']
             assert all(torch.equal(states[n][k],states['control'][k]) for n in models for k in base.state_keys)
             assert row['arms']['integer_dense']['events']['layers']==[dict(v,actual_fp64_conv_flops=v['dense_mac']*2,actual_integer_macs=0,dense_reference_calls=1,reference_absolute_bound=row['arms']['integer_dense']['events']['layers'][i]['reference_absolute_bound'],event_absolute_bound=0) for i,v in enumerate(row['arms']['integer_sparse']['events']['layers'])]
-            write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=32))
-    assert len(records)==32 and all(model_digest(m)==hashes[n] for n,m in models.items())
-    metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),core_conv_flops_mean=sum(r['arms'][n]['core_conv_flops'] for r in records)/32,core_fp32_conv_flops_mean=sum(r['arms'][n]['core_fp32_conv_flops'] for r in records)/32,readout_fp64_reference_flops_mean=sum(r['arms'][n]['readout_fp64_reference_flops'] for r in records)/32,readout_integer_macs_mean=sum(r['arms'][n]['readout_integer_macs'] for r in records)/32,core_arithmetic_operations_mean=sum(r['arms'][n]['core_arithmetic_operations'] for r in records)/32,cache_bytes=records[0]['arms'][n]['cache_bytes'] if len(set(r['arms'][n]['cache_bytes'] for r in records))==1 else None,cache_bytes_mean=sum(r['arms'][n]['cache_bytes'] for r in records)/32,cache_bytes_min=min(r['arms'][n]['cache_bytes'] for r in records),cache_bytes_max=max(r['arms'][n]['cache_bytes'] for r in records),model_step_ms_mean=None,ap50=None,ap70=None) for n,m in models.items()}
-    write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,scans=32,weights_unchanged=True,paired_task_states_exact=True,integer_predictions_bit_exact=True,integer_state_values_exact=True,trained=False,ap_evaluated=False,timing_valid=False));write_json(out/'status.json',dict(status='COMPLETED'))
+            write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=expected_scans))
+    assert len(records)==expected_scans and all(model_digest(m)==hashes[n] for n,m in models.items())
+    metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),core_conv_flops_mean=sum(r['arms'][n]['core_conv_flops'] for r in records)/expected_scans,core_fp32_conv_flops_mean=sum(r['arms'][n]['core_fp32_conv_flops'] for r in records)/expected_scans,readout_fp64_reference_flops_mean=sum(r['arms'][n]['readout_fp64_reference_flops'] for r in records)/expected_scans,readout_integer_macs_mean=sum(r['arms'][n]['readout_integer_macs'] for r in records)/expected_scans,core_arithmetic_operations_mean=sum(r['arms'][n]['core_arithmetic_operations'] for r in records)/expected_scans,cache_bytes=records[0]['arms'][n]['cache_bytes'] if len(set(r['arms'][n]['cache_bytes'] for r in records))==1 else None,cache_bytes_mean=sum(r['arms'][n]['cache_bytes'] for r in records)/expected_scans,cache_bytes_min=min(r['arms'][n]['cache_bytes'] for r in records),cache_bytes_max=max(r['arms'][n]['cache_bytes'] for r in records),model_step_ms_mean=None,ap50=None,ap70=None) for n,m in models.items()}
+    write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,scans=expected_scans,weights_unchanged=True,paired_task_states_exact=True,integer_predictions_bit_exact=True,integer_state_values_exact=True,trained=False,ap_evaluated=False,timing_valid=False));write_json(out/'status.json',dict(status='COMPLETED'))
 
 
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','event-verification','calibration','reference-verification','integer-verification','integer-source','output'):p.add_argument('--'+n,required=True)
-    a=p.parse_args();a.full=False;out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
+    p.add_argument('--validation-prefix',type=int,default=0)
+    a=p.parse_args();assert a.validation_prefix in (0,512);a.full=bool(a.validation_prefix);out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('45min frozen integer nonlinear readout stream')));signal.alarm(2700)
     try:worker(a,out)
     except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
