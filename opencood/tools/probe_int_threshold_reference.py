@@ -23,6 +23,8 @@ def worker(a,out):
     iv=json.loads(Path(a.implicit_verification).read_text());full=json.loads(Path(a.implicit_full_verification).read_text())
     assert iv['status']==full['status']=='VERIFIED' and iv['run']=='R-201' and full['run']=='R-202' and iv['checkpoint_sha256']==full['checkpoint_sha256']==gate['checkpoint_sha256']
     assert iv['calibration_sha256']==full['calibration_sha256']==digest(Path(a.calibration))
+    threshold_proof=json.loads(Path(a.threshold_verification).read_text()) if a.threshold_verification else None
+    if a.validation_prefix:assert threshold_proof and threshold_proof['status']=='VERIFIED' and threshold_proof['run']=='R-215' and threshold_proof['checkpoint_sha256']==gate['checkpoint_sha256'] and threshold_proof['calibration_sha256']==digest(Path(a.calibration))
     calibration=json.loads(Path(a.calibration).read_text());assert calibration['relative_quantum']==.125 and calibration['floor']==1e-4
     source_proof=full if a.validation_prefix else iv
     gp=Path(a.implicit_source)/'frames.jsonl';assert digest(gp)==source_proof['source_sha256']['frames.jsonl'];gold=[json.loads(x) for x in gp.read_text().splitlines()];assert len(gold)==(5794 if a.validation_prefix else 32)
@@ -32,7 +34,7 @@ def worker(a,out):
         for parameter in m.parameters():parameter.requires_grad_(False)
     rows=rows[:512] if a.validation_prefix else rows[512:544];assert len(rows)==(512 if a.validation_prefix else 32)
     hashes={n:model_digest(m) for n,m in models.items()};states={n:None for n in models};base_state=None;records=[]
-    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),protected_checkpoint_sha256=gate['training']['protected_light']['checkpoint_sha256'],initialization_sha256=digest(Path(a.initialization)),calibration_sha256=digest(Path(a.calibration)),implicit_verification_sha256=digest(Path(a.implicit_verification)),implicit_full_verification_sha256=digest(Path(a.implicit_full_verification)),validation_prefix=a.validation_prefix,frames=[r['frame'] for r in rows],code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),levels=4096,accumulator_bound=2**31-2,threshold_dtype='torch.int32',orientation_dtype='torch.int8',precision=dict(matmul_tf32=False,cudnn_tf32=False),
+    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),protected_checkpoint_sha256=gate['training']['protected_light']['checkpoint_sha256'],initialization_sha256=digest(Path(a.initialization)),calibration_sha256=digest(Path(a.calibration)),implicit_verification_sha256=digest(Path(a.implicit_verification)),implicit_full_verification_sha256=digest(Path(a.implicit_full_verification)),threshold_verification_sha256=digest(Path(a.threshold_verification)) if a.threshold_verification else None,validation_prefix=a.validation_prefix,frames=[r['frame'] for r in rows],code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),levels=4096,accumulator_bound=2**31-2,threshold_dtype='torch.int32',orientation_dtype='torch.int8',precision=dict(matmul_tf32=False,cudnn_tf32=False),
         boundary='Fixed train32 or val512 original implicit float old-reference decode versus monotone integer threshold lookup. Both own-state predictions/task/n0/A exact and old internal references exact. Fixed signed4096-level tables compiled on original spatial geometry, int32 range guard and whole-layer original float fallback preserve unsupported values. Current decoder/nonlinearities and all convolution work unchanged. Table capacity and one-time float compilation counted separately. Audit old n only for external comparison then cleared. No AP/training/model timing or independent task-memory/neural-energy benefit.')
     write_json(out/'contract.json',contract);_,stream=loader(rows,cfg,0,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
@@ -59,6 +61,8 @@ def worker(a,out):
     for i,m in enumerate(maps):
         for name,value in [('thresholds',m.thresholds),('orientation',m.orientation)]:arrays[name+'_'+str(i)]=value.cpu().numpy()
         tables.append(dict(index=i,shape=list(m.thresholds.shape),table_bytes=m.table_bytes,build_oracle_calls=m.build_oracle_calls,build_float_elements=m.build_float_elements,threshold_sha256=hashlib.sha256(m.thresholds.cpu().numpy().tobytes()).hexdigest(),orientation_sha256=hashlib.sha256(m.orientation.cpu().numpy().tobytes()).hexdigest()))
+    if threshold_proof:
+        for current,expected in zip(tables,threshold_proof['tables']):assert current==expected
     np.savez_compressed(out/'threshold_tables.npz',**arrays)
     metrics={n:dict(parameters=sum(p.numel() for p in m.parameters()),**{k+'_mean':sum(r['arms'][n][k] for r in records)/len(records) for k in ('core_fp32_conv_flops','readout_fp64_reference_flops','readout_integer_macs','logical_core_conv_flops','cache_bytes','old_reference_float_elements')},model_step_ms_mean=None,ap50=None,ap70=None) for n,m in models.items()}
     write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics,tables=tables,tables_sha256=digest(out/'threshold_tables.npz'),weights_unchanged=True,predictions_task_states_n0_A_exact=True,internal_references_exact=True,source_trajectory_exact=True,trained=False,ap_evaluated=False,timing_valid=False));write_json(out/'status.json',dict(status='COMPLETED'))
@@ -67,6 +71,7 @@ def worker(a,out):
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','calibration','implicit-verification','implicit-full-verification','implicit-source','output'):p.add_argument('--'+n,required=True)
+    p.add_argument('--threshold-verification')
     p.add_argument('--validation-prefix',type=int,choices=(0,512),default=0)
     a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('60min threshold reference proof')));signal.alarm(3600)
