@@ -33,7 +33,16 @@ def worker(a,out):
     proof=json.loads(Path(a.fine_stream_verification).read_text());assert proof['status']=='VERIFIED' and proof['run']=='R-205' and proof['calibration_sha256']==digest(Path(a.calibration))
     iv=json.loads(Path(a.implicit_verification).read_text());assert iv['status']=='VERIFIED' and iv['run']=='R-201' and iv['checkpoint_sha256']==gate['checkpoint_sha256'] and iv['calibration_sha256']==digest(Path(a.readout_calibration))
     rc=json.loads(Path(a.readout_calibration).read_text());assert rc['relative_quantum']==.125 and rc['floor']==1e-4
-    modes=('dense','static') if a.full_static else ('dense','hybrid') if a.full_hybrid else ('dense','static','hybrid')
+    if a.full_p5_hybrid:
+        prefix=json.loads(Path(a.p5_prefix_verification).read_text())
+        pc=Path(a.p5_prefix_source)/'contract.json'
+        assert prefix['status']=='VERIFIED' and prefix['run']=='R-231' and prefix['scans']==512
+        assert prefix['refresh_period']==5 and prefix['max_age']==.55
+        assert prefix['checkpoint_sha256']==gate['checkpoint_sha256'] and prefix['calibration_sha256']==digest(Path(a.calibration)) and prefix['readout_calibration_sha256']==digest(Path(a.readout_calibration))
+        assert prefix['periodic_verification_sha256']==digest(Path(a.periodic_verification)) and prefix['source_sha256']['contract.json']==digest(pc)
+        original=json.loads(pc.read_text());assert original['frames']==[row['frame'] for row in rows[:512]]
+        assert original['protected_checkpoint_sha256']==gate['training']['protected_light']['checkpoint_sha256'] and original['initialization_sha256']==cv['rank128_checkpoint_sha256']
+    modes=('dense','static') if a.full_static else ('dense','hybrid') if a.full_hybrid or a.full_p5_hybrid else ('dense','static','hybrid')
     models=dict(control=source,**{'fine_'+mode:FineReadoutIntegerDetector(source,calibration['layers'],rc['quanta'],mode,True).cuda().eval() for mode in modes})
     if a.full_static:
         jv=json.loads(Path(a.joint_full_verification).read_text());assert jv['status']=='VERIFIED' and jv['run']=='R-214' and jv['scans']==5794
@@ -53,6 +62,8 @@ def worker(a,out):
         frames=[r['frame'] for r in selected],code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),policy=FINE_POLICY,fine_execution_reset='scene/gap/start/explicit only; no extra P4 flush; rebuild via sparse current integer inputs',precision=dict(matmul_tf32=False,cudnn_tf32=False),
         boundary=('Validation prefix%d'%total if a.validation_prefix else 'Fixed train32')+' real own-state streams. Fine Conv plus original readout quantized jointly; recurrent updates, BN/ReLU/residual placement unchanged. Dense fine/readout versus static or hybrid fine with implicit sparse integer readout; full_hybrid omits static arm to conserve engineering compute, replays full fine-dense layer ledger R206. Readout refresh follows P4; fine execution resets only at scene/gap/start/explicit. Dense FP64 integer, static actual integer events and preselected hybrid delta use equal quantized inputs/predictions/tasks; ANN is quality reference only. No AP/optimizer/timing. Audit n/A buffers are transient and cleared after external comparison; persistent state reported separately from scratch/static tables.')
     contract.update(refresh_period=source.period,max_age=source.max_age,periodic_verification_sha256=digest(Path(a.periodic_verification)) if a.refresh_period==5 else None,periodic_contract_sha256=digest(Path(a.periodic_contract)) if a.refresh_period==5 else None)
+    contract.update(full_p5_hybrid=a.full_p5_hybrid,p5_prefix_verification_sha256=digest(Path(a.p5_prefix_verification)) if a.full_p5_hybrid else None)
+    if a.refresh_period==5:contract['boundary']=contract['boundary'].replace('Readout refresh follows P4','Readout refresh follows retained P5/.55')
     write_json(out/'contract.json',contract);_,stream=loader(selected,cfg,0,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
         for index,sample in enumerate(stream):
@@ -84,20 +95,25 @@ def main():
     for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','fine-verification','primitive-verification','calibration','implicit-verification','readout-calibration','fine-stream-verification','output'):p.add_argument('--'+n,required=True)
     p.add_argument('--full-hybrid',action='store_true')
     p.add_argument('--full-static',action='store_true')
+    p.add_argument('--full-p5-hybrid',action='store_true')
+    p.add_argument('--p5-prefix-verification');p.add_argument('--p5-prefix-source')
     p.add_argument('--joint-full-verification')
     p.add_argument('--validation-prefix',type=int,choices=(0,512),default=0)
     p.add_argument('--refresh-period',type=int,choices=(4,5),default=4)
     p.add_argument('--periodic-verification');p.add_argument('--periodic-contract')
     for n in ('joint-verification','implicit-full-verification','fine-quality-verification','fine-quality-source'):p.add_argument('--'+n)
     a=p.parse_args()
-    if a.refresh_period==5 and (a.validation_prefix!=512 or a.full_hybrid or a.full_static or not a.periodic_verification or not a.periodic_contract):raise ValueError('P5 is a separately verified fixed512 engineering protocol')
+    if a.full_p5_hybrid:
+        if a.refresh_period!=5 or a.validation_prefix or a.full_hybrid or a.full_static or not a.p5_prefix_verification or not a.p5_prefix_source:raise ValueError('Full P5 hybrid requires its fixed512 proof and a separate full protocol')
+        a.validation_prefix=5794
+    if a.refresh_period==5 and ((a.validation_prefix!=512 and not a.full_p5_hybrid) or a.full_hybrid or a.full_static or not a.periodic_verification or not a.periodic_contract):raise ValueError('P5 requires retained source proofs and either fixed512 or gated full hybrid')
     if a.full_hybrid or a.full_static:
         if a.full_hybrid and a.full_static:raise ValueError('Choose one full execution layout')
         if a.validation_prefix:raise ValueError('Full hybrid and prefix are separate fixed protocols')
         if a.full_static and not a.joint_full_verification:raise ValueError('Full joint source verification required')
         a.validation_prefix=5794
     out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
-    budget=21600 if a.full_hybrid or a.full_static else 2700
+    budget=21600 if a.full_hybrid or a.full_static or a.full_p5_hybrid else 2700
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('%dmin fine/readout frozen stream'%(budget//60))));signal.alarm(budget)
     try:worker(a,out)
     except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
