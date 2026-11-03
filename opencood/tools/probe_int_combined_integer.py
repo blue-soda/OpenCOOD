@@ -1,4 +1,4 @@
-"""Fixed32 joint candidate/encoder integer execution after both512 prefix gates."""
+"""Fixed32 joint candidate/encoder integer execution after candidate512 and encoder32 gates."""
 from opencood.tools.int_joint_adaptation_setup import *
 from opencood.models.sub_modules.int_refresh_encoder_integer import ENCODER_PREFIXES
 from opencood.models.sub_modules.int_candidate_integer import CANDIDATE_PREFIXES
@@ -24,9 +24,9 @@ def worker(a,out):
     for k in ('checkpoint_sha256','protected_checkpoint_sha256','initialization_sha256'):assert candidate_contract[k]==identity[k]
     assert tuple(candidate_contract['candidate_prefixes'])==CANDIDATE_PREFIXES and candidate_cal['relative_quantum']==.125 and candidate_cal['floor']==1e-4
     assert candidate_contract['evaluation_frames']==pc['evaluation_frames'] and candidate_contract['calibration_frames']==pc['calibration_frames']
-    for filename,run,key,proof_path in ((a.candidate_prefix_verification,'R-244','candidate',a.candidate_verification),(a.encoder_prefix_verification,'R-247','encoder',a.encoder_verification)):
+    for filename,run,key,proof_path,scans in ((a.candidate_prefix_verification,'R-244','candidate',a.candidate_verification,512),(a.encoder_stream_verification,'R-246','encoder',a.encoder_verification,32)):
         gate=json.loads(Path(filename).read_text())
-        assert gate['status']=='VERIFIED' and gate['run']==run and gate['scans']==512 and gate['checkpoint_sha256']==identity['checkpoint_sha256']
+        assert gate['status']=='VERIFIED' and gate['run']==run and gate['scans']==scans and gate['checkpoint_sha256']==identity['checkpoint_sha256']
         assert gate[key+'_verification_sha256']==digest(Path(proof_path))
         assert all(gate['metrics'][n][key+'_integer_macs_mean']<gate['metrics']['dense'][key+'_fp64_reference_flops_mean']/2 for n in ('static','delta'))
     selected=rows[512:544];assert len(selected)==32 and [r['frame'] for r in selected]==pc['evaluation_frames'][:32]
@@ -35,7 +35,7 @@ def worker(a,out):
     for mode in ('dense','static','delta'):
         models[mode]=CombinedIntegerDetector(source,cal['layers'],rc['quanta'],candidate_cal['layers'],cc['layers'],mode,mode,True).cuda().eval()
     freeze([base]+list(models.values()));hashes={n:model_digest(m) for n,m in models.items()}
-    contract=dict(**identity,candidate_verification_sha256=digest(Path(a.candidate_verification)),candidate_calibration_sha256=digest(candidate_source/'calibration.json'),candidate_prefix_verification_sha256=digest(Path(a.candidate_prefix_verification)),encoder_prefix_verification_sha256=digest(Path(a.encoder_prefix_verification)),candidate_prefixes=CANDIDATE_PREFIXES,encoder_verification_sha256=digest(Path(a.encoder_verification)),encoder_calibration_sha256=digest(prior/'calibration.json'),encoder_prefixes=ENCODER_PREFIXES,frames=[r['frame'] for r in selected],scans=32,encoder_modes=['dense','static','delta'],fine_policy=FINE_POLICY,
+    contract=dict(**identity,candidate_verification_sha256=digest(Path(a.candidate_verification)),candidate_calibration_sha256=digest(candidate_source/'calibration.json'),candidate_prefix_verification_sha256=digest(Path(a.candidate_prefix_verification)),encoder_stream_verification_sha256=digest(Path(a.encoder_stream_verification)),candidate_prefixes=CANDIDATE_PREFIXES,encoder_verification_sha256=digest(Path(a.encoder_verification)),encoder_calibration_sha256=digest(prior/'calibration.json'),encoder_prefixes=ENCODER_PREFIXES,frames=[r['frame'] for r in selected],scans=32,encoder_modes=['dense','static','delta'],fine_policy=FINE_POLICY,
         boundary='Fixed train512:544 frozen own-state streams. Existing hybrid fine/implicit readout in all arms; 15 candidate and20 full-refresh encoder Conv inputs/weights jointly quantized. Dense FP64, real static integer and real delta integer encoders must agree exactly in task/prediction/n/A. Original ANN-derived calibration frozen, no policy selection. Gates, protected task merge, nonlinearities and warp unchanged. Encoder references survive skipped ordinary frames; coarse/deep candidate references survive skipped refreshes and reset on scene/gap/start. No AP, timing or training, no independent task membrane advantage. Source training-adapted models are not used; task and execution state distinct. Audit scratch reported separately from deployment state.')
     write_json(out/'contract.json',contract)
     states={n:None for n in models};base_state=None;records=[];_,stream=loader(selected,cfg,0,303)
@@ -76,7 +76,7 @@ def worker(a,out):
 
 def main():
     p=argparse.ArgumentParser()
-    for n in ARGUMENTS+('encoder-verification','encoder-source','candidate-verification','candidate-source','candidate-prefix-verification','encoder-prefix-verification'):p.add_argument('--'+n,required=True)
+    for n in ARGUMENTS+('encoder-verification','encoder-source','candidate-verification','candidate-source','candidate-prefix-verification','encoder-stream-verification'):p.add_argument('--'+n,required=True)
     a=p.parse_args();a.validation_prefix=0;out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('45min combined integer engineering')));signal.alarm(2700)
     try:worker(a,out)
