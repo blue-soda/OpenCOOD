@@ -7,6 +7,7 @@ from opencood.tools.int_joint_adaptation_setup import *
 from opencood.models.sub_modules.int_readout_event_objective import EventObjectiveReadout
 from opencood.models.sub_modules.int_event_training_loss import (
     window_objective, gradient_summary, READOUT_DENSE_MAC, UNIT_ENERGY_RATIO, EVENT_WEIGHT)
+from opencood.models.sub_modules.int_training_contract import require_matching_preflight
 from opencood.tools.pilot_int_joint_state_qat import frozen_digest, buffer_digest
 from opencood.tools.pilot_int_gated_state import detach_state
 from opencood.tools.check_int_fine_readout_restore import tree_digest
@@ -175,7 +176,7 @@ def worker(a,out):
         assert a.preflight_verification and a.preflight_source
         v=json.loads(Path(a.preflight_verification).read_text());assert v['status']=='VERIFIED' and v['run']=='R-232'
         pc=Path(a.preflight_source)/'contract.json';assert digest(pc)==v['source_sha256']['contract.json']
-        prior=json.loads(pc.read_text());assert all(prior[k]==contract[k] for k in contract if k!='preflight_only')
+        prior=json.loads(pc.read_text());require_matching_preflight(prior,contract)
         contract['preflight_verification_sha256']=digest(Path(a.preflight_verification))
     write_json(out/'contract.json',contract)
     if a.preflight_only:
