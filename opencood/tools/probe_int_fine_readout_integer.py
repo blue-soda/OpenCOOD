@@ -18,6 +18,12 @@ def worker(a,out):
     assert saved['contract']['teacher_sha256']==prov['checkpoint']['sha256'] and saved['contract']['data_contract']==prov['contract'];base.load_state_dict(saved['model']);del teacher,saved
     source=ProtectedMultiscaleRefreshDetector(base,True).cuda().eval();load_targets(source,Path(a.trained)/'protected_light_final.pth',gate['training']['protected_light']['checkpoint_sha256'])
     source.core.readout,_=compact_readout(base.core.readout,128);source.core.readout.load_state_dict(torch.load(a.initialization,map_location='cpu')['readout']);source.eval()
+    if a.refresh_period==5:
+        period_proof=json.loads(Path(a.periodic_verification).read_text());period_contract=json.loads(Path(a.periodic_contract).read_text())
+        assert period_proof['status']=='VERIFIED' and period_proof['run']=='R-170' and period_proof['checkpoint_sha256']==gate['checkpoint_sha256']
+        assert digest(Path(a.periodic_contract))==period_proof['source_sha256']['contract.json']
+        assert period_contract['initialization_sha256']==cv['rank128_checkpoint_sha256'] and period_contract['protected_trained_sha256']==gate['training']['protected_light']['checkpoint_sha256']
+        source.period=5;source.max_age=.55
     for p in source.parameters():p.requires_grad_(False)
     
     fv=json.loads(Path(a.fine_verification).read_text());assert fv['status']=='VERIFIED' and fv['run']=='R-200'
@@ -46,6 +52,7 @@ def worker(a,out):
     contract=dict(full_static=a.full_static,joint_full_verification_sha256=digest(Path(a.joint_full_verification)) if a.full_static else None,full_hybrid=a.full_hybrid,joint_verification_sha256=digest(Path(a.joint_verification)) if a.full_hybrid else None,implicit_full_verification_sha256=digest(Path(a.implicit_full_verification)) if a.full_hybrid else None,fine_quality_verification_sha256=digest(Path(a.fine_quality_verification)) if a.full_hybrid else None,implicit_verification_sha256=digest(Path(a.implicit_verification)),readout_calibration_sha256=digest(Path(a.readout_calibration)),fine_stream_proof_sha256=digest(Path(a.fine_stream_verification)),scans=total,frame_scope='validation_prefix' if a.validation_prefix else 'train32',fine_stream_verification_sha256=digest(Path(a.fine_stream_verification)) if a.validation_prefix else None,checkpoint_sha256=digest(Path(a.checkpoint)),protected_checkpoint_sha256=gate['training']['protected_light']['checkpoint_sha256'],initialization_sha256=digest(Path(a.initialization)),fine_verification_sha256=digest(Path(a.fine_verification)),primitive_verification_sha256=digest(Path(a.primitive_verification)),calibration_sha256=digest(Path(a.calibration)),
         frames=[r['frame'] for r in selected],code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),policy=FINE_POLICY,fine_execution_reset='scene/gap/start/explicit only; no extra P4 flush; rebuild via sparse current integer inputs',precision=dict(matmul_tf32=False,cudnn_tf32=False),
         boundary=('Validation prefix%d'%total if a.validation_prefix else 'Fixed train32')+' real own-state streams. Fine Conv plus original readout quantized jointly; recurrent updates, BN/ReLU/residual placement unchanged. Dense fine/readout versus static or hybrid fine with implicit sparse integer readout; full_hybrid omits static arm to conserve engineering compute, replays full fine-dense layer ledger R206. Readout refresh follows P4; fine execution resets only at scene/gap/start/explicit. Dense FP64 integer, static actual integer events and preselected hybrid delta use equal quantized inputs/predictions/tasks; ANN is quality reference only. No AP/optimizer/timing. Audit n/A buffers are transient and cleared after external comparison; persistent state reported separately from scratch/static tables.')
+    contract.update(refresh_period=source.period,max_age=source.max_age,periodic_verification_sha256=digest(Path(a.periodic_verification)) if a.refresh_period==5 else None,periodic_contract_sha256=digest(Path(a.periodic_contract)) if a.refresh_period==5 else None)
     write_json(out/'contract.json',contract);_,stream=loader(selected,cfg,0,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
         for index,sample in enumerate(stream):
@@ -79,8 +86,11 @@ def main():
     p.add_argument('--full-static',action='store_true')
     p.add_argument('--joint-full-verification')
     p.add_argument('--validation-prefix',type=int,choices=(0,512),default=0)
+    p.add_argument('--refresh-period',type=int,choices=(4,5),default=4)
+    p.add_argument('--periodic-verification');p.add_argument('--periodic-contract')
     for n in ('joint-verification','implicit-full-verification','fine-quality-verification','fine-quality-source'):p.add_argument('--'+n)
     a=p.parse_args()
+    if a.refresh_period==5 and (a.validation_prefix!=512 or a.full_hybrid or a.full_static or not a.periodic_verification or not a.periodic_contract):raise ValueError('P5 is a separately verified fixed512 engineering protocol')
     if a.full_hybrid or a.full_static:
         if a.full_hybrid and a.full_static:raise ValueError('Choose one full execution layout')
         if a.validation_prefix:raise ValueError('Full hybrid and prefix are separate fixed protocols')

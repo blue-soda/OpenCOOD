@@ -173,7 +173,7 @@ def worker(a,out):
                   boundary='Same R139+rank128 initialization, frozen quanta/P4/BN. Only intervention: event coefficient0 versus0.1, assumed unitAC/MAC ratio0.1. Label-only detection mean and all-frame unitAC mean within original eligible windows. Detached non-warped sending references; no added task membrane. Dense FP64 training, no AP/deployment FLOPs or latency. One quality GPU. No coefficient search or checkpoint selection.')
     if not a.preflight_only:
         assert a.preflight_verification and a.preflight_source
-        v=json.loads(Path(a.preflight_verification).read_text());assert v['status']=='VERIFIED' and v['run']=='R-231'
+        v=json.loads(Path(a.preflight_verification).read_text());assert v['status']=='VERIFIED' and v['run']=='R-232'
         pc=Path(a.preflight_source)/'contract.json';assert digest(pc)==v['source_sha256']['contract.json']
         prior=json.loads(pc.read_text());assert all(prior[k]==contract[k] for k in contract if k!='preflight_only')
         contract['preflight_verification_sha256']=digest(Path(a.preflight_verification))
