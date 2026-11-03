@@ -37,7 +37,8 @@ def prepare(a,out):
     assert lc['checkpoint_sha256']==gate['checkpoint_sha256'] and lc['protected_checkpoint_sha256']==gate['training']['protected_light']['checkpoint_sha256'] and lc['initialization_sha256']==cv['rank128_checkpoint_sha256']
     assert lc['calibration_sha256']==digest(Path(a.calibration)) and lc['readout_calibration_sha256']==digest(Path(a.readout_calibration)) and len(lc['expected_update_frames'])==389
     quality=json.loads(Path(a.quality_verification).read_text());assert quality['status']=='VERIFIED' and quality['run']=='R-212' and quality['checkpoint_sha256']==gate['checkpoint_sha256']
-    assert quality['calibration_sha256']==digest(Path(a.calibration)) and quality['readout_calibration_sha256']==digest(Path(a.readout_calibration))
+    quality_contract=Path(a.quality_source)/'contract.json';assert digest(quality_contract)==quality['source_sha256']['contract.json']
+    assert quality['calibration_sha256']==digest(Path(a.calibration)) and json.loads(quality_contract.read_text())['readout_calibration_sha256']==digest(Path(a.readout_calibration))
     exports={};trained_hashes={};frozen=frozen_digest(source)
     for name in ('ann','qat'):
         path=lp/(name+'_final.pth');assert digest(path)==lv['training'][name]['checkpoint_sha256'];saved=torch.load(path,map_location='cpu')
