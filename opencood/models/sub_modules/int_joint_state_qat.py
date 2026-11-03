@@ -15,6 +15,19 @@ from opencood.models.sub_modules.int_multiscale_refresh import ProtectedMultisca
 STATE_QAT_PREFIXES=('core.coarse_update.','core.deep_update.','core.coarse_light.','core.deep_light.')
 
 
+def causal_update_indices(rows, refresh_reasons, window_ends):
+    if len(rows)!=len(refresh_reasons):raise ValueError('Schedule length mismatch')
+    ordinary=eligible=False;result=[]
+    for i,(row,reason) in enumerate(zip(rows,refresh_reasons)):
+        if reason in ('initial','scene','gap','explicit'):ordinary=False
+        ordinary|=not bool(reason)
+        eligible|=bool(row['supervised']) and ordinary
+        if i in window_ends:
+            if eligible:result.append(i)
+            ordinary=eligible=False
+    return result
+
+
 class FrozenFineObservation(FineIntegerEncoder):
     def forward(self,x):
         if any(p.requires_grad for p in self.parameters()):raise ValueError('Fine parameters must be frozen')

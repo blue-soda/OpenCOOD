@@ -2,11 +2,20 @@ import unittest
 import torch
 from torch import nn
 from opencood.models.sub_modules.int_causal_readout_qat import CausalReadoutQAT
-from opencood.models.sub_modules.int_joint_state_qat import FrozenFineObservation
+from opencood.models.sub_modules.int_joint_state_qat import FrozenFineObservation,causal_update_indices
 from opencood.models.sub_modules.resblock import BasicBlock
 
 
 class JointStateQATTests(unittest.TestCase):
+    def test_supervision_cannot_use_a_later_ordinary_frame(self):
+        rows=[dict(supervised=i in (0,6)) for i in range(8)]
+        reasons=['initial',None,None,None,'period',None,None,None]
+        self.assertEqual(causal_update_indices(rows,reasons,{3,7}),[7])
+        rows[0]['supervised']=False;rows[2]['supervised']=True
+        self.assertEqual(causal_update_indices(rows,reasons,{3,7}),[3,7])
+        reasons[2]='scene'
+        self.assertEqual(causal_update_indices(rows,reasons,{3,7}),[7])
+
     def test_frozen_readout_passes_surrogate_gradient_to_state(self):
         torch.manual_seed(303)
         source=nn.Sequential(nn.Conv2d(2,3,3,padding=1),nn.BatchNorm2d(3),nn.ReLU(),nn.Conv2d(3,2,1)).eval()

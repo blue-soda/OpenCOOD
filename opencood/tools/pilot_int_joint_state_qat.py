@@ -7,7 +7,7 @@ from opencood.tools.check_int_pyramid_cache import measured_step
 from opencood.tools.calibrate_int_event_refresh import capture
 from opencood.tools.int_artifact_paths import artifact_path
 import copy,numpy as np
-from opencood.models.sub_modules.int_joint_state_qat import STATE_QAT_PREFIXES
+from opencood.models.sub_modules.int_joint_state_qat import STATE_QAT_PREFIXES,causal_update_indices
 from opencood.tools.pilot_int_protected_state import schedule
 from opencood.tools.pilot_int_gated_state import detach_state
 from opencood.tools.pilot_int_causal_readout_qat import buffer_digest
@@ -40,7 +40,8 @@ def train_one(model,cfg,rows,out,name,criterion,contract,preflight=False):
             if meta['supervised']:
                 loss=criterion(pred,ego['label_dict']);assert bool(torch.isfinite(loss));losses.append(loss);labels+=1;row['detection_loss']=float(loss.detach())
             if i in ends:
-                if losses and ordinary:
+                if i in contract['expected_update_indices']:
+                    assert losses and ordinary
                     objective=torch.stack(losses).mean();objective.backward()
                     for parameter_name,p in model.named_parameters():
                         if p.requires_grad:assert p.grad is not None and bool(torch.isfinite(p.grad).all()),parameter_name
@@ -123,9 +124,9 @@ def worker(a,out):
         for p in m.parameters():p.requires_grad_(False)
     for n in ('ann','qat'):models[n].open_ordinary_updates()
     training,evaluation=rows[768:2816],rows[512:768];assert audit['train_frames']==[r['frame'] for r in training] and audit['evaluation_frames']==[r['frame'] for r in evaluation]
-    reasons,updates=schedule(training);assert len(training)==2048 and len(evaluation)==256
-    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),protected_checkpoint_sha256=gate['training']['protected_light']['checkpoint_sha256'],initialization_sha256=digest(Path(a.initialization)),calibration_sha256=digest(Path(a.calibration)),readout_calibration_sha256=digest(Path(a.readout_calibration)),interface_verification_sha256=digest(Path(a.interface_verification)),quality_verification_sha256=digest(Path(a.quality_verification)),prior_learning_verification_sha256=digest(Path(a.prior_learning_verification)),audit_sha256=digest(Path(a.audit)),train_frames=[r['frame'] for r in training],evaluation_frames=[r['frame'] for r in evaluation],training_labels=sum(r['supervised'] for r in training),expected_refresh_reasons=reasons,expected_update_frames=updates,seed=303,tbptt=4,epochs=1,optimizer='AdamW',lr=1e-4,weight_decay=1e-4,clip_norm=10.,trainable_prefixes=STATE_QAT_PREFIXES,trainable_parameters=2449664,cuda_memory_fraction=.65,precision=dict(matmul_tf32=False,cudnn_tf32=False),code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
-        loss='Matched labelled-window mean detection loss, update only if labelled and ordinary frame. No teacher target/history, no event penalty. Same2048 already-registered training frames and update schedule; one additional adaptation pass, not unseen training data.',
+    reasons,legacy_updates=schedule(training);ends=window_ends(training,4);indices=causal_update_indices(training,reasons,ends);updates=[training[i]['frame'] for i in indices];assert len(training)==2048 and len(evaluation)==256
+    contract=dict(checkpoint_sha256=digest(Path(a.checkpoint)),protected_checkpoint_sha256=gate['training']['protected_light']['checkpoint_sha256'],initialization_sha256=digest(Path(a.initialization)),calibration_sha256=digest(Path(a.calibration)),readout_calibration_sha256=digest(Path(a.readout_calibration)),interface_verification_sha256=digest(Path(a.interface_verification)),quality_verification_sha256=digest(Path(a.quality_verification)),prior_learning_verification_sha256=digest(Path(a.prior_learning_verification)),audit_sha256=digest(Path(a.audit)),train_frames=[r['frame'] for r in training],evaluation_frames=[r['frame'] for r in evaluation],training_labels=sum(r['supervised'] for r in training),expected_refresh_reasons=reasons,expected_update_frames=updates,expected_update_indices=indices,window_end_indices=sorted(ends),training_supervised=[bool(r['supervised']) for r in training],skipped_legacy_window_frames=[f for f in legacy_updates if f not in updates],seed=303,tbptt=4,epochs=1,optimizer='AdamW',lr=1e-4,weight_decay=1e-4,clip_norm=10.,trainable_prefixes=STATE_QAT_PREFIXES,trainable_parameters=2449664,cuda_memory_fraction=.65,precision=dict(matmul_tf32=False,cudnn_tf32=False),code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
+        loss='Matched labelled-window mean detection loss, update only if an ordinary frame occurs at or before a labelled frame within its TBPTT window, without intervening task reset. No teacher target/history, no event penalty. Same2048 already-registered training frames and update schedule; one additional adaptation pass, not unseen training data.',
         boundary='One quality GPU only. Frozen fine/readout/heads/deblocks/fine state/full-refresh/BN buffers; only ordinary coarse/deep update and light paths train. Fixed quanta and240min budget. Initial and final four-arm train256 diagnostics, not fullval/independent test. Real no-step gradient gate before any optimization. Every64-update recovery members kept, no best-epoch selection, no additional learning-rate search. QAT FP64/STE is training/reference, not actual event cost or independent SNN memory benefit.')
     write_json(out/'contract.json',contract);criterion=PointPillarDirLoss(cfg['loss']['args']).cuda()
     preflight={n:train_one(models[n],cfg,training,out,n,criterion,contract,True) for n in ('ann','qat')};write_json(out/'preflight.json',preflight)
