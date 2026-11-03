@@ -100,11 +100,14 @@ def run(a):
         assert all(torch.isfinite(g).all() for g in grads.values())
         for prefix in prefixes:
             assert any(g.abs().sum() > 0 for n,g in grads.items() if n.startswith(prefix)), prefix
+        if step == 1:
+            assert model.serial_project[0].weight.grad[256:].abs().sum() > 0
         norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 10.); assert torch.isfinite(norm)
         optimizer.step(); assert model.fixed_state_digest() == frozen
         steps.append(dict(step=step+1, loss=float(loss), norm=float(norm)))
     write_json(Path(a.output), dict(passed=True, no_AP=True, reference=reference, candidate=candidate,
         spatial_pack_inverse_exact=True, cyclic_projection_initially_injective=True,
+        extra_hidden_channels_receive_gradient_after_first_update=True,
         shared_initial_fused_counts_equal=True, frames=frames, steps=steps,
         no_training_codec=True, discarded_updates=True, frozen_state_unchanged=True,
         trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad),

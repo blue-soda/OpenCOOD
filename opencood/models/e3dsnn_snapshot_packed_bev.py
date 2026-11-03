@@ -25,13 +25,20 @@ class E3dsnnSnapshotPackedBev(E3dsnnSnapshotBranchProbe):
         if first.in_channels != 384:
             raise ValueError('Registered DAIR backend expects 384 input channels')
         with torch.random.fork_rng(devices=[]):
-            self.serial_project = nn.Conv2d(256, 384, 1, bias=False)
-            # Full-column-rank cyclic copy, preserving nonnegative count scale
-            # at initialization. This is not a learned or calibrated threshold.
+            torch.manual_seed(20261103)
+            self.serial_project = nn.Sequential(
+                nn.Conv2d(256, 1024, 1, bias=False), nn.LeakyReLU(.1),
+                nn.Conv2d(1024, 384, 1, bias=False))
+            # Preserve an injective cyclic copy at initialization. Extra hidden
+            # channels have distinct random features and initially zero output
+            # weights; they become trainable capacity after the first update.
             with torch.no_grad():
-                self.serial_project.weight.zero_()
+                self.serial_project[0].weight[:256].zero_()
+                for channel in range(256):
+                    self.serial_project[0].weight[channel, channel, 0, 0] = 1.
+                self.serial_project[2].weight.zero_()
                 for channel in range(384):
-                    self.serial_project.weight[channel, channel % 256, 0, 0] = 1.
+                    self.serial_project[2].weight[channel, channel % 256, 0, 0] = 1.
 
     def _detect_shallow(self, counts):
         if counts.shape[1] != 64 or any(v % 2 for v in counts.shape[-2:]):
