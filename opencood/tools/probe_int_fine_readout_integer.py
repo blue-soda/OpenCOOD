@@ -72,8 +72,13 @@ def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','fine-verification','primitive-verification','calibration','implicit-verification','readout-calibration','fine-stream-verification','output'):p.add_argument('--'+n,required=True)
     p.add_argument('--full-hybrid',action='store_true')
+    p.add_argument('--validation-prefix',type=int,choices=(0,512),default=0)
     for n in ('joint-verification','implicit-full-verification','fine-quality-verification','fine-quality-source'):p.add_argument('--'+n)
-    a=p.parse_args();a.validation_prefix=5794 if a.full_hybrid else 0;out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
+    a=p.parse_args()
+    if a.full_hybrid:
+        if a.validation_prefix:raise ValueError('Full hybrid and prefix are separate fixed protocols')
+        a.validation_prefix=5794
+    out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
     budget=21600 if a.full_hybrid else 2700
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('%dmin fine/readout frozen stream'%(budget//60))));signal.alarm(budget)
     try:worker(a,out)
