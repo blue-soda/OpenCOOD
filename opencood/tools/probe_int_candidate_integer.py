@@ -13,14 +13,26 @@ def worker(a,out):
     pc=json.loads((prior/'contract.json').read_text());cc=json.loads((prior/'calibration.json').read_text())
     for k in ('checkpoint_sha256','protected_checkpoint_sha256','initialization_sha256'):assert pc[k]==identity[k]
     assert tuple(pc['candidate_prefixes'])==CANDIDATE_PREFIXES and cc['relative_quantum']==.125 and cc['floor']==1e-4
-    selected=rows[512:544];assert len(selected)==32 and [r['frame'] for r in selected]==pc['evaluation_frames'][:32]
+    total=a.validation_prefix or 32
+    selected=rows[:total] if a.validation_prefix else rows[512:544]
+    assert len(selected)==total
+    if a.validation_prefix:
+        gate=json.loads(Path(a.candidate_stream_verification).read_text())
+        assert gate['status']=='VERIFIED' and gate['run']=='R-243' and gate['scans']==32
+        assert gate['checkpoint_sha256']==identity['checkpoint_sha256'] and gate['candidate_verification_sha256']==digest(Path(a.candidate_verification))
+        # Arithmetic admission only: require each actual integer implementation
+        # to use fewer candidate MACs than its matched dense reference. No AP gate.
+        dense_mac=gate['metrics']['dense']['candidate_fp64_reference_flops_mean']/2
+        assert all(gate['metrics'][n]['candidate_integer_macs_mean']<dense_mac for n in ('static','delta'))
+    else:
+        assert [r['frame'] for r in selected]==pc['evaluation_frames'][:32]
     assert not set(pc['calibration_frames'])&set(pc['evaluation_frames'])
     models=dict(control=FineReadoutIntegerDetector(source,cal['layers'],rc['quanta'],'hybrid',False).cuda().eval())
     for mode in ('dense','static','delta'):
         models[mode]=CandidateIntegerDetector(source,cal['layers'],rc['quanta'],cc['layers'],mode,True).cuda().eval()
     freeze([base]+list(models.values()));hashes={n:model_digest(m) for n,m in models.items()}
-    contract=dict(**identity,candidate_verification_sha256=digest(Path(a.candidate_verification)),candidate_calibration_sha256=digest(prior/'calibration.json'),candidate_prefixes=CANDIDATE_PREFIXES,frames=[r['frame'] for r in selected],scans=32,candidate_modes=['dense','static','delta'],fine_policy=FINE_POLICY,
-        boundary='Fixed train512:544 frozen own-state streams. Existing hybrid fine/implicit readout in all arms; only 15 candidate Conv inputs/weights newly quantized. Dense FP64, real static integer and real delta integer candidates must agree exactly in task/prediction/n/A. Original ANN-derived calibration frozen, no policy selection. Gates, protected refresh candidates, nonlinearities and warp unchanged. Candidate references survive skipped refreshes and reset on scene/gap/start. No AP, timing or training, no independent task membrane advantage. Source training-adapted models are not used; task and execution state distinct. Audit scratch reported separately from deployment state.')
+    contract=dict(**identity,candidate_verification_sha256=digest(Path(a.candidate_verification)),candidate_calibration_sha256=digest(prior/'calibration.json'),candidate_stream_verification_sha256=digest(Path(a.candidate_stream_verification)) if a.validation_prefix else None,candidate_prefixes=CANDIDATE_PREFIXES,frames=[r['frame'] for r in selected],scans=total,frame_scope='validation_prefix' if a.validation_prefix else 'train32',candidate_modes=['dense','static','delta'],fine_policy=FINE_POLICY,
+        boundary=('Fixed validation-prefix512' if a.validation_prefix else 'Fixed train512:544')+' frozen own-state streams. Existing hybrid fine/implicit readout in all arms; only 15 candidate Conv inputs/weights newly quantized. Dense FP64, real static integer and real delta integer candidates must agree exactly in task/prediction/n/A. Original ANN-derived calibration frozen, no policy selection. Gates, protected refresh candidates, nonlinearities and warp unchanged. Candidate references survive skipped refreshes and reset on scene/gap/start. No AP, timing or training, no independent task membrane advantage. Source training-adapted models are not used; task and execution state distinct. Audit scratch reported separately from deployment state.')
     write_json(out/'contract.json',contract)
     states={n:None for n in models};base_state=None;records=[];_,stream=loader(selected,cfg,0,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
@@ -44,12 +56,12 @@ def worker(a,out):
                     if leaf.audit is not None:assert all(torch.equal(a,b) for a,b in zip(leaf.audit,other.audit))
             for name,m in models.items():
                 if name!='control':m.clear_audit()
-            records.append(row);log.write(json.dumps(row)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=32))
+            records.append(row);log.write(json.dumps(row)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=total))
     assert all(model_digest(m)==hashes[n] for n,m in models.items())
     result=metrics(models,records)
     for name,m in result.items():
         for key in ('candidate_fp64_reference_flops','candidate_integer_macs','candidate_unit_spike_ac','candidate_cache_bytes'):
-            m[key+'_mean']=sum(r['arms'][name][key] for r in records)/32
+            m[key+'_mean']=sum(r['arms'][name][key] for r in records)/total
         m['cache_bytes_min']=min(r['arms'][name]['cache_bytes'] for r in records);m['cache_bytes_max']=max(r['arms'][name]['cache_bytes'] for r in records)
     write_json(out/'report.json',dict(status='COMPLETED',metrics=result,weights_unchanged=True,integer_predictions_bit_exact=True,integer_task_states_exact=True,integer_inputs_accumulators_exact=True,trained=False,ap_evaluated=False,timing_valid=False))
     write_json(out/'status.json',dict(status='COMPLETED'))
@@ -58,8 +70,12 @@ def worker(a,out):
 def main():
     p=argparse.ArgumentParser()
     for n in ARGUMENTS+('candidate-verification','candidate-source'):p.add_argument('--'+n,required=True)
-    a=p.parse_args();a.validation_prefix=0;out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
-    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('45min candidate integer engineering')));signal.alarm(2700)
+    p.add_argument('--validation-prefix',type=int,choices=(0,512),default=0);p.add_argument('--candidate-stream-verification')
+    a=p.parse_args()
+    if a.validation_prefix and not a.candidate_stream_verification:p.error('Candidate stream verification required for validation-prefix512')
+    out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
+    budget=5400 if a.validation_prefix else 2700
+    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('%dmin candidate integer engineering'%(budget//60))));signal.alarm(budget)
     try:worker(a,out)
     except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
 if __name__=='__main__':main()
