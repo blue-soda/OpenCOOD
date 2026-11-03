@@ -14,6 +14,10 @@ class CausalReadoutQAT(ChangeEncodedReadout):
     def __init__(self,source,quanta,enabled,fast_eval=False):
         super().__init__(source,quanta);self.enabled=bool(enabled);self.fast_eval=bool(fast_eval);self.last_reference_flops=0;self.last_fp32_reference_flops=0;self.last_logical_reference_flops=0;self.last_bounds=[]
 
+    def observe_integer_inputs(self,index,layer,inputs):
+        """Optional diagnostic/objective observer; default has no execution state."""
+        pass
+
     def forward(self,x):
         if self.training:raise ValueError('BN statistics must remain frozen')
         self.last_reference_flops=0;self.last_fp32_reference_flops=0;self.last_logical_reference_flops=0;self.last_bounds=[];i=0
@@ -22,6 +26,7 @@ class CausalReadoutQAT(ChangeEncodedReadout):
             quantum=getattr(self,'quantum_%d'%i).double();normalized=x.double()/quantum;rounded=torch.round(normalized).detach()
             if not bool(torch.isfinite(rounded).all()) or float(rounded.abs().max())>=2**31:raise ValueError('Input integer range exceeded')
             inputs=rounded+(normalized-normalized.detach())
+            self.observe_integer_inputs(i,layer,inputs)
             folded=layer.weight.double()*quantum.reshape(1,-1,1,1);scale=folded.detach().abs().flatten(1).amax(1).clamp_min(1e-12)/32767
             weight_normalized=folded/scale.reshape(-1,1,1,1);weight_rounded=torch.round(weight_normalized).detach();weight=weight_rounded+(weight_normalized-weight_normalized.detach())
             bound=int(weight_rounded.abs().flatten(1).sum(1).max())*int(rounded.abs().max())
