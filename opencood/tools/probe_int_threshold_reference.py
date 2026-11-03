@@ -43,7 +43,8 @@ def worker(a,out):
             assert all(torch.equal(preds['implicit'][k],preds['threshold'][k]) for k in preds['implicit'])
             assert all(torch.equal(states['implicit'][k],states['threshold'][k]) for k in base.state_keys)
             assert torch.equal(states['implicit']['readout'][0],states['threshold']['readout'][0]) and all(torch.equal(a,b) for a,b in zip(states['implicit']['readout_accumulators'],states['threshold']['readout_accumulators']))
-            for k,value in row['arms']['implicit']['events'].items():assert row['arms']['threshold']['events'][k]==value
+            for k,value in row['arms']['implicit']['events'].items():
+                if k!='storage_policy':assert row['arms']['threshold']['events'][k]==value
             decoder=models['threshold'].core.readout
             if decoder.reference_audit is not None:
                 reference=models['implicit'].core.readout.reconstruct_references(previous['readout'],previous['readout_accumulators'])[1:]

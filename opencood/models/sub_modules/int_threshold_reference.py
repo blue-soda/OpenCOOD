@@ -90,6 +90,7 @@ class ThresholdImplicitReferenceReadout(ImplicitReferenceIntegerReadout):
             threshold_float_fallback_elements=sum(z['float_fallback_elements'] for z in self.threshold_step),
             threshold_build_float_elements=self.threshold_build_elements,
             threshold_reference_audit_bytes=sum(v.numel()*v.element_size() for v in self.reference_audit or []),
+            storage_policy='Only external n and all compact A persist; old internal n uses bounded integer thresholds with original float fallback. Derived static tables are charged separately.',
             reference_decoder='Integer monotone lookup for old internal n; fixed geometry, int32 tables, full float layer fallback on out-of-range values. Current decode remains float; tables are static overhead, no task-memory benefit or speed claim.')
         return result
 
