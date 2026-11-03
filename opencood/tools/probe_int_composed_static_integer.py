@@ -50,6 +50,13 @@ def worker(a,out):
     prefix_source=Path(a.joint_prefix_source)
     for n,h in prefix['source_sha256'].items():assert digest(prefix_source/n)==h
     prefix_gold=[json.loads(x) for x in (prefix_source/'frames.jsonl').read_text().splitlines()];assert len(prefix_gold)==512
+    composed_gold=None
+    if total==512:
+        cv=json.loads(Path(a.composed_verification).read_text());assert cv['status']=='VERIFIED' and cv['run']=='R-258' and cv['scans']==32
+        assert cv['joint_prefix_verification_sha256']==digest(Path(a.joint_prefix_verification)) and cv['readout_static_verification_sha256']==digest(Path(a.readout_static_verification))
+        cp=Path(a.composed_source)
+        for n,h in cv['source_sha256'].items():assert digest(cp/n)==h
+        composed_gold=[json.loads(x) for x in (cp/'frames.jsonl').read_text().splitlines()];assert len(composed_gold)==32
     assert not set(pc['calibration_frames'])&set(pc['evaluation_frames'])
     models=dict(control=FineReadoutIntegerDetector(source,cal['layers'],rc['quanta'],'hybrid',False).cuda().eval())
     modes=('static',)
@@ -60,6 +67,7 @@ def worker(a,out):
     contract=dict(**identity,candidate_verification_sha256=digest(Path(a.candidate_verification)),candidate_calibration_sha256=digest(candidate_source/'calibration.json'),candidate_prefix_verification_sha256=digest(Path(a.candidate_prefix_verification)),encoder_stream_verification_sha256=digest(Path(a.encoder_stream_verification)),candidate_prefixes=CANDIDATE_PREFIXES,encoder_verification_sha256=digest(Path(a.encoder_verification)),encoder_calibration_sha256=digest(prior/'calibration.json'),encoder_prefixes=ENCODER_PREFIXES,frames=[r['frame'] for r in selected],scans=total,frame_scope='validation_prefix' if a.validation_prefix else 'train32',joint_stream_verification_sha256=digest(Path(a.joint_stream_verification)) if a.validation_prefix else None,encoder_modes=['dense','static','delta'],fine_policy=FINE_POLICY,
         boundary='Fixed validation prefix; control and joint-static replay R250. Composed adds static sparse readout refresh to joint35 static, retaining fine hybrid and ordinary implicit reader. Frozen original R139/initrank128/quanta/P4. Exact paired prediction, task, fine/readout/candidate/encoder nA and storage. Typed arithmetic measured directly, no addition of marginal savings. No AP, timing, training or independent membrane claim.')
     contract.update(encoder_modes=['static','composed'],joint_prefix_verification_sha256=digest(Path(a.joint_prefix_verification)),readout_static_verification_sha256=digest(Path(a.readout_static_verification)))
+    contract['composed_verification_sha256']=digest(Path(a.composed_verification)) if total==512 else None
     write_json(out/'contract.json',contract)
     states={n:None for n in models};base_state=None;records=[];_,stream=loader(selected,cfg,0,303)
     with torch.no_grad(),(out/'frames.jsonl').open('x',buffering=1) as log:
@@ -76,6 +84,7 @@ def worker(a,out):
                     values['logical_core_conv_flops']+=2*sum(z['dense_mac'] for z in entries.values())
                 assert values['logical_core_conv_flops']==(231067468800 if info['full_refresh'] else 105679929600)
                 row['arms'][name]=values
+            if composed_gold is not None and index<32:assert row==composed_gold[index]
             gold=prefix_gold[index];assert row['frame']==gold['frame']
             for n in ('control','static'):assert row['arms'][n]==gold['arms'][n]
             for name in ('composed',):
@@ -111,7 +120,9 @@ def main():
     p.add_argument('--readout-static-verification',required=True)
     p.add_argument('--validation-prefix',type=int,choices=(32,512),default=32);p.add_argument('--joint-stream-verification')
     for n in ('joint-prefix-verification','joint-prefix-source'):p.add_argument('--'+n)
+    p.add_argument('--composed-verification');p.add_argument('--composed-source')
     a=p.parse_args()
+    if a.validation_prefix==512 and not (a.composed_verification and a.composed_source):p.error('Verified composed32 source required')
     if a.validation_prefix and not a.joint_stream_verification:p.error('Joint32 proof required for validation512')
     if not a.joint_prefix_verification or not a.joint_prefix_source:p.error('Composition requires verified joint512 source')
     out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
