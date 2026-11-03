@@ -11,7 +11,9 @@ from opencood.models.sub_modules.int_integer_event_reference import folded_integ
 
 
 class IntegerReadout(ChangeEncodedReadout):
-    def __init__(self,source,quanta,sparse):
+    def __init__(self,source,quanta,sparse,sparse_refresh=False):
+        if sparse_refresh and not sparse:raise ValueError('Static refresh requires sparse execution')
+        self.sparse_refresh=bool(sparse_refresh)
         super().__init__(source,quanta);self.sparse=bool(sparse);self.previous_accumulators=None;self.next_accumulators=None
         for i,conv in enumerate(m for m in self.layers if isinstance(m,nn.Conv2d)):
             weight,scale=folded_integer_weights(conv,getattr(self,'quantum_%d'%i))
@@ -26,10 +28,11 @@ class IntegerReadout(ChangeEncodedReadout):
             quantum=getattr(self,'quantum_%d'%i);weight=getattr(self,'integer_weight_%d'%i);scale=getattr(self,'output_scale_%d'%i)
             inputs=integer_input(x,quantum);h,w=x.shape[-2:];kernel=layer.kernel_size[0];dense_mac=h*w*layer.in_channels*layer.out_channels*kernel*kernel
             refresh=self.refresh or self.previous is None
-            delta=torch.zeros_like(inputs) if refresh else inputs-self.previous[i]
-            if self.sparse and not refresh:
-                if self.previous_accumulators is None:raise ValueError('Missing integer accumulator state')
-                update,execution=sparse_integer_delta(layer,delta,weight);acc=self.previous_accumulators[i]+update
+            delta=(inputs if self.sparse_refresh else torch.zeros_like(inputs)) if refresh else inputs-self.previous[i]
+            if self.sparse and (not refresh or self.sparse_refresh):
+                if not refresh and self.previous_accumulators is None:raise ValueError('Missing integer accumulator state')
+                update,execution=sparse_integer_delta(layer,delta,weight)
+                acc=update if refresh else self.previous_accumulators[i]+update
                 reference_bound=0;fp64_flops=0;integer_macs=execution['executed_macs'];reference_calls=0
             else:
                 acc,reference_bound=dense_integer_reference(layer,inputs,weight);execution={};fp64_flops=2*dense_mac;integer_macs=0;reference_calls=1
@@ -39,11 +42,11 @@ class IntegerReadout(ChangeEncodedReadout):
             fanout=F.conv2d(x.new_ones(1,1,h,w),x.new_ones(1,1,kernel,kernel),padding=kernel//2).to(torch.int64)
             active=delta!=0;weighted=int((active.to(torch.int64)*fanout).sum())*layer.out_channels;units=int((delta.abs()*fanout).sum())*layer.out_channels
             records.append(dict(input_channels=layer.in_channels,output_channels=layer.out_channels,height=h,width=w,kernel=kernel,dense_mac=dense_mac,refresh=refresh,
-                refresh_dense_mac=dense_mac if refresh else 0,weighted_event_mac=weighted,unit_spike_ac=units,nonzero_events=int(active.sum()),unit_spikes=int(delta.abs().sum()),
+                refresh_dense_mac=dense_mac if refresh and not self.sparse_refresh else 0,weighted_event_mac=weighted,unit_spike_ac=units,nonzero_events=int(active.sum()),unit_spikes=int(delta.abs().sum()),
                 actual_fp64_conv_flops=fp64_flops,actual_integer_macs=integer_macs,dense_reference_calls=reference_calls,reference_absolute_bound=reference_bound,
                 event_absolute_bound=execution.get('absolute_accumulation_bound',0),integer_weight_bytes=weight.numel()*weight.element_size(),scale_bytes=scale.numel()*scale.element_size(),
                 max_input_integer=int(inputs.abs().max()),quantization_error_in_quanta=float((x.double()/quantum.double()-inputs.double()).abs().max())))
-            if self.sparse and not refresh:assert integer_macs==weighted
+            if self.sparse and (not refresh or self.sparse_refresh):assert integer_macs==weighted
             states.append(inputs.detach());accumulators.append(acc.detach());x=(acc.double()*scale.reshape(1,-1,1,1)).to(x.dtype)
             if layer.bias is not None:x=x+layer.bias.reshape(1,-1,1,1)
             i+=1
