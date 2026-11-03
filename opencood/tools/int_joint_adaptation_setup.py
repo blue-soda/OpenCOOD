@@ -42,7 +42,8 @@ def prepare(a,out):
     exports={};trained_hashes={};frozen=frozen_digest(source)
     for name in ('ann','qat'):
         path=lp/(name+'_final.pth');assert digest(path)==lv['training'][name]['checkpoint_sha256'];saved=torch.load(path,map_location='cpu')
-        assert saved['contract']==lc and saved['mode']==name and saved['updates']==lc['expected_update_frames']
+        saved_contract=dict(saved['contract']);saved_contract['trainable_prefixes']=list(saved_contract['trainable_prefixes'])
+        assert saved_contract==lc and saved['mode']==name and saved['updates']==lc['expected_update_frames']
         model=copy.deepcopy(source);assert load_state_update_targets(model,saved['targets'])==2449664
         assert frozen_digest(model)==frozen and model_digest(model)!=model_digest(source)
         exports[name]=model.eval();trained_hashes[name]=digest(path)
