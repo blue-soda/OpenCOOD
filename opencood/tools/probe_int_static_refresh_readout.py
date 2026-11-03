@@ -1,4 +1,4 @@
-"""Fixed32 equal-quantization replacement of readout refresh initialization."""
+"""Gated fixed-prefix equal-quantization replacement of readout initialization."""
 from opencood.tools.int_joint_adaptation_setup import *
 from opencood.models.sub_modules.int_static_refresh_readout import StaticRefreshReadoutDetector
 
@@ -12,13 +12,19 @@ def worker(a,out):
     prior=Path(a.joint_source)
     for n,h in gate['source_sha256'].items():assert digest(prior/n)==h
     gold=[json.loads(x) for x in (prior/'frames.jsonl').read_text().splitlines()]
-    if a.validation_prefix:assert len(gold)==5794;gold=gold[:32]
-    selected=rows[:32] if a.validation_prefix else rows[512:544];assert len(selected)==len(gold)==32
+    total=a.validation_prefix or 32
+    if a.validation_prefix:assert len(gold)==5794;gold=gold[:total]
+    selected=rows[:total] if a.validation_prefix else rows[512:544];assert len(selected)==len(gold)==total
+    if total==512:
+        prefix=json.loads(Path(a.prefix_verification).read_text())
+        assert prefix['status']=='VERIFIED' and prefix['run']=='R-253' and prefix['scans']==32
+        assert prefix['joint_verification_sha256']==digest(Path(a.joint_verification))
+        for key in ('checkpoint_sha256','calibration_sha256','readout_calibration_sha256'):assert prefix[key]==identity[key]
     assert [r['frame'] for r in selected]==[r['frame'] for r in gold]
     models=dict(control=FineReadoutIntegerDetector(source,cal['layers'],rc['quanta'],'hybrid',True).cuda().eval(),static_refresh=StaticRefreshReadoutDetector(source,cal['layers'],rc['quanta'],True).cuda().eval())
     freeze([base]+list(models.values()));hashes={n:model_digest(m) for n,m in models.items()}
-    contract=dict(**identity,joint_verification_sha256=digest(Path(a.joint_verification)),frames=[r['frame'] for r in selected],scans=32,frame_scope='validation_prefix32' if a.validation_prefix else 'train512:544',refresh_period=source.period,max_age=source.max_age,
-        boundary=('Fixed validation first32, control replays R214. ' if a.validation_prefix else 'Fixed train512:544, control replays R209. ')+'Original R139 protected weights/initial rank128 and ANN quanta. Static refresh initializes readout A from sparse current integer inputs instead of dense FP64 reference; ordinary delta path unchanged. Exact outputs/task/fine n-A/readout n-A and storage required. No new task membrane, training, AP or timing; learned exports loaded for provenance then discarded.')
+    contract=dict(**identity,joint_verification_sha256=digest(Path(a.joint_verification)),prefix_verification_sha256=digest(Path(a.prefix_verification)) if total==512 else None,frames=[r['frame'] for r in selected],scans=total,frame_scope='validation_prefix%d'%total if a.validation_prefix else 'train512:544',refresh_period=source.period,max_age=source.max_age,
+        boundary=('Fixed validation first%d, control replays R214. '%total if a.validation_prefix else 'Fixed train512:544, control replays R209. ')+'Original R139 protected weights/initial rank128 and ANN quanta. Static refresh initializes readout A from sparse current integer inputs instead of dense FP64 reference; ordinary delta path unchanged. Exact outputs/task/fine n-A/readout n-A and storage required. No new task membrane, training, AP or timing; learned exports loaded for provenance then discarded.')
     assert source.period==4 and source.max_age==.45
     write_json(out/'contract.json',contract)
     states={n:None for n in models};base_state=None;records=[];_,stream=loader(selected,cfg,0,303)
@@ -45,8 +51,8 @@ def worker(a,out):
                 if not old['refresh']:assert old_layer==new_layer
             if not old['refresh']:assert old['readout_events']==new['readout_events']
             for m in models.values():m.clear_audit()
-            records.append(row);log.write(json.dumps(row)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=32))
-    assert len(records)==32 and all(model_digest(m)==hashes[n] for n,m in models.items())
+            records.append(row);log.write(json.dumps(row)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=total))
+    assert len(records)==total and all(model_digest(m)==hashes[n] for n,m in models.items())
     write_json(out/'report.json',dict(status='COMPLETED',metrics=metrics(models,records),weights_unchanged=True,predictions_bit_exact=True,task_states_exact=True,integer_states_exact=True,storage_exact=True,control_replayed=True,trained=False,ap_evaluated=False,timing_valid=False))
     write_json(out/'status.json',dict(status='COMPLETED'))
 
@@ -54,10 +60,12 @@ def worker(a,out):
 def main():
     p=argparse.ArgumentParser()
     for n in ARGUMENTS+('joint-verification','joint-source'):p.add_argument('--'+n,required=True)
-    p.add_argument('--validation-prefix',type=int,choices=(0,32),default=0)
+    p.add_argument('--validation-prefix',type=int,choices=(0,32,512),default=0);p.add_argument('--prefix-verification')
     a=p.parse_args()
+    if a.validation_prefix==512 and not a.prefix_verification:p.error('Verified R253 prefix required for512')
     out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
-    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('45min static refresh fixed32')));signal.alarm(2700)
+    budget=5400 if a.validation_prefix==512 else 2700
+    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('%dmin static refresh prefix'%(budget//60))));signal.alarm(budget)
     try:worker(a,out)
     except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
 
