@@ -49,7 +49,7 @@ def worker(a,out):
             for n in ('fine_static','fine_hybrid'):
                 assert all(torch.equal(preds['fine_dense'][k],preds[n][k]) for k in preds[n])
                 assert all(torch.equal(states['fine_dense'][k],states[n][k]) for k in base.state_keys)
-                assert torch.equal(states['fine_dense']['readout'][0],states[n]['readout'][0]) and all(torch.equal(a,b.to(a.dtype)) for a,b in zip(states['fine_dense']['readout_accumulators'],states[n]['readout_accumulators']))
+                assert torch.equal(states['fine_dense']['readout'][0],states[n]['readout'][0].to(states['fine_dense']['readout'][0].dtype)) and all(torch.equal(a,b.to(a.dtype)) for a,b in zip(states['fine_dense']['readout_accumulators'],states[n]['readout_accumulators']))
                 for name,leaf in models[n].core.observation.leaves().items():assert all(torch.equal(a,b) for a,b in zip(reference[name].audit,leaf.audit))
             for n in ('fine_dense','fine_static','fine_hybrid'):models[n].clear_audit()
             records.append(row);log.write(json.dumps(row)+'\n');write_json(out/'status.json',dict(status='RUNNING',scans=len(records),total=total))

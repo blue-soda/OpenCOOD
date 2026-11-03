@@ -26,7 +26,7 @@ class FineReadoutIntegerTests(unittest.TestCase):
                     r.previous=rs[i];r.previous_accumulators=acc[i];r.refresh=step in (0,3,5,8)
                     outputs.append(r(z));rs[i]=r.next_state;acc[i]=r.next_accumulators
                 self.assertTrue(torch.equal(features[0],features[1]));self.assertTrue(torch.equal(outputs[0],outputs[1]))
-                self.assertTrue(torch.equal(rs[0][0],rs[1][0]))
+                self.assertTrue(torch.equal(rs[0][0],rs[1][0].to(rs[0][0].dtype)))
                 self.assertTrue(all(torch.equal(a,b.to(a.dtype)) for a,b in zip(acc[0],acc[1])))
                 self.assertEqual(len(rs[1]),1)
 
