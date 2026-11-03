@@ -15,6 +15,20 @@ from opencood.models.sub_modules.int_multiscale_refresh import ProtectedMultisca
 STATE_QAT_PREFIXES=('core.coarse_update.','core.deep_update.','core.coarse_light.','core.deep_light.')
 
 
+def load_state_update_targets(model, targets):
+    """Validate every target before changing any parameter; keep frozen weights."""
+    expected={n:p for n,p in model.named_parameters() if n.startswith(STATE_QAT_PREFIXES)}
+    if not expected or set(targets)!=set(expected):raise ValueError('Exact ordinary-state target keys required')
+    for n,p in expected.items():
+        value=targets[n]
+        if not isinstance(value,torch.Tensor) or value.shape!=p.shape or value.dtype!=p.dtype:
+            raise ValueError('Target shape/dtype mismatch: '+n)
+        if not bool(torch.isfinite(value).all()):raise ValueError('Nonfinite target: '+n)
+    with torch.no_grad():
+        for n,p in expected.items():p.copy_(targets[n])
+    return sum(p.numel() for p in expected.values())
+
+
 def causal_update_indices(rows, refresh_reasons, window_ends):
     if len(rows)!=len(refresh_reasons):raise ValueError('Schedule length mismatch')
     ordinary=eligible=False;result=[]
