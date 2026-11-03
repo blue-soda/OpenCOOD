@@ -56,9 +56,10 @@ def worker(a,out):
 def main():
     p=argparse.ArgumentParser()
     for n in ('root','checkpoint','audit','verification','trained','compact-verification','initialization','fine-verification','primitive-verification','calibration','output'):p.add_argument('--'+n,required=True)
-    p.add_argument('--validation-prefix',type=int,choices=(0,512),default=0);p.add_argument('--fine-stream-verification')
+    p.add_argument('--validation-prefix',type=int,choices=(0,512,5794),default=0);p.add_argument('--fine-stream-verification')
     a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False);write_json(out/'status.json',dict(status='RUNNING',phase='tests'))
-    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('45min fine integer frozen stream')));signal.alarm(5400 if a.validation_prefix else 2700)
+    budget=14400 if a.validation_prefix==5794 else (5400 if a.validation_prefix else 2700)
+    signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(TimeoutError('%dmin fine integer frozen stream'%(budget//60))));signal.alarm(budget)
     try:worker(a,out)
     except Exception as exc:write_json(out/'status.json',dict(status='FAILED',error=repr(exc)));raise
 if __name__=='__main__':main()
