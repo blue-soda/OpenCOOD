@@ -45,11 +45,20 @@ def widen_inplace(module):
     for name, child in list(module.named_children()):
         target = int(name) if isinstance(module, nn.Sequential) else name
         if isinstance(child, (nn.Conv2d, nn.ConvTranspose2d)):
-            new = type(child)(_widen_channels(child.in_channels),
-                              _widen_channels(child.out_channels),
-                              child.kernel_size, child.stride, child.padding,
-                              child.dilation, child.groups,
-                              child.bias is not None, child.padding_mode)
+            if isinstance(child, nn.ConvTranspose2d):
+                new = nn.ConvTranspose2d(_widen_channels(child.in_channels),
+                                         _widen_channels(child.out_channels),
+                                         child.kernel_size, child.stride, child.padding,
+                                         output_padding=child.output_padding,
+                                         groups=child.groups, bias=child.bias is not None,
+                                         dilation=child.dilation,
+                                         padding_mode=child.padding_mode)
+            else:
+                new = nn.Conv2d(_widen_channels(child.in_channels),
+                                _widen_channels(child.out_channels),
+                                child.kernel_size, child.stride, child.padding,
+                                child.dilation, child.groups,
+                                child.bias is not None, child.padding_mode)
             _expand_conv(child, new)
             if isinstance(module, nn.Sequential):
                 module[target] = new
