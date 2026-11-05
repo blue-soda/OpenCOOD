@@ -137,7 +137,7 @@ def main():
             for c in converters:c.begin()
             optimizer.zero_grad(set_to_none=True);output=model(batch['ego']);routes=[c.finish() for c in converters]
             loss=criterion(output,batch['ego']['label_dict']);assert torch.isfinite(loss);loss.backward()
-            gradients=dict(BEV=[c.gradient_summary() for c in stages],PFN=pillar.gradient_summary()) if a.smoke else None
+            gradients=dict(BEV=[c.gradient_summary() for c in stages],PFN=pillar.gradient_summary()) if (a.smoke and not a.spiking_io) else None
             if a.smoke and synapse_names:
                 gradients['synapse']=[dict(nonzero=int(torch.count_nonzero(v.grad)),elements=v.numel(),l1=float(v.grad.abs().sum())) for v in model.snn_synapse.parameters()]
             norm=torch.nn.utils.clip_grad_norm_(parameters,10.,error_if_nonfinite=True)
