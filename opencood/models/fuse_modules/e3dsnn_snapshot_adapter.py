@@ -22,6 +22,9 @@ class SnapshotAdapter:
         self.snapshot_budget = args['snapshot']['budget_bytes']
         self.snapshot_family = args['snapshot']['family']
         self.snapshot_selection = args['snapshot'].get('selection', 'actual_bytes')
+        self.snapshot_order = args['snapshot'].get('order', 'time')
+        if self.snapshot_order not in ('time', 'block'):
+            raise ValueError('Unknown snapshot event order')
         self.snapshot_event_quotas = {int(k):v for k,v in args['snapshot'].get('event_quotas', {}).items()}
         self.snapshot_measure_bytes = False
         if self.snapshot_selection not in ('actual_bytes', 'event_quota'):
@@ -94,7 +97,7 @@ class SnapshotAdapter:
                 outputs.append(self.detect_bev_sample(ego[i:i+1].flatten(1,2),i));sizes.append(0);units.append(0)
                 continue
             if self.snapshot_family=='if8':
-                stream=integrate_and_fire(self.snapshot_drive(sources[i:i+1]),8)
+                stream=integrate_and_fire(self.snapshot_drive(sources[i:i+1]),8,order_mode=self.snapshot_order)
                 full=stream.drive if quota_mode else stream.prefix(len(stream.addresses))
                 scales=full.new_ones((1,32,1,1,1))
                 order=dict(stream=stream)

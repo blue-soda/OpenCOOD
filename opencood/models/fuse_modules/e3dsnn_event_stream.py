@@ -57,7 +57,30 @@ class IFStream:
         return _HardCounts.apply(soft, hard)
 
 
-def integrate_and_fire(drive, max_spikes=8):
+def _block_round_robin(addresses, times, shape, block=8):
+    channels, depth, height, width = shape
+    a = addresses.astype(np.int64).copy()
+    x = a % width; a //= width
+    y = a % height; a //= height
+    z = a % depth
+    blocks_per_row = (width + block - 1) // block
+    key = (y // block) * blocks_per_row + (x // block)
+    order = np.argsort(times, kind='stable')
+    groups = {}
+    for index in order:
+        groups.setdefault(int(key[index]), []).append(int(index))
+    queues = [groups[k] for k in sorted(groups)]
+    picked = []
+    rank = 0
+    while len(picked) < len(times):
+        for queue in queues:
+            if rank < len(queue):
+                picked.append(queue[rank])
+        rank += 1
+    return np.asarray(picked, dtype=np.int64)
+
+
+def integrate_and_fire(drive, max_spikes=8, order_mode='time'):
     """One finite nonnegative CZYX frame; clamp is a declared safety ceiling."""
     if (drive.ndim != 5 or drive.shape[0] != 1 or
             any(n < 1 for n in drive.shape) or not torch.isfinite(drive).all() or
@@ -73,7 +96,12 @@ def integrate_and_fire(drive, max_spikes=8):
         addresses.append(active)
         times.append(ordinal / flat[active])
     addresses, times = np.concatenate(addresses), np.concatenate(times)
-    order = np.lexsort((addresses, times))
+    if order_mode == 'time':
+        order = np.lexsort((addresses, times))
+    elif order_mode == 'block':
+        order = _block_round_robin(addresses, times, bounded.shape[1:])
+    else:
+        raise ValueError('Unknown event order mode')
     return IFStream(bounded, addresses[order].astype('<u4'), times[order], max_spikes)
 
 
