@@ -29,6 +29,7 @@ def main():
     p.add_argument('--synapse-mode',choices=('none','stage','channel'),default='none')
     p.add_argument('--smoke',action='store_true')
     p.add_argument('--train-quotas',type=int,nargs=3,default=None)
+    p.add_argument('--spiking-io',action='store_true')
     a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
     sys.path.insert(0,str(Path(a.repo).resolve()));os.chdir(a.repo)
     import numpy as np
@@ -56,17 +57,24 @@ def main():
     install_synapse(model,a.synapse_mode,a.readout_thresholds)
     original=torch.load(str(checkpoint),map_location='cpu')
     model.load_state_dict(original,strict=True);model.cuda().eval()
+    spiking_names=[]
+    if a.spiking_io:
+        from cosdh_spiking_io import install as install_spiking
+        spiking_names=install_spiking(model,a.readout_thresholds)
     for v in model.parameters():v.requires_grad_(False)
     names=[]
     for name,module in model.named_modules():
-        conv=isinstance(module,torch.nn.Conv2d) and (name.startswith('backbone.blocks.') or (name.startswith('naive_compressor_list.') and '.decoder.' in name))
+        comp_conv=isinstance(module,torch.nn.Conv2d) and name.startswith('naive_compressor_list.') and ('.decoder.' in name or (a.spiking_io and '.encoder.synapse' in name))
+        conv=isinstance(module,torch.nn.Conv2d) and (name.startswith('backbone.blocks.') or comp_conv)
         pfn=name=='pillar_vfe.pfn_layers.0.linear' and isinstance(module,torch.nn.Linear)
         if conv or pfn:
             for suffix,v in module.named_parameters(recurse=False):v.requires_grad_(True);names.append(name+'.'+suffix)
     expected={'pillar_vfe.pfn_layers.0.linear.weight'}
     expected|={'backbone.blocks.%d.%d.weight'%(stage,1+3*i) for stage,n in enumerate((4,6,9)) for i in range(n)}
-    assert len(names)==32 and {n for n in names if not n.startswith('naive_compressor_list.')}==expected
-    assert len([n for n in names if n.startswith('naive_compressor_list.')])==12
+    assert {n for n in names if not n.startswith('naive_compressor_list.')}==expected
+    registered=[n for n in names if n.startswith('naive_compressor_list.')]
+    assert len(registered)==(6 if a.spiking_io else 12), registered
+    assert len(names)==len(expected)+len(registered)
     encoder_decoder_names=names[:]
     head_names=[]
     if a.adaptation_scope=='encoder_decoder_head':
@@ -107,7 +115,7 @@ def main():
     contract=dict(epochs=3,batch_size=1,seed=303,lr=1e-5,weight_decay=1e-4,optimizer='AdamW',grad_clip=10.,receiver=a.receiver,
         trainable_names=names,trainable_parameters=sum(v.numel() for v in parameters),encoder_paths=paths,
         adaptation_scope=a.adaptation_scope,encoder_decoder_names=encoder_decoder_names,head_names=head_names,
-        synapse_mode=a.synapse_mode,synapse_names=synapse_names,synapse_lr=1e-3 if synapse_names else None,
+        synapse_mode=a.synapse_mode,synapse_names=synapse_names,spiking_io=a.spiking_io,spiking_names=spiking_names,synapse_lr=1e-3 if synapse_names else None,
         total_parameters=sum(v.numel() for v in model.parameters()),
         scope='PFN linear weight,19 BEV convolution weights,12 compressor-decoder tensors; optional ANN downstream convolutions or registered bounded synaptic gains. All BN and latent compressor encoders frozen.',
         checkpoint_sha256=sha(checkpoint),train_split_sha256=sha(a.train_split),val_split_sha256=sha(a.val_split),
@@ -144,7 +152,7 @@ def main():
                 write(out/'progress.json',row)
                 with (out/'steps.jsonl').open('a') as f:f.write(json.dumps(row)+'\n')
             del output,loss,batch
-        state=model.state_dict();changed=[k for k,v in state.items() if not torch.equal(v.detach().cpu(),original[k])]
+        state=model.state_dict();changed=[k for k,v in state.items() if k not in original or not torch.equal(v.detach().cpu(),original[k])]
         assert changed and set(changed).issubset(names) and all(torch.isfinite(v).all() for v in parameters)
         if a.smoke:assert set(changed)==set(names),'All registered tensors must update in admission'
         history.append(dict(epoch=epoch,samples=len(order),loss=loss_sum/len(order),order_sha256=order_hash,changed_names=changed,frozen_tensors_unchanged=True))
