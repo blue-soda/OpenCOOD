@@ -8,7 +8,6 @@ is functionally identical to the base one before the first update.
 """
 from opencood.models.e3dsnn_single import AttributeConfig
 from opencood.models.e3dsnn_snapshot_highres import E3dsnnSnapshotHighres
-from opencood.models.sub_modules.e3dsnn.backbone_2d import BaseBEVBackbone_spike
 
 
 class E3dsnnSnapshotHighresWide(E3dsnnSnapshotHighres):
@@ -26,5 +25,8 @@ class E3dsnnSnapshotHighresWide(E3dsnnSnapshotHighres):
                               NUM_FILTERS=list(filters),
                               UPSAMPLE_STRIDES=[1, 2],
                               NUM_UPSAMPLE_FILTERS=list(upsample))
-        self.backbone_2d = BaseBEVBackbone_spike(cfg, in_ch)
+        # Keep the exact backbone family of the base model (the snapshot path
+        # replaces the spiking BEV with the small ANN BEV), so widening changes
+        # capacity only, not the activation family.
+        self.backbone_2d = type(self.backbone_2d)(cfg, in_ch)
         self.bev_filters = filters
