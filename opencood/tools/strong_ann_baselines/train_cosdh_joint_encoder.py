@@ -73,7 +73,7 @@ def main():
     expected|={'backbone.blocks.%d.%d.weight'%(stage,1+3*i) for stage,n in enumerate((4,6,9)) for i in range(n)}
     assert {n for n in names if not n.startswith('naive_compressor_list.')}==expected
     registered=[n for n in names if n.startswith('naive_compressor_list.')]
-    assert len(registered)==(6 if a.spiking_io else 12), registered
+    assert len(registered)==12, registered
     assert len(names)==len(expected)+len(registered)
     encoder_decoder_names=names[:]
     head_names=[]
