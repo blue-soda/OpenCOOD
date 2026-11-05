@@ -155,7 +155,7 @@ def main():
                 with (out/'steps.jsonl').open('a') as f:f.write(json.dumps(row)+'\n')
             del output,loss,batch
         state=model.state_dict();changed=[k for k,v in state.items() if k not in original or not torch.equal(v.detach().cpu(),original[k])]
-        assert changed and set(changed).issubset(names) and all(torch.isfinite(v).all() for v in parameters)
+        assert changed and set(changed).issubset(names) and all(torch.isfinite(v).all() for v in parameters), sorted(set(changed)-set(names))
         if a.smoke:assert set(changed)==set(names),'All registered tensors must update in admission'
         history.append(dict(epoch=epoch,samples=len(order),loss=loss_sum/len(order),order_sha256=order_hash,changed_names=changed,frozen_tensors_unchanged=True))
         write(out/'history.json',history)
