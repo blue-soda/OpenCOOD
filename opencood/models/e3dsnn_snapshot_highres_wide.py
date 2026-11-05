@@ -63,6 +63,7 @@ def widen_inplace(module, widen_out=True):
                                 child.kernel_size, child.stride, child.padding,
                                 child.dilation, child.groups,
                                 child.bias is not None, child.padding_mode)
+            new.train(child.training)
             _expand_conv(child, new)
             if isinstance(module, nn.Sequential):
                 module[target] = new
@@ -73,6 +74,7 @@ def widen_inplace(module, widen_out=True):
             new = nn.BatchNorm2d(feats, eps=child.eps, momentum=child.momentum,
                                  affine=child.affine,
                                  track_running_stats=child.track_running_stats)
+            new.train(child.training)
             _expand_bn(child, new)
             if isinstance(module, nn.Sequential):
                 module[target] = new
