@@ -142,7 +142,9 @@ def main():
                 gradients['synapse']=[dict(nonzero=int(torch.count_nonzero(v.grad)),elements=v.numel(),l1=float(v.grad.abs().sum())) for v in model.snn_synapse.parameters()]
             norm=torch.nn.utils.clip_grad_norm_(parameters,10.,error_if_nonfinite=True)
             assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in parameters)
-            if a.smoke:assert all(torch.count_nonzero(v.grad)>0 for v in parameters),'All registered tensors must receive gradients'
+            if a.smoke:
+                dead=[n for n,v in model.named_parameters() if v.requires_grad and (v.grad is None or torch.count_nonzero(v.grad)==0)]
+                assert not dead, dead
             optimizer.step();updates+=1;loss_sum+=float(loss.detach())
             if batch_index==1 or batch_index%25==0 or a.smoke:
                 row=dict(state='training',epoch=epoch,batch=batch_index,batches=len(order),optimizer_steps=updates,loss=float(loss.detach()),gradient_norm=float(norm),elapsed_seconds=time.time()-start,order_sha256=order_hash,
