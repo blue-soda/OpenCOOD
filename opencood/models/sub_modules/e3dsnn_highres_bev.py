@@ -28,5 +28,5 @@ class LocalCountDetail(nn.Module):
         return raw.tanh()
 
 
-def upsample_bev(bev):
-    return F.interpolate(bev, scale_factor=2, mode='bilinear', align_corners=False)
+def upsample_bev(bev, scale=2):
+    return F.interpolate(bev, scale_factor=scale, mode='bilinear', align_corners=False)

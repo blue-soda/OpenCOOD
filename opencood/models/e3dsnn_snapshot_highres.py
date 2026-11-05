@@ -5,6 +5,7 @@ The paired interpolation control uses the same head grid and pretrained layers.
 """
 from opencood.models.e3dsnn_snapshot_frontend import E3dsnnSnapshotFrontend
 from opencood.models.sub_modules.e3dsnn.backbone_3d import Multispike
+import torch.nn.functional as F
 from opencood.models.sub_modules.e3dsnn_highres_bev import LocalCountDetail, upsample_bev
 
 
@@ -19,6 +20,9 @@ class E3dsnnSnapshotHighres(E3dsnnSnapshotFrontend):
             raise ValueError('use_shallow_skip must be boolean')
         self.local_detail = LocalCountDetail(opts.get('hidden_channels', 128),
                                             opts.get('second_dilation', 1)) if self.use_shallow_skip else None
+        self.upsample_factor = int(opts.get('upsample_factor', 2))
+        if self.upsample_factor not in (2, 4):
+            raise ValueError('Head upsample factor must be 2 or 4')
         self.shallow_readout = Multispike()
         self._local_shallow = None
 
@@ -38,11 +42,14 @@ class E3dsnnSnapshotHighres(E3dsnnSnapshotFrontend):
 
     def _detect_highres(self, spatial, local):
         bev = self.backbone_2d({'spatial_features': spatial})['spatial_features_2d']
-        bev = upsample_bev(bev)
+        bev = upsample_bev(bev, self.upsample_factor)
         if self.use_shallow_skip:
-            if local is None or local.shape[0] != bev.shape[0] or local.shape[-2:] != bev.shape[-2:]:
+            if local is None or local.shape[0] != bev.shape[0]:
                 raise ValueError('Ego-only shallow count / head-grid mismatch')
-            bev = bev + self.local_detail(local)
+            detail = self.local_detail(local)
+            if detail.shape[-2:] != bev.shape[-2:]:
+                detail = F.interpolate(detail, size=bev.shape[-2:], mode='bilinear', align_corners=False)
+            bev = bev + detail
         return dict(psm=self.cls_head(bev), rm=self.reg_head(bev), dm=self.dir_head(bev))
 
     def detect_bev_sample(self, spatial, sample_index):
