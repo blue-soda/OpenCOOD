@@ -26,7 +26,8 @@ class SpikingEncoder(nn.Module):
             self.synapse.weight.copy_(conv.weight[:, :, k, k].unsqueeze(-1).unsqueeze(-1))
 
     def forward(self, x):
-        return self.synapse(x)
+        # Rate coding needs a nonnegative drive; this is the membrane input.
+        return torch.relu(self.synapse(x))
 
 
 class SpikingDecoder(nn.Module):
@@ -40,9 +41,9 @@ class SpikingDecoder(nn.Module):
         self.register_buffer('theta', theta.reshape(1, -1, 1, 1).clone())
 
     def forward(self, x):
-        current = self.synapse(x)
-        q = torch.floor(current / self.theta).clamp(0, self.steps) * self.theta
-        return current + (q - current).detach()
+        drive = torch.relu(self.synapse(x))
+        q = torch.floor(drive / self.theta).clamp(0, self.steps) * self.theta
+        return drive + (q - drive).detach()
 
 
 def install(model, readout_thresholds, steps=16):
