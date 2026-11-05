@@ -51,8 +51,9 @@ def install(model, readout_thresholds, steps=16):
     for stage, compressor in enumerate(model.naive_compressor_list):
         theta = torch.tensor(values['stages'][str(stage)]['range_p999'],
                              device=next(model.parameters()).device).reshape(-1) / float(steps)
-        compressor.encoder = SpikingEncoder(compressor.encoder[0])
-        compressor.decoder = SpikingDecoder(compressor.decoder[0], theta, steps)
+        device = compressor.encoder[0].weight.device
+        compressor.encoder = SpikingEncoder(compressor.encoder[0]).to(device)
+        compressor.decoder = SpikingDecoder(compressor.decoder[0], theta, steps).to(device)
         names.append('naive_compressor_list.%d.encoder.synapse.weight' % stage)
         names.append('naive_compressor_list.%d.decoder.synapse.weight' % stage)
     return names
