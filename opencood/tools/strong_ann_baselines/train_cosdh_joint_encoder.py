@@ -28,6 +28,7 @@ def main():
     p.add_argument('--adaptation-scope',choices=('encoder_decoder','encoder_decoder_head'),default='encoder_decoder')
     p.add_argument('--synapse-mode',choices=('none','stage','channel'),default='none')
     p.add_argument('--smoke',action='store_true')
+    p.add_argument('--train-quotas',type=int,nargs=3,default=None)
     a=p.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
     sys.path.insert(0,str(Path(a.repo).resolve()));os.chdir(a.repo)
     import numpy as np
@@ -95,7 +96,7 @@ def main():
                 dict(params=list(model.snn_synapse.parameters()),lr=1e-3)]
     optimizer=torch.optim.AdamW(groups,lr=1e-5,weight_decay=1e-4);criterion=train_utils.create_loss(cfg)
     paths=1 if a.receiver=='geometry' else 2
-    counts=CoSDHCounts(model,a.sender_thresholds,8,surrogate=True)
+    counts=CoSDHCounts(model,a.sender_thresholds,8,surrogate=True,quotas=a.train_quotas)
     readout=CoSDHReadout(model,a.readout_thresholds,'count16',surrogate=True)
     membrane=CoSDHMembrane(model,a.readout_thresholds,'local',16)
     stages=[CoSDHFrontStage(model,getattr(a,k+'_thresholds'),'count32',surrogate=True,audit_gradients=a.smoke,initial_voltage=v0,encoder_paths=paths) for k,v0 in [('front',0.),('second',.5),('third',0.)]]
@@ -113,7 +114,7 @@ def main():
         thresholds_sha256={k:sha(getattr(a,k+'_thresholds')) for k in ('sender','readout','front','second','third','pillar')},source_sha256=sha(__file__),
         preprocessing='4678 commontrain with inference preprocessing, no random augmentation; same seeded epoch permutation',
         selection='Fixed last epoch3; no intermediate AP or validation selection',surrogate='Exact IF forward; unit gradient inside calibrated range, zero outside',
-        no_wire=True,no_byte_statistics=True,all_BN_frozen=True)
+        no_wire=True,no_byte_statistics=True,all_BN_frozen=True,train_event_quotas=a.train_quotas)
     write(out/'contract.json',contract)
     def forbidden(*args,**kwargs):raise AssertionError('Training must not compress/decompress')
     zlib.compress=zlib.decompress=forbidden

@@ -35,8 +35,6 @@ def prefix_counts(rate, counts, quota):
 
 
 def quantize_remote(x, scale, steps, quota=None, surrogate=False):
-    if surrogate and quota is not None:
-        raise ValueError('Quota selection has no registered surrogate')
     if x.ndim != 4 or x.shape[0] != 2 or scale.shape != (x.shape[1], 1, 1):
         raise ValueError('Expected two agents and a per-channel scale')
     if not torch.isfinite(x).all() or not torch.isfinite(scale).all() or not (scale > 0).all():
@@ -48,6 +46,9 @@ def quantize_remote(x, scale, steps, quota=None, surrogate=False):
     counts = prefix_counts(rate, torch.floor(rate).clamp(0, steps), quota)
     result = x.clone()
     value = counts * theta
+    # Straight-through on the hard (possibly quota-truncated) counts: the
+    # selection is discrete, but the pre-count activation keeps a bounded
+    # surrogate so the sender can be adapted under a training-time budget.
     result[1] = _RemoteSurrogate.apply(x[1], value, scale) if surrogate else value
     assert torch.equal(result[0], x[0])
     return result, counts
