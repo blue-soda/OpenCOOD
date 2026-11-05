@@ -25,7 +25,9 @@ def _fold(conv, bn):
     with torch.no_grad():
         scale = _bn_scale(bn)
         weight = conv.weight.sum(dim=(2, 3)) * scale[:, None]
-        bias = bn.bias - bn.running_mean * scale
+        # Keep the rate coder in its responsive range: a folded BN bias can be
+        # strongly negative and would silence a whole stage at initialisation.
+        bias = bn.bias - bn.running_mean * scale + 1.0
     return weight, bias
 
 
@@ -50,7 +52,7 @@ class SpikingDecoder(nn.Module):
         w1, d1 = _fold(c1, b1)
         with torch.no_grad():
             weight = w1 @ w0
-            bias = w1 @ d0 + d1
+            bias = w1 @ d0 + d1 + 1.0
         self.synapse = nn.Conv2d(c0.in_channels, c1.out_channels, 1, bias=True)
         with torch.no_grad():
             self.synapse.weight.copy_(weight[:, :, None, None])
