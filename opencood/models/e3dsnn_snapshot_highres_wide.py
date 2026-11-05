@@ -40,22 +40,26 @@ def _expand_bn(old, new):
         new.running_var[:n].copy_(old.running_var)
 
 
-def widen_inplace(module):
-    """Rewrite every Conv2d/ConvTranspose2d/BatchNorm2d inside `module`."""
+def widen_inplace(module, widen_out=True):
+    """Rewrite every Conv2d/ConvTranspose2d/BatchNorm2d inside ``module``.
+
+    ``widen_out=False`` keeps output channels unchanged; used for the deblocks,
+    whose 128-channel outputs feed the fixed 256-channel head input.
+    """
     for name, child in list(module.named_children()):
         target = int(name) if isinstance(module, nn.Sequential) else name
+        grow = widen_out and name != 'deblocks'
         if isinstance(child, (nn.Conv2d, nn.ConvTranspose2d)):
+            out = _widen_channels(child.out_channels) if grow else child.out_channels
             if isinstance(child, nn.ConvTranspose2d):
-                new = nn.ConvTranspose2d(_widen_channels(child.in_channels),
-                                         _widen_channels(child.out_channels),
+                new = nn.ConvTranspose2d(_widen_channels(child.in_channels), out,
                                          child.kernel_size, child.stride, child.padding,
                                          output_padding=child.output_padding,
                                          groups=child.groups, bias=child.bias is not None,
                                          dilation=child.dilation,
                                          padding_mode=child.padding_mode)
             else:
-                new = nn.Conv2d(_widen_channels(child.in_channels),
-                                _widen_channels(child.out_channels),
+                new = nn.Conv2d(_widen_channels(child.in_channels), out,
                                 child.kernel_size, child.stride, child.padding,
                                 child.dilation, child.groups,
                                 child.bias is not None, child.padding_mode)
@@ -65,8 +69,8 @@ def widen_inplace(module):
             else:
                 setattr(module, target, new)
         elif isinstance(child, nn.BatchNorm2d):
-            new = nn.BatchNorm2d(_widen_channels(child.num_features),
-                                 eps=child.eps, momentum=child.momentum,
+            feats = _widen_channels(child.num_features) if grow else child.num_features
+            new = nn.BatchNorm2d(feats, eps=child.eps, momentum=child.momentum,
                                  affine=child.affine,
                                  track_running_stats=child.track_running_stats)
             _expand_bn(child, new)
@@ -75,7 +79,7 @@ def widen_inplace(module):
             else:
                 setattr(module, target, new)
         else:
-            widen_inplace(child)
+            widen_inplace(child, grow)
 
 
 class E3dsnnSnapshotHighresWide(E3dsnnSnapshotHighres):
