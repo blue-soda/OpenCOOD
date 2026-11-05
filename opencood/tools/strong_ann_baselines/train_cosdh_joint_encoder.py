@@ -105,7 +105,7 @@ def main():
     optimizer=torch.optim.AdamW(groups,lr=1e-5,weight_decay=1e-4);criterion=train_utils.create_loss(cfg)
     paths=1 if a.receiver=='geometry' else 2
     counts=CoSDHCounts(model,a.sender_thresholds,8,surrogate=True,quotas=a.train_quotas)
-    readout=CoSDHReadout(model,a.readout_thresholds,'count16',surrogate=True)
+    readout=CoSDHReadout(model,a.readout_thresholds,'identity' if a.spiking_io else 'count16',surrogate=True)
     membrane=CoSDHMembrane(model,a.readout_thresholds,'local',16)
     stages=[CoSDHFrontStage(model,getattr(a,k+'_thresholds'),'count32',surrogate=True,audit_gradients=a.smoke,initial_voltage=v0,encoder_paths=paths) for k,v0 in [('front',0.),('second',.5),('third',0.)]]
     pillar=CoSDHPillar(model,a.pillar_thresholds,'count32',.5,surrogate=True,encoder_paths=paths,audit_gradients=a.smoke)
