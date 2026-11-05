@@ -1,16 +1,14 @@
 """High-resolution head with a wider ANN BEV backbone and unchanged head width.
 
-The base snapshot model keeps a small ANN BEV (its `BaseBEVBackbone_spike`
-modules have been switched to ReLU by the snapshot adapter), so widening must
-preserve that exact module family. This class deep-copies the constructed
-backbone and rewrites every convolution and batch-norm in place: 64->96 and
-128->160 channels, while the deblock output channels stay (128, 128) and the
-256-channel head input, local-detail sum and all downstream shapes are
-unchanged. The preparation script applies the same function to a backbone
-loaded from the source checkpoint, so training starts from an exact warm start.
+The base snapshot model keeps a small ANN BEV (the adapter switches the
+spiking BEV modules to ReLU), so widening must preserve that exact module
+family. This class widens the already-constructed backbone in place: every
+convolution and batch-norm maps 64->96 and 128->160 channels, while the deblock
+output channels stay (128, 128) and the 256-channel head input, local-detail sum
+and all downstream shapes are unchanged. The preparation script applies the
+same function to a backbone loaded from the source checkpoint, so training
+starts from an exact warm start.
 """
-import copy
-
 import torch
 import torch.nn as nn
 
@@ -42,30 +40,33 @@ def _expand_bn(old, new):
         new.running_var[:n].copy_(old.running_var)
 
 
-def _widen(module):
+def widen_inplace(module):
+    """Rewrite every Conv2d/ConvTranspose2d/BatchNorm2d inside `module`."""
     for name, child in list(module.named_children()):
-        if isinstance(child, nn.Conv2d) or isinstance(child, nn.ConvTranspose2d):
+        target = int(name) if isinstance(module, nn.Sequential) else name
+        if isinstance(child, (nn.Conv2d, nn.ConvTranspose2d)):
             new = type(child)(_widen_channels(child.in_channels),
                               _widen_channels(child.out_channels),
                               child.kernel_size, child.stride, child.padding,
                               child.dilation, child.groups,
                               child.bias is not None, child.padding_mode)
             _expand_conv(child, new)
-            module[int(name) if isinstance(module, nn.Sequential) else name] = new
+            if isinstance(module, nn.Sequential):
+                module[target] = new
+            else:
+                setattr(module, target, new)
         elif isinstance(child, nn.BatchNorm2d):
             new = nn.BatchNorm2d(_widen_channels(child.num_features),
                                  eps=child.eps, momentum=child.momentum,
-                                 affine=child.affine, track_running_stats=child.track_running_stats)
+                                 affine=child.affine,
+                                 track_running_stats=child.track_running_stats)
             _expand_bn(child, new)
-            module[int(name) if isinstance(module, nn.Sequential) else name] = new
+            if isinstance(module, nn.Sequential):
+                module[target] = new
+            else:
+                setattr(module, target, new)
         else:
-            _widen(child)
-
-
-def widen_bev(backbone):
-    widened = copy.deepcopy(backbone)
-    _widen(widened)
-    return widened
+            widen_inplace(child)
 
 
 class E3dsnnSnapshotHighresWide(E3dsnnSnapshotHighres):
@@ -74,4 +75,4 @@ class E3dsnnSnapshotHighresWide(E3dsnnSnapshotHighres):
         upsample = tuple(int(x) for x in args.get('bev_wide', {}).get('upsample_filters', (128, 128)))
         if upsample != (128, 128):
             raise ValueError('Head input must stay 256: upsample filters are fixed')
-        self.backbone_2d = widen_bev(self.backbone_2d)
+        widen_inplace(self.backbone_2d)
