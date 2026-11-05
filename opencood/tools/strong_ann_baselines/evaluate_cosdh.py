@@ -86,6 +86,7 @@ def main():
     parser.add_argument('--selection-mode', choices=('identity','request_only','confidence_only','geometry_only'))
     parser.add_argument('--geometry-backend',action='store_true',help='Single encoder pass; remove confidence and request computation')
     parser.add_argument('--synapse-mode',choices=('none','stage','channel'),default='none')
+    parser.add_argument('--spiking-io',action='store_true',help='Load the converted 1x1 spiking sender/receiver checkpoint')
     parser.add_argument('--synapse-identity',action='store_true',help='Fixed-weight ablation: replace learned current gains by one')
     parser.add_argument('--suppress-remote-current',action='store_true',help='Frozen geometry-model ablation: retain local membrane and readout, set aligned remote current to zero; not independently trained ego or wire accounting')
     args = parser.parse_args()
@@ -206,6 +207,9 @@ def main():
         model = train_utils.create_model(cfg)
         from cosdh_synapse import install as install_synapse
         install_synapse(model,args.synapse_mode,args.readout_thresholds)
+        if args.spiking_io:
+            from cosdh_spiking_io import install as install_spiking
+            install_spiking(model,args.readout_thresholds)
         saved = torch.load(str(checkpoint), map_location='cpu')
         expected = model.state_dict()
         if not isinstance(saved, dict):
