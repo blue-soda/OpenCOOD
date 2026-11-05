@@ -54,9 +54,10 @@ def main():
                 counts[b]['frames'] += 1
             counts[b]['predictions'] += int(mask.sum())
             counts[b]['gt'] += int(gmask.sum())
+            bin_stat = {k: stats[k][b] for k in stats}
             for t in stats:
                 eval_utils.caluclate_tp_fp(torch.from_numpy(boxes[mask]), torch.from_numpy(scores[mask]),
-                                           torch.from_numpy(gt[gmask]), stats[t][b], t)
+                                           torch.from_numpy(gt[gmask]), bin_stat, t)
     result = {'samples': evaluation['samples'], 'gt_boxes': evaluation['gt_boxes'],
               'source_evaluation': str(folder / 'evaluation.json'),
               'bins': [], 'overall_ap': evaluation['ap']}
@@ -64,7 +65,7 @@ def main():
         row = {'range_m': [lo, None if hi > 1e8 else hi],
                'counts': counts[b]}
         for t in stats:
-            row['AP%.1f' % t] = eval_utils.calculate_ap(stats[t][b], t)[0]
+            row['AP%.1f' % t] = eval_utils.calculate_ap({k: stats[k][b] for k in stats}, t)[0]
         result['bins'].append(row)
     Path(args.output).write_text(json.dumps(result, indent=2))
     print(json.dumps(result, indent=2))
