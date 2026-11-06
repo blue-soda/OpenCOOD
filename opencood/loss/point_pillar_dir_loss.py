@@ -92,6 +92,12 @@ class PointPillarDirLoss(nn.Module):
         self.anchor_num = self.anchor_yaw_map.shape[1]
 
 
+        self.distance_alpha = float(args.get('distance_alpha', 0.0))
+        self.distance_range = float(args.get('distance_range', 100.0))
+        self.distance_grid = (args.get('bev_w'), args.get('bev_h'))
+        self.distance_extent = (args.get('bev_x_range', (-100.8, 100.8)),
+                                args.get('bev_y_range', (-40.0, 40.0)))
+        self._distance_weights = None
         self.loss_dict = {}
 
     def forward(self, output_dict, target_dict):
@@ -117,6 +123,20 @@ class PointPillarDirLoss(nn.Module):
         cls_weights = (negative_cls_weights + 1.0 * positives).float()
         reg_weights = positives.float()
 
+        if self.distance_alpha > 0:
+            if self._distance_weights is None or self._distance_weights.shape[1] != cls_weights.shape[1]:
+                width, height = self.distance_grid
+                if width is None or height is None:
+                    raise ValueError('Distance weighting requires bev_w/bev_h')
+                (x0, x1), (y0, y1) = self.distance_extent
+                xs = torch.linspace(x0, x1, int(width) + 1)[:-1] + (x1 - x0) / (2 * int(width))
+                ys = torch.linspace(y0, y1, int(height) + 1)[:-1] + (y1 - y0) / (2 * int(height))
+                grid_y, grid_x = torch.meshgrid(ys, xs)
+                radius = torch.sqrt(grid_x ** 2 + grid_y ** 2)
+                weight = 1.0 + self.distance_alpha * torch.clamp(radius / self.distance_range, 0.0, 1.0)
+                weight = weight.reshape(1, -1).repeat_interleave(self.anchor_num, dim=1)
+                self._distance_weights = weight
+            cls_weights = cls_weights * self._distance_weights.to(cls_weights.device)
         pos_normalizer = positives.sum(1, keepdim=True).float()
         reg_weights /= torch.clamp(pos_normalizer, min=1.0) # [N, H*W*anchor_num]
         cls_weights /= torch.clamp(pos_normalizer, min=1.0)
