@@ -123,9 +123,9 @@ def main():
         parser.error('Half-threshold initialization requires a count frontend')
     if bool(args.front_thresholds) != bool(args.front_mode):
         parser.error('Front stage thresholds and mode required together')
-    if args.front_mode and (args.membrane_mode != 'local' or args.readout_mode != 'count16'):
+    if args.front_mode and not args.spiking_io and (args.membrane_mode != 'local' or args.readout_mode != 'count16'):
         parser.error('Front stage probe requires the fixed local membrane / Count16 route')
-    if args.membrane_mode and args.readout_mode not in ('count4', 'count16'):
+    if args.membrane_mode and not args.spiking_io and args.readout_mode not in ('count4', 'count16'):
         parser.error('Membrane probe requires calibrated count readout')
     if bool(args.readout_thresholds) != bool(args.readout_mode):
         parser.error('Readout mode and thresholds must be specified together')
