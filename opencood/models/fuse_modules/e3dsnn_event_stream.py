@@ -100,6 +100,8 @@ def integrate_and_fire(drive, max_spikes=8, order_mode='time'):
         order = np.lexsort((addresses, times))
     elif order_mode == 'block':
         order = _block_round_robin(addresses, times, bounded.shape[1:])
+    elif order_mode == 'random':
+        order = np.random.RandomState(303).permutation(len(times))
     else:
         raise ValueError('Unknown event order mode')
     return IFStream(bounded, addresses[order].astype('<u4'), times[order], max_spikes)
