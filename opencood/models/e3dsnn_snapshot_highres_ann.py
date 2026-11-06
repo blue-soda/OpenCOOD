@@ -28,6 +28,7 @@ class E3dsnnSnapshotHighresAnn(E3dsnnSnapshotHighres):
             opts.get('hidden_channels', 128),
             opts.get('second_dilation', 1)) if self.use_shallow_skip else None
         self.shallow_readout = Multispike()
+        self.upsample_factor = 2
         self._local_shallow = None
         self.freeze_encoder = False
         self.train_encoder = True
