@@ -138,12 +138,12 @@ class SnapshotAdapter:
                         parts=[];total=0
                         for link in range(self.snapshot_split_links):
                             if self.snapshot_split_mode == 'channel':
-                channels=selected.counts.shape[1]
-                index=torch.arange(channels,device=flat.device).repeat_interleave(flat.numel()//channels)
-                mask=(index % self.snapshot_split_links == link)
-            else:
-                mask=(positions % self.snapshot_split_links == link)
-            part=(flat*mask).reshape(selected.counts.shape)
+                                channels=selected.counts.shape[1]
+                                index=torch.arange(channels,device=flat.device).repeat_interleave(flat.numel()//channels)
+                                mask=(index % self.snapshot_split_links == link)
+                            else:
+                                mask=(positions % self.snapshot_split_links == link)
+                            part=(flat*mask).reshape(selected.counts.shape)
                             packet=wire.encode(part.detach().cpu().numpy(),
                                 selected.scales.detach().cpu().numpy().reshape(32),meta)
                             parts.append(packet);total+=len(packet)
