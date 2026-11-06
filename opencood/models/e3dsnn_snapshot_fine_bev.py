@@ -22,18 +22,20 @@ def restore_fine_conv4(module, stride=FINE_STRIDE, indice_key='spconv4fine'):
     down = module.down
     if not isinstance(down, spconv.SparseSequential) or len(down) < 3:
         raise ValueError('Unexpected conv4 downsampling layout')
-    old = down[1]
+    children = list(down)
+    old = children[1]
     if not isinstance(old, spconv.SparseConv3d):
         raise ValueError('Unexpected conv4 downsampling layer')
-    new = spconv.SparseConv3d(old.in_channels, old.out_channels,
-                              kernel_size=old.kernel_size, stride=stride,
-                              padding=old.padding, indice_key=indice_key,
-                              bias=False)
+    replacement = spconv.SparseConv3d(old.in_channels, old.out_channels,
+                                      kernel_size=old.kernel_size, stride=stride,
+                                      padding=old.padding, indice_key=indice_key,
+                                      bias=False)
     with torch.no_grad():
-        if tuple(new.weight.shape) != tuple(old.weight.shape):
+        if tuple(replacement.weight.shape) != tuple(old.weight.shape):
             raise ValueError('Fine-BEV conv keeps the weight shape')
-        new.weight.copy_(old.weight)
-    down[1] = new
+        replacement.weight.copy_(old.weight)
+    children[1] = replacement
+    module.down = spconv.SparseSequential(*children)
     return module
 
 
