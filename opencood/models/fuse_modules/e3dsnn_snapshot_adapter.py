@@ -27,6 +27,9 @@ class SnapshotAdapter:
             raise ValueError('Unknown snapshot event order')
         self.snapshot_event_quotas = {int(k):v for k,v in args['snapshot'].get('event_quotas', {}).items()}
         self.snapshot_split_links = int(args['snapshot'].get('split_links', 1))
+        self.snapshot_split_mode = args['snapshot'].get('split_mode', 'flat')
+        if self.snapshot_split_mode not in ('flat', 'channel'):
+            raise ValueError('Unknown message split mode')
         if not 1 <= self.snapshot_split_links <= 4:
             raise ValueError('Split links must be between 1 and 4')
         self.snapshot_measure_bytes = False
@@ -134,7 +137,13 @@ class SnapshotAdapter:
                         positions=torch.arange(flat.numel(),device=flat.device)
                         parts=[];total=0
                         for link in range(self.snapshot_split_links):
-                            part=(flat*(positions % self.snapshot_split_links == link)).reshape(selected.counts.shape)
+                            if self.snapshot_split_mode == 'channel':
+                channels=selected.counts.shape[1]
+                index=torch.arange(channels,device=flat.device).repeat_interleave(flat.numel()//channels)
+                mask=(index % self.snapshot_split_links == link)
+            else:
+                mask=(positions % self.snapshot_split_links == link)
+            part=(flat*mask).reshape(selected.counts.shape)
                             packet=wire.encode(part.detach().cpu().numpy(),
                                 selected.scales.detach().cpu().numpy().reshape(32),meta)
                             parts.append(packet);total+=len(packet)
