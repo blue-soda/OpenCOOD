@@ -1,19 +1,20 @@
-"""Depth capacity variant with normally initialized residual blocks.
+"""Depth capacity variant whose appended residual blocks start active.
 
 The stock depth variant zeroes the last BatchNorm affine of both branches of
-every appended block so that the model is exactly equivalent to its source at
+every appended block, so the model is exactly equivalent to its source at
 initialization. That equivalence also blocks gradients to the branch
-convolutions until the scale moves, so the extra capacity stays inactive under
-a small learning rate.
+convolutions until the scale moves, so the extra capacity can stay inactive
+under a small learning rate.
 
-This variant keeps the same architecture and parameter names but sets those
-scales to one, making the appended blocks active from the first step.
+This class only performs a one-time preparation: ``activate_appended_blocks``
+sets those scales to one for a *fresh* model. It deliberately does NOT override
+``load_state_dict``: a trained checkpoint already carries whatever scales the
+optimizer learned, and re-activating on every load would silently reset them.
 
-The activation must also survive checkpoint loading: the trainer constructs the
-model and then calls ``load_state_dict(strict=True)``, which would restore the
-zero scales from a stock depth checkpoint. ``load_state_dict`` is therefore
-overridden to re-apply the active initialization after every load, and
-``activation_applied`` records that this happened.
+To create an active starting point, build this model, load the source
+checkpoint, call ``activate_appended_blocks()`` and save the resulting state
+dict with ``opencood.tools.prepare_active_initial``. Train from that file with
+the ordinary training command.
 """
 import torch
 
@@ -27,7 +28,6 @@ class E3dsnnSnapshotHighresDepthActive(E3dsnnSnapshotHighresDepth):
         if self.extra_depth <= 0:
             raise ValueError('Active depth variant requires extra blocks')
         self.activation_applied = False
-        self.activate_appended_blocks()
 
     def activate_appended_blocks(self):
         for stage in (3, 4):
@@ -38,8 +38,4 @@ class E3dsnnSnapshotHighresDepthActive(E3dsnnSnapshotHighresDepth):
                         torch.nn.init.ones_(branch[-1].weight)
                         torch.nn.init.zeros_(branch[-1].bias)
         self.activation_applied = True
-
-    def load_state_dict(self, state_dict, strict=True):
-        result = super().load_state_dict(state_dict, strict=strict)
-        self.activate_appended_blocks()
-        return result
+        return self

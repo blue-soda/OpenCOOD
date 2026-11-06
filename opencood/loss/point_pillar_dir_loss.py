@@ -143,11 +143,11 @@ class PointPillarDirLoss(nn.Module):
                     weight = 1.0 + self.distance_alpha * torch.clamp(radius / self.distance_range, 0.0, 1.0)
                 weight = weight.reshape(1, -1).repeat_interleave(self.anchor_num, dim=1)
                 self._distance_weights = weight
-            weight = self._distance_weights.to(cls_weights.device)
+            weight = self._distance_weights.to(cls_weights.device).expand_as(positives)
             if self.distance_mode == 'far_positive':
                 positive_mass = positives.sum().clamp(min=1.0)
-                mean_weight = ((weight.expand_as(positives) * positives).sum() / positive_mass).clamp(min=1e-6)
-                weight = weight / mean_weight
+                mean_weight = ((weight * positives).sum() / positive_mass).clamp(min=1e-6)
+                weight = 1.0 + (weight / mean_weight - 1.0) * positives.float()
             cls_weights = cls_weights * weight
         pos_normalizer = positives.sum(1, keepdim=True).float()
         reg_weights /= torch.clamp(pos_normalizer, min=1.0) # [N, H*W*anchor_num]
