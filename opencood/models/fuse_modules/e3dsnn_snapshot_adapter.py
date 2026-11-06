@@ -26,6 +26,9 @@ class SnapshotAdapter:
         if self.snapshot_order not in ('time', 'block', 'random'):
             raise ValueError('Unknown snapshot event order')
         self.snapshot_event_quotas = {int(k):v for k,v in args['snapshot'].get('event_quotas', {}).items()}
+        self.snapshot_split_links = int(args['snapshot'].get('split_links', 1))
+        if not 1 <= self.snapshot_split_links <= 4:
+            raise ValueError('Split links must be between 1 and 4')
         self.snapshot_measure_bytes = False
         if self.snapshot_selection not in ('actual_bytes', 'event_quota'):
             raise ValueError('Unknown snapshot selection policy')
@@ -124,15 +127,38 @@ class SnapshotAdapter:
                     quota=self.snapshot_event_quotas[self.snapshot_budget]
                 selected=select_event_quota(stream,quota)
                 if measure:
-                    selected.packet=wire.encode(selected.counts.detach().cpu().numpy(),
-                        selected.scales.detach().cpu().numpy().reshape(32),meta)
-                    selected.record.update(communication_measured=True,actual_bytes=len(selected.packet))
+                    if self.snapshot_split_links > 1:
+                        if not self.packet_roundtrip:
+                            raise ValueError('Split links require wire reconstruction')
+                        flat=selected.counts.reshape(-1)
+                        positions=torch.arange(flat.numel(),device=flat.device)
+                        parts=[];total=0
+                        for link in range(self.snapshot_split_links):
+                            part=(flat*(positions % self.snapshot_split_links == link)).reshape(selected.counts.shape)
+                            packet=wire.encode(part.detach().cpu().numpy(),
+                                selected.scales.detach().cpu().numpy().reshape(32),meta)
+                            parts.append(packet);total+=len(packet)
+                        selected.parts=parts;selected.packet=parts[0]
+                        selected.record.update(communication_measured=True,actual_bytes=total,
+                            split_links=self.snapshot_split_links)
+                    else:
+                        selected.packet=wire.encode(selected.counts.detach().cpu().numpy(),
+                            selected.scales.detach().cpu().numpy().reshape(32),meta)
+                        selected.record.update(communication_measured=True,actual_bytes=len(selected.packet))
             else:
                 selected=select_training_snapshot(full,scales,meta,self.snapshot_budget,**order)
             counts=selected.counts;scales=selected.scales
             if self.packet_roundtrip:
-                decoded,paid=wire.decode(selected.packet,meta)
-                counts=full.new_tensor(decoded);scales=full.new_tensor(paid).reshape(1,32,1,1,1)
+                if self.snapshot_split_links > 1:
+                    merged=None
+                    for packet in selected.parts:
+                        decoded,paid=wire.decode(packet,meta)
+                        piece=full.new_tensor(decoded)
+                        merged=piece if merged is None else merged+piece
+                    counts=merged;scales=full.new_tensor(paid).reshape(1,32,1,1,1)
+                else:
+                    decoded,paid=wire.decode(selected.packet,meta)
+                    counts=full.new_tensor(decoded);scales=full.new_tensor(paid).reshape(1,32,1,1,1)
             counts=counts*kept[i]
             if self.snapshot_family=='if8':
                 fused=stream_readout(membrane[i:i+1],counts,pose,contract,self.joint_receiver,self.content.decode).flatten(1,2)
