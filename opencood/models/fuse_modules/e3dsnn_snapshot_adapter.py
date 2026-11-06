@@ -23,7 +23,7 @@ class SnapshotAdapter:
         self.snapshot_family = args['snapshot']['family']
         self.snapshot_selection = args['snapshot'].get('selection', 'actual_bytes')
         self.snapshot_order = args['snapshot'].get('order', 'time')
-        if self.snapshot_order not in ('time', 'block'):
+        if self.snapshot_order not in ('time', 'block', 'random'):
             raise ValueError('Unknown snapshot event order')
         self.snapshot_event_quotas = {int(k):v for k,v in args['snapshot'].get('event_quotas', {}).items()}
         self.snapshot_measure_bytes = False
