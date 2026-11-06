@@ -242,7 +242,8 @@ def main():
         membrane = None
         if args.membrane_mode:
             from cosdh_membrane import CoSDHMembrane
-            membrane = CoSDHMembrane(model, args.readout_thresholds, args.membrane_mode, int(args.readout_mode[5:]), suppress_remote=args.suppress_remote_current)
+            membrane_steps = int(args.readout_mode[5:]) if args.readout_mode in ('count4', 'count16') else 16
+            membrane = CoSDHMembrane(model, args.readout_thresholds, args.membrane_mode, membrane_steps, suppress_remote=args.suppress_remote_current)
         front = None
         if args.front_mode:
             from cosdh_front_stage import CoSDHFrontStage
