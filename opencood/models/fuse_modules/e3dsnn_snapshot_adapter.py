@@ -175,7 +175,7 @@ class SnapshotAdapter:
                 events=None if self.packet_roundtrip else [CountContent(counts,scales).event(k) for k in (1,2,3)]
                 _,fused=ann_readout(self,ego[i:i+1],counts,scales,contract,pose,events)
             outputs.append(self.detect_bev_sample(fused,i))
-            if selected.packet is not None:sizes.append(len(selected.packet))
+            if selected.packet is not None:sizes.append(int(selected.record.get('actual_bytes', len(selected.packet))))
             units.append(selected.record['selected_events'])
             if observer is not None:
                 if self.training or not self.packet_roundtrip:
@@ -187,6 +187,8 @@ class SnapshotAdapter:
             if self.snapshot_packet_directory:
                 if self.training or not self.packet_roundtrip:
                     raise ValueError('Packet archive requires real wire evaluation')
+                if self.snapshot_split_links > 1:
+                    raise ValueError('Split-link runs do not archive a single packet per frame')
                 directory=Path(self.snapshot_packet_directory)
                 if self.snapshot_packet_index==0:directory.mkdir(parents=True,exist_ok=False)
                 filename='{:06d}.bin'.format(self.snapshot_packet_index)

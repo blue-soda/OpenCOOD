@@ -70,8 +70,8 @@ def main():
     macs = sum(frame_flops) / 2.0 if frame_flops else 0.0
     spike_mean = sum(frame_spikes) / len(frame_spikes)
     neuron_mean = sum(frame_neurons) / len(frame_neurons)
-    comm_low = args.bytes * 8 * E_BIT_NJ[0] / 1000.0   # nJ -> pJ
-    comm_high = args.bytes * 8 * E_BIT_NJ[1] / 1000.0
+    comm_low = args.bytes * 8 * E_BIT_NJ[0] * 1000.0   # nJ -> pJ
+    comm_high = args.bytes * 8 * E_BIT_NJ[1] * 1000.0
     compute_mac = macs * E_MAC_FP32_PJ
     compute_spike_low = spike_mean * E_SYN_PJ[0] + neuron_mean * E_NEU_PJ
     compute_spike_high = spike_mean * E_SYN_PJ[1] + neuron_mean * E_NEU_PJ
