@@ -93,6 +93,10 @@ class PointPillarDirLoss(nn.Module):
 
 
         self.distance_alpha = float(args.get('distance_alpha', 0.0))
+        self.distance_mode = args.get('distance_mode', 'all')
+        self.distance_threshold = float(args.get('distance_threshold', 50.0))
+        if self.distance_mode not in ('all', 'far_positive'):
+            raise ValueError('Unknown distance weighting mode')
         self.distance_range = float(args.get('distance_range', 100.0))
         self.distance_grid = (args.get('bev_w'), args.get('bev_h'))
         self.distance_extent = (args.get('bev_x_range', (-100.8, 100.8)),
@@ -133,10 +137,18 @@ class PointPillarDirLoss(nn.Module):
                 ys = torch.linspace(y0, y1, int(height) + 1)[:-1] + (y1 - y0) / (2 * int(height))
                 grid_y, grid_x = torch.meshgrid(ys, xs)
                 radius = torch.sqrt(grid_x ** 2 + grid_y ** 2)
-                weight = 1.0 + self.distance_alpha * torch.clamp(radius / self.distance_range, 0.0, 1.0)
+                if self.distance_mode == 'far_positive':
+                    weight = 1.0 + self.distance_alpha * (radius >= self.distance_threshold).float()
+                else:
+                    weight = 1.0 + self.distance_alpha * torch.clamp(radius / self.distance_range, 0.0, 1.0)
                 weight = weight.reshape(1, -1).repeat_interleave(self.anchor_num, dim=1)
                 self._distance_weights = weight
-            cls_weights = cls_weights * self._distance_weights.to(cls_weights.device)
+            weight = self._distance_weights.to(cls_weights.device)
+            if self.distance_mode == 'far_positive':
+                positive_mass = positives.sum().clamp(min=1.0)
+                mean_weight = ((weight.expand_as(positives) * positives).sum() / positive_mass).clamp(min=1e-6)
+                weight = weight / mean_weight
+            cls_weights = cls_weights * weight
         pos_normalizer = positives.sum(1, keepdim=True).float()
         reg_weights /= torch.clamp(pos_normalizer, min=1.0) # [N, H*W*anchor_num]
         cls_weights /= torch.clamp(pos_normalizer, min=1.0)
