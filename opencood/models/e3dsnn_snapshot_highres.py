@@ -13,7 +13,7 @@ class E3dsnnSnapshotHighres(E3dsnnSnapshotFrontend):
     def __init__(self, args):
         super().__init__(args)
         opts = args['highres']
-        if opts['output_stride'] != 4 or args['frontend']['extra_blocks_per_stage'] != 0:
+        if opts['output_stride'] not in (4, 2) or args['frontend']['extra_blocks_per_stage'] != 0:
             raise ValueError('Registered high-resolution experiment uses original depth and stride 4')
         self.use_shallow_skip = opts['use_shallow_skip']
         if type(self.use_shallow_skip) is not bool:
