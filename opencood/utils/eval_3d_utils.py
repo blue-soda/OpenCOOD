@@ -40,9 +40,10 @@ def pairwise_iou3d(det_boxes, gt_boxes):
     return ious
 
 
-def calculate_tp_fp_3d(det_boxes, det_score, gt_boxes, result_stat):
+def calculate_tp_fp_3d(det_boxes, det_score, gt_boxes, result_stat, *, pairwise=pairwise_iou3d):
     """Accumulate all thresholds; greedy score order and one match per GT.
 
+    For rigid predictions with pitch or roll, pass pairwise_oriented_iou3d.
     Use eval_utils.calculate_ap for the unchanged global confidence sorting
     and VOC2010 precision-envelope integral.
     """
@@ -56,7 +57,7 @@ def calculate_tp_fp_3d(det_boxes, det_score, gt_boxes, result_stat):
     if scores.shape != (len(boxes),) or not np.isfinite(scores).all():
         raise ValueError('Expected one finite confidence score per prediction')
     order = np.argsort(-scores)
-    ious = pairwise_iou3d(boxes, gt_boxes)
+    ious = pairwise(boxes, gt_boxes)
     for threshold, stat in result_stat.items():
         unmatched = list(range(len(gt_boxes)))
         for index in order:
