@@ -61,8 +61,15 @@ class SnapshotAdapter:
             raise ValueError('Unknown snapshot selection policy')
         if self.snapshot_selection == 'if_window':
             self.if_window = float(args['snapshot']['if_window'])
+            self.if_pilot = args['snapshot'].get('if_pilot')
             if self.snapshot_family != 'if8' or not 0 <= self.if_window <= 1 or self.snapshot_budget is not None:
                 raise ValueError('Fixed-time selection requires IF8, a window in [0,1], and no byte budget')
+            if self.if_pilot is not None:
+                if (set(self.if_pilot) != {'time', 'mean_log_count', 'slope'}
+                        or not all(np.isfinite(v) for v in self.if_pilot.values())
+                        or not 0 < self.if_pilot['time'] <= 1
+                        or self.if_pilot['mean_log_count'] < 0 or self.if_pilot['slope'] > 0):
+                    raise ValueError('Invalid early-count window calibration')
         if self.snapshot_selection == 'event_quota':
             if self.snapshot_family != 'if8' or not self.snapshot_event_quotas:
                 raise ValueError('Event quotas require IF8 and an explicit nominal-budget mapping')
@@ -161,7 +168,7 @@ class SnapshotAdapter:
                 family=self.snapshot_family,schema='task-count32-v1')
             if tensor_selection:
                 if fixed_window:
-                    selected = select_if_window(full, self.if_window)
+                    selected = select_if_window(full, self.if_window, self.if_pilot)
                 else:
                     if self.snapshot_budget in (0,None): quota=self.snapshot_budget
                     else:

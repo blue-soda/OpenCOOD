@@ -176,6 +176,8 @@ def validate(model, dataset, workers, limit=0, include_3d=False, prediction_dir=
     elif getattr(model, 'snapshot_selection', None) == 'if_window':
         result['selection'] = dict(policy='if_window', window=model.if_window,
             communication_measured=bool(packets), hard_compressed_byte_cap=False)
+        if model.if_pilot is not None:
+            result['selection'].update(policy='early_count_window', pilot=model.if_pilot)
     if include_3d:
         result.update({'metric': 'BEV and upright 3D AP; ' + getattr(dataset, 'protocol', 'vehicle-local GT, no fusion'),
             'ap_3d': {str(t): eval_utils.calculate_ap(stat_3d, t)[0] for t in stat_3d},

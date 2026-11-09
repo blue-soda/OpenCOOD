@@ -1,5 +1,6 @@
 """Regression checks against the reference event stream, including address ties."""
 import unittest
+import math
 
 import torch
 
@@ -9,6 +10,16 @@ from opencood.models.fuse_modules.e3dsnn_snapshot_selection import (
 
 
 class IFQuotaSelectionTest(unittest.TestCase):
+    def test_early_count_deadline(self):
+        pilot = {'time': .25, 'mean_log_count': math.log(4), 'slope': -1.}
+        drive = torch.tensor([8., 4., 2.]).reshape(1, 1, 1, 1, 3)
+        self.assertEqual(select_if_window(drive, .5, pilot).counts.flatten().tolist(), [4., 2., 1.])
+        crowded = drive.repeat(1, 1, 1, 1, 4)
+        # The deadline cannot precede the pilot, even when early activity is high.
+        out = select_if_window(crowded, .5, pilot)
+        self.assertEqual(out.record['if_window'], .25)
+        self.assertEqual(out.counts.flatten().tolist(), [2., 1., 0.] * 4)
+
     def compare(self, values, device):
         drive = values.reshape(1, 1, 1, 1, -1).to(device).requires_grad_()
         reference = integrate_and_fire(drive, 8)
