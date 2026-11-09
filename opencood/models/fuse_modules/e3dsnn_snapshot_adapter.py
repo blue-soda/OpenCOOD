@@ -37,6 +37,7 @@ class SnapshotAdapter:
         self.snapshot_family = args['snapshot']['family']
         self.shuffle_received_counts = False
         self.binary_received_counts = False
+        self.support_only_wire = args['snapshot'].get('support_only_wire', False)
         self.support_only_receiver = args['snapshot'].get('support_only_receiver', False)
         if self.support_only_receiver and self.snapshot_family != 'if8':
             raise ValueError('Support-only receiver requires IF8 counts')
@@ -118,6 +119,9 @@ class SnapshotAdapter:
         return self.detect_bev(spatial)
 
     def forward(self, data):
+        if self.support_only_wire and (self.training or not self.packet_roundtrip or self.snapshot_family != 'if8'
+                or self.snapshot_codec != 'v3' or self.snapshot_split_links != 1 or self.snapshot_selection != 'event_quota'):
+            raise ValueError('Support-only wire control requires evaluation with a single v3 IF8 quota packet')
         if self.training and self.packet_roundtrip:
             raise ValueError('Wire reconstruction is eval-only; preserve training gradients')
         fixed_window = self.snapshot_selection == 'if_window'
@@ -204,7 +208,10 @@ class SnapshotAdapter:
                             split_links=self.snapshot_split_links)
                     else:
                         encoder = {'v1': wire.encode, 'v2': wire.encode_v2, 'v3': wire.encode_v3}[self.snapshot_codec]
-                        selected.packet=encoder(selected.counts.detach().cpu().numpy(),
+                        sent_counts = selected.counts.detach().cpu().numpy()
+                        if self.support_only_wire:
+                            sent_counts = (sent_counts > 0).astype(sent_counts.dtype)
+                        selected.packet=encoder(sent_counts,
                             selected.scales.detach().cpu().numpy().reshape(32),meta)
                         selected.record.update(communication_measured=True,actual_bytes=len(selected.packet))
             else:
