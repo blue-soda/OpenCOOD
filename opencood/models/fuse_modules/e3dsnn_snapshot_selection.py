@@ -24,6 +24,17 @@ def select_event_quota(stream, quota):
              selection='IF crossing-time prefix, fixed event quota',communication_measured=False))
 
 
+def select_if_window(drive, window):
+    """Counts accumulated by a fixed time in a unit-horizon, constant-drive IF8 stream."""
+    if not 0 <= window <= 1:
+        raise ValueError('Expected an IF window between zero and one')
+    counts = (drive.clamp(0, 8).double() * window).floor().to(drive.dtype)
+    events = int(counts.sum().item())
+    return SelectedSnapshot(None, counts, counts.new_ones((1,32,1,1,1)),
+        dict(selected_events=events, accepted_units=events, if_window=window,
+             selection='IF crossing-time prefix, fixed time window', communication_measured=False))
+
+
 @dataclass
 class SelectedSnapshot:
     packet: Optional[bytes]

@@ -8,7 +8,7 @@ import torch
 from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract
 from opencood.models.fuse_modules.e3dsnn_event_stream import integrate_and_fire, stream_readout
 from opencood.models.fuse_modules.e3dsnn_content_message import CountContent
-from opencood.models.fuse_modules.e3dsnn_snapshot_selection import select_training_snapshot, select_event_quota
+from opencood.models.fuse_modules.e3dsnn_snapshot_selection import select_training_snapshot, select_event_quota, select_if_window
 from opencood.models.fuse_modules.e3dsnn_snapshot_readout import ann_readout
 from opencood.utils.e3dsnn_transplant import encoder_digest
 from opencood.utils import task_snapshot_packet as wire
@@ -53,8 +53,12 @@ class SnapshotAdapter:
         if not 1 <= self.snapshot_split_links <= 4:
             raise ValueError('Split links must be between 1 and 4')
         self.snapshot_measure_bytes = False
-        if self.snapshot_selection not in ('actual_bytes', 'event_quota'):
+        if self.snapshot_selection not in ('actual_bytes', 'event_quota', 'if_window'):
             raise ValueError('Unknown snapshot selection policy')
+        if self.snapshot_selection == 'if_window':
+            self.if_window = float(args['snapshot']['if_window'])
+            if self.snapshot_family != 'if8' or not 0 <= self.if_window <= 1 or self.snapshot_budget is not None:
+                raise ValueError('Fixed-time selection requires IF8, a window in [0,1], and no byte budget')
         if self.snapshot_selection == 'event_quota':
             if self.snapshot_family != 'if8' or not self.snapshot_event_quotas:
                 raise ValueError('Event quotas require IF8 and an explicit nominal-budget mapping')
@@ -78,6 +82,9 @@ class SnapshotAdapter:
         self.content_prefix_semantics = 'single actual-byte snapshot; fixed selection surrogate'
         if self.snapshot_selection == 'event_quota':
             self.content_prefix_semantics = 'fixed IF event quota; bytes measured only on explicit export, no hard compressed-byte cap'
+        elif self.snapshot_selection == 'if_window':
+            self.sender_ranking = 'local IF threshold crossings before a fixed time'
+            self.content_prefix_semantics = 'fixed IF window; event count and bytes vary by frame'
 
     def train(self, mode=True):
         super().train(mode)
@@ -98,9 +105,13 @@ class SnapshotAdapter:
     def forward(self, data):
         if self.training and self.packet_roundtrip:
             raise ValueError('Wire reconstruction is eval-only; preserve training gradients')
+        fixed_window = self.snapshot_selection == 'if_window'
+        if fixed_window and self.training:
+            raise ValueError('Fixed-window IF selection is an evaluation intervention')
         quota_mode = self.snapshot_selection == 'event_quota'
+        tensor_selection = quota_mode or fixed_window
         observer = getattr(self, '_snapshot_packet_observer', None)
-        measure = quota_mode and not self.training and bool(self.snapshot_measure_bytes or
+        measure = tensor_selection and not self.training and bool(self.snapshot_measure_bytes or
             self.packet_roundtrip or observer is not None or self.snapshot_packet_directory)
         if quota_mode and self.training and (self.snapshot_measure_bytes or observer is not None or self.snapshot_packet_directory):
             raise ValueError('Training must not encode, decode, export, or measure communication')
@@ -122,7 +133,9 @@ class SnapshotAdapter:
             if local_only:
                 outputs.append(self.detect_bev_sample(ego[i:i+1].flatten(1,2),i));sizes.append(0);units.append(0)
                 continue
-            if self.snapshot_family=='if8':
+            if fixed_window:
+                full = self.snapshot_drive(sources[i:i+1])
+            elif self.snapshot_family=='if8':
                 stream=integrate_and_fire(self.snapshot_drive(sources[i:i+1]),8,order_mode=self.snapshot_order)
                 full=stream.drive if quota_mode else stream.prefix(len(stream.addresses))
                 scales=full.new_ones((1,32,1,1,1))
@@ -142,13 +155,16 @@ class SnapshotAdapter:
             pose=data['road_to_ego'][i:i+1]
             meta=dict(contract=asdict(contract),source_to_ego=pose[0].cpu().tolist(),
                 family=self.snapshot_family,schema='task-count32-v1')
-            if quota_mode:
-                if self.snapshot_budget in (0,None): quota=self.snapshot_budget
+            if tensor_selection:
+                if fixed_window:
+                    selected = select_if_window(full, self.if_window)
                 else:
-                    if self.snapshot_budget not in self.snapshot_event_quotas:
-                        raise ValueError('Unregistered nominal budget for event-quota selection')
-                    quota=self.snapshot_event_quotas[self.snapshot_budget]
-                selected=select_event_quota(stream,quota)
+                    if self.snapshot_budget in (0,None): quota=self.snapshot_budget
+                    else:
+                        if self.snapshot_budget not in self.snapshot_event_quotas:
+                            raise ValueError('Unregistered nominal budget for event-quota selection')
+                        quota=self.snapshot_event_quotas[self.snapshot_budget]
+                    selected=select_event_quota(stream,quota)
                 if measure:
                     if self.snapshot_split_links > 1:
                         if not self.packet_roundtrip:
@@ -227,8 +243,9 @@ class SnapshotAdapter:
         keys=('psm','rm','dm')+(('qm',) if all('qm' in o for o in outputs) else ())
         output={k:torch.cat([o[k] for o in outputs]) for k in keys}
         output.update(message_kept=kept.detach(),stream_events=units)
-        if quota_mode:
-            output['event_quotas']=[self.snapshot_event_quotas.get(self.snapshot_budget,self.snapshot_budget)]*b
+        if tensor_selection:
+            if quota_mode:
+                output['event_quotas']=[self.snapshot_event_quotas.get(self.snapshot_budget,self.snapshot_budget)]*b
             output['communication_measured']=measure
             if measure:output['packet_bytes']=sizes
         else:
