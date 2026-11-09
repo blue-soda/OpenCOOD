@@ -36,6 +36,7 @@ class SnapshotAdapter:
         self.snapshot_budget = args['snapshot']['budget_bytes']
         self.snapshot_family = args['snapshot']['family']
         self.shuffle_received_counts = False
+        self.binary_received_counts = False
         self.snapshot_selection = args['snapshot'].get('selection', 'actual_bytes')
         self.snapshot_order = args['snapshot'].get('order', 'time')
         self.use_tensor_quota = bool(args['snapshot'].get('tensor_quota', False))
@@ -222,6 +223,8 @@ class SnapshotAdapter:
                     decoded,paid=decoder(selected.packet,meta)
                     if self.shuffle_received_counts:
                         decoded = shuffle_positive_counts(decoded, contract.receiver_frame)
+                    elif self.binary_received_counts:
+                        decoded = (decoded > 0).astype(decoded.dtype)
                     counts=full.new_tensor(decoded);scales=full.new_tensor(paid).reshape(1,32,1,1,1)
             counts=counts*kept[i]
             if self.snapshot_family=='if8':
