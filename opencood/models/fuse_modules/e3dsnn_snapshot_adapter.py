@@ -37,6 +37,9 @@ class SnapshotAdapter:
         self.snapshot_family = args['snapshot']['family']
         self.shuffle_received_counts = False
         self.binary_received_counts = False
+        self.support_only_receiver = args['snapshot'].get('support_only_receiver', False)
+        if self.support_only_receiver and self.snapshot_family != 'if8':
+            raise ValueError('Support-only receiver requires IF8 counts')
         self.snapshot_selection = args['snapshot'].get('selection', 'actual_bytes')
         self.snapshot_order = args['snapshot'].get('order', 'time')
         self.use_tensor_quota = bool(args['snapshot'].get('tensor_quota', False))
@@ -226,6 +229,8 @@ class SnapshotAdapter:
                     elif self.binary_received_counts:
                         decoded = (decoded > 0).astype(decoded.dtype)
                     counts=full.new_tensor(decoded);scales=full.new_tensor(paid).reshape(1,32,1,1,1)
+            if self.support_only_receiver:
+                counts = (counts > 0).to(counts.dtype)
             counts=counts*kept[i]
             if self.snapshot_family=='if8':
                 fused=stream_readout(membrane[i:i+1],counts,pose,contract,self.joint_receiver,self.content.decode).flatten(1,2)

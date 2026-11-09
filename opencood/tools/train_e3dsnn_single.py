@@ -249,6 +249,12 @@ def execute(args, output_dir):
             raise ValueError('Received-count controls require a single IF8 event-quota message')
         model.shuffle_received_counts = getattr(args, 'shuffle_received_counts', False)
         model.binary_received_counts = getattr(args, 'binary_received_counts', False)
+    if getattr(args, 'adapt_count_receiver', False):
+        if (getattr(model, 'snapshot_family', None) != 'if8' or model.snapshot_selection != 'event_quota'
+                or not model.freeze_detector_bn):
+            raise ValueError('Receiver-only adaptation requires IF8 quotas and frozen BN')
+        for name, param in model.named_parameters():
+            param.requires_grad_(name.startswith(('content.expand.', 'joint_receiver.')))
     criterion = train_utils.create_loss(cfg).cuda()
     from opencood.utils.cp_optimizer import make_optimizer, apply_warmup
     optimizer = make_optimizer(cfg, model)
@@ -629,6 +635,8 @@ def main():
                         help='After decoding, keep nonzero locations and replace each positive count with one')
     parser.add_argument('--allow-new-modules', action='store_true',
                         help='Initialise a variant with new modules from a parent checkpoint')
+    parser.add_argument('--adapt-count-receiver', action='store_true',
+                        help='Train only the IF count decoder and receiver on a frozen detector')
     parser.add_argument('--measure-communication', action='store_true',
         help='Eval only: encode each selected message once and report measured bytes')
     parser.add_argument('--eval-3d', action='store_true', help='Also report volume-IoU AP in eval mode')
@@ -642,6 +650,8 @@ def main():
     parser.add_argument('--defer-initial-validation', action='store_true',
         help='Evaluate the fixed initial checkpoint concurrently; include it before first best selection')
     args = parser.parse_args()
+    if args.adapt_count_receiver and (args.mode != 'train' or args.warmup_epochs):
+        parser.error('--adapt-count-receiver requires training with no parameter-resetting fusion warmup')
     if (args.shuffle_received_counts or args.binary_received_counts) and (args.mode != 'eval' or not args.packet_roundtrip):
         parser.error('Received-count controls require eval mode with --packet-roundtrip')
     if args.measure_communication and args.mode != 'eval':
