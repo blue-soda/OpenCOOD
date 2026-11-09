@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from opencood.utils import task_snapshot_packet as wire
 from opencood.models.fuse_modules.e3dsnn_content_message import CountContent
+from opencood.models.fuse_modules.e3dsnn_event_stream import _HardCounts
 
 
 def select_event_quota(stream, quota):
@@ -33,6 +34,39 @@ def select_if_window(drive, window):
     return SelectedSnapshot(None, counts, counts.new_ones((1,32,1,1,1)),
         dict(selected_events=events, accepted_units=events, if_window=window,
              selection='IF crossing-time prefix, fixed time window', communication_measured=False))
+
+
+def select_tensor_quota(drive, quota):
+    """Select the IF8 time prefix on-device, breaking equal-time ties by address."""
+    if quota is not None and (type(quota) is not int or quota < 0):
+        raise ValueError('Expected a nonnegative event quota or None')
+    if (drive.ndim != 5 or drive.shape[0] != 1 or not drive.numel() or
+            drive.numel() >= 2**32 or not torch.isfinite(drive).all() or (drive < 0).any()):
+        raise ValueError('Expected finite nonnegative single-frame drive')
+    bounded = drive.clamp(max=8)
+    flat = bounded.detach().flatten()
+    # nonzero returns addresses in increasing order, including on CUDA.
+    active = torch.nonzero(flat >= 1, as_tuple=True)[0]
+    rates = flat[active].double()
+    total = int(rates.floor().sum().item())
+    count = total if quota is None else min(quota, total)
+    if count == 0:
+        counts = bounded * 0
+    elif count == total:
+        counts = _HardCounts.apply(bounded, bounded.detach().floor())
+    else:
+        levels = torch.arange(1, 9, device=drive.device, dtype=torch.float64)[:, None]
+        times = levels / rates
+        frontier = torch.kthvalue(times[times <= 1], count).values
+        earlier = (times < frontier).sum(dim=0)
+        tied = (times == frontier).any(dim=0)
+        admitted = tied & (tied.cumsum(dim=0) <= count - earlier.sum())
+        sparse_counts = (earlier + admitted).to(drive.dtype)
+        hard = torch.zeros_like(flat).index_copy_(0, active, sparse_counts)
+        counts = _HardCounts.apply(bounded * frontier.to(drive.dtype), hard.reshape_as(drive))
+    return SelectedSnapshot(None, counts, counts.new_ones((1,32,1,1,1)),
+        dict(accepted_units=count, selected_events=count, event_quota=quota,
+             selection='IF crossing-time prefix, fixed event quota', communication_measured=False))
 
 
 @dataclass

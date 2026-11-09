@@ -8,7 +8,8 @@ import torch
 from opencood.models.fuse_modules.e3dsnn_progressive import MessageContract
 from opencood.models.fuse_modules.e3dsnn_event_stream import integrate_and_fire, stream_readout
 from opencood.models.fuse_modules.e3dsnn_content_message import CountContent
-from opencood.models.fuse_modules.e3dsnn_snapshot_selection import select_training_snapshot, select_event_quota, select_if_window
+from opencood.models.fuse_modules.e3dsnn_snapshot_selection import (
+    select_training_snapshot, select_event_quota, select_if_window, select_tensor_quota)
 from opencood.models.fuse_modules.e3dsnn_snapshot_readout import ann_readout
 from opencood.utils.e3dsnn_transplant import encoder_digest
 from opencood.utils import task_snapshot_packet as wire
@@ -37,6 +38,9 @@ class SnapshotAdapter:
         self.shuffle_received_counts = False
         self.snapshot_selection = args['snapshot'].get('selection', 'actual_bytes')
         self.snapshot_order = args['snapshot'].get('order', 'time')
+        self.use_tensor_quota = bool(args['snapshot'].get('tensor_quota', False))
+        if self.use_tensor_quota and (self.snapshot_selection != 'event_quota' or self.snapshot_order != 'time'):
+            raise ValueError('The on-device quota selector requires a time-ordered event quota')
         if self.snapshot_order not in ('time', 'block', 'random'):
             raise ValueError('Unknown snapshot event order')
         self.snapshot_event_quotas = {int(k):v for k,v in args['snapshot'].get('event_quotas', {}).items()}
@@ -133,7 +137,7 @@ class SnapshotAdapter:
             if local_only:
                 outputs.append(self.detect_bev_sample(ego[i:i+1].flatten(1,2),i));sizes.append(0);units.append(0)
                 continue
-            if fixed_window:
+            if fixed_window or self.use_tensor_quota:
                 full = self.snapshot_drive(sources[i:i+1])
             elif self.snapshot_family=='if8':
                 stream=integrate_and_fire(self.snapshot_drive(sources[i:i+1]),8,order_mode=self.snapshot_order)
@@ -164,7 +168,8 @@ class SnapshotAdapter:
                         if self.snapshot_budget not in self.snapshot_event_quotas:
                             raise ValueError('Unregistered nominal budget for event-quota selection')
                         quota=self.snapshot_event_quotas[self.snapshot_budget]
-                    selected=select_event_quota(stream,quota)
+                    selected = (select_tensor_quota(full, quota) if self.use_tensor_quota
+                                else select_event_quota(stream, quota))
                 if measure:
                     if self.snapshot_split_links > 1:
                         if not self.packet_roundtrip:
