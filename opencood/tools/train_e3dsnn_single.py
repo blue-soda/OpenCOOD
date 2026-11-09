@@ -58,7 +58,9 @@ def seed_worker(worker_id):
 
 def checked_forward(model, criterion, batch, teacher=None, kd_weight=0.):
     output = model(batch['ego'])
-    labels = batch['ego']['label_dict']
+    labels = dict(batch['ego']['label_dict'])
+    if 'anchor_box' in batch['ego']:
+        labels['anchors'] = batch['ego']['anchor_box']
     assert output['psm'].shape[2:] == labels['pos_equal_one'].shape[1:3], (
         'Prediction/anchor grid mismatch', output['psm'].shape, labels['pos_equal_one'].shape)
     assert all(torch.isfinite(output[key]).all() for key in ('psm', 'rm', 'dm'))
@@ -322,7 +324,22 @@ def execute(args, output_dir):
     write_json(output_dir / ('manifest_{}.json'.format(int(time.time()))), manifest)
     (output_dir / 'config.yaml').write_bytes(Path(args.config).read_bytes())
     if args.checkpoint:
-        model.load_state_dict(torch.load(args.checkpoint, map_location='cpu'), strict=True)
+        state = torch.load(args.checkpoint, map_location='cpu')
+        if getattr(args, 'allow_new_modules', False):
+            own = model.state_dict()
+            skipped = [k for k in state if k not in own or tuple(state[k].shape) != tuple(own[k].shape)]
+            kept = {k: v for k, v in state.items() if k not in skipped}
+            missing, unexpected = model.load_state_dict(kept, strict=False)
+            if unexpected:
+                raise ValueError('Unexpected checkpoint keys: ' + str(unexpected))
+            allowed = tuple(p for p in ('ms_proj.', 'fpn_proj.', 'head_trunk.', 'quality_head.', 'mem_quality.', 'cls_adapter.', 'reg_adapter.',
+                                        'cls_head.', 'reg_head.', 'dir_head.') if p in str(missing) or True)
+            bad = [k for k in list(missing) if not k.startswith(allowed)]
+            if bad:
+                raise ValueError('Checkpoint lacks base weights: ' + str(bad[:8]))
+            print({'init_skipped_keys': skipped, 'init_new_missing': list(missing)})
+        else:
+            model.load_state_dict(state, strict=True)
     if getattr(args, 'measure_communication', False):
         if not hasattr(model, 'snapshot_measure_bytes'):
             raise ValueError('Explicit communication measurement requires a snapshot model')
@@ -585,6 +602,8 @@ def main():
     parser.add_argument('--single-checkpoint', help='Initialize fusion from the corresponding fixed single-agent state')
     parser.add_argument('--warmup-epochs', type=int, default=0, help='Freeze pretrained parameters and BN during residual-fusion warmup')
     parser.add_argument('--packet-roundtrip', action='store_true', help='Serialize/decode road features during eval')
+    parser.add_argument('--allow-new-modules', action='store_true',
+                        help='Initialise a variant with new modules from a parent checkpoint')
     parser.add_argument('--measure-communication', action='store_true',
         help='Eval only: encode each selected message once and report measured bytes')
     parser.add_argument('--eval-3d', action='store_true', help='Also report volume-IoU AP in eval mode')

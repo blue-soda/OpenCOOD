@@ -31,18 +31,25 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--evaluation-dir', required=True)
     parser.add_argument('--reference', required=True)
+    parser.add_argument('--format', choices=('native', 'cosdh'), default='native')
     parser.add_argument('--output', required=True)
     args = parser.parse_args()
     folder = Path(args.evaluation_dir)
     reference = Path(args.reference)
-    index = json.loads((folder / 'predictions' / 'index.json').read_text())['frames']
+    if args.format == 'native':
+        rows = json.loads((folder / 'predictions' / 'index.json').read_text())['frames']
+        sources = [(row['frame_id'], str(folder / 'predictions' / row['file'])) for row in rows]
+        pred_key, score_key = 'pred_boxes', 'scores'
+    else:
+        rows = [json.loads(line) for line in (folder / 'frames.jsonl').read_text().splitlines() if line.strip()]
+        sources = [(row['frame_id'], str(folder / row['file'])) for row in rows]
+        pred_key, score_key = 'pred', 'score'
     bins = [{'n_gt': 0, 'covered': 0, 'm50': 0, 'm70': 0, 'best_iou': 0.0,
              'best_score': 0.0, 'low_score_match': 0} for _ in BINS]
-    for row in index:
-        frame_id = row['frame_id']
-        with np.load(str(folder / 'predictions' / row['file']), allow_pickle=False) as z:
-            boxes = z['pred_boxes'].copy()
-            scores = z['scores'].copy()
+    for frame_id, path in sources:
+        with np.load(path, allow_pickle=False) as z:
+            boxes = z[pred_key].copy()
+            scores = z[score_key].copy()
         gt = np.load(str(reference / 'common_gt' / (frame_id + '.npy')), allow_pickle=False)
         if len(gt) == 0:
             continue
@@ -63,7 +70,7 @@ def main():
                     if nearest <= COVER_M:
                         entry['covered'] += 1
                 if len(pred_polys):
-                    ious = np.asarray([common_utils.compute_iou(p, gt_polys[g]) for p in pred_polys])
+                    ious = np.asarray([float(common_utils.compute_iou(p, [gt_polys[g]])[0]) for p in pred_polys])
                     best = float(np.max(ious))
                     best_idx = int(np.argmax(ious))
                     entry['best_iou'] += best

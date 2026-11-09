@@ -142,3 +142,106 @@ def select(counts,scales,meta,budget=None,addresses=None,row_order=None):
     return packet,selected,dict(accepted_units=int(accepted),actual_bytes=len(packet),
         budget_bytes=budget,first_rejected_bytes=rejected,
         selected_events=int(selected.sum()),selected_voxels=int(np.any(selected,axis=1).sum()))
+
+
+def encode_v2(counts,scales,meta):
+    """Version 2: compress the JSON context as well; payload layout unchanged."""
+    _,coords,rows,context,scale_bytes,bits=prepare(counts,scales,meta)
+    if not len(coords):return b''
+    mask=rows!=0;values=rows[mask]
+    raw=scale_bytes+coords.astype('<u4').tobytes()+pack(mask,1).tobytes()+pack(values,bits).tobytes()
+    ctx=zlib.compress(context,9)
+    body=ctx+zlib.compress(raw,9)
+    return HEADER.pack(b'E3TS2',len(ctx),len(coords),len(values),len(raw),zlib.crc32(body))+body
+
+
+def decode_v2(packet,expected_meta):
+    c=validate_metadata(expected_meta);bits,ceiling,sbytes=SPECS[expected_meta['family']]
+    counts=np.zeros((1,32)+c.shape_zyx,dtype=np.uint8)
+    if not packet:return counts,np.ones(32,dtype=np.float32)
+    if len(packet)<HEADER.size:raise ValueError('Truncated snapshot')
+    magic,msize,n,nnz,rsize,crc=HEADER.unpack(packet[:HEADER.size]);size=int(np.prod(c.shape_zyx))
+    if magic!=b'E3TS2' or not 1<=n<=size or not n<=nnz<=32*n or rsize!=sbytes+8*n+(bits*nnz+7)//8:
+        raise ValueError('Invalid v2 snapshot header')
+    body=packet[HEADER.size:]
+    if zlib.crc32(body)!=crc:raise ValueError('Snapshot checksum mismatch')
+    if zlib.decompress(body[:msize])!=_context(expected_meta):raise ValueError('Changed identity')
+    decoder=zlib.decompressobj();raw=decoder.decompress(body[msize:],rsize+1)
+    if len(raw)!=rsize or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail:raise ValueError('Invalid compression stream')
+    scales=np.frombuffer(raw[:sbytes],dtype='<f4').copy() if sbytes else np.ones(32,dtype=np.float32)
+    _scales(scales,expected_meta['family']);raw=raw[sbytes:]
+    coords=np.frombuffer(raw[:4*n],dtype='<u4')
+    if np.any(coords>=size) or np.any(coords[1:]<=coords[:-1]):raise ValueError('Invalid spatial rows')
+    mask=unpack(np.frombuffer(raw[4*n:8*n],dtype=np.uint8),32*n,1).reshape(n,32).astype(bool)
+    values=unpack(np.frombuffer(raw[8*n:],dtype=np.uint8),nnz,bits)
+    if int(mask.sum())!=nnz or not np.all(mask.any(1)) or np.any(values==0) or np.any(values>ceiling):raise ValueError('Invalid channel codes')
+    rows=np.zeros((n,32),dtype=np.uint8);rows[mask]=values
+    counts.reshape(32,size)[:,coords]=rows.T
+    return counts,scales
+
+
+V3HEADER = struct.Struct('<5sIIIIII')
+
+
+def _varint(value):
+    out=bytearray()
+    while True:
+        b=value&0x7f;value>>=7
+        if value:out.append(b|0x80)
+        else:out.append(b);break
+    return bytes(out)
+
+
+def _delta_varints(coords):
+    out=bytearray();prev=0
+    for c in coords:
+        out+=_varint(int(c)-prev);prev=int(c)
+    return bytes(out)
+
+
+def _read_delta_varints(buf,count):
+    vals=[];i=0;prev=0
+    for _ in range(count):
+        shift=0;value=0
+        while True:
+            b=buf[i];i+=1;value|=(b&0x7f)<<shift;shift+=7
+            if not (b&0x80):break
+        prev+=value;vals.append(prev)
+    return np.asarray(vals,dtype=np.uint32),i
+
+
+def encode_v3(counts,scales,meta):
+    """Version 3: compressed context plus delta-varint row coordinates."""
+    _,coords,rows,context,scale_bytes,bits=prepare(counts,scales,meta)
+    if not len(coords):return b''
+    mask=rows!=0;values=rows[mask]
+    cbytes=_delta_varints(coords)
+    raw=scale_bytes+cbytes+pack(mask,1).tobytes()+pack(values,bits).tobytes()
+    ctx=zlib.compress(context,9)
+    body=ctx+zlib.compress(raw,9)
+    return V3HEADER.pack(b'E3TS3',len(ctx),len(coords),len(values),len(raw),len(cbytes),zlib.crc32(body))+body
+
+
+def decode_v3(packet,expected_meta):
+    c=validate_metadata(expected_meta);bits,ceiling,sbytes=SPECS[expected_meta['family']]
+    counts=np.zeros((1,32)+c.shape_zyx,dtype=np.uint8)
+    if not packet:return counts,np.ones(32,dtype=np.float32)
+    magic,msize,n,nnz,rsize,clen,crc=V3HEADER.unpack(packet[:V3HEADER.size]);size=int(np.prod(c.shape_zyx))
+    if (magic!=b'E3TS3' or not 1<=n<=size or not n<=nnz<=32*n or
+            rsize!=sbytes+clen+4*n+(bits*nnz+7)//8):raise ValueError('Invalid v3 snapshot header')
+    body=packet[V3HEADER.size:]
+    if zlib.crc32(body)!=crc:raise ValueError('Snapshot checksum mismatch')
+    if zlib.decompress(body[:msize])!=_context(expected_meta):raise ValueError('Changed identity')
+    decoder=zlib.decompressobj();raw=decoder.decompress(body[msize:],rsize+1)
+    if len(raw)!=rsize or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail:raise ValueError('Invalid compression stream')
+    scales=np.frombuffer(raw[:sbytes],dtype='<f4').copy() if sbytes else np.ones(32,dtype=np.float32)
+    _scales(scales,expected_meta['family']);raw=raw[sbytes:]
+    coords,used=_read_delta_varints(raw[:clen],n)
+    if used!=clen or np.any(coords>=size) or np.any(coords[1:]<=coords[:-1]):raise ValueError('Invalid spatial rows')
+    raw2=raw[clen:]
+    mask=unpack(np.frombuffer(raw2[:4*n],dtype=np.uint8),32*n,1).reshape(n,32).astype(bool)
+    values=unpack(np.frombuffer(raw2[4*n:],dtype=np.uint8),nnz,bits)
+    if int(mask.sum())!=nnz or not np.all(mask.any(1)) or np.any(values==0) or np.any(values>ceiling):raise ValueError('Invalid channel codes')
+    rows=np.zeros((n,32),dtype=np.uint8);rows[mask]=values
+    counts.reshape(32,size)[:,coords]=rows.T
+    return counts,scales

@@ -102,6 +102,10 @@ class PointPillarDirLoss(nn.Module):
         self.distance_extent = (args.get('bev_x_range', (-100.8, 100.8)),
                                 args.get('bev_y_range', (-40.0, 40.0)))
         self._distance_weights = None
+        self.reg_distance_alpha = float(args.get('reg_distance_alpha', 0.0))
+        self.iou_weight = float(args.get('iou_weight', 0.0))
+        self.quality_weight = float(args.get('quality_weight', 0.0))
+        self._reg_distance = None
         self.loss_dict = {}
 
     def forward(self, output_dict, target_dict):
@@ -126,6 +130,20 @@ class PointPillarDirLoss(nn.Module):
         negative_cls_weights = negatives * 1.0
         cls_weights = (negative_cls_weights + 1.0 * positives).float()
         reg_weights = positives.float()
+        if self.reg_distance_alpha > 0:
+            if self._reg_distance is None or self._reg_distance.shape[1] != reg_weights.shape[1]:
+                width, height = self.distance_grid
+                if width is None or height is None:
+                    raise ValueError('Regression distance weighting requires bev_w/bev_h')
+                (x0, x1), (y0, y1) = self.distance_extent
+                xs = torch.linspace(x0, x1, int(width) + 1)[:-1] + (x1 - x0) / (2 * int(width))
+                ys = torch.linspace(y0, y1, int(height) + 1)[:-1] + (y1 - y0) / (2 * int(height))
+                grid_y, grid_x = torch.meshgrid(ys, xs)
+                radius = torch.sqrt(grid_x ** 2 + grid_y ** 2)
+                factor = radius / radius.mean()
+                anchors = reg_weights.shape[1] // int(width * height)
+                self._reg_distance = factor.reshape(1, -1).repeat_interleave(anchors, dim=1)
+            reg_weights = reg_weights * (1.0 + self.reg_distance_alpha * (self._reg_distance.to(reg_weights.device) - 1.0)).clamp(min=0.0)
 
         if self.distance_alpha > 0:
             if self._distance_weights is None or self._distance_weights.shape[1] != cls_weights.shape[1]:
@@ -182,6 +200,47 @@ class PointPillarDirLoss(nn.Module):
                                weights=reg_weights)
         reg_loss = loc_loss_src.sum() / rm.shape[0]
         reg_loss *= self.reg_coe
+        pos_iou = None
+        if (self.iou_weight > 0 or self.quality_weight > 0) and 'anchors' in target_dict and int(positives.sum()) > 0:
+            from shapely.geometry import Polygon as _Poly
+            anchors_all = target_dict['anchors']
+            flat_anchors = anchors_all.reshape(-1, 7) if anchors_all.dim() > 1 else anchors_all
+            idx = positives.reshape(-1).nonzero(as_tuple=False).squeeze(1) % flat_anchors.size(0)
+            a = flat_anchors[idx].detach()
+            dp = rm.view(rm.size(0), -1, 7)[positives]
+            dg = targets[positives]
+            a_d = torch.sqrt(a[:, 4] ** 2 + a[:, 5] ** 2)
+            def _decode(d):
+                b = torch.zeros_like(d)
+                b[:, 0] = d[:, 0] * a_d + a[:, 0]
+                b[:, 1] = d[:, 1] * a_d + a[:, 1]
+                b[:, 2] = d[:, 2] * a[:, 3] + a[:, 2]
+                b[:, 3:6] = torch.exp(d[:, 3:6]) * a[:, 3:6]
+                b[:, 6] = d[:, 6] + a[:, 6]
+                return b
+            bp = _decode(dp).detach().cpu().numpy()
+            bg = _decode(dg).detach().cpu().numpy()
+            values = []
+            for i in range(len(bp)):
+                def _poly(box):
+                    x, y, w, l, yaw = box[0], box[1], box[4], box[5], box[6]
+                    c, s = np.cos(yaw), np.sin(yaw)
+                    dx, dy = l / 2.0, w / 2.0
+                    return _Poly([(x + c * dx - s * dy, y + s * dx + c * dy),
+                                  (x + c * dx + s * dy, y + s * dx - c * dy),
+                                  (x - c * dx + s * dy, y - s * dx - c * dy),
+                                  (x - c * dx - s * dy, y - s * dx + c * dy)])
+                p1, p2 = _poly(bp[i]), _poly(bg[i])
+                inter = p1.intersection(p2).area
+                union = p1.area + p2.area - inter
+                values.append(inter / union if union > 0 else 0.0)
+            pos_iou = torch.tensor(values, dtype=rm.dtype, device=rm.device)
+        if self.iou_weight > 0 and pos_iou is not None:
+            reg_loss = reg_loss + self.iou_weight * (1.0 - pos_iou).mean()
+        if self.quality_weight > 0 and pos_iou is not None and 'qm' in output_dict:
+            q_logits = output_dict['qm'].permute(0, 2, 3, 1).contiguous().view(positives.size(0), -1)[positives]
+            import torch.nn.functional as _F
+            reg_loss = reg_loss + self.quality_weight * _F.binary_cross_entropy_with_logits(q_logits, pos_iou.detach())
 
         ######## direction ##########
         dir_targets = self.get_direction_target(targets)

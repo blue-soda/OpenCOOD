@@ -28,6 +28,12 @@ class SnapshotAdapter:
         self.snapshot_event_quotas = {int(k):v for k,v in args['snapshot'].get('event_quotas', {}).items()}
         self.snapshot_split_links = int(args['snapshot'].get('split_links', 1))
         self.snapshot_split_mode = args['snapshot'].get('split_mode', 'flat')
+        self.snapshot_codec = args['snapshot'].get('codec', 'v1')
+        self.snapshot_drop_links = int(args['snapshot'].get('drop_links', 0))
+        if not 0 <= self.snapshot_drop_links < 4:
+            raise ValueError('drop_links must be in [0, 4)')
+        if self.snapshot_codec not in ('v1', 'v2', 'v3'):
+            raise ValueError('Unknown snapshot codec version')
         if self.snapshot_split_mode not in ('flat', 'channel'):
             raise ValueError('Unknown message split mode')
         if not 1 <= self.snapshot_split_links <= 4:
@@ -151,7 +157,8 @@ class SnapshotAdapter:
                         selected.record.update(communication_measured=True,actual_bytes=total,
                             split_links=self.snapshot_split_links)
                     else:
-                        selected.packet=wire.encode(selected.counts.detach().cpu().numpy(),
+                        encoder = {'v1': wire.encode, 'v2': wire.encode_v2, 'v3': wire.encode_v3}[self.snapshot_codec]
+                        selected.packet=encoder(selected.counts.detach().cpu().numpy(),
                             selected.scales.detach().cpu().numpy().reshape(32),meta)
                         selected.record.update(communication_measured=True,actual_bytes=len(selected.packet))
             else:
@@ -160,13 +167,17 @@ class SnapshotAdapter:
             if self.packet_roundtrip:
                 if self.snapshot_split_links > 1:
                     merged=None
-                    for packet in selected.parts:
+                    surviving = selected.parts[self.snapshot_drop_links:] if self.snapshot_drop_links else selected.parts
+                    if not surviving:
+                        raise ValueError('All packets dropped; use a smaller drop_links')
+                    for packet in surviving:
                         decoded,paid=wire.decode(packet,meta)
                         piece=full.new_tensor(decoded)
                         merged=piece if merged is None else merged+piece
                     counts=merged;scales=full.new_tensor(paid).reshape(1,32,1,1,1)
                 else:
-                    decoded,paid=wire.decode(selected.packet,meta)
+                    decoder = {'v1': wire.decode, 'v2': wire.decode_v2, 'v3': wire.decode_v3}[self.snapshot_codec]
+                    decoded,paid=decoder(selected.packet,meta)
                     counts=full.new_tensor(decoded);scales=full.new_tensor(paid).reshape(1,32,1,1,1)
             counts=counts*kept[i]
             if self.snapshot_family=='if8':
@@ -197,7 +208,8 @@ class SnapshotAdapter:
                     sha256=hashlib.sha256(selected.packet).hexdigest(),basis=basis)
                 with (directory/'index.jsonl').open('a') as f:f.write(json.dumps(record)+'\n')
                 self.snapshot_packet_index+=1
-        output={k:torch.cat([o[k] for o in outputs]) for k in ('psm','rm','dm')}
+        keys=('psm','rm','dm')+(('qm',) if all('qm' in o for o in outputs) else ())
+        output={k:torch.cat([o[k] for o in outputs]) for k in keys}
         output.update(message_kept=kept.detach(),stream_events=units)
         if quota_mode:
             output['event_quotas']=[self.snapshot_event_quotas.get(self.snapshot_budget,self.snapshot_budget)]*b

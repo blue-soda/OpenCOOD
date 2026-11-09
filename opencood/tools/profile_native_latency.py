@@ -22,13 +22,20 @@ def main():
     parser.add_argument('--config', required=True)
     parser.add_argument('--checkpoint', required=True)
     parser.add_argument('--frames', type=int, default=200)
+    parser.add_argument('--allow-new-modules', action='store_true')
     parser.add_argument('--warmup', type=int, default=20)
     parser.add_argument('--output', required=True)
     args = parser.parse_args()
     cfg = yaml_utils.load_yaml(args.config)
     device = torch.device('cuda:0')
     model = train_utils.create_model(cfg)
-    model.load_state_dict(torch.load(args.checkpoint, map_location='cpu'), strict=True)
+    state = torch.load(args.checkpoint, map_location='cpu')
+    if getattr(args, 'allow_new_modules', False):
+        own = model.state_dict()
+        kept = {k: v for k, v in state.items() if k in own and tuple(v.shape) == tuple(own[k].shape)}
+        model.load_state_dict(kept, strict=False)
+    else:
+        model.load_state_dict(state, strict=True)
     model.to(device).eval()
     dataset = build_dataset(cfg, visualize=False, train=False)
     timings = []
