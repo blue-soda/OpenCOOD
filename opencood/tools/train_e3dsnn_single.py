@@ -238,6 +238,11 @@ def execute(args, output_dir):
         if not hasattr(model, 'packet_roundtrip'):
             raise ValueError('Packet replay requires a fusion model')
         model.packet_roundtrip = True
+    if getattr(args, 'shuffle_received_counts', False):
+        if (getattr(model, 'snapshot_family', None) != 'if8'
+                or model.snapshot_split_links != 1 or model.snapshot_selection != 'event_quota'):
+            raise ValueError('Count shuffling requires a single IF8 event-quota message')
+        model.shuffle_received_counts = True
     criterion = train_utils.create_loss(cfg).cuda()
     from opencood.utils.cp_optimizer import make_optimizer, apply_warmup
     optimizer = make_optimizer(cfg, model)
@@ -602,6 +607,8 @@ def main():
     parser.add_argument('--single-checkpoint', help='Initialize fusion from the corresponding fixed single-agent state')
     parser.add_argument('--warmup-epochs', type=int, default=0, help='Freeze pretrained parameters and BN during residual-fusion warmup')
     parser.add_argument('--packet-roundtrip', action='store_true', help='Serialize/decode road features during eval')
+    parser.add_argument('--shuffle-received-counts', action='store_true',
+                        help='After decoding, permute nonzero voxel counts within each channel')
     parser.add_argument('--allow-new-modules', action='store_true',
                         help='Initialise a variant with new modules from a parent checkpoint')
     parser.add_argument('--measure-communication', action='store_true',
@@ -617,6 +624,8 @@ def main():
     parser.add_argument('--defer-initial-validation', action='store_true',
         help='Evaluate the fixed initial checkpoint concurrently; include it before first best selection')
     args = parser.parse_args()
+    if args.shuffle_received_counts and (args.mode != 'eval' or not args.packet_roundtrip):
+        parser.error('--shuffle-received-counts requires eval mode with --packet-roundtrip')
     if args.measure_communication and args.mode != 'eval':
         parser.error('--measure-communication is evaluation-only')
     if args.defer_initial_validation and (args.mode != 'train' or not args.retain_initial_best):

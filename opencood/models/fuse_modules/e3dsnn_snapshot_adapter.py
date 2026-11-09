@@ -16,11 +16,25 @@ from opencood.utils import task_snapshot_packet as wire
 TRAINABLE = ('content.project.weight', 'content.expand.weight')
 
 
+def shuffle_positive_counts(counts, frame_id):
+    """Permute multiplicities within each channel, preserving its active voxels."""
+    if counts.ndim != 5 or counts.shape[0] != 1:
+        raise ValueError('Expected one decoded [1,C,Z,Y,X] count message')
+    seed = int.from_bytes(hashlib.sha256(str(frame_id).encode()).digest()[:8], 'little')
+    rng = np.random.default_rng(seed)
+    shuffled = counts.copy(order='C')
+    for channel in shuffled[0].reshape(shuffled.shape[1], -1):
+        active = np.flatnonzero(channel)
+        channel[active] = rng.permutation(channel[active])
+    return shuffled
+
+
 class SnapshotAdapter:
     def __init__(self, args):
         super().__init__(args)
         self.snapshot_budget = args['snapshot']['budget_bytes']
         self.snapshot_family = args['snapshot']['family']
+        self.shuffle_received_counts = False
         self.snapshot_selection = args['snapshot'].get('selection', 'actual_bytes')
         self.snapshot_order = args['snapshot'].get('order', 'time')
         if self.snapshot_order not in ('time', 'block', 'random'):
@@ -178,6 +192,8 @@ class SnapshotAdapter:
                 else:
                     decoder = {'v1': wire.decode, 'v2': wire.decode_v2, 'v3': wire.decode_v3}[self.snapshot_codec]
                     decoded,paid=decoder(selected.packet,meta)
+                    if self.shuffle_received_counts:
+                        decoded = shuffle_positive_counts(decoded, contract.receiver_frame)
                     counts=full.new_tensor(decoded);scales=full.new_tensor(paid).reshape(1,32,1,1,1)
             counts=counts*kept[i]
             if self.snapshot_family=='if8':
