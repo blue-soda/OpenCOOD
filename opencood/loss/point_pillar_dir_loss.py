@@ -6,6 +6,7 @@
 
 import torch
 import torch.nn as nn
+import math
 import torch.nn.functional as F
 import numpy as np
 from opencood.utils.common_utils import limit_period
@@ -105,6 +106,7 @@ class PointPillarDirLoss(nn.Module):
         self.reg_distance_alpha = float(args.get('reg_distance_alpha', 0.0))
         self.iou_weight = float(args.get('iou_weight', 0.0))
         self.quality_weight = float(args.get('quality_weight', 0.0))
+        self.quality_negative_weight = float(args.get('quality_negative_weight', 0.0))
         self._reg_distance = None
         self.loss_dict = {}
 
@@ -241,6 +243,18 @@ class PointPillarDirLoss(nn.Module):
             q_logits = output_dict['qm'].permute(0, 2, 3, 1).contiguous().view(positives.size(0), -1)[positives]
             import torch.nn.functional as _F
             reg_loss = reg_loss + self.quality_weight * _F.binary_cross_entropy_with_logits(q_logits, pos_iou.detach())
+        if self.quality_negative_weight > 0:
+            # Mine up to 16 confident negative anchors per scene outside a 2 m
+            # margin around positive cells on the fine (0.4 m) detection grid.
+            pos_map = target_dict['pos_equal_one'].any(dim=-1).unsqueeze(1).float()
+            near_positive = F.max_pool2d(pos_map, 11, 1, 5).bool()
+            eligible = target_dict['neg_equal_one'].permute(0, 3, 1, 2).bool() & ~near_positive
+            scores = psm.detach().masked_fill(~eligible, -torch.inf).flatten(1)
+            values, indices = scores.topk(min(16, scores.size(1)), dim=1)
+            selected = values >= math.log(0.2 / 0.8)
+            quality = output_dict['qm'].flatten(1).gather(1, indices)[selected]
+            if quality.numel():
+                reg_loss = reg_loss + self.quality_negative_weight * F.softplus(quality).mean()
 
         ######## direction ##########
         dir_targets = self.get_direction_target(targets)
