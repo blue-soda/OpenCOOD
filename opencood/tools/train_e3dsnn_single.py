@@ -496,9 +496,18 @@ def execute(args, output_dir):
             optimizer.zero_grad(set_to_none=True)
             train_output, loss = checked_forward(model, criterion, batch, teacher,
                                       teacher_manifest['weight'] if teacher_manifest else 0.)
-            loss.backward()
-            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 10., error_if_nonfinite=True)
-            optimizer.step()
+            if loss.requires_grad:
+                loss.backward()
+                grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 10., error_if_nonfinite=True)
+                optimizer.step()
+            else:
+                # The frozen detector has no trainable objective on a batch with zero positive anchors.
+                if not (cfg['model']['args'].get('freeze_for_quality') and criterion.quality_weight > 0
+                        and 'anchor_box' in batch['ego'] and not batch['ego']['label_dict']['pos_equal_one'].any()
+                        and train_output['qm'].requires_grad):
+                    raise RuntimeError('Training loss is disconnected on a supervised batch')
+                grad_norm = 0.
+                print(f'No quality targets in epoch {epoch + 1}, batch {index + 1}; optimizer step skipped', flush=True)
             n = batch['ego']['object_bbx_mask'].shape[0]
             total += float(loss.detach()) * n
             for key, value in model.last_loss_components.items():
