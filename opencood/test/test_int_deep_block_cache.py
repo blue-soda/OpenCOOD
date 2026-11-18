@@ -4,11 +4,48 @@ import numpy as np
 import torch
 
 from opencood.models.sub_modules.int_deep_block_cache import DeepBlockCache
+from opencood.models.sub_modules.int_deep_phase_projection import DeepPhaseProjection
+from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.models.sub_modules.int_multiscale_refresh import ProtectedMultiscaleRefreshDetector
 from opencood.models.sub_modules.int_pyramid_regions import (
     plan_coalesced_refresh, plan_counted_host_refresh, plan_host_coalesced_refresh,
 )
 from test_int_pyramid_cache import fixture
+
+
+class DeepPhaseProjectionTests(unittest.TestCase):
+    @torch.no_grad()
+    def test_stride_four_reuses_aligned_sites_and_projects_new_writes(self):
+        torch.manual_seed(17)
+        block = torch.nn.Sequential(
+            torch.nn.ConvTranspose2d(5, 7, 4, stride=4, bias=False),
+            torch.nn.BatchNorm2d(7),
+            torch.nn.ReLU(),
+        ).eval()
+        block[1].bias.copy_(torch.linspace(-.2, .2, 7))
+        projector = DeepPhaseProjection(block)
+        previous = torch.randn(1, 5, 3, 6)
+        old_output, old_phases = projector.fresh(previous)
+        old_pose = np.eye(4)
+        moved = old_pose.copy()
+        moved[0, 3] = 1.
+        bounds = (0, 0, -1, 6, 3, 1)
+        aligned, valid = warp_bev(previous, old_pose, moved, bounds)
+        written = ~valid
+        written[..., 1, 2] = True
+        deep = torch.where(written, torch.randn_like(aligned), aligned)
+        sizes = []
+        hook = block[0].register_forward_pre_hook(lambda _, inputs: sizes.append(inputs[0].shape[-2:]))
+        try:
+            projected, _ = projector.advance(deep, written, old_phases, old_pose, moved, bounds)
+            held, _ = projector.advance(previous, torch.zeros_like(written), old_phases, old_pose, old_pose, bounds)
+            refreshed, _ = projector.advance(deep, torch.ones_like(written), old_phases, old_pose, moved, bounds)
+        finally:
+            hook.remove()
+        self.assertEqual(sizes, [(1, 4), deep.shape[-2:]])
+        self.assertTrue(torch.allclose(projected, block(deep), atol=1e-6))
+        self.assertTrue(torch.equal(held, old_output))
+        self.assertTrue(torch.equal(refreshed, block(deep)))
 
 
 class DeepBlockCacheTests(unittest.TestCase):

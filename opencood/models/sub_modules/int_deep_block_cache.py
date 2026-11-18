@@ -53,7 +53,8 @@ class PackedLightDeepStage(PackedPyramidStage):
 
 class DeepBlockCache:
     def __init__(self, source, tile, operator='heavy', deep_interface=None,
-                 planner=plan_coalesced_refresh, phase=nullcontext, crop_first=False, counted_host=False):
+                 planner=plan_coalesced_refresh, phase=nullcontext, crop_first=False, counted_host=False,
+                 deep_projector=None):
         if source.training or not source.light_observations or tile < 1:
             raise ValueError('Frozen light-observation source and positive tile size required')
         self.source = source
@@ -66,6 +67,9 @@ class DeepBlockCache:
         self.phase = phase
         self.crop_first = crop_first
         self.counted_host = counted_host
+        if deep_projector is not None and deep_interface is not None:
+            raise ValueError('Test the projection cache with unmodified float task features')
+        self.deep_projector = deep_projector
         if operator == 'heavy':
             self.stage = PackedPyramidStage(self.core.deep_encoder, self.core.refresh_updates['deep']).eval()
         elif operator == 'light':
@@ -115,8 +119,9 @@ class DeepBlockCache:
         required = ~frame.valid | (frame.age >= self.source.max_age - 1e-6)
         return expand_tiles(tile_mask(required, self.tile), self.tile, required.shape[-2:])
 
-    def predict(self, frame, deep):
-        projected = [layer(value) for layer, value in zip(self.core.deblocks, (frame.fine, frame.coarse, deep))]
+    def predict(self, frame, deep, deep_projection=None):
+        projected = [self.core.deblocks[0](frame.fine), self.core.deblocks[1](frame.coarse)]
+        projected.append(self.core.deblocks[2](deep) if deep_projection is None else deep_projection)
         features = self.core.readout(torch.cat(projected, 1))
         output = dict(psm=self.core.cls_head(features), rm=self.core.reg_head(features))
         if self.core.dir_head is not None:
@@ -132,6 +137,8 @@ class DeepBlockCache:
             kwargs = {} if self.deep_interface is None else {'deep_interface': self.deep_interface}
             if self.phase is not nullcontext:
                 kwargs['phase'] = self.phase
+            if self.deep_projector is not None:
+                kwargs['deep_projector'] = self.deep_projector
             prediction, new, info = self.source.step_spatial(spatial, state, meta, **kwargs)
             new['deep_age'] = torch.zeros_like(new['deep'][:, :1])
             return prediction, new, dict(info, stage_conv_ratio=1., actual_write_fraction=1., fallback=False)
@@ -174,4 +181,9 @@ class DeepBlockCache:
                        pose=copy.deepcopy(meta['pose']), scene=meta['segment'], timestamp_us=int(meta['timestamp_us']),
                        refresh_timestamp_us=state['refresh_timestamp_us'], since_refresh=state['since_refresh'] + 1)
         with self.phase('readout'):
-            return self.predict(frame, sent), new, dict(info, reset=None, full_refresh=None)
+            projected = None
+            if self.deep_projector is not None:
+                bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], sent.shape[-2:], 8)
+                projected, new['deep_projection'] = self.deep_projector.advance(
+                    sent, written, state['deep_projection'], state['pose'], meta['pose'], bounds)
+            return self.predict(frame, sent, projected), new, dict(info, reset=None, full_refresh=None)

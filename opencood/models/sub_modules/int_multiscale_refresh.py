@@ -74,7 +74,8 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
         self.core.deep_light=nn.Sequential(nn.Conv2d(256,256,3,stride=2,padding=1,groups=256),nn.ReLU(),nn.Conv2d(256,512,1))
         self.variant='middle_deep_light_'+mode;self.train(False)
 
-    def step_spatial(self,spatial,state,meta,detach_state=True,requests=None,deep_interface=None,phase=nullcontext):
+    def step_spatial(self,spatial,state,meta,detach_state=True,requests=None,deep_interface=None,phase=nullcontext,
+                     deep_projector=None):
         if spatial.shape[0]!=1 or requests is not None:raise ValueError('Single stream; no local masks yet')
         reason,dt=reset_reason(state,meta);stamp=int(meta['timestamp_us'])
         refresh=reason
@@ -104,11 +105,21 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
                 readout_values = (*values[:-1], sent)
             else:
                 readout_values = values
-            features=self.core.readout(torch.cat([m(v) for m,v in zip(self.core.deblocks,readout_values)],1))
+            projections = [self.core.deblocks[0](readout_values[0]),
+                           self.core.deblocks[1](readout_values[1])]
+            projection_state = None
+            if deep_projector is None:
+                projections.append(self.core.deblocks[2](readout_values[2]))
+            else:
+                projected, projection_state = deep_projector.fresh(readout_values[2])
+                projections.append(projected)
+            features=self.core.readout(torch.cat(projections,1))
             pred=dict(psm=self.core.cls_head(features),rm=self.core.reg_head(features))
             if self.core.dir_head is not None:pred['dm']=self.core.dir_head(features)
         with phase('state_commit'):
             new={k:v.detach() if detach_state else v for k,v in zip(self.state_keys,values)}
+            if projection_state is not None:
+                new['deep_projection'] = projection_state.detach() if detach_state else projection_state
             new.update(pose=copy.deepcopy(meta['pose']),scene=meta['segment'],timestamp_us=stamp,
                 refresh_timestamp_us=stamp if refresh else state['refresh_timestamp_us'],
                 since_refresh=0 if refresh else state['since_refresh']+1)
