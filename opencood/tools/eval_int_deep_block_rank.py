@@ -172,7 +172,7 @@ def policy_eval(cache, cfg, rows, plan, weights, out):
                     if meta['supervised']:
                         boxes, scores = dataset.post.post_process(batch, dict(ego=pred))
                         for t in (.5,.7):
-                            eval_utils.caluclate_tp_fp(boxes, scores, gt, stats[mode][t], t)
+                            eval_utils.caluclate_tp_fp(boxes, scores, gt, stats[mode], t)
                 reference = entry['arms']['p5']
                 assert all(a['refresh'] == reference['refresh'] and a['core_conv_flops'] <= reference['core_conv_flops']
                            for a in entry['arms'].values())
