@@ -86,7 +86,8 @@ def bootstrap(directory, metrics, seed):
 
 
 def load_models(parent, checkpoint, saved_identity):
-    assert checkpoint['identity'] == saved_identity and checkpoint['epoch'] == EPOCHS
+    serialized_identity = json.loads(json.dumps(checkpoint['identity']))
+    assert serialized_identity == saved_identity and checkpoint['epoch'] == EPOCHS
     frozen = tensor_digest(parent.state_dict(),TRAINED)
     assert saved_identity['frozen_digest']==frozen
     models={}
