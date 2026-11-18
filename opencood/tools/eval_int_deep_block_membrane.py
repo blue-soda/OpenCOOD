@@ -25,20 +25,40 @@ TRACE_SHA = 'e98c16a9aa99bd3db874161e2cc734d2b6e6681c6e33f13144582d14c6c51a82'
 
 
 class TaskStateInterface:
-    def __init__(self, mode):
+    def __init__(self, mode, quantum):
         self.mode = mode
+        self.quantum = quantum
         self.quantization = None
 
     def __call__(self, deep, written):
         if self.mode == 'continuous':
             return deep, deep
-        sent = quantize_ste(deep, QUANTUM)
+        sent = quantized_deep(deep, self.quantum)
         self.quantization = dict(mean_abs=float((deep - sent).abs().mean()),
                                  zero_fraction=float((sent == 0).float().mean()))
         stored = deep
         if self.mode == 'drop':
             stored = sent if written is None else torch.where(written, sent, deep)
         return stored, sent
+
+
+def quantized_deep(deep, quantum):
+    if torch.is_tensor(quantum):
+        return torch.round(deep / quantum) * quantum
+    return quantize_ste(deep, quantum)
+
+
+def load_quantum(path, dev_plan, channels):
+    if path is None:
+        return QUANTUM, None, 0
+    record = json.loads(Path(path).read_text())
+    assert record['split'] == 'train' and record['source_sha256'] == SOURCE_SHA
+    assert record['period'] == 5 and record['max_age'] == .55 and record['tile'] == TILE
+    assert {s[0] for s in record['scenes']}.isdisjoint(s[0] for s in dev_plan['scenes'])
+    quantum = np.asarray(record['quantum'], dtype=np.float32)
+    assert quantum.shape == (channels,) and np.isfinite(quantum).all() and (quantum > 0).all()
+    assert (np.frexp(quantum)[0] == .5).all()
+    return torch.from_numpy(quantum).view(1, -1, 1, 1).cuda(), digest(Path(path)), quantum.nbytes
 
 
 def exact(left, right, keys):
@@ -74,14 +94,18 @@ def run(args, out):
     source, cfg, rows, _ = build(args)
     source.period, source.max_age = 5, .55
     original = model_digest(source)
-    modes = {mode:TaskStateInterface(mode) for mode in MODES if mode != 'ann'}
+    quantum, calibration_sha, calibration_bytes = load_quantum(args.calibration, plan, source.core.deep_light[-1].out_channels)
+    modes = {mode:TaskStateInterface(mode, quantum) for mode in MODES if mode != 'ann'}
     models = {mode:DeepBlockCache(source, TILE, 'light', modes.get(mode)) for mode in MODES}
     state_keys = (*source.state_keys, 'deep_age')
+    verify_dense = not args.score or args.check_dense
     stats = {m:{t:dict(tp=[], fp=[], score=[], gt=0) for t in (.5,.7)} for m in MODES} if args.score else {}
     write_json(out/'contract.json', dict(code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         checkpoint_sha256=SOURCE_SHA, plan_sha256=digest(Path(args.plan)), fixed_residual_trace_sha256=trace_sha,
-        device=torch.cuda.get_device_name(), torch=torch.__version__, period=5, max_age=.55, tile=TILE, quantum=QUANTUM,
-        scored=args.score, same_mask_dense_reference=not args.score, scope='Frozen learned P5 dynamics; only deep state storage/readout changed. Carry preserves full pre-quantized task tensor, drop quantizes actual write cells, both round readout. Warp-only retention uses common alignment. No spike transport or timing.'))
+        device=torch.cuda.get_device_name(), torch=torch.__version__, period=5, max_age=.55, tile=TILE,
+        quantum='per-channel' if calibration_sha else QUANTUM, calibration_sha256=calibration_sha,
+        static_calibration_bytes=calibration_bytes,
+        scored=args.score, same_mask_dense_reference=verify_dense, scope='Frozen learned P5 dynamics; only deep state storage/readout changed. Carry preserves full pre-quantized task tensor, drop quantizes actual write cells, both round readout. Warp-only retention uses common alignment. No spike transport or timing.'))
     recorded = []
     with torch.no_grad(), (out/'frames.jsonl').open('x', buffering=1) as writer:
         for clip, ids, dataset, stream in clip_streams(plan, rows, cfg):
@@ -117,7 +141,7 @@ def run(args, out):
                     step = dict(core_conv_flops=flops, state_bytes=state_bytes,
                                 quantization=modes[name].quantization if name in modes else None,
                                 head_mae_vs_ann=head_delta(pred, predictions['ann']))
-                    if name in refs and not args.score:
+                    if name in refs and verify_dense:
                         agreement = []
                         reference, refs[name], _ = model.step_spatial(
                             spatial, refs[name], meta, trace_request(tiles, agreement), dense_reference=True)
@@ -138,8 +162,8 @@ def run(args, out):
                     exact(predictions['carry'], predictions['drop'], predictions['carry'])
                 mask = observed['ann']
                 off_mask = (~mask).expand_as(state['drop']['deep'])
-                residual = state['drop']['deep'][mask.expand_as(state['drop']['deep'])]
-                assert torch.equal(residual, quantize_ste(residual, QUANTUM))
+                dropped = state['drop']['deep']
+                assert not bool((mask & (dropped != quantized_deep(dropped, quantum))).any())
                 drift = (state['carry']['deep']-state['drop']['deep']).abs()
                 row = dict(frame=meta['frame'], clip=clip, refresh=gold['refresh'], supervised=bool(meta['supervised']),
                            written_cells=int(mask.sum()), lattice_cells=mask.numel(), arms=metrics,
@@ -161,6 +185,7 @@ def run(args, out):
         report[name] = dict(parameters=sum(p.numel() for p in source.parameters()), model_step_ms_mean=None,
                             core_conv_flops_mean=mean(r['core_conv_flops'] for r in items),
                             state_bytes_max=max(r['state_bytes'] for r in items),
+                            static_calibration_bytes=calibration_bytes if name in ('carry','drop') else 0,
                             ap50=eval_utils.calculate_ap(stats[name], .5)[0] if args.score else None,
                             ap70=eval_utils.calculate_ap(stats[name], .7)[0] if args.score else None,
                             mean_head_mae_vs_ann={key:mean(r['head_mae_vs_ann'][key] for r in items)
@@ -168,7 +193,7 @@ def run(args, out):
         if name in ('carry','drop'):
             report[name]['mean_readout_quantization_abs'] = mean(r['quantization']['mean_abs'] for r in items)
             report[name]['mean_readout_zero_fraction'] = mean(r['quantization']['zero_fraction'] for r in items)
-            if not args.score:
+            if verify_dense:
                 report[name]['dense_head_max_abs'] = max(r['dense_head_max_abs'] for r in items)
                 report[name]['dense_state_max_abs'] = max(r['dense_state_max_abs'] for r in items)
     ordinary = [r for r in recorded if r['refresh'] is None]
@@ -189,7 +214,9 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     for name in ('root','checkpoint','trained','readout','plan','trace','output'):
         p.add_argument('--'+name, required=True)
+    p.add_argument('--calibration', help='Training-only deep-channel quantum artifact')
     p.add_argument('--score', action='store_true')
+    p.add_argument('--check-dense', action='store_true', help='Also verify same-mask dense references when scoring')
     args = p.parse_args()
     out = Path(args.output)
     out.mkdir(parents=True, exist_ok=False)
