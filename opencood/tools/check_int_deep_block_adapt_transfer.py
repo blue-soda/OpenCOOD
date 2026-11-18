@@ -139,6 +139,7 @@ def run(args,out):
     write_json(out/'status.json',dict(status='RUNNING',phase='transfer_fixed_trace'))
     with torch.no_grad():
         transfer_trace=compile_trace(source,cfg,rows,transfer)
+    transfer.setdefault('labelled',sum(row['supervised'] for clip in transfer_trace for row in clip))
     write_json(out/'transfer_traces.json',transfer_trace)
     results={}
     for i,(name,plan,traces) in enumerate((('primary',primary,primary_trace),('transfer',transfer,transfer_trace))):
