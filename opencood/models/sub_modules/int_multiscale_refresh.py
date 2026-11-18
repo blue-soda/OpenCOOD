@@ -1,5 +1,6 @@
 """Trainable recurrent state and middle/deep refresh with light observations."""
 import copy
+from contextlib import nullcontext
 import math
 import torch
 from torch import nn
@@ -73,7 +74,7 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
         self.core.deep_light=nn.Sequential(nn.Conv2d(256,256,3,stride=2,padding=1,groups=256),nn.ReLU(),nn.Conv2d(256,512,1))
         self.variant='middle_deep_light_'+mode;self.train(False)
 
-    def step_spatial(self,spatial,state,meta,detach_state=True,requests=None,deep_interface=None):
+    def step_spatial(self,spatial,state,meta,detach_state=True,requests=None,deep_interface=None,phase=nullcontext):
         if spatial.shape[0]!=1 or requests is not None:raise ValueError('Single stream; no local masks yet')
         reason,dt=reset_reason(state,meta);stamp=int(meta['timestamp_us'])
         refresh=reason
@@ -85,26 +86,32 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
             ('value',self.core.observation,None,self.core.fine_update,2),
             ('coarse',self.core.coarse_encoder,self.core.coarse_light,self.core.coarse_update,4),
             ('deep',self.core.deep_encoder,self.core.deep_light,self.core.deep_update,8)):
-            current=(encoder if refresh or light is None or not getattr(self,'light_observations',True) else light)(x)
-            if reason:old=torch.zeros_like(current);valid=torch.zeros_like(current[:,:1],dtype=torch.bool)
+            compute, warp = ('deep_compute', 'deep_warp') if key == 'deep' else ('fine_coarse_compute', 'fine_coarse_warp')
+            with phase(compute):
+                current=(encoder if refresh or light is None or not getattr(self,'light_observations',True) else light)(x)
+            with phase(warp):
+                if reason:old=torch.zeros_like(current);valid=torch.zeros_like(current[:,:1],dtype=torch.bool)
+                else:
+                    bounds=block_lidar_range(self.bounds,spatial.shape[-2:],current.shape[-2:],stride)
+                    old,valid=warp_bev(state[key],state['pose'],meta['pose'],bounds)
+            with phase(compute):
+                if refresh and hasattr(self.core,'refresh_updates') and key in self.core.refresh_updates:
+                    update=self.core.refresh_updates[key]
+                update.delta_t=dt;x=update(current,old,valid);values.append(x)
+        with phase('readout'):
+            if deep_interface is not None:
+                values[-1], sent = deep_interface(values[-1], None)
+                readout_values = (*values[:-1], sent)
             else:
-                bounds=block_lidar_range(self.bounds,spatial.shape[-2:],current.shape[-2:],stride)
-                old,valid=warp_bev(state[key],state['pose'],meta['pose'],bounds)
-            if refresh and hasattr(self.core,'refresh_updates') and key in self.core.refresh_updates:
-                update=self.core.refresh_updates[key]
-            update.delta_t=dt;x=update(current,old,valid);values.append(x)
-        if deep_interface is not None:
-            values[-1], sent = deep_interface(values[-1], None)
-            readout_values = (*values[:-1], sent)
-        else:
-            readout_values = values
-        features=self.core.readout(torch.cat([m(v) for m,v in zip(self.core.deblocks,readout_values)],1))
-        pred=dict(psm=self.core.cls_head(features),rm=self.core.reg_head(features))
-        if self.core.dir_head is not None:pred['dm']=self.core.dir_head(features)
-        new={k:v.detach() if detach_state else v for k,v in zip(self.state_keys,values)}
-        new.update(pose=copy.deepcopy(meta['pose']),scene=meta['segment'],timestamp_us=stamp,
-            refresh_timestamp_us=stamp if refresh else state['refresh_timestamp_us'],
-            since_refresh=0 if refresh else state['since_refresh']+1)
+                readout_values = values
+            features=self.core.readout(torch.cat([m(v) for m,v in zip(self.core.deblocks,readout_values)],1))
+            pred=dict(psm=self.core.cls_head(features),rm=self.core.reg_head(features))
+            if self.core.dir_head is not None:pred['dm']=self.core.dir_head(features)
+        with phase('state_commit'):
+            new={k:v.detach() if detach_state else v for k,v in zip(self.state_keys,values)}
+            new.update(pose=copy.deepcopy(meta['pose']),scene=meta['segment'],timestamp_us=stamp,
+                refresh_timestamp_us=stamp if refresh else state['refresh_timestamp_us'],
+                since_refresh=0 if refresh else state['since_refresh']+1)
         return pred,new,dict(reset=reason,full_refresh=refresh,
             cache_bytes=sum(new[k].numel()*new[k].element_size() for k in self.state_keys),
             middle_deep_encoder_executed=bool(refresh) or not getattr(self,'light_observations',True),state_updates_executed=True)

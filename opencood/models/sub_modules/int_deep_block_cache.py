@@ -1,5 +1,6 @@
 """Frozen deep-state writeback with the P4 shallow/middle and refresh paths."""
 import copy
+from contextlib import nullcontext
 from typing import NamedTuple
 
 import torch
@@ -11,7 +12,7 @@ from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.models.sub_modules.int_mechanism_probes import SingleGateStateUpdate
 from opencood.models.sub_modules.int_multiscale_refresh import reset_reason
 from opencood.models.sub_modules.int_pyramid_cache import PackedPyramidStage
-from opencood.models.sub_modules.int_pyramid_regions import coalesced_refresh
+from opencood.models.sub_modules.int_pyramid_regions import coalesced_refresh, plan_coalesced_refresh
 from opencood.models.sub_modules.int_two_scale import StateUpdate
 
 
@@ -48,7 +49,8 @@ class PackedLightDeepStage(PackedPyramidStage):
 
 
 class DeepBlockCache:
-    def __init__(self, source, tile, operator='heavy', deep_interface=None):
+    def __init__(self, source, tile, operator='heavy', deep_interface=None,
+                 planner=plan_coalesced_refresh, phase=nullcontext):
         if source.training or not source.light_observations or tile < 1:
             raise ValueError('Frozen light-observation source and positive tile size required')
         self.source = source
@@ -57,6 +59,8 @@ class DeepBlockCache:
         self.operator = operator
         # Optional mapping from the computed state and written mask to stored and readout values.
         self.deep_interface = deep_interface
+        self.planner = planner
+        self.phase = phase
         if operator == 'heavy':
             self.stage = PackedPyramidStage(self.core.deep_encoder, self.core.refresh_updates['deep']).eval()
         elif operator == 'light':
@@ -84,19 +88,23 @@ class DeepBlockCache:
             ('value', self.core.observation, self.core.fine_update, 2),
             ('coarse', self.core.coarse_light, self.core.coarse_update, 4),
         ):
-            encoded = encoder(current)
-            bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], encoded.shape[-2:], stride)
-            old, valid = warp_bev(state[key], state['pose'], meta['pose'], bounds)
-            update.delta_t = dt
-            current = update(encoded, old, valid)
+            with self.phase('fine_coarse_compute'):
+                encoded = encoder(current)
+            with self.phase('fine_coarse_warp'):
+                bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], encoded.shape[-2:], stride)
+                old, valid = warp_bev(state[key], state['pose'], meta['pose'], bounds)
+            with self.phase('fine_coarse_compute'):
+                update.delta_t = dt
+                current = update(encoded, old, valid)
             features.append(current)
-        bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], state['deep'].shape[-2:], 8)
-        age = state.get('deep_age')
-        if age is None:
-            elapsed = (state['timestamp_us'] - state['refresh_timestamp_us']) / 1e6
-            age = torch.full_like(state['deep'][:, :1], elapsed)
-        aligned, valid = warp_bev(torch.cat((state['deep'], age), 1), state['pose'], meta['pose'], bounds)
-        return OrdinaryDeepInputs(features[0], features[1], old, aligned[:, :-1], valid, aligned[:, -1:] + dt, dt)
+        with self.phase('deep_warp'):
+            bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], state['deep'].shape[-2:], 8)
+            age = state.get('deep_age')
+            if age is None:
+                elapsed = (state['timestamp_us'] - state['refresh_timestamp_us']) / 1e6
+                age = torch.full_like(state['deep'][:, :1], elapsed)
+            aligned, valid = warp_bev(torch.cat((state['deep'], age), 1), state['pose'], meta['pose'], bounds)
+            return OrdinaryDeepInputs(features[0], features[1], old, aligned[:, :-1], valid, aligned[:, -1:] + dt, dt)
 
     def mandatory(self, frame):
         required = ~frame.valid | (frame.age >= self.source.max_age - 1e-6)
@@ -117,28 +125,36 @@ class DeepBlockCache:
     def step_spatial(self, spatial, state, meta, requests=None, dense_reference=False):
         if self.refresh_reason(state, meta):
             kwargs = {} if self.deep_interface is None else {'deep_interface': self.deep_interface}
+            if self.phase is not nullcontext:
+                kwargs['phase'] = self.phase
             prediction, new, info = self.source.step_spatial(spatial, state, meta, **kwargs)
             new['deep_age'] = torch.zeros_like(new['deep'][:, :1])
             return prediction, new, dict(info, stage_conv_ratio=1., actual_write_fraction=1., fallback=False)
         frame = self.prepare(spatial, state, meta)
-        mask = self.mandatory(frame)
-        if callable(requests):
-            requests = requests(frame, mask)
-        if requests is not None:
-            if requests.dtype != torch.bool or requests.shape != mask.shape:
-                raise ValueError('Expected a boolean mask on the deep lattice')
-            mask = mask | requests
-        if bool(mask.any()):
+        with self.phase('mask_guard'):
+            mask = self.mandatory(frame)
+            if callable(requests):
+                requests = requests(frame, mask)
+            if requests is not None:
+                if requests.dtype != torch.bool or requests.shape != mask.shape:
+                    raise ValueError('Expected a boolean mask on the deep lattice')
+                mask = mask | requests
+            needs_work = bool(mask.any())
+        if needs_work:
+            with self.phase('state_pack'):
+                packed = self.pack(frame)
             deep, written, info = coalesced_refresh(
-                self.stage, self.pack(frame),
-                frame.aligned, mask, tile=self.tile, dense_reference=dense_reference,
+                self.stage, packed, frame.aligned, mask, tile=self.tile, dense_reference=dense_reference,
+                planner=self.planner, phase=self.phase,
             )
         else:
             deep, written = frame.aligned, mask
             info = dict(stage_conv_ratio=0., actual_write_fraction=0., fallback=False)
-        stored, sent = (deep, deep) if self.deep_interface is None else self.deep_interface(deep, written)
-        new = dict(value=frame.fine, coarse=frame.coarse, deep=stored,
-                   deep_age=torch.where(written, torch.zeros_like(frame.age), frame.age),
-                   pose=copy.deepcopy(meta['pose']), scene=meta['segment'], timestamp_us=int(meta['timestamp_us']),
-                   refresh_timestamp_us=state['refresh_timestamp_us'], since_refresh=state['since_refresh'] + 1)
-        return self.predict(frame, sent), new, dict(info, reset=None, full_refresh=None)
+        with self.phase('state_commit'):
+            stored, sent = (deep, deep) if self.deep_interface is None else self.deep_interface(deep, written)
+            new = dict(value=frame.fine, coarse=frame.coarse, deep=stored,
+                       deep_age=torch.where(written, torch.zeros_like(frame.age), frame.age),
+                       pose=copy.deepcopy(meta['pose']), scene=meta['segment'], timestamp_us=int(meta['timestamp_us']),
+                       refresh_timestamp_us=state['refresh_timestamp_us'], since_refresh=state['since_refresh'] + 1)
+        with self.phase('readout'):
+            return self.predict(frame, sent), new, dict(info, reset=None, full_refresh=None)

@@ -5,6 +5,7 @@ import torch
 
 from opencood.models.sub_modules.int_deep_block_cache import DeepBlockCache
 from opencood.models.sub_modules.int_multiscale_refresh import ProtectedMultiscaleRefreshDetector
+from opencood.models.sub_modules.int_pyramid_regions import plan_coalesced_refresh, plan_host_coalesced_refresh
 from test_int_pyramid_cache import fixture
 
 
@@ -75,3 +76,22 @@ class DeepBlockCacheTests(unittest.TestCase):
             self.assertTrue(torch.allclose(local[key], dense[key], atol=1e-4, rtol=1e-4), key)
         for key in pred:
             self.assertTrue(torch.allclose(pred[key], ref[key], atol=1e-4, rtol=1e-4), key)
+
+    def test_host_planning_matches_partial_tiles_and_dense_fallback(self):
+        shape = (50, 126)
+        request = torch.zeros(1, 1, 25, 63, dtype=torch.bool)
+        for cells in ((), ((0, 1),), ((7, 61), (24, 62), (12, 28))):
+            request.zero_()
+            for y, x in cells:
+                request[..., y, x] = True
+            with self.subTest(cells=cells):
+                ref = plan_coalesced_refresh(request, shape, 5, 8)
+                host = plan_host_coalesced_refresh(request, shape, 5, 8)
+                self.assertTrue(torch.equal(ref[0], host[0]))
+                self.assertEqual(ref[1:], host[1:])
+        request.fill_(True)
+        ref = plan_coalesced_refresh(request, shape, 5, 8)
+        host = plan_host_coalesced_refresh(request, shape, 5, 8)
+        self.assertTrue(torch.equal(ref[0], host[0]))
+        self.assertEqual(ref[1:], host[1:])
+        self.assertIsNone(host[1])
