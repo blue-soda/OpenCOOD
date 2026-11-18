@@ -4,30 +4,38 @@ from opencood.models.sub_modules.int_cache_repair import (
     tile_mask, expand_tiles, rectangles, crop_jobs)
 
 
-def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8, stride=2, dense_reference=False):
-    """Local blocks whose convolutions all use the same output grid.
-
-    Candidate cost counts executed output pixels, including repeated halos.
-    All convolutions have the same output lattice, so this is proportional to
-    their actual MACs, including downsample projections and state updates.
-    Dense fallback preserves the same write mask; it is not a full refresh.
-    """
-    if module.training or x.shape[0] != 1 or batch_size < 1 or tile < 1 or stride not in (1,2):
-        raise ValueError('Frozen single-stream inference required')
-    h, w = x.shape[-2:]; oh, ow = cached.shape[-2:]
-    if (oh, ow) != ((h+stride-1)//stride, (w+stride-1)//stride) or requested.shape != cached[:, :1].shape:
-        raise ValueError('Output/mask mismatch')
+def plan_coalesced_refresh(requested, input_shape, radius, tile, stride=2):
+    """Plan the exact write mask and count executed sites, including halos."""
+    h, w = input_shape
+    oh, ow = requested.shape[-2:]
     written = expand_tiles(tile_mask(requested, tile), tile, (oh, ow))
     dense_work = oh*ow
     best_jobs = None; best_work = dense_work; chosen_tile = None
     original_work = None
     for size in (tile, tile*2, tile*4, tile*8, tile*16):
         regions = rectangles(tile_mask(written, size))
-        jobs, _ = crop_jobs(regions, h, w, oh, ow, stride, module.radius, size)
+        jobs, _ = crop_jobs(regions, h, w, oh, ow, stride, radius, size)
         work = sum(((j[6]-j[4]+stride-1)//stride)*((j[7]-j[5]+stride-1)//stride) for j in jobs)
         if original_work is None: original_work = work
         if work < best_work:
             best_work, best_jobs, chosen_tile = work, jobs, size
+    return written, best_jobs, best_work, original_work, chosen_tile
+
+
+def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8, stride=2, dense_reference=False):
+    """Local blocks whose convolutions all use the same output grid.
+
+    All convolutions have the same output lattice, so executed sites are
+    proportional to actual MACs. Dense fallback preserves the write mask.
+    """
+    if module.training or x.shape[0] != 1 or batch_size < 1 or tile < 1 or stride not in (1,2):
+        raise ValueError('Frozen single-stream inference required')
+    h, w = x.shape[-2:]; oh, ow = cached.shape[-2:]
+    if (oh, ow) != ((h+stride-1)//stride, (w+stride-1)//stride) or requested.shape != cached[:, :1].shape:
+        raise ValueError('Output/mask mismatch')
+    written, best_jobs, best_work, original_work, chosen_tile = plan_coalesced_refresh(
+        requested, (h, w), module.radius, tile, stride)
+    dense_work = oh * ow
     stats = dict(requested_fraction=float(requested.float().mean()),
                  selected_fraction=float(written.float().mean()),
                  actual_write_fraction=float(written.float().mean()),
