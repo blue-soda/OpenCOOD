@@ -2,7 +2,7 @@
 import copy
 from contextlib import nullcontext
 from functools import partial
-from typing import NamedTuple
+from typing import NamedTuple, Optional, Tuple
 
 import torch
 from torch import nn
@@ -27,6 +27,7 @@ class OrdinaryDeepInputs(NamedTuple):
     valid: torch.Tensor
     age: torch.Tensor
     dt: float
+    deep_route: Optional[Tuple[torch.Tensor, torch.Tensor]]
 
 
 class PackedLightDeepStage(PackedPyramidStage):
@@ -112,8 +113,14 @@ class DeepBlockCache:
             if age is None:
                 elapsed = (state['timestamp_us'] - state['refresh_timestamp_us']) / 1e6
                 age = torch.full_like(state['deep'][:, :1], elapsed)
-            aligned, valid = warp_bev(torch.cat((state['deep'], age), 1), state['pose'], meta['pose'], bounds)
-            return OrdinaryDeepInputs(features[0], features[1], old, aligned[:, :-1], valid, aligned[:, -1:] + dt, dt)
+            value = torch.cat((state['deep'], age), 1)
+            route = None
+            if self.deep_projector is not None and self.deep_projector.indexed:
+                aligned, valid, route = self.deep_projector.align_task(value, state['pose'], meta['pose'], bounds)
+            else:
+                aligned, valid = warp_bev(value, state['pose'], meta['pose'], bounds)
+            return OrdinaryDeepInputs(features[0], features[1], old, aligned[:, :-1], valid,
+                                      aligned[:, -1:] + dt, dt, route)
 
     def mandatory(self, frame):
         required = ~frame.valid | (frame.age >= self.source.max_age - 1e-6)
@@ -185,5 +192,5 @@ class DeepBlockCache:
             if self.deep_projector is not None:
                 bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], sent.shape[-2:], 8)
                 projected, new['deep_projection'] = self.deep_projector.advance(
-                    sent, written, state['deep_projection'], state['pose'], meta['pose'], bounds)
+                    sent, written, state['deep_projection'], state['pose'], meta['pose'], bounds, frame.deep_route)
             return self.predict(frame, sent, projected), new, dict(info, reset=None, full_refresh=None)

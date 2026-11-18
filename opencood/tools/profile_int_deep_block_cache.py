@@ -82,9 +82,9 @@ def prove_candidate(cache, candidate, source, cfg, rows, plan, masks, trace, pat
 PROJECTION_TOLERANCE = dict(atol=1e-4, rtol=1e-4)
 
 
-def prove_projection(source,cfg,rows,plan,masks,trace,path,uuid):
+def prove_projection(source,cfg,rows,plan,masks,trace,path,uuid,indexed=False):
     ref = DeepBlockCache(source,TILE,'light',planner=plan_host_coalesced_refresh,crop_first=True)
-    projector = DeepPhaseProjection(source.core.deblocks[2])
+    projector = DeepPhaseProjection(source.core.deblocks[2],indexed=indexed)
     candidate = DeepBlockCache(source,TILE,'light',planner=plan_host_coalesced_refresh,
                                crop_first=True,deep_projector=projector)
     conv = projector.block[0]
@@ -133,7 +133,7 @@ def prove_projection(source,cfg,rows,plan,masks,trace,path,uuid):
     return records
 
 
-def replay(source,cfg,rows,plan,masks,trace,out,uuid,modes,diagnostic,projection=()):
+def replay(source,cfg,rows,plan,masks,trace,out,uuid,modes,diagnostic,projection):
     name = 'phase_frames.jsonl' if diagnostic else 'frames.jsonl'
     repeats = 1 if diagnostic else PASSES
     timers = {m:PhaseTimer() for m in modes} if diagnostic else {}
@@ -148,9 +148,10 @@ def replay(source,cfg,rows,plan,masks,trace,out,uuid,modes,diagnostic,projection
                                         phase=phases['crop'],crop_first=True)
     if 'sync' in modes:
         caches['sync'] = DeepBlockCache(source,TILE,'light',phase=phases['sync'],crop_first=True,counted_host=True)
-    if 'projection' in modes:
-        caches['projection'] = DeepBlockCache(source,TILE,'light',planner=plan_host_coalesced_refresh,
-            phase=phases['projection'],crop_first=True,deep_projector=DeepPhaseProjection(source.core.deblocks[2]))
+    for mode in projection:
+        caches[mode] = DeepBlockCache(source,TILE,'light',planner=plan_host_coalesced_refresh,
+            phase=phases[mode],crop_first=True,
+            deep_projector=DeepPhaseProjection(source.core.deblocks[2],indexed=mode=='phase_index'))
     measurements, checks = [], 0
     with (out/name).open('x', buffering=1) as raw:
         for repeat in range(repeats):
@@ -181,8 +182,8 @@ def replay(source,cfg,rows,plan,masks,trace,out,uuid,modes,diagnostic,projection
                         torch.cuda.synchronize()
                         elapsed = (time.perf_counter()-start)*1000
                         gold = trace[i]['arms']['p5' if mode=='p5' else 'local']
-                        if mode == 'projection':
-                            gold = projection[i]
+                        if mode in projection:
+                            gold = projection[mode][i]
                         assert info['full_refresh'] == gold['refresh']
                         if gold['fingerprint'] is not None:
                             assert fingerprint(pred,states[mode]) == gold['fingerprint']
@@ -242,13 +243,15 @@ def worker(args,out):
         modes = ('p5','crop','sync')
     if args.compare_projection:
         modes = ('p5','crop','projection')
+    if args.compare_indexed_projection:
+        modes = ('p5','projection','phase_index')
     scope = 'Pillar through detection heads, fixed optional masks; includes guard, online region planning, packing, warp and writeback. Excludes loaders, H2D, postprocess and off-timestep optional selection.'
     diagnostic_scope = 'Separate diagnostic pass: host wall blocks may wait on earlier kernels, CUDA event intervals include host gaps. These readings are not isolated kernel costs or additive across host and stream. The model latency pass has no active timers, hooks or internal synchronization beyond the model itself.'
     write_json(out/'contract.json',dict(code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         source_sha256=SOURCE_SHA, plan_sha256=digest(Path(args.timing_plan)),reference_trace_sha256=digest(Path(args.trace)),
         device=torch.cuda.get_device_name(),uuid=args.uuid,torch=torch.__version__,period=5,tile=TILE,
         passes=PASSES,warmup=WARMUP,modes=modes,scope=scope,diagnostic_scope=diagnostic_scope,
-        projection_tolerance=PROJECTION_TOLERANCE if args.compare_projection else None))
+        projection_tolerance=PROJECTION_TOLERANCE if 'projection' in modes else None))
     with torch.no_grad():
         masks, trace = fixed_trace(cache,cfg,rows,plan,out)
         assert digest(out/'trace.jsonl')==digest(Path(args.trace)), 'R-276 trace must replay byte for byte'
@@ -268,14 +271,21 @@ def worker(args,out):
             sync_equivalent = prove_candidate(crop,sync,source,cfg,rows,plan,masks,trace,
                                               out/'sync_equivalence.jsonl',fraction_tolerance=1e-7)
             assert sync_equivalent==len(trace)
-        projection = []
-        if args.compare_projection:
-            projection = prove_projection(source,cfg,rows,plan,masks,trace,out/'projection_equivalence.jsonl',args.uuid)
-            assert len(projection)==len(trace)
-        plain,pchecks = replay(source,cfg,rows,plan,masks,trace,out,args.uuid,modes,False,projection)
-        diagnostic,dchecks = replay(source,cfg,rows,plan,masks,trace,out,args.uuid,modes,True,projection)
+        proofs = {}
+        if 'projection' in modes:
+            proofs['projection'] = prove_projection(
+                source,cfg,rows,plan,masks,trace,out/'projection_equivalence.jsonl',args.uuid)
+            assert len(proofs['projection'])==len(trace)
+        if args.compare_indexed_projection:
+            proofs['phase_index'] = prove_projection(
+                source,cfg,rows,plan,masks,trace,out/'phase_index_equivalence.jsonl',args.uuid,indexed=True)
+            assert proofs['phase_index']==proofs['projection']
+            assert all(row['projection_exact'] and row['prediction_exact'] for row in proofs['phase_index'])
+        plain,pchecks = replay(source,cfg,rows,plan,masks,trace,out,args.uuid,modes,False,proofs)
+        diagnostic,dchecks = replay(source,cfg,rows,plan,masks,trace,out,args.uuid,modes,True,proofs)
     assert model_digest(source)==before
     metrics, phases = summarize(plain,diagnostic,modes,sum(p.numel() for p in source.parameters()))
+    projection = proofs.get('projection', [])
     write_json(out/'report.json',dict(status='COMPLETED',timing_valid=True,weights_unchanged=True,
         trace_identity=True,metrics=metrics,ordinary_phase_means=phases,host_equivalence_frames=equivalent,
         crop_equivalence_frames=crop_equivalent,sync_equivalence_frames=sync_equivalent,
@@ -283,6 +293,7 @@ def worker(args,out):
         projection_exact_frames=sum(r['projection_exact'] for r in projection),
         projection_prediction_exact_frames=sum(r['prediction_exact'] for r in projection),
         projection_extra_state_bytes=max((r['cache_bytes'] for r in projection),default=0),
+        phase_index_equivalence_frames=len(proofs.get('phase_index', [])),
         scopes=dict(model=scope,phases=diagnostic_scope),exclusive_checks=pchecks+dchecks))
     write_json(out/'status.json',dict(status='COMPLETED',scans=len(trace),phases=True))
 
@@ -296,6 +307,7 @@ def main():
     comparison.add_argument('--compare-crop',action='store_true')
     comparison.add_argument('--compare-sync',action='store_true')
     comparison.add_argument('--compare-projection',action='store_true')
+    comparison.add_argument('--compare-indexed-projection',action='store_true')
     args = p.parse_args()
     out = Path(args.output)
     out.mkdir(parents=True,exist_ok=False)

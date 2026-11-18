@@ -15,6 +15,32 @@ from test_int_pyramid_cache import fixture
 
 class DeepPhaseProjectionTests(unittest.TestCase):
     @torch.no_grad()
+    def test_indexed_projection_shares_route_and_handles_half_cell_padding(self):
+        block = torch.nn.Sequential(
+            torch.nn.ConvTranspose2d(3, 5, 4, stride=4),
+            torch.nn.BatchNorm2d(5),
+            torch.nn.ReLU(),
+        ).eval()
+        block[0].bias.fill_(.2)
+        projector = DeepPhaseProjection(block, indexed=True)
+        value = torch.randn(1, 3, 3, 6)
+        _, previous = projector.fresh(value)
+        old_pose = np.eye(4)
+        moved = old_pose.copy()
+        moved[0, 3] = .5
+        bounds = (0, 0, -1, 6, 3, 1)
+        dense, expected_valid = warp_bev(value, old_pose, moved, bounds)
+        aligned, valid, route = projector.align_task(value, old_pose, moved, bounds)
+        self.assertTrue(torch.equal(expected_valid, valid))
+        self.assertTrue(torch.equal(dense, aligned))
+        self.assertTrue(bool((route[1] & valid).any()))
+        written = ~valid
+        written[..., 1, 2] = True
+        deep = torch.where(written, torch.randn_like(aligned), aligned)
+        projected, _ = projector.advance(deep, written, previous, old_pose, moved, bounds, route)
+        self.assertTrue(torch.allclose(projected, block(deep), atol=1e-6))
+
+    @torch.no_grad()
     def test_stride_four_reuses_aligned_sites_and_projects_new_writes(self):
         torch.manual_seed(17)
         block = torch.nn.Sequential(
