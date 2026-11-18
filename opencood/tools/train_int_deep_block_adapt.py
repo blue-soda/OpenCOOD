@@ -168,7 +168,7 @@ def train_epoch(epoch, parent, models, optimizers, cfg, rows, plan, traces, out,
 
 
 @torch.no_grad()
-def evaluate(epoch, parent, models, cfg, rows, plan, traces, out):
+def evaluate(epoch, parent, models, cfg, rows, plan, traces, out, include_scenes=False):
     directory = out / ('eval_%02d' % epoch)
     directory.mkdir()
     built = {'p5': parent}
@@ -177,8 +177,11 @@ def evaluate(epoch, parent, models, cfg, rows, plan, traces, out):
     stats = {k:{t:dict(tp=[],fp=[],score=[],gt=0) for t in (.5,.7)} for k in EVAL_ARMS}
     totals = dict.fromkeys(EVAL_ARMS,0)
     scans, annotated = 0, 0
+    scene_slices = []
     with (directory/'frames.jsonl').open('x',buffering=1) as raw:
         for clip, ids, dataset, stream in clip_streams(plan,rows,cfg):
+            start = {name:{t:(len(record['score']),record['gt']) for t,record in arm.items()}
+                     for name,arm in stats.items()} if include_scenes else None
             states = dict.fromkeys(EVAL_ARMS)
             entries = load_clip(ids,stream,traces[clip],parent)
             for meta, ego, spatial, masks in entries:
@@ -209,9 +212,15 @@ def evaluate(epoch, parent, models, cfg, rows, plan, traces, out):
                 raw.write(json.dumps(dict(frame=meta['frame'],clip=clip,supervised=gt is not None,
                     core_conv_flops=count))+'\n')
             del entries
+            if include_scenes:
+                scene_slices.append(dict(scene=plan['scenes'][clip][0], clip=clip,
+                    arms={name:{str(t):[start[name][t][0],len(record['score']),record['gt']-start[name][t][1]]
+                                for t,record in arm.items()} for name,arm in stats.items()}))
             write_json(out/'status.json',dict(status='RUNNING',phase='eval',epoch=epoch,scans=scans))
     assert scans == sum(map(len,plan['clips'])) and annotated == plan['labelled']
     write_json(directory/'ap_records.json',stats)
+    if include_scenes:
+        write_json(directory/'scene_slices.json',scene_slices)
     write_json(directory/'sort_orders.json',dict(source_sha256=digest(directory/'ap_records.json'),
         orders={key:{str(t):np.argsort(-np.asarray(row['score'])).tolist() for t,row in values.items()}
                 for key,values in stats.items()}))
