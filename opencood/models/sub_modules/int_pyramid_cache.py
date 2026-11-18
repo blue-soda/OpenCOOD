@@ -29,10 +29,26 @@ class PackedPyramidStage(nn.Module):
         history = history.repeat_interleave(2, -2).repeat_interleave(2, -1)
         return torch.cat((current, history[..., :current.shape[-2], :current.shape[-1]]), 1)
 
-    def forward(self, packed):
-        current = self.encoder(packed[:, :self.input_channels])
-        history = packed[:, self.input_channels:, ::2, ::2]
-        return self.update(current, history[:, :self.output_channels], history[:, -1:] > 0)
+    def region_inputs(self, current, old, valid, jobs):
+        """Batch matching stride-aligned crops without expanding the history grid."""
+        if jobs is None:
+            return current, old, valid
+
+        def crop_batch(value, stride):
+            crops = [value[..., y0//stride:(y1+stride-1)//stride, x0//stride:(x1+stride-1)//stride]
+                     for _, _, _, _, y0, x0, y1, x1 in jobs]
+            return crops[0] if len(crops) == 1 else torch.cat(crops, 0)
+
+        return crop_batch(current, 1), crop_batch(old, 2), crop_batch(valid, 2)
+
+    def forward(self, packed, old=None, valid=None):
+        if old is None:
+            current = self.encoder(packed[:, :self.input_channels])
+            history = packed[:, self.input_channels:, ::2, ::2]
+            old, valid = history[:, :self.output_channels], history[:, -1:] > 0
+        else:
+            current = self.encoder(packed)
+        return self.update(current, old, valid)
 
 
 class CachedPyramidDetector(PyramidStateDetector):

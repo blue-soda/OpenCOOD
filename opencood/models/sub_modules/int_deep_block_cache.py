@@ -1,6 +1,7 @@
 """Frozen deep-state writeback with the P4 shallow/middle and refresh paths."""
 import copy
 from contextlib import nullcontext
+from functools import partial
 from typing import NamedTuple
 
 import torch
@@ -50,7 +51,7 @@ class PackedLightDeepStage(PackedPyramidStage):
 
 class DeepBlockCache:
     def __init__(self, source, tile, operator='heavy', deep_interface=None,
-                 planner=plan_coalesced_refresh, phase=nullcontext):
+                 planner=plan_coalesced_refresh, phase=nullcontext, crop_first=False):
         if source.training or not source.light_observations or tile < 1:
             raise ValueError('Frozen light-observation source and positive tile size required')
         self.source = source
@@ -61,6 +62,7 @@ class DeepBlockCache:
         self.deep_interface = deep_interface
         self.planner = planner
         self.phase = phase
+        self.crop_first = crop_first
         if operator == 'heavy':
             self.stage = PackedPyramidStage(self.core.deep_encoder, self.core.refresh_updates['deep']).eval()
         elif operator == 'light':
@@ -142,10 +144,16 @@ class DeepBlockCache:
             needs_work = bool(mask.any())
         if needs_work:
             with self.phase('state_pack'):
-                packed = self.pack(frame)
+                if self.crop_first:
+                    self.stage.update.delta_t = frame.dt
+                    packed = frame.coarse
+                    region_inputs = partial(self.stage.region_inputs, frame.coarse, frame.aligned, frame.valid)
+                else:
+                    packed = self.pack(frame)
+                    region_inputs = None
             deep, written, info = coalesced_refresh(
                 self.stage, packed, frame.aligned, mask, tile=self.tile, dense_reference=dense_reference,
-                planner=self.planner, phase=self.phase,
+                planner=self.planner, phase=self.phase, region_inputs=region_inputs,
             )
         else:
             deep, written = frame.aligned, mask

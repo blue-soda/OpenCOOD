@@ -95,3 +95,15 @@ class DeepBlockCacheTests(unittest.TestCase):
         self.assertTrue(torch.equal(ref[0], host[0]))
         self.assertEqual(ref[1:], host[1:])
         self.assertIsNone(host[1])
+
+    @torch.no_grad()
+    def test_direct_region_batch_matches_packed_on_odd_boundaries(self):
+        stage = DeepBlockCache(self.source, tile=2, operator='light').stage
+        current = torch.randn(1, stage.input_channels, 13, 19)
+        old = torch.randn(1, stage.output_channels, 7, 10)
+        valid = torch.rand(1, 1, 7, 10) > .3
+        packed = stage.pack(current, old, valid)
+        jobs = [(0,0,0,0,0,0,7,9), (0,0,0,0,6,10,13,19)]
+        crops = torch.cat([packed[..., j[4]:j[6], j[5]:j[7]] for j in jobs])
+        self.assertTrue(torch.equal(stage(crops), stage(*stage.region_inputs(current, old, valid, jobs))))
+        self.assertTrue(torch.equal(stage(packed), stage(*stage.region_inputs(current, old, valid, None))))

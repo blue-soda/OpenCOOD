@@ -42,7 +42,7 @@ def _choose_jobs(layouts, input_shape, output_shape, radius, stride):
 
 
 def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8, stride=2, dense_reference=False,
-                      planner=plan_coalesced_refresh, phase=nullcontext):
+                      planner=plan_coalesced_refresh, phase=nullcontext, region_inputs=None):
     """Local blocks whose convolutions all use the same output grid.
 
     All convolutions have the same output lattice, so executed sites are
@@ -72,7 +72,7 @@ def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8, stride
             stats['planned_stage_conv_ratio'] = stats['stage_conv_ratio']
             stats['stage_conv_ratio'] = 1.
         with phase('deep_compute'):
-            result = module(x)
+            result = module(x) if region_inputs is None else module(*region_inputs(None))
         with phase('write_back'):
             return torch.where(written, result, cached), written, stats
     stats['executed_input_area_ratio'] = sum((j[6]-j[4])*(j[7]-j[5]) for j in best_jobs)/float(h*w)
@@ -86,9 +86,12 @@ def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8, stride
         for start in range(0, len(group), batch_size):
             batch = group[start:start+batch_size]
             with phase('crop_pack'):
-                crops = torch.cat([x[..., j[4]:j[6], j[5]:j[7]] for j in batch], 0)
+                if region_inputs is None:
+                    inputs = (torch.cat([x[..., j[4]:j[6], j[5]:j[7]] for j in batch], 0),)
+                else:
+                    inputs = region_inputs(batch)
             with phase('deep_compute'):
-                result = module(crops)
+                result = module(*inputs)
             with phase('write_back'):
                 for i, (y0,x0,y1,x1,iy0,ix0,_,_) in enumerate(batch):
                     sy,sx = y0-iy0//stride,x0-ix0//stride
