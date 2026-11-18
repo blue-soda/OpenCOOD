@@ -72,14 +72,21 @@ def warm_batches(trace):
         yield start, len(trace)
 
 
-def load_clip(ids, stream, trace, source):
-    def mask(row, name, like):
-        if row[name] is None:
-            return None
-        value = torch.zeros(row['shape'], device=like.device, dtype=torch.bool)
-        value.view(-1)[row[name]] = True
-        return value
+def trace_masks(row, device):
+    if row['refresh'] is not None:
+        return None
+    masks = {}
+    for name in ('optional', 'written', 'valid'):
+        indices = row[name]
+        mask = None
+        if indices is not None:
+            mask = torch.zeros(row['shape'], device=device, dtype=torch.bool)
+            mask.view(-1)[indices] = True
+        masks[name] = mask
+    return masks
 
+
+def load_clip(ids, stream, trace, source):
     entries = []
     for index, sample in enumerate(stream):
         row = trace[index]
@@ -88,9 +95,7 @@ def load_clip(ids, stream, trace, source):
         assert row['supervised'] == bool(meta['supervised'])
         ego = to_device(sample['ego'], torch.device('cuda'))
         spatial = spatial_input(source, ego)
-        options = None if row['refresh'] is not None else {
-            key: mask(row, key, spatial) for key in ('optional','written','valid')}
-        entries.append((meta, ego, spatial, options))
+        entries.append((meta, ego, spatial, trace_masks(row, spatial.device)))
     assert len(entries) == len(ids) == len(trace)
     return entries
 
