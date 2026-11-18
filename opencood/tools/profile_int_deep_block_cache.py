@@ -51,8 +51,9 @@ def assert_equal(left, right, keys):
     assert all(torch.equal(left[k],right[k]) for k in keys)
 
 
-def prove_candidate(cache, candidate, source, cfg, rows, plan, masks, trace, path):
+def prove_candidate(cache, candidate, source, cfg, rows, plan, masks, trace, path, fraction_tolerance=0.):
     verified = 0
+    fractions = {'requested_fraction', 'selected_fraction', 'actual_write_fraction'}
     with path.open('x', buffering=1) as raw:
         for _, ids, _, stream in clip_streams(plan, rows, cfg):
             a, b = None, None
@@ -63,11 +64,15 @@ def prove_candidate(cache, candidate, source, cfg, rows, plan, masks, trace, pat
                 spatial = spatial_input(source,ego)
                 (ref,a,old), ca = measured_step(cache,spatial,a,meta,masks[i])
                 (pred,b,new), cb = measured_step(candidate,spatial,b,meta,masks[i])
-                assert old == new and ca == cb == trace[i]['arms']['local']['core_conv_flops']
+                assert old.keys() == new.keys() and ca == cb == trace[i]['arms']['local']['core_conv_flops']
+                assert all(old[k] == new[k] for k in old.keys() - fractions)
+                max_fraction_delta = max([abs(old[k]-new[k]) for k in old.keys() & fractions], default=0.)
+                assert max_fraction_delta <= fraction_tolerance
                 assert_equal(ref,pred,ref)
                 assert_equal(a,b,(*source.state_keys,'deep_age'))
                 raw.write(json.dumps(dict(frame=ids[i], refresh=old['full_refresh'], core_conv_flops=ca,
-                    jobs=old.get('tiles'), state_and_prediction_exact=True, planning_stats_exact=True))+'\n')
+                    jobs=old.get('tiles'), state_and_prediction_exact=True, planning_stats_exact=old==new,
+                    geometry_stats_exact=True, telemetry_fraction_max_abs=max_fraction_delta))+'\n')
                 verified += 1
     return verified
 
@@ -85,6 +90,8 @@ def replay(source,cfg,rows,plan,masks,trace,out,uuid,modes,diagnostic):
     if 'crop' in modes:
         caches['crop'] = DeepBlockCache(source,TILE,'light',planner=plan_host_coalesced_refresh,
                                         phase=phases['crop'],crop_first=True)
+    if 'sync' in modes:
+        caches['sync'] = DeepBlockCache(source,TILE,'light',phase=phases['sync'],crop_first=True,counted_host=True)
     measurements, checks = [], 0
     with (out/name).open('x', buffering=1) as raw:
         for repeat in range(repeats):
@@ -170,6 +177,8 @@ def worker(args,out):
         modes = ('p5','local','host')
     if args.compare_crop:
         modes = ('p5','host','crop')
+    if args.compare_sync:
+        modes = ('p5','crop','sync')
     scope = 'Pillar through detection heads, fixed optional masks; includes guard, online region planning, packing, warp and writeback. Excludes loaders, H2D, postprocess and off-timestep optional selection.'
     diagnostic_scope = 'Separate diagnostic pass: host wall blocks may wait on earlier kernels, CUDA event intervals include host gaps. These readings are not isolated kernel costs or additive across host and stream. The model latency pass has no active timers, hooks or internal synchronization beyond the model itself.'
     write_json(out/'contract.json',dict(code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
@@ -179,7 +188,7 @@ def worker(args,out):
     with torch.no_grad():
         masks, trace = fixed_trace(cache,cfg,rows,plan,out)
         assert digest(out/'trace.jsonl')==digest(Path(args.trace)), 'R-276 trace must replay byte for byte'
-        equivalent = crop_equivalent = 0
+        equivalent = crop_equivalent = sync_equivalent = 0
         if args.compare_host:
             host = DeepBlockCache(source,TILE,'light',planner=plan_host_coalesced_refresh)
             equivalent = prove_candidate(cache,host,source,cfg,rows,plan,masks,trace,out/'host_equivalence.jsonl')
@@ -189,13 +198,19 @@ def worker(args,out):
             crop = DeepBlockCache(source,TILE,'light',planner=plan_host_coalesced_refresh,crop_first=True)
             crop_equivalent = prove_candidate(host,crop,source,cfg,rows,plan,masks,trace,out/'crop_equivalence.jsonl')
             assert crop_equivalent==len(trace)
+        if args.compare_sync:
+            crop = DeepBlockCache(source,TILE,'light',planner=plan_host_coalesced_refresh,crop_first=True)
+            sync = DeepBlockCache(source,TILE,'light',crop_first=True,counted_host=True)
+            sync_equivalent = prove_candidate(crop,sync,source,cfg,rows,plan,masks,trace,
+                                              out/'sync_equivalence.jsonl',fraction_tolerance=1e-7)
+            assert sync_equivalent==len(trace)
         plain,pchecks = replay(source,cfg,rows,plan,masks,trace,out,args.uuid,modes,False)
         diagnostic,dchecks = replay(source,cfg,rows,plan,masks,trace,out,args.uuid,modes,True)
     assert model_digest(source)==before
     metrics, phases = summarize(plain,diagnostic,modes,sum(p.numel() for p in source.parameters()))
     write_json(out/'report.json',dict(status='COMPLETED',timing_valid=True,weights_unchanged=True,
         trace_identity=True,metrics=metrics,ordinary_phase_means=phases,host_equivalence_frames=equivalent,
-        crop_equivalence_frames=crop_equivalent,
+        crop_equivalence_frames=crop_equivalent,sync_equivalence_frames=sync_equivalent,
         scopes=dict(model=scope,phases=diagnostic_scope),exclusive_checks=pchecks+dchecks))
     write_json(out/'status.json',dict(status='COMPLETED',scans=len(trace),phases=True))
 
@@ -207,6 +222,7 @@ def main():
     comparison = p.add_mutually_exclusive_group()
     comparison.add_argument('--compare-host',action='store_true')
     comparison.add_argument('--compare-crop',action='store_true')
+    comparison.add_argument('--compare-sync',action='store_true')
     args = p.parse_args()
     out = Path(args.output)
     out.mkdir(parents=True,exist_ok=False)

@@ -1,9 +1,16 @@
 """Coalesce execution regions while preserving the original tile write mask."""
 from contextlib import nullcontext
+from typing import NamedTuple
 
 import torch
 from opencood.models.sub_modules.int_cache_repair import (
     tile_mask, expand_tiles, rectangles, crop_jobs)
+
+
+class CountedPlan(NamedTuple):
+    layout: tuple
+    requested_fraction: float
+    written_fraction: float
 
 
 def plan_coalesced_refresh(requested, input_shape, radius, tile, stride=2):
@@ -20,10 +27,32 @@ def plan_host_coalesced_refresh(requested, input_shape, radius, tile, stride=2):
     output_shape = requested.shape[-2:]
     active = tile_mask(requested, tile)
     written = expand_tiles(active, tile, output_shape)
-    host_tiles = active.cpu()
+    return (written, *_host_jobs(active.cpu(), input_shape, output_shape, radius, tile, stride))
+
+
+def _host_jobs(host_tiles, input_shape, output_shape, radius, tile, stride):
     layouts = ((tile*factor, rectangles(host_tiles if factor == 1 else tile_mask(host_tiles, factor)))
                for factor in (1, 2, 4, 8, 16))
-    return (written, *_choose_jobs(layouts, input_shape, output_shape, radius, stride))
+    return _choose_jobs(layouts, input_shape, output_shape, radius, stride)
+
+
+def plan_counted_host_refresh(requested, input_shape, radius, tile, stride=2):
+    """Resolve empty, layout and telemetry through one compact transfer."""
+    output_shape = requested.shape[-2:]
+    active = tile_mask(requested, tile)
+    count = requested.sum().reshape(1)
+    payload = torch.cat((active.flatten().to(count.dtype), count)).cpu()
+    requested_count = int(payload[-1])
+    if requested_count == 0:
+        return None
+    host_tiles = payload[:-1].view(active.shape).bool()
+    height, width = output_shape
+    written_count = sum(min(tile, height-y*tile) * min(tile, width-x*tile)
+                        for y, x in host_tiles[0, 0].nonzero().tolist())
+    written = expand_tiles(active, tile, output_shape)
+    layout = (written, *_host_jobs(host_tiles, input_shape, output_shape, radius, tile, stride))
+    fractions = torch.tensor((requested_count, written_count), dtype=torch.float32, device='cpu') / (height*width)
+    return CountedPlan(layout, *fractions.tolist())
 
 
 def _choose_jobs(layouts, input_shape, output_shape, radius, stride):
@@ -42,7 +71,7 @@ def _choose_jobs(layouts, input_shape, output_shape, radius, stride):
 
 
 def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8, stride=2, dense_reference=False,
-                      planner=plan_coalesced_refresh, phase=nullcontext, region_inputs=None):
+                      planner=plan_coalesced_refresh, phase=nullcontext, region_inputs=None, counted_plan=None):
     """Local blocks whose convolutions all use the same output grid.
 
     All convolutions have the same output lattice, so executed sites are
@@ -53,14 +82,23 @@ def coalesced_refresh(module, x, cached, requested, tile=4, batch_size=8, stride
     h, w = x.shape[-2:]; oh, ow = cached.shape[-2:]
     if (oh, ow) != ((h+stride-1)//stride, (w+stride-1)//stride) or requested.shape != cached[:, :1].shape:
         raise ValueError('Output/mask mismatch')
-    with phase('region_plan'):
-        written, best_jobs, best_work, original_work, chosen_tile = planner(
-            requested, (h, w), module.radius, tile, stride)
+    if counted_plan is None:
+        with phase('region_plan'):
+            layout = planner(requested, (h, w), module.radius, tile, stride)
+    else:
+        layout = counted_plan.layout
+    written, best_jobs, best_work, original_work, chosen_tile = layout
     dense_work = oh * ow
     with phase('stats_sync'):
-        stats = dict(requested_fraction=float(requested.float().mean()),
-                     selected_fraction=float(written.float().mean()),
-                     actual_write_fraction=float(written.float().mean()),
+        if counted_plan is None:
+            requested_fraction = float(requested.float().mean())
+            selected_fraction = float(written.float().mean())
+            actual_write_fraction = float(written.float().mean())
+        else:
+            requested_fraction = counted_plan.requested_fraction
+            selected_fraction = actual_write_fraction = counted_plan.written_fraction
+        stats = dict(requested_fraction=requested_fraction, selected_fraction=selected_fraction,
+                     actual_write_fraction=actual_write_fraction,
                      fallback=best_jobs is None, execution_tile=chosen_tile,
                      original_stage_conv_ratio=original_work/float(dense_work),
                      stage_conv_ratio=best_work/float(dense_work),

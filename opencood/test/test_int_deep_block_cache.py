@@ -5,7 +5,9 @@ import torch
 
 from opencood.models.sub_modules.int_deep_block_cache import DeepBlockCache
 from opencood.models.sub_modules.int_multiscale_refresh import ProtectedMultiscaleRefreshDetector
-from opencood.models.sub_modules.int_pyramid_regions import plan_coalesced_refresh, plan_host_coalesced_refresh
+from opencood.models.sub_modules.int_pyramid_regions import (
+    plan_coalesced_refresh, plan_counted_host_refresh, plan_host_coalesced_refresh,
+)
 from test_int_pyramid_cache import fixture
 
 
@@ -107,3 +109,18 @@ class DeepBlockCacheTests(unittest.TestCase):
         crops = torch.cat([packed[..., j[4]:j[6], j[5]:j[7]] for j in jobs])
         self.assertTrue(torch.equal(stage(crops), stage(*stage.region_inputs(current, old, valid, jobs))))
         self.assertTrue(torch.equal(stage(packed), stage(*stage.region_inputs(current, old, valid, None))))
+
+    def test_counted_planning_preserves_partial_edge_tile_fractions(self):
+        request = torch.zeros(1, 1, 25, 63, dtype=torch.bool)
+        shape = (50, 126)
+        self.assertIsNone(plan_counted_host_refresh(request, shape, 5, 8))
+        for indices in ([(0, 0), (24, 62), (23, 62)], [(24, 62)], None):
+            request.fill_(indices is None)
+            for y, x in indices or ():
+                request[..., y, x] = True
+            ref = plan_host_coalesced_refresh(request, shape, 5, 8)
+            counted = plan_counted_host_refresh(request, shape, 5, 8)
+            self.assertTrue(torch.equal(ref[0], counted.layout[0]))
+            self.assertEqual(ref[1:], counted.layout[1:])
+            self.assertAlmostEqual(float(request.float().mean()), counted.requested_fraction)
+            self.assertAlmostEqual(float(ref[0].float().mean()), counted.written_fraction)

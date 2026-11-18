@@ -13,7 +13,9 @@ from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.models.sub_modules.int_mechanism_probes import SingleGateStateUpdate
 from opencood.models.sub_modules.int_multiscale_refresh import reset_reason
 from opencood.models.sub_modules.int_pyramid_cache import PackedPyramidStage
-from opencood.models.sub_modules.int_pyramid_regions import coalesced_refresh, plan_coalesced_refresh
+from opencood.models.sub_modules.int_pyramid_regions import (
+    coalesced_refresh, plan_coalesced_refresh, plan_counted_host_refresh,
+)
 from opencood.models.sub_modules.int_two_scale import StateUpdate
 
 
@@ -51,7 +53,7 @@ class PackedLightDeepStage(PackedPyramidStage):
 
 class DeepBlockCache:
     def __init__(self, source, tile, operator='heavy', deep_interface=None,
-                 planner=plan_coalesced_refresh, phase=nullcontext, crop_first=False):
+                 planner=plan_coalesced_refresh, phase=nullcontext, crop_first=False, counted_host=False):
         if source.training or not source.light_observations or tile < 1:
             raise ValueError('Frozen light-observation source and positive tile size required')
         self.source = source
@@ -63,6 +65,7 @@ class DeepBlockCache:
         self.planner = planner
         self.phase = phase
         self.crop_first = crop_first
+        self.counted_host = counted_host
         if operator == 'heavy':
             self.stage = PackedPyramidStage(self.core.deep_encoder, self.core.refresh_updates['deep']).eval()
         elif operator == 'light':
@@ -141,7 +144,13 @@ class DeepBlockCache:
                 if requests.dtype != torch.bool or requests.shape != mask.shape:
                     raise ValueError('Expected a boolean mask on the deep lattice')
                 mask = mask | requests
-            needs_work = bool(mask.any())
+            if not self.counted_host:
+                needs_work = bool(mask.any())
+        counted_plan = None
+        if self.counted_host:
+            with self.phase('region_plan'):
+                counted_plan = plan_counted_host_refresh(mask, frame.coarse.shape[-2:], self.stage.radius, self.tile)
+                needs_work = counted_plan is not None
         if needs_work:
             with self.phase('state_pack'):
                 if self.crop_first:
@@ -153,7 +162,7 @@ class DeepBlockCache:
                     region_inputs = None
             deep, written, info = coalesced_refresh(
                 self.stage, packed, frame.aligned, mask, tile=self.tile, dense_reference=dense_reference,
-                planner=self.planner, phase=self.phase, region_inputs=region_inputs,
+                planner=self.planner, phase=self.phase, region_inputs=region_inputs, counted_plan=counted_plan,
             )
         else:
             deep, written = frame.aligned, mask
