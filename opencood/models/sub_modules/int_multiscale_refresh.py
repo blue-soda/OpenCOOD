@@ -73,7 +73,7 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
         self.core.deep_light=nn.Sequential(nn.Conv2d(256,256,3,stride=2,padding=1,groups=256),nn.ReLU(),nn.Conv2d(256,512,1))
         self.variant='middle_deep_light_'+mode;self.train(False)
 
-    def step_spatial(self,spatial,state,meta,detach_state=True,requests=None):
+    def step_spatial(self,spatial,state,meta,detach_state=True,requests=None,deep_interface=None):
         if spatial.shape[0]!=1 or requests is not None:raise ValueError('Single stream; no local masks yet')
         reason,dt=reset_reason(state,meta);stamp=int(meta['timestamp_us'])
         refresh=reason
@@ -93,7 +93,12 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
             if refresh and hasattr(self.core,'refresh_updates') and key in self.core.refresh_updates:
                 update=self.core.refresh_updates[key]
             update.delta_t=dt;x=update(current,old,valid);values.append(x)
-        features=self.core.readout(torch.cat([m(v) for m,v in zip(self.core.deblocks,values)],1))
+        if deep_interface is not None:
+            values[-1], sent = deep_interface(values[-1], None)
+            readout_values = (*values[:-1], sent)
+        else:
+            readout_values = values
+        features=self.core.readout(torch.cat([m(v) for m,v in zip(self.core.deblocks,readout_values)],1))
         pred=dict(psm=self.core.cls_head(features),rm=self.core.reg_head(features))
         if self.core.dir_head is not None:pred['dm']=self.core.dir_head(features)
         new={k:v.detach() if detach_state else v for k,v in zip(self.state_keys,values)}

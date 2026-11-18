@@ -48,13 +48,15 @@ class PackedLightDeepStage(PackedPyramidStage):
 
 
 class DeepBlockCache:
-    def __init__(self, source, tile, operator='heavy'):
+    def __init__(self, source, tile, operator='heavy', deep_interface=None):
         if source.training or not source.light_observations or tile < 1:
             raise ValueError('Frozen light-observation source and positive tile size required')
         self.source = source
         self.core = source.core
         self.tile = tile
         self.operator = operator
+        # Optional mapping from the computed state and written mask to stored and readout values.
+        self.deep_interface = deep_interface
         if operator == 'heavy':
             self.stage = PackedPyramidStage(self.core.deep_encoder, self.core.refresh_updates['deep']).eval()
         elif operator == 'light':
@@ -114,7 +116,8 @@ class DeepBlockCache:
 
     def step_spatial(self, spatial, state, meta, requests=None, dense_reference=False):
         if self.refresh_reason(state, meta):
-            prediction, new, info = self.source.step_spatial(spatial, state, meta)
+            kwargs = {} if self.deep_interface is None else {'deep_interface': self.deep_interface}
+            prediction, new, info = self.source.step_spatial(spatial, state, meta, **kwargs)
             new['deep_age'] = torch.zeros_like(new['deep'][:, :1])
             return prediction, new, dict(info, stage_conv_ratio=1., actual_write_fraction=1., fallback=False)
         frame = self.prepare(spatial, state, meta)
@@ -133,8 +136,9 @@ class DeepBlockCache:
         else:
             deep, written = frame.aligned, mask
             info = dict(stage_conv_ratio=0., actual_write_fraction=0., fallback=False)
-        new = dict(value=frame.fine, coarse=frame.coarse, deep=deep,
+        stored, sent = (deep, deep) if self.deep_interface is None else self.deep_interface(deep, written)
+        new = dict(value=frame.fine, coarse=frame.coarse, deep=stored,
                    deep_age=torch.where(written, torch.zeros_like(frame.age), frame.age),
                    pose=copy.deepcopy(meta['pose']), scene=meta['segment'], timestamp_us=int(meta['timestamp_us']),
                    refresh_timestamp_us=state['refresh_timestamp_us'], since_refresh=state['since_refresh'] + 1)
-        return self.predict(frame, deep), new, dict(info, reset=None, full_refresh=None)
+        return self.predict(frame, sent), new, dict(info, reset=None, full_refresh=None)
