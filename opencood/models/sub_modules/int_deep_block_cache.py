@@ -119,6 +119,8 @@ class DeepBlockCache:
             return prediction, new, dict(info, stage_conv_ratio=1., actual_write_fraction=1., fallback=False)
         frame = self.prepare(spatial, state, meta)
         mask = self.mandatory(frame)
+        if callable(requests):
+            requests = requests(frame, mask)
         if requests is not None:
             if requests.dtype != torch.bool or requests.shape != mask.shape:
                 raise ValueError('Expected a boolean mask on the deep lattice')
