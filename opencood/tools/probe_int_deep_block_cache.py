@@ -85,7 +85,7 @@ def group_bucket(cache, frame, required, cap):
     optional = list(masks_by_tile(required, cache.tile))
     allowed = set(optional)
     work = functools.partial(plan_coalesced_refresh, input_shape=frame.coarse.shape[-2:],
-                             radius=cache.heavy.radius, tile=cache.tile)
+                             radius=cache.stage.radius, tile=cache.tile)
     base_work = work(required)[2]
     cells = required.numel()
     candidates = defaultdict(list)
@@ -120,6 +120,8 @@ def geometry(cache, spatial, meta, states, index):
         (pred, states[period], info), flops = measured_step(source, spatial, states[period], meta)
         assert all(bool(torch.isfinite(v).all()) for v in pred.values())
         states[(period, 'trace')] = dict(flops=flops, refresh=info['full_refresh'], cache_bytes=info['cache_bytes'])
+        if period == 4:
+            p4_prediction = pred
     source.period, source.max_age = 4, .45
     mask = None
     if cache.refresh_reason(states['local'], meta) is None:
@@ -134,9 +136,19 @@ def geometry(cache, spatial, meta, states, index):
     state_delta = max_delta(states['ref'], states['local'], (*source.state_keys, 'deep_age'))
     assert local_flops <= ref_flops
     assert info['full_refresh'] == states[(4, 'trace')]['refresh']
-    return dict(p4=states[(4, 'trace')], p5=states[(5, 'trace')], local=info,
-                local_flops=local_flops, same_mask_dense_flops=ref_flops,
-                prediction_max_abs=prediction_delta, state_max_abs=state_delta)
+    record = dict(p4=states[(4, 'trace')], p5=states[(5, 'trace')], local=info,
+                  local_flops=local_flops, same_mask_dense_flops=ref_flops,
+                  prediction_max_abs=prediction_delta, state_max_abs=state_delta)
+    if cache.operator == 'light':
+        all_mask = torch.ones_like(states['local']['deep_age'], dtype=torch.bool)
+        (all_pred, states['all'], all_info), all_flops = measured_step(cache, spatial, states['all'], meta, all_mask)
+        record.update(p4_all_write_prediction_max_abs=max_delta(p4_prediction, all_pred, p4_prediction),
+                      p4_all_write_state_max_abs=max_delta(states[4], states['all'], source.state_keys),
+                      p4_all_write_flops=all_flops)
+        assert all_flops == states[(4, 'trace')]['flops']
+        assert all_info['full_refresh'] == states[(4, 'trace')]['refresh']
+        assert local_flops <= all_flops
+    return record
 
 
 class Reference:
@@ -149,8 +161,7 @@ class Reference:
 
 def quality_probe(cache, spatial, meta, ego, state, criterion, required, frame, sites, pairs):
     source = cache.source
-    packed = cache.heavy.pack(frame.coarse, frame.aligned, frame.valid)
-    candidate = cache.heavy(packed)
+    candidate = cache.stage(cache.pack(frame))
     target = ego['label_dict']
 
     def loss(pred):
@@ -165,11 +176,17 @@ def quality_probe(cache, spatial, meta, ego, state, criterion, required, frame, 
 
     previous = interventions(())
     baseline = loss(previous)
+    cache.core.deep_update.delta_t = frame.dt
     light = cache.core.deep_update(cache.core.deep_light(frame.coarse), frame.aligned, frame.valid)
     full_state = dict(state, since_refresh=source.period - 1)
     refreshed, _, _ = source.step_spatial(spatial, full_state, meta)
-    row = dict(mandatory_only=baseline, ordinary_light=loss(cache.predict(frame, light)),
-               heavy_light_coarse=loss(cache.predict(frame, candidate)), full_refresh=loss(refreshed))
+    row = dict(mandatory_only=baseline, ordinary_light=loss(cache.predict(frame, light)), full_refresh=loss(refreshed))
+    if cache.operator == 'heavy':
+        row['heavy_light_coarse'] = loss(cache.predict(frame, candidate))
+    else:
+        (p4, _, _), p4_flops = measured_step(source, spatial, state, meta)
+        max_delta(p4, cache.predict(frame, candidate), p4)
+        row['p4_ordinary_core_flops'] = p4_flops
     if len(pairs) < 2:
         return row
 
@@ -190,6 +207,8 @@ def quality_probe(cache, spatial, meta, ego, state, criterion, required, frame, 
     (actual, actual_state, info), flops = measured_step(cache, spatial, state, meta, write)
     row.update(executed_model_core_flops=flops, checked_stage_ratio=info['stage_conv_ratio'])
     assert abs(info['stage_conv_ratio'] - sites / required.numel()) <= 1e-12
+    if cache.operator == 'light':
+        assert flops < row['p4_ordinary_core_flops']
     max_delta(interventions(chosen), actual, actual)
     expected = torch.where(add_tiles(required, chosen, cache.tile).cuda(), candidate, frame.aligned)
     max_delta({'deep': expected}, actual_state, ('deep',))
@@ -206,11 +225,12 @@ def run(a, out):
     source, cfg, rows, provenance = build(a)
     assert provenance['split'] == plan['split']
     by_frame = {row['frame']: row for row in rows}
-    cache = DeepBlockCache(source, a.tile)
+    cache = DeepBlockCache(source, a.tile, a.operator)
     criterion = PointPillarDirLoss(cfg['loss']['args']).cuda().eval() if a.kind == 'quality' else None
     frozen = model_digest(source)
     shapes = [len(clip) for clip in plan['clips']]
     contract = dict(clips=plan['clips'], plan_sha256=digest(Path(a.plan)), kind=a.kind, tile=a.tile,
+                    operator=a.operator,
                     cap=a.cap, max_probes=a.probes, probes_per_clip=a.probes_per_clip,
                     source_sha256=SOURCE_SHA, atol=ATOL, rtol=RTOL,
                     code_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip(),
@@ -222,7 +242,7 @@ def run(a, out):
     with torch.no_grad(), (out / 'frames.jsonl').open('x', buffering=1) as log:
         for clip_index, ids in enumerate(plan['clips']):
             _, stream = loader([by_frame[f] for f in ids], cfg, 0, 303)
-            states = {4: None, 5: None, 'local': None, 'ref': None}
+            states = {4: None, 5: None, 'local': None, 'ref': None, 'all': None}
             clip_probes = 0
             for index, sample in enumerate(stream):
                 ego = to_device(sample['ego'], torch.device('cuda'))
@@ -257,7 +277,7 @@ def run(a, out):
                 if len(records) % 8 == 0:
                     write_json(out / 'status.json', dict(status='RUNNING', scans=len(records), probes=probes))
     assert len(records) == sum(shapes) and model_digest(source) == frozen
-    report = dict(status='COMPLETED', kind=a.kind, scans=len(records), clips=shapes, probes=probes,
+    report = dict(status='COMPLETED', kind=a.kind, operator=a.operator, scans=len(records), clips=shapes, probes=probes,
                   parameters=sum(p.numel() for p in source.parameters()), ap50=None, ap70=None,
                   model_step_ms_mean=None, weights_unchanged=True)
     if a.kind == 'geometry':
@@ -266,6 +286,9 @@ def run(a, out):
                       prediction_max_abs=max(r['prediction_max_abs'] for r in records),
                       state_max_abs=max(r['state_max_abs'] for r in records),
                       refresh_reasons=dict(Counter(r['local']['full_refresh'] or 'ordinary' for r in records)))
+        if a.operator == 'light':
+            report.update(p4_all_write_prediction_max_abs=max(r['p4_all_write_prediction_max_abs'] for r in records),
+                          p4_all_write_state_max_abs=max(r['p4_all_write_state_max_abs'] for r in records))
     else:
         matched = [r for r in records if 'policies' in r]
         report['matched_frames'] = len(matched)
@@ -275,6 +298,8 @@ def run(a, out):
                 name: sum(r['policies'][name]['loss'] for r in matched)/len(matched)
                 for name in matched[0]['policies']}
             report['checked_policy_core_flops_mean'] = sum(r['executed_model_core_flops'] for r in matched)/len(matched)
+            if a.operator == 'light':
+                report['matched_p4_ordinary_core_flops_mean'] = sum(r['p4_ordinary_core_flops'] for r in matched)/len(matched)
     write_json(out / 'report.json', report)
     write_json(out / 'status.json', dict(status='COMPLETED', scans=len(records), probes=probes))
 
@@ -284,6 +309,7 @@ def main():
     for name in ('root', 'checkpoint', 'trained', 'readout', 'plan', 'output'):
         parser.add_argument('--' + name, required=True)
     parser.add_argument('--kind', required=True, choices=('geometry', 'quality'))
+    parser.add_argument('--operator', choices=('heavy', 'light'), default='heavy')
     parser.add_argument('--tile', type=int, default=8)
     parser.add_argument('--cap', type=float, default=.9)
     parser.add_argument('--probes', type=int, default=16)

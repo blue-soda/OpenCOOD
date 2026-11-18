@@ -3,13 +3,16 @@ import copy
 from typing import NamedTuple
 
 import torch
+from torch import nn
 
 from opencood.models.sub_modules.int_block_cache import block_lidar_range
 from opencood.models.sub_modules.int_cache_repair import tile_mask, expand_tiles
 from opencood.models.sub_modules.int_feature_memory import warp_bev
+from opencood.models.sub_modules.int_mechanism_probes import SingleGateStateUpdate
 from opencood.models.sub_modules.int_multiscale_refresh import reset_reason
 from opencood.models.sub_modules.int_pyramid_cache import PackedPyramidStage
 from opencood.models.sub_modules.int_pyramid_regions import coalesced_refresh
+from opencood.models.sub_modules.int_two_scale import StateUpdate
 
 
 class OrdinaryDeepInputs(NamedTuple):
@@ -19,16 +22,45 @@ class OrdinaryDeepInputs(NamedTuple):
     aligned: torch.Tensor
     valid: torch.Tensor
     age: torch.Tensor
+    dt: float
+
+
+class PackedLightDeepStage(PackedPyramidStage):
+    """The learned P4 ordinary deep path with its exact input halo."""
+
+    def __init__(self, encoder, update):
+        nn.Module.__init__(self)
+        depthwise, activation, projection = encoder
+        if (not isinstance(depthwise, nn.Conv2d) or not isinstance(activation, nn.ReLU)
+                or not isinstance(projection, nn.Conv2d) or not isinstance(update, SingleGateStateUpdate)
+                or not isinstance(update.candidate, StateUpdate)):
+            raise ValueError('Expected the ordinary P4 deep encoder and gated state update')
+        if ((depthwise.kernel_size, depthwise.stride, depthwise.padding, depthwise.dilation)
+                != ((3, 3), (2, 2), (1, 1), (1, 1))
+                or (projection.kernel_size, projection.stride, projection.padding, projection.dilation)
+                != ((1, 1), (1, 1), (0, 0), (1, 1))):
+            raise ValueError('Unsupported convolution geometry for the light deep halo')
+        self.encoder, self.update = encoder, update
+        self.input_channels = depthwise.in_channels
+        self.output_channels = projection.out_channels
+        # One input cell for the observation, two output cells for StateUpdate.
+        self.radius = 1 + 2 * update.candidate.radius
 
 
 class DeepBlockCache:
-    def __init__(self, source, tile):
+    def __init__(self, source, tile, operator='heavy'):
         if source.training or not source.light_observations or tile < 1:
             raise ValueError('Frozen light-observation source and positive tile size required')
         self.source = source
         self.core = source.core
         self.tile = tile
-        self.heavy = PackedPyramidStage(self.core.deep_encoder, self.core.refresh_updates['deep']).eval()
+        self.operator = operator
+        if operator == 'heavy':
+            self.stage = PackedPyramidStage(self.core.deep_encoder, self.core.refresh_updates['deep']).eval()
+        elif operator == 'light':
+            self.stage = PackedLightDeepStage(self.core.deep_light, self.core.deep_update).eval()
+        else:
+            raise ValueError('Unknown ordinary deep operator')
 
     def refresh_reason(self, state, meta):
         reset, _ = reset_reason(state, meta)
@@ -62,7 +94,7 @@ class DeepBlockCache:
             elapsed = (state['timestamp_us'] - state['refresh_timestamp_us']) / 1e6
             age = torch.full_like(state['deep'][:, :1], elapsed)
         aligned, valid = warp_bev(torch.cat((state['deep'], age), 1), state['pose'], meta['pose'], bounds)
-        return OrdinaryDeepInputs(features[0], features[1], old, aligned[:, :-1], valid, aligned[:, -1:] + dt)
+        return OrdinaryDeepInputs(features[0], features[1], old, aligned[:, :-1], valid, aligned[:, -1:] + dt, dt)
 
     def mandatory(self, frame):
         required = ~frame.valid | (frame.age >= self.source.max_age - 1e-6)
@@ -75,6 +107,10 @@ class DeepBlockCache:
         if self.core.dir_head is not None:
             output['dm'] = self.core.dir_head(features)
         return output
+
+    def pack(self, frame):
+        self.stage.update.delta_t = frame.dt
+        return self.stage.pack(frame.coarse, frame.aligned, frame.valid)
 
     def step_spatial(self, spatial, state, meta, requests=None, dense_reference=False):
         if self.refresh_reason(state, meta):
@@ -89,7 +125,7 @@ class DeepBlockCache:
             mask = mask | requests
         if bool(mask.any()):
             deep, written, info = coalesced_refresh(
-                self.heavy, self.heavy.pack(frame.coarse, frame.aligned, frame.valid),
+                self.stage, self.pack(frame),
                 frame.aligned, mask, tile=self.tile, dense_reference=dense_reference,
             )
         else:
