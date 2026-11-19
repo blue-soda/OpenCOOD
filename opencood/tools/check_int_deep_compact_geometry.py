@@ -33,11 +33,13 @@ def masks(compose, long, shape):
     for line in long.read_text().splitlines():
         row = json.loads(line)
         if row['refresh'] is None:
+            written = row.get('written_indices',row['written'])
+            assert isinstance(written,list)
             picked = row['arms']['indexed_crop_online']['selection']['chosen'] or []
             optional = {y*w+x for ty,tx in picked for y in range(ty*TILE,min((ty+1)*TILE,h))
                         for x in range(tx*TILE,min((tx+1)*TILE,w))}
-            assert optional.issubset(row['written'])
-            counts[tuple(sorted(set(row['written'])-optional))] += 1
+            assert optional.issubset(written)
+            counts[tuple(sorted(set(written)-optional))] += 1
     return counts
 
 
