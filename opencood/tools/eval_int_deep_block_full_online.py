@@ -147,6 +147,9 @@ def evaluate(args,out):
     plan = read(args.plan)
     plan_sha = digest(Path(args.plan))
     reference,r170_hashes,gold,prior_ap = read_r170(args.r170)
+    precision = reference['precision']
+    torch.backends.cuda.matmul.allow_tf32 = precision['matmul_tf32']
+    torch.backends.cudnn.allow_tf32 = precision['cudnn_tf32']
     assert plan['r170_sha256']==r170_hashes and plan['split']=='val' and plan['seed']==SEED and plan['warmup_excluded']==0
     assert reference['checkpoint_sha256']==SOURCE_SHA['checkpoint']
     assert reference['initialization_sha256']==SOURCE_SHA['readout']
@@ -159,7 +162,7 @@ def evaluate(args,out):
     assert len(ranges)==plan['segments']
     key = dict(code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                source_sha256=SOURCE_SHA,plan_sha256=plan_sha,r170_sha256=r170_hashes,period=PERIOD,max_age=AGE,tile=TILE,
-               workers=args.workers,seed=SEED,torch=torch.__version__,device=torch.cuda.get_device_name())
+               workers=args.workers,seed=SEED,precision=precision,torch=torch.__version__,device=torch.cuda.get_device_name())
     contract = dict(identity=key,arms=list(MODES),scans=SCANS,labelled_scans=LABELS,warmup_excluded=0,
         scope='Complete historical DAIR validation split. Frozen weights. Every labeled scan scored, all unlabeled scans consumed in original native order. AP and Conv/ConvTranspose only.',
         segments='Task states persist across the stream and reset naturally via manifest boundaries. Reuse pure geometry cache within each segment only. Resume uses prior segment identity to preserve next natural reset.',
