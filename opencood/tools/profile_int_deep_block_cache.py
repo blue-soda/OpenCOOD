@@ -133,7 +133,7 @@ def prove_projection(source,cfg,rows,plan,masks,trace,path,uuid,indexed=False):
     return records
 
 
-def replay(source,cfg,rows,plan,masks,trace,out,uuid,modes,diagnostic,projection):
+def replay(source,cfg,rows,plan,masks,trace,out,uuid,modes,diagnostic,projection,projected_planners=None):
     name = 'phase_frames.jsonl' if diagnostic else 'frames.jsonl'
     repeats = 1 if diagnostic else PASSES
     timers = {m:PhaseTimer() for m in modes} if diagnostic else {}
@@ -149,9 +149,13 @@ def replay(source,cfg,rows,plan,masks,trace,out,uuid,modes,diagnostic,projection
     if 'sync' in modes:
         caches['sync'] = DeepBlockCache(source,TILE,'light',phase=phases['sync'],crop_first=True,counted_host=True)
     for mode in projection:
-        caches[mode] = DeepBlockCache(source,TILE,'light',planner=plan_host_coalesced_refresh,
+        planner,indexed = (plan_host_coalesced_refresh, mode=='phase_index')
+        if projected_planners is not None:
+            planner = projected_planners[mode]
+            indexed = True
+        caches[mode] = DeepBlockCache(source,TILE,'light',planner=planner,
             phase=phases[mode],crop_first=True,
-            deep_projector=DeepPhaseProjection(source.core.deblocks[2],indexed=mode=='phase_index'))
+            deep_projector=DeepPhaseProjection(source.core.deblocks[2],indexed=indexed))
     measurements, checks = [], 0
     with (out/name).open('x', buffering=1) as raw:
         for repeat in range(repeats):
