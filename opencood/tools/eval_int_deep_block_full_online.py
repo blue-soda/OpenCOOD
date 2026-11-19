@@ -95,7 +95,8 @@ def blank_ap():
 
 
 def merge_ap(target, part):
-    for mode in MODES:
+    assert target.keys() == part.keys()
+    for mode in target:
         for threshold in IOU:
             a,b = target[mode][threshold],part[mode][threshold]
             for key in ('tp','fp','score'):
