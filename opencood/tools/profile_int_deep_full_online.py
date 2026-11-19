@@ -135,7 +135,7 @@ def timing(source, models, entries, gold, previous_segment, uuid):
                 torch.cuda.synchronize()
                 before = time.perf_counter()
                 spatial = spatial_input(source,ego)
-                _,states[name],info = models[name].step_spatial(spatial,states[name],meta,policies.get(name))
+                _,states[name],info = models[name].step_spatial(spatial,states[name],meta,requests=policies.get(name))
                 torch.cuda.synchronize()
                 elapsed[name] = (time.perf_counter()-before)*1000.
                 assert info['full_refresh']==expected['refresh']
@@ -152,7 +152,7 @@ def replay(name, source, model, entries, gold, previous_segment):
             segment = meta['segment']
             policy = None if name=='p5' else cached_policy(name)(model)
         spatial = spatial_input(source,ego)
-        _,state,info = model.step_spatial(spatial,state,meta,policy)
+        _,state,info = model.step_spatial(spatial,state,meta,requests=policy)
         torch.cuda.synchronize()
         assert info['full_refresh']==expected['refresh']
 
@@ -254,6 +254,7 @@ def run(args, out):
                     input_sha256=hashes,source_sha256=SOURCE_SHA,torch=torch.__version__,driver=subprocess.check_output(
                         ['nvidia-smi','--query-gpu=driver_version','--id='+args.uuid,'--format=csv,noheader']).decode().strip(),
                     gpu=torch.cuda.get_device_name(),uuid=args.uuid,modes=list(MODES),energy_orders=[list(o) for o in ORDERS],
+                    cudnn=dict(deterministic=True,benchmark=False),
                     workers=args.workers,bounds=[list(r) for r in ranges],passes=PASSES,
                     scope='GPU-resident Pillar through detection heads, one full paired energy replay per arm per batch. '
                           'Each batch is preconditioned by a complete equivalence pass; all scans in the measured replays count. '
@@ -269,6 +270,8 @@ def run(args, out):
     check_files(plan,out)
     args.kind = 'geometry'
     source,cfg,rows,origin = build(args)
+    assert not torch.backends.cuda.matmul.allow_tf32 and not torch.backends.cudnn.allow_tf32
+    assert torch.backends.cudnn.deterministic and not torch.backends.cudnn.benchmark
     source.period,source.max_age = PERIOD,AGE
     assert origin['split']=='val' and [row_identity(r) for r in rows]==plan['ordered_stream']
     weights = model_digest(source)
