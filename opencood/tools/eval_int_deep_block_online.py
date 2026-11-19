@@ -47,8 +47,9 @@ def original_online_policy(cache):
 class CachedResidualPolicy:
     """Reuse geometry buckets while scoring live residuals on every ordinary frame."""
 
-    def __init__(self, cache):
+    def __init__(self, cache, compiler=group_bucket):
         self.cache = cache
+        self.compiler = compiler
         self.layouts = OrderedDict()
         self.record = None
         self.hits = self.misses = 0
@@ -62,7 +63,7 @@ class CachedResidualPolicy:
             self.layouts.move_to_end(key)
         else:
             self.misses += 1
-            self.layouts[key] = group_bucket(self.cache,frame,mask,CAP)
+            self.layouts[key] = self.compiler(self.cache,frame,mask,CAP)
             if len(self.layouts)>MAX_GEOMETRIES:
                 self.layouts.popitem(last=False)
         mandatory_sites,sites,pairs = self.layouts[key]

@@ -1,5 +1,6 @@
 """Same-card audit, latency and NVML energy of online deep-cache dispatch."""
 import argparse
+from functools import partial
 from itertools import permutations
 import json
 from pathlib import Path
@@ -20,7 +21,7 @@ from opencood.tools.eval_int_deep_block_online import CachedResidualPolicy, Obse
 from opencood.tools.eval_int_deep_block_rank import TILE, checked_plan, clip_streams
 from opencood.tools.launch_int_memory import digest
 from opencood.tools.measure_int_deep_phase_energy import BoardEnergy, idle, interval
-from opencood.tools.probe_int_deep_block_cache import SOURCE_SHA, build, spatial_input
+from opencood.tools.probe_int_deep_block_cache import SOURCE_SHA, build, compact_group_bucket, spatial_input
 from opencood.tools.profile_int_deep_phase_edges import ObservedPlanner, dense_plan
 from opencood.tools.run_int_ego import to_device, write_json
 from opencood.tools.time_int_deep_block_cache import PASSES, WARMUP, fingerprint
@@ -29,17 +30,20 @@ from opencood.tools.train_int_deep_block_adapt import pack_mask
 
 
 MODES = ('p5','crop_online','dispatch_online')
-LOCAL = MODES[1:]
 ENERGY_PASSES = 4
-ENERGY_ORDER = tuple(permutations(MODES))
 DEVICE = torch.device('cuda')
+COMPACT = 'compact_dispatch'
+
+
+def cached_policy(name):
+    return partial(CachedResidualPolicy,compiler=compact_group_bucket) if name==COMPACT else CachedResidualPolicy
 
 
 def build_models(source, planners):
     return dict(p5=source,**{
         name:DeepBlockCache(source,TILE,'light',planner=planners[name],crop_first=True,
                             deep_projector=DeepPhaseProjection(source.core.deblocks[2],indexed=True))
-        for name in LOCAL})
+        for name in planners})
 
 
 def stage(cfg, rows, plan, uuid):
@@ -64,13 +68,13 @@ def equal_observations(a, b):
     return all(x is y is None or (x is not None and y is not None and torch.equal(x,y)) for x,y in zip(a,b))
 
 
-def quality_gate(source, entries, upstream, uuid, out):
-    planners = dict(crop_online=ObservedPlanner(plan_host_coalesced_refresh),dispatch_online=ObservedPlanner(dense_plan))
+def quality_gate(source, entries, upstream, uuid, out, planners):
+    planners = {name:ObservedPlanner(planner) for name,planner in planners.items()}
     models = build_models(source,planners)
     models['original'] = DeepBlockCache(source,TILE,'light',planner=plan_host_coalesced_refresh,crop_first=True)
-    policies = {n:ObservedPolicy(models[n],CachedResidualPolicy) for n in LOCAL}
+    policies = {n:ObservedPolicy(models[n],cached_policy(n)) for n in planners}
     policies['original'] = ObservedPolicy(models['original'],original_online_policy)
-    hooks = [models[n].stage.register_forward_pre_hook(planners[n].observe) for n in LOCAL]
+    hooks = [models[n].stage.register_forward_pre_hook(p.observe) for n,p in planners.items()]
     stage_cost = sum(2*m.out_channels*(m.in_channels//m.groups)*m.kernel_size[0]*m.kernel_size[1]
                      for m in models['original'].stage.modules() if isinstance(m,nn.Conv2d))
     proj = source.core.deblocks[2][0]
@@ -90,14 +94,14 @@ def quality_gate(source, entries, upstream, uuid, out):
                     policy = policies.get(name)
                     if policy is not None:
                         policy.observation = None
-                    if name in LOCAL:
+                    if name in planners:
                         planners[name].reset()
                     (pred,states[name],info),cost = measured_step(model,spatial,states[name],meta,policy)
                     assert info['full_refresh']==refresh
                     if i%16==0:
                         anchors[name] = fingerprint(pred,states[name])
                     preds[name],costs[name] = pred,cost
-                    if name in LOCAL:
+                    if name in planners:
                         layouts[name] = planners[name].record(states[name]['deep_age'],refresh)
                 assert costs['p5']==gold['arms']['p5']['core_conv_flops']
                 assert anchors.get('p5')==gold['arms']['p5']['fingerprint']
@@ -105,13 +109,16 @@ def quality_gate(source, entries, upstream, uuid, out):
                 baseline = states['original']
                 written = int((baseline['deep_age']==0).sum())
                 sites = baseline['deep_age'].numel()
-                for arm in LOCAL:
+                for arm in planners:
                     assert equal_observations(obs,policies[arm].observation)
                     assert all(torch.equal(preds['original'][k],preds[arm][k]) for k in preds['original'])
                     assert all(torch.equal(baseline[k],states[arm][k]) for k in (*source.state_keys,'deep_age'))
                     extra = layouts[arm]['work_sites']-layouts['crop_online']['work_sites']
                     assert costs[arm]==costs['original']-(sites-written)*proj_cost+stage_cost*extra
-                assert torch.equal(states['crop_online']['deep_projection'],states['dispatch_online']['deep_projection'])
+                    assert torch.equal(states['crop_online']['deep_projection'],states[arm]['deep_projection'])
+                if COMPACT in planners:
+                    assert layouts[COMPACT]==layouts['dispatch_online'] and costs[COMPACT]==costs['dispatch_online']
+                    assert policies[COMPACT].policy.record==policies['dispatch_online'].policy.record
                 valid,required,optional = (None,None,None) if obs is None else obs
                 row = dict(frame=meta['frame'],index=i,refresh=refresh,core_conv_flops=costs,anchors=anchors,
                     written=written,invalid=0 if valid is None else int((~valid).sum()),
@@ -127,17 +134,18 @@ def quality_gate(source, entries, upstream, uuid, out):
     return rows,stage_cost,proj_cost
 
 
-def time_steps(source,models,entries,proof,uuid,out):
+def time_steps(source,models,entries,proof,uuid,out,modes):
     measurements = []
     with (out/'timing.jsonl').open('x',buffering=1) as raw:
         for repeat in range(PASSES):
             exclusive(uuid)
-            states = dict.fromkeys(MODES)
-            policies = {n:CachedResidualPolicy(models[n]) for n in LOCAL}
+            states = dict.fromkeys(modes)
+            policies = {n:cached_policy(n)(models[n]) for n in modes if n!='p5'}
             for i,((meta,ego),gold) in enumerate(zip(entries,proof)):
                 if i%16==0:
                     exclusive(uuid)
-                order = MODES[(i+repeat)%len(MODES):]+MODES[:(i+repeat)%len(MODES)]
+                shift = (i+repeat)%len(modes)
+                order = modes[shift:]+modes[:shift]
                 elapsed = {}
                 for name in order:
                     torch.cuda.synchronize()
@@ -160,7 +168,7 @@ def time_steps(source,models,entries,proof,uuid,out):
 
 def replay(name,source,model,entries,proof=None):
     state = None
-    policy = None if name=='p5' else CachedResidualPolicy(model)
+    policy = None if name=='p5' else cached_policy(name)(model)
     for i,(meta,ego) in enumerate(entries):
         spatial = spatial_input(source,ego)
         pred,state,info = model.step_spatial(spatial,state,meta,policy)
@@ -171,14 +179,14 @@ def replay(name,source,model,entries,proof=None):
                 assert fingerprint(pred,state)==proof[i]['anchors'][name]
 
 
-def energy(meter,source,models,entries,proof,uuid,out):
+def energy(meter,source,models,entries,proof,uuid,out,orders):
     rows = []
     with (out/'board_intervals.jsonl').open('x',buffering=1) as raw:
         def record(row):
             rows.append(row)
             raw.write(json.dumps(row,allow_nan=False)+'\n')
 
-        for block,order in enumerate(ENERGY_ORDER):
+        for block,order in enumerate(orders):
             base = dict(kind='idle',block=block,**idle(meter,uuid))
             record(base)
             for position,name in enumerate(order):
@@ -197,17 +205,19 @@ def energy(meter,source,models,entries,proof,uuid,out):
                     joules=joules,seconds=seconds,scans=n,gross_j_per_scan=joules/n,board_w=joules/seconds,
                     ms_per_scan=1000*seconds/n))
                 write_json(out/'status.json',dict(status='RUNNING',phase='board_intervals',block=block,position=position))
-        record(dict(kind='idle',block=len(ENERGY_ORDER),**idle(meter,uuid)))
+        record(dict(kind='idle',block=len(orders),**idle(meter,uuid)))
     return rows
 
 
-def summary(timing,board,proof,parameters):
+def summary(timing,board,proof,parameters,modes):
     kept = [r for r in timing if r['included']]
     normal = [r for r in kept if r['refresh'] is None]
     groups = dict(overall=kept,ordinary=normal,boundary=[r for r in normal if r['boundary']],
                   interior=[r for r in normal if not r['boundary']],fallback=[r for r in normal if r['fallback']])
+    groups['cache_miss'] = [r for r in normal if not proof[r['index']]['geometry_cache_hit']]
+    groups['cache_hit'] = [r for r in normal if proof[r['index']]['geometry_cache_hit']]
     reports = {}
-    for name in MODES:
+    for name in modes:
         data = [r for r in board if r.get('arm')==name]
         stats = {}
         for group,frames in groups.items():
@@ -217,17 +227,19 @@ def summary(timing,board,proof,parameters):
             stats[group] = dict(samples=len(ms),mean_ms=mean(ms),p95_ms=float(np.percentile(ms,95)),
                 core_conv_flops_per_scan=mean(proof[row['index']]['core_conv_flops'][name] for row in frames),
                 pass_means=[mean(row['ms'][name] for row in frames if row['repeat']==p) for p in range(PASSES)])
-        reports[name] = dict(parameters=parameters,ap50=None,ap70=None,timing=stats,gross_j_per_scan=mean(r['gross_j_per_scan'] for r in data),
-            energy_scans=sum(r['scans'] for r in data),energy_ms_per_scan=mean(r['ms_per_scan'] for r in data),
-            energy_mean_board_w=mean(r['board_w'] for r in data))
+        reports[name] = dict(parameters=parameters,ap50=None,ap70=None,timing=stats,energy_scans=sum(r['scans'] for r in data))
+        if data:
+            reports[name].update(gross_j_per_scan=mean(r['gross_j_per_scan'] for r in data),
+                energy_ms_per_scan=mean(r['ms_per_scan'] for r in data),energy_mean_board_w=mean(r['board_w'] for r in data))
     return reports
 
 
 @torch.no_grad()
 def run(args,out):
     exclusive(args.uuid)
-    meter = BoardEnergy(args.uuid)
-    meter.mark()
+    if not args.timing_only:
+        meter = BoardEnergy(args.uuid)
+        meter.mark()
     plan = checked_plan(args.plan)
     assert plan['split']=='val' and len(plan['clips'])==1 and len(plan['clips'][0])==128
     trace = [json.loads(line) for line in Path(args.trace).read_text().splitlines()]
@@ -238,24 +250,31 @@ def run(args,out):
     source,cfg,rows,_ = build(args)
     source.period,source.max_age = 5,.55
     weights = model_digest(source)
+    planners = dict(crop_online=plan_host_coalesced_refresh,dispatch_online=dense_plan)
+    modes = MODES
+    if args.compact_geometry:
+        planners[COMPACT] = dense_plan
+        modes = ('p5','dispatch_online',COMPACT)
+    orders = () if args.timing_only else tuple(permutations(modes))
     paths = {key:Path(getattr(args,key)) for key in ('plan','trace','prior_contract')}
     hashes = {key:digest(path) for key,path in paths.items()}
     write_json(out/'contract.json',dict(code_commit=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         device=torch.cuda.get_device_name(),uuid=args.uuid,torch=torch.__version__,source_sha256=SOURCE_SHA,inputs_sha256=hashes,
-        modes=MODES,passes=PASSES,warmup=WARMUP,energy_order=ENERGY_ORDER,energy_passes=ENERGY_PASSES,
+        modes=modes,passes=PASSES,warmup=WARMUP,energy_order=orders,energy_passes=0 if args.timing_only else ENERGY_PASSES,
+        compact_geometry=args.compact_geometry,
         scope='GPU-resident Pillar through detection heads, includes live residual, planner and same-mask dispatch. Independent model states. Loads, transfers and postprocess are outside timing. Energy uses a warm run and four homogeneous cold-scene replays per interval from synchronized NVML counter endpoints. AP not scored.'))
     entries = stage(cfg,rows,plan,args.uuid)
-    proof,per_stage,per_projection = quality_gate(source,entries,trace,args.uuid,out)
-    models = build_models(source,dict(crop_online=plan_host_coalesced_refresh,dispatch_online=dense_plan))
-    times = time_steps(source,models,entries,proof,args.uuid,out)
+    proof,per_stage,per_projection = quality_gate(source,entries,trace,args.uuid,out,planners)
+    models = build_models(source,{name:planners[name] for name in modes if name!='p5'})
+    times = time_steps(source,models,entries,proof,args.uuid,out,modes)
     assert len(times)==len(proof)*PASSES
-    work = energy(meter,source,models,entries,proof,args.uuid,out)
+    work = [] if args.timing_only else energy(meter,source,models,entries,proof,args.uuid,out,orders)
     assert model_digest(source)==weights and all(digest(paths[k])==v for k,v in hashes.items())
     ordinary = [r for r in proof if r['refresh'] is None]
     write_json(out/'report.json',dict(status='COMPLETED',verified_scans=len(proof),ordinary_scans=len(ordinary),
         boundary_scans=sum(r['invalid']>0 for r in ordinary),fallback_scans=sum(r['fallback'] for r in ordinary),
         geometry_cache_hits=sum(r['geometry_cache_hit'] for r in ordinary),stage_flops_per_site=per_stage,
-        projection_flops_per_site=per_projection,metrics=summary(times,work,proof,sum(p.numel() for p in source.parameters()))))
+        projection_flops_per_site=per_projection,metrics=summary(times,work,proof,sum(p.numel() for p in source.parameters()),modes)))
     write_json(out/'status.json',dict(status='COMPLETED',scans=len(proof)))
 
 
@@ -263,6 +282,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('root','checkpoint','trained','readout','plan','trace','prior-contract','uuid','output'):
         parser.add_argument('--'+name,required=True)
+    parser.add_argument('--compact-geometry',action='store_true')
+    parser.add_argument('--timing-only',action='store_true')
     args = parser.parse_args()
     out = Path(args.output)
     out.mkdir(parents=True,exist_ok=False)

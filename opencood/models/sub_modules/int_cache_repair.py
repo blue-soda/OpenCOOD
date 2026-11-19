@@ -44,7 +44,10 @@ def select_updates(current, previous, valid, fraction, tile=32, occupancy_policy
 
 def rectangles(active):
     """Merge horizontal tile runs and identical runs on consecutive rows."""
-    rows=active[0,0].cpu().tolist()
+    return tile_rectangles(active[0,0].cpu().tolist())
+
+
+def tile_rectangles(rows):
     result=[];previous={}
     for y,row in enumerate(rows):
         current={};x=0

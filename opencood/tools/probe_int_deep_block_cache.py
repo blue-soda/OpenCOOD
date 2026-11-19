@@ -11,12 +11,13 @@ import torch
 import torch.nn.functional as F
 
 from opencood.loss.point_pillar_dir_loss import PointPillarDirLoss
+from opencood.models.sub_modules.int_cache_repair import tile_mask
 from opencood.models.sub_modules.int_deep_block_cache import DeepBlockCache
 from opencood.models.sub_modules.int_factorized_readout import compact_readout
 from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.models.sub_modules.int_local_state_cache import relative_change_score
 from opencood.models.sub_modules.int_multiscale_refresh import ProtectedMultiscaleRefreshDetector, reset_reason
-from opencood.models.sub_modules.int_pyramid_regions import plan_coalesced_refresh
+from opencood.models.sub_modules.int_pyramid_regions import compact_tile_geometry, plan_coalesced_refresh
 from opencood.models.sub_modules.int_pyramid_state import PyramidStateDetector
 from opencood.tools.check_int_pyramid_cache import measured_step
 from opencood.tools.check_int_temporal_feature import model_digest
@@ -83,19 +84,40 @@ def add_tiles(required, keys, tile):
 def group_bucket(cache, frame, required, cap):
     """Pick a metadata-only bucket of adjacent pairs at exactly equal planned work."""
     optional = list(masks_by_tile(required, cache.tile))
-    allowed = set(optional)
     work = functools.partial(plan_coalesced_refresh, input_shape=frame.coarse.shape[-2:],
                              radius=cache.stage.radius, tile=cache.tile)
     base_work = work(required)[2]
-    cells = required.numel()
+    return equal_work_pairs(optional,base_work,cap*required.numel(),
+                            lambda pair:work(add_tiles(required,pair,cache.tile))[2])
+
+
+def compact_group_bucket(cache, frame, required, cap):
+    tiles = tile_mask(required,cache.tile)[0,0].cpu().tolist()
+    optional = [(y,x) for y,row in enumerate(tiles) for x,on in enumerate(row) if not on]
+    plan = functools.partial(compact_tile_geometry,input_shape=frame.coarse.shape[-2:],
+                             output_shape=required.shape[-2:],radius=cache.stage.radius,tile=cache.tile)
+    base_work = plan(tiles)[1]
+
+    def work(pair):
+        (y0,x0),(y1,x1) = pair
+        tiles[y0][x0] = tiles[y1][x1] = True
+        cost = plan(tiles)[1]
+        tiles[y0][x0] = tiles[y1][x1] = False
+        return cost
+
+    return equal_work_pairs(optional,base_work,cap*required.numel(),work)
+
+
+def equal_work_pairs(optional, base_work, cap_sites, work):
+    allowed = set(optional)
     candidates = defaultdict(list)
     for y, x in optional:
         for other in ((y+1, x), (y, x+1)):
             if other not in allowed:
                 continue
             pair = ((y, x), other)
-            sites = work(add_tiles(required, pair, cache.tile))[2]
-            if base_work < sites <= cap * cells:
+            sites = work(pair)
+            if base_work < sites <= cap_sites:
                 candidates[sites].append(pair)
     if not candidates:
         return base_work, None, []

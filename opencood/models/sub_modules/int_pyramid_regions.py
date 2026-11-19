@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 import torch
 from opencood.models.sub_modules.int_cache_repair import (
-    tile_mask, expand_tiles, rectangles, crop_jobs)
+    tile_mask, expand_tiles, rectangles, tile_rectangles, crop_jobs)
 
 
 class CountedPlan(NamedTuple):
@@ -53,6 +53,22 @@ def plan_counted_host_refresh(requested, input_shape, radius, tile, stride=2):
     layout = (written, *_host_jobs(host_tiles, input_shape, output_shape, radius, tile, stride))
     fractions = torch.tensor((requested_count, written_count), dtype=torch.float32, device='cpu') / (height*width)
     return CountedPlan(layout, *fractions.tolist())
+
+
+def compact_tile_geometry(rows, input_shape, output_shape, radius, tile, stride=2):
+    """Plan on boolean base tiles using the same crop and halo accounting."""
+    def pooled(factor):
+        height,width = len(rows),len(rows[0])
+        grid = [[False]*((width+factor-1)//factor) for _ in range((height+factor-1)//factor)]
+        for y,row in enumerate(rows):
+            for x,active in enumerate(row):
+                if active:
+                    grid[y//factor][x//factor] = True
+        return grid
+
+    layouts = ((tile*factor,tile_rectangles(rows if factor==1 else pooled(factor)))
+               for factor in (1,2,4,8,16))
+    return _choose_jobs(layouts,input_shape,output_shape,radius,stride)
 
 
 def _choose_jobs(layouts, input_shape, output_shape, radius, stride):
