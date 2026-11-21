@@ -72,6 +72,57 @@ class TaskDrive(SilentDrive):
         return tangent
 
 
+class ChargeDrive(TaskDrive):
+    """Accumulate unsent task corrections on the ego-aligned middle lattice."""
+    def __init__(self, coefficients, name, audit):
+        super().__init__(coefficients, name)
+        self.audit = audit
+        self.charge = None
+
+    def begin_frame(self, state, meta, shape, bounds, reason):
+        if reason is not None:
+            self.charge = None
+        self.context = (state, meta, shape, bounds)
+
+    def apply(self, fine, old, extra, output):
+        state, meta, shape, bounds = self.context
+        self.context = None
+        cost = SilentDrive.apply(self, fine, old, extra, output)
+        ids = extra.flatten().nonzero().flatten()
+        values, shallow = samples(fine, old, ids)
+        proposal = self.correction(values, shallow)
+        if self.charge is None:
+            aligned = torch.zeros_like(old)
+        else:
+            area = block_lidar_range(bounds, shape, old.shape[-2:], 4)
+            aligned = warp_bev(self.charge, state['pose'], meta['pose'], area)[0]
+        self.charge = aligned.masked_fill(~self.executor.skip, 0)
+        flat = self.charge[0].flatten(1)
+        prior = flat[:, ids].T
+        if self.name == 'shuffled':
+            prior = prior.roll(len(ids)//2, 0)
+        total = prior + proposal
+        units = (total * 4).round().clamp(-1, 1)
+        sent = units * .25
+        remainder = total - sent
+        flat[:, ids] = remainder.T
+        target = output[0].flatten(1)
+        base = target[:, ids].T
+        target[:, ids] = (base + sent).clamp_min(0).T
+        self.emitted = int(units.count_nonzero())
+        self.extra_stats = dict(charge_bytes=self.charge.numel()*self.charge.element_size(),
+                                read_nonzero=int(prior.count_nonzero()),
+                                changed=int((sent != (proposal*4).round()*.25).sum()))
+        if self.audit:
+            error = float((remainder.double()+sent.double()-prior.double()-proposal.double()).abs().max()) if len(ids) else 0.
+            assert error <= 5e-8 and (not len(ids) or float(remainder.abs().max())<=.12500002)
+            assert not bool(self.charge.masked_select(~self.executor.skip).count_nonzero())
+            assert torch.equal(target[:,ids].T,(base+sent).clamp_min(0))
+            self.extra_stats['balance_error'] = error
+        # Integrating the previous charge and subtracting the emitted value.
+        return cost + 21 * proposal.numel()
+
+
 def readout_loss(core, dense_readout, middle, tangent, branches, actual, criterion, target):
     # Forward logits are the real integer/sparse detector's. The backward surrogate
     # uses the direct middle projection, with frozen fine and deep branch outputs.
@@ -96,13 +147,17 @@ def run(a):
     core = source.core
     source.eval().requires_grad_(False)
     train = a.phase == 'fit'
-    if train:
-        rows, traces, data_id = training_rows(a.long_base, book_path, False)
+    audit = a.phase == 'charge_train'
+    charge_test = audit or a.phase == 'charge_dev'
+    if train or audit:
+        rows, traces, data_id = training_rows(a.long_base, book_path, audit)
     else:
         a.inputs = a.long_base/'inputs'
         rows, traces, data_id = complete_scenes(a, short, remainder=False)
     edge = GroupedEdge(source.bounds, 16384, book['levels'])
     names = ('continuous', 'pulse') if train else ('drive', 'continuous', 'pulse')
+    if charge_test:
+        names = ('pulse', 'carry', 'shuffled')
     dense_readout = copy.deepcopy(core.readout) if train else None
     first = core.readout.layers[0].double_conv[0]
     layer = BranchFusion(first[0]).eval()
@@ -121,10 +176,13 @@ def run(a):
         gate = SilencePolicy(edge.arms['tile'], 'silent')
         exe = InspectMiddle(False, model.coarse_executor.receive_fine, gate)
         drive = SilentDrive(fit, 'drive') if n == 'drive' else TaskDrive(fit, n)
+        if n in ('carry', 'shuffled'):
+            drive = ChargeDrive(fit, n, audit)
+            drive.executor = exe
         if train:
             optimizers[n] = torch.optim.Adam([drive.adapter], lr=.005)
         elif n != 'drive':
-            drive.adapter.copy_(weights[n])
+            drive.adapter.copy_(weights['pulse' if charge_test else n])
         model.coarse_executor, exe.drive = exe, drive
         models[n], drives[n] = model, drive
     data, stream = loader(rows, cfg, 0, 303)
@@ -166,6 +224,8 @@ def run(a):
                 assert model.refresh_reason(old_state, meta) == reason
                 model.coarse_projector.begin(old_state, reason)
                 layer.begin(old_state, reason)
+                if isinstance(drives[n],ChargeDrive):
+                    drives[n].begin_frame(old_state,meta,spatial.shape[-2:],source.bounds,reason)
                 selector = selectors[n]
                 selector.observation = None
                 (pred, state, info), base_cost = measured_step(model, spatial, old_state, meta, selector)
@@ -183,9 +243,11 @@ def run(a):
                     rec['core'] += exe.drive_ops + sum(costs[k]*v for k,v in exe.counts.items())
                     if n != 'drive':
                         count = rec['extra'] * 256
-                        rec.update(emitted=drive.emitted, values=count, scale_ops=2*count if n=='pulse' else 0,
-                                   rounding=count if n=='pulse' else 0)
+                        rec.update(emitted=drive.emitted, values=count, scale_ops=2*count if n!='continuous' else 0,
+                                   rounding=count if n!='continuous' else 0)
                         rec['core'] += rec['scale_ops']
+                        if isinstance(drive,ChargeDrive):
+                            rec.update(drive.extra_stats)
                     if train:
                         with torch.enable_grad():
                             area = block_lidar_range(source.bounds,spatial.shape[-2:],exe.result.shape[-2:],4)
@@ -224,7 +286,7 @@ def run(a):
                 assert all(c == counts[0] for c in counts)
             row['bytes'] = edge.stats['tile']['bytes']
             log.write(json.dumps(row,allow_nan=False)+'\n')
-    assert (i+1,labels) == ((211,168) if train else (1014,458))
+    assert (i+1,labels) == ((211,168) if train else (211,0) if audit else (1014,458))
     report = dict(status='COMPLETED', scans=i+1, labels=labels, steps=steps, cross_windows=cross)
     if train:
         hook.remove()
@@ -236,11 +298,11 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    p.add_argument('phase', choices=('fit','dev'))
+    p.add_argument('phase', choices=('fit','dev','charge_train','charge_dev'))
     for k in ('long-base','drive','output','vehicle','fit'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','drive','output'))
     a=p.parse_args()
-    if a.phase=='dev' and (not a.vehicle or not a.fit):
+    if (a.phase.endswith('dev') and not a.vehicle) or (a.phase!='fit' and not a.fit):
         p.error('development needs vehicle data and frozen adapters')
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
