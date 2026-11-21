@@ -9,6 +9,7 @@ from opencood.models.sub_modules.int_compact_middle_update import FineInnovation
 from opencood.models.sub_modules.int_cross_scale_dw import CrossScaleCache
 from opencood.models.sub_modules.int_deep_spike_projection import DeepSpikeProjection
 from opencood.models.sub_modules.int_exact_fusion_cache import ExactFusionCache
+from opencood.models.sub_modules.int_nonzero_fusion import NonzeroFusionCache
 from opencood.models.sub_modules.int_fine_codebook import FineCodebook
 from opencood.models.sub_modules.int_fine_demand import QuotaFineEdge
 from opencood.models.sub_modules.int_middle_decay_projection import MiddleDecayProjection
@@ -30,7 +31,7 @@ def run(a):
     old=[json.loads(x) for x in a.prior.read_bytes().splitlines()]
     core=source.core
     base=core.readout.layers[0].double_conv[0]
-    layer=ExactFusionCache(base[0]).eval()
+    layer=(NonzeroFusionCache(base[0]) if a.nonzero else ExactFusionCache(base[0])).eval()
     base[0]=layer
     models={}
     for name in ('dense','local'):
@@ -49,7 +50,7 @@ def run(a):
     per=conv_costs(core)
     write_json(a.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                params=sum(p.numel() for p in source.parameters()),block=layer.block,book=digest(a.book),prior=digest(a.prior),
-               trace=digest(a.inputs/'traces.json'),amplitude=a.amplitude,optimizer_steps=0))
+               trace=digest(a.inputs/'traces.json'),amplitude=a.amplitude,nonzero=a.nonzero,optimizer_steps=0))
     n=0
     with (a.output/'frames.jsonl').open('x',buffering=1) as log:
         for sample,trace,ref in zip(stream,traces,old):
@@ -96,6 +97,7 @@ if __name__=='__main__':
     p=argparse.ArgumentParser()
     for k in ('inputs','scans','book','prior','output'):p.add_argument('--'+k,type=Path,required=True)
     p.add_argument('--amplitude',action='store_true')
+    p.add_argument('--nonzero',action='store_true')
     a=p.parse_args()
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)

@@ -34,6 +34,16 @@ class ExactFusionCache(nn.Module):
         else:
             ids=torch.arange(h*w,device=x.device)
             output=x.new_empty(h*w,c)
+        padding,mac,extra=self.compute_deep(deep,ids,output)
+        self.new=(deep.detach().clone(),output)
+        self.previous=None
+        self.ledger=dict(sites=h*w,dirty=len(ids),executed=len(ids)+padding,padding=padding,
+                         float_conv=2*(h*w*256*9*c+mac),
+                         merge_add=h*w*c,cache_bytes=(deep.numel()+output.numel())*deep.element_size(),**extra)
+        return first+output.T.reshape(1,c,h,w)
+
+    def compute_deep(self,deep,ids,output):
+        _,c,h,w=deep.shape
         size=len(ids)
         padding=(-size)%self.block
         if size:
@@ -41,7 +51,7 @@ class ExactFusionCache(nn.Module):
             # the same floating accumulation order. Padding jobs are charged.
             source=F.pad(deep[0],(1,1,1,1)).permute(1,2,0).contiguous().view(-1,c)
             weights=self.weight[:,256:].contiguous().view(c,-1)
-            axis=torch.arange(3,device=x.device)
+            axis=torch.arange(3,device=deep.device)
             offsets=(axis[:,None]*(w+2)+axis).flatten()
             padded=F.pad(ids,(0,padding),value=int(ids[-1]))
             for start in range(0,len(padded),self.block):
@@ -51,10 +61,5 @@ class ExactFusionCache(nn.Module):
                 result=F.linear(patch,weights)
                 used=min(self.block,size-start)
                 output[selected[:used]]=result[:used]
-        self.new=(deep.detach().clone(),output)
-        self.previous=None
-        self.ledger=dict(sites=h*w,dirty=size,executed=size+padding,padding=padding,
-                         float_conv=2*(h*w*256+(size+padding)*c)*9*c,
-                         merge_add=h*w*c,cache_bytes=(deep.numel()+output.numel())*deep.element_size())
-        return first+output.T.reshape(1,c,h,w)
+        return padding,(size+padding)*9*c*c,{}
 
