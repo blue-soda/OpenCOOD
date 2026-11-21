@@ -99,6 +99,7 @@ def run(a):
     if train:
         rows, traces, data_id = training_rows(a.long_base, book_path, False)
     else:
+        a.inputs = a.long_base/'inputs'
         rows, traces, data_id = complete_scenes(a, short, remainder=False)
     edge = GroupedEdge(source.bounds, 16384, book['levels'])
     names = ('continuous', 'pulse') if train else ('drive', 'continuous', 'pulse')
