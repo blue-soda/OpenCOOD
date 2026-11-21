@@ -48,7 +48,7 @@ def run(args):
         calibration_report = read(args.calibration/'report.json')
         assert calibration_report['status'] == 'COMPLETED' and calibration_report['scans'] == 211
         thresholds = [calibration_report['threshold']]
-    paired = PairedEdge(source.bounds, book['cap']//2, book['levels'], thresholds, calibration)
+    paired = PairedEdge(source.bounds, book['cap']//2, book['levels'], thresholds, calibration, args.native)
     names = list(paired.arms)
     paths = names[:1] if calibration else names
     core = source.core
@@ -82,7 +82,7 @@ def run(args):
             features.append(inputs[0].detach())
         hook = core.reg_head.register_forward_pre_hook(capture)
     data, stream = loader(rows, cfg, 0, 303)
-    write_json(args.output/'contract.json', dict(mode=args.mode, thresholds=thresholds, seed=303,
+    write_json(args.output/'contract.json', dict(mode=args.mode, native_grants=args.native, thresholds=thresholds, seed=303,
         scenes=sorted({r['scene'] for r in rows}), data=identity, book=digest(book_path), fit=fit_hash,
         calibration=None if calibration else digest(args.calibration/'report.json'),
         params_per_arm=0 if not heads else sum(p.numel() for p in heads[paths[0]].parameters()),
@@ -141,7 +141,7 @@ def run(args):
                 ordinary += 1
                 for n in names:
                     totals[n] += paired.stats[n]['addresses']
-                if not calibration:
+                if not calibration and not args.native:
                     a, b, c, d = (paired.stats[n] for n in names)
                     assert a['addresses'] == b['addresses'] == c['addresses'] and a['bytes'] == b['bytes']
                     assert 0 <= a['bytes'] - d['bytes'] < 12
@@ -165,9 +165,12 @@ def run(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('mode', choices=['calibration','fit','dev'])
+    parser.add_argument('--native', action='store_true', help='each development arm grants its own traffic')
     for k in ('long-base','output','vehicle','calibration','fit'):
         parser.add_argument('--'+k, type=Path, required=k in ('long-base','output'))
     args = parser.parse_args()
+    if args.native and args.mode != 'dev':
+        parser.error('native grants are a development control')
     if args.mode != 'calibration' and args.calibration is None:
         parser.error('calibration result required')
     if args.mode == 'dev' and (args.fit is None or args.vehicle is None):

@@ -80,15 +80,18 @@ class SilentReceiver:
 
 class PairedEdge:
     """Compute the current joint grant without future inputs, labels or detections."""
-    def __init__(self, bounds, cap, book, thresholds, calibration):
+    def __init__(self, bounds, cap, book, thresholds, calibration, native=False):
         self.bounds, self.cap, self.book = bounds, cap, book
         self.calibration = calibration
+        self.native = native
         if calibration:
             self.arms = {str(t): SilentReceiver(t) for t in thresholds}
         else:
             t, = thresholds
             self.arms = dict(carry=SilentReceiver(t), reset=SilentReceiver(t, forget=True),
                              float_address=SilentReceiver(t, floating=True), float_bytes=SilentReceiver(t, floating=True))
+            if native:
+                del self.arms['float_bytes']
 
     def start(self, meta, shape, reason):
         self.meta, self.shape, self.reason = meta, shape, reason
@@ -116,7 +119,7 @@ class PairedEdge:
 
             candidates = {key: arm.prepare(value, sites, warp) for key, arm in self.arms.items()}
             limits = {key: min(self.cap, len(c.ids)) for key, c in candidates.items()}
-            if not self.calibration:
+            if not self.calibration and not self.native:
                 # A floating record costs 12 bytes. A four-level record uses
                 # 8 address bytes and three packed amplitude bits.
                 common = min(limits['carry'], limits['reset'], limits['float_address'],
