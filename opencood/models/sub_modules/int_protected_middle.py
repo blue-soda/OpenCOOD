@@ -50,16 +50,19 @@ def protected_mask(base, silent, score, frame):
     # Mix the frame number before hashing tile IDs, so orders vary between frames.
     tie=((ids ^ ((frame*2246822519)&0xffffffff))*2654435761)&0xffffffff
     restored=np.zeros(len(sig),dtype=bool)
+    exchangeable=0
     for key in np.unique(sig[sig[:,0]>0],axis=0):
         bucket=ids[(sig==key).all(axis=1)]
         parity=(int(key@[11,17,29])+frame)%2
         n=(len(bucket)+parity)//2
+        exchangeable+=int(key[0])*min(n,len(bucket)-n)
         order=np.lexsort((tie[bucket],-scores[bucket]))
         restored[bucket[order[:n]]]=True
     tile_mask=torch.as_tensor(restored,device=silent.device).view((h+top+bottom)//8,-1)
     chosen=tile_mask.repeat_interleave(8,0).repeat_interleave(8,1)[top:top+h,left:left+w] & proposals
     expected=sig[restored].sum(0).tolist()
-    return chosen,dict(increments=expected,available=int(proposals.sum()),blocks=int(restored.sum()))
+    return chosen,dict(increments=expected,available=int(proposals.sum()),blocks=int(restored.sum()),
+                       exchangeable=exchangeable)
 
 
 class ProtectedMiddle:

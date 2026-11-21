@@ -244,6 +244,9 @@ def run(args):
             row['wire']=paired.stats if args.grouped else paired.stats['12']
             if args.protect and reason is None:
                 assert all(row['arms'][n]['executed']==row['arms']['combined']['executed'] for n in names)
+                if args.audit:
+                    row['shared_protection']={n:{other:int((policies[n].guard.chosen & policies[other].guard.chosen).sum())
+                                                  for other in names[:j]} for j,n in enumerate(names)}
                 if gt is not None:
                     masks=torch.cat([policies[n].guard.chosen for n in names],1)[0].cpu().numpy()
                     row['guard_box_cells']=box_counts(gt,masks,source.bounds,spatial.shape[-2:])
