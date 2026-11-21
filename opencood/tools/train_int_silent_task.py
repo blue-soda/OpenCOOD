@@ -166,7 +166,8 @@ def run(a):
     core = source.core
     source.eval().requires_grad_(False)
     train = a.phase == 'fit'
-    audit = a.phase in ('charge_train','edge_audit')
+    native = a.phase in ('native_train','native_dev')
+    audit = a.phase in ('charge_train','edge_audit','native_train')
     charge_test = a.phase in ('charge_train','charge_dev')
     fit_eval = a.phase == 'fit_eval'
     if train or audit or fit_eval:
@@ -176,6 +177,10 @@ def run(a):
         rows, traces, data_id = complete_scenes(a, short, remainder=False)
     edge = GroupedEdge(source.bounds, 16384, book['levels'])
     names = ('continuous', 'pulse') if train else ('drive', 'continuous', 'pulse')
+    native_budget = {}
+    if native:
+        from opencood.models.sub_modules.int_native_silent_events import NativeEventWriter
+        names = ('drive','discard','integrate','misaligned')
     if charge_test:
         names = ('pulse', 'carry', 'shuffled')
     dense_readout = copy.deepcopy(core.readout) if train else None
@@ -202,7 +207,10 @@ def run(a):
         if train:
             optimizers[n] = torch.optim.Adam([drive.adapter], lr=.005)
         elif n != 'drive':
-            drive.adapter.copy_(weights['pulse' if charge_test else n])
+            if native:
+                drive = NativeEventWriter(TaskDrive(fit, 'pulse'), exe, native_budget, n, audit)
+                model.coarse_projector.event_observer = drive.observe_events
+            drive.adapter.copy_(weights['pulse' if charge_test or native else n])
         model.coarse_executor, exe.drive = exe, drive
         if a.phase == 'edge_audit':
             def observe(events, executor=exe, name=n):
@@ -248,7 +256,7 @@ def run(a):
                 assert model.refresh_reason(old_state, meta) == reason
                 model.coarse_projector.begin(old_state, reason)
                 layer.begin(old_state, reason)
-                if isinstance(drives[n],ChargeDrive):
+                if hasattr(drives[n], 'begin_frame'):
                     drives[n].begin_frame(old_state,meta,spatial.shape[-2:],source.bounds,reason)
                 selector = selectors[n]
                 selector.observation = None
@@ -265,7 +273,14 @@ def run(a):
                     assert exe.counts == support_counts(~exe.skip)
                     rec.update(executed=exe.counts, extra=int(exe.refine_skip.extra.sum()), drive_ops=exe.drive_ops)
                     rec['core'] += exe.drive_ops + sum(costs[k]*v for k,v in exe.counts.items())
-                    if n != 'drive':
+                    if native and n == 'drive':
+                        mask = exe.refine_skip.extra.expand_as(exe.result)
+                        delta = ((exe.result[mask]*4).round() - (exe.inputs[1][mask]*4).round())
+                        native_budget['addresses'] = int(delta.count_nonzero())
+                        rec['grant'] = native_budget['addresses']
+                    elif native:
+                        rec['native'] = drive.native
+                    elif n != 'drive':
                         count = rec['extra'] * 256
                         rec.update(emitted=drive.emitted, values=count, scale_ops=2*count if n!='continuous' else 0,
                                    rounding=count if n!='continuous' else 0)
@@ -326,7 +341,7 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    p.add_argument('phase', choices=('fit','dev','charge_train','charge_dev','fit_eval','edge_audit'))
+    p.add_argument('phase', choices=('fit','dev','charge_train','charge_dev','fit_eval','edge_audit','native_train','native_dev'))
     for k in ('long-base','drive','output','vehicle','fit'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','drive','output'))
     a=p.parse_args()
