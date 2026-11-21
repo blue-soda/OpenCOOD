@@ -12,7 +12,7 @@ def descriptor(value):
     return value.abs().reshape(1,8,-1,*value.shape[-2:]).mean(2)
 
 
-def estimate(older, last, valid):
+def estimate(older, last, valid, strategy='local'):
     # Common support for all shifts, including border tiles, prevents padding wins.
     h,w = valid.shape[-2:]
     border = F.pad((~valid).float(), (1,1,1,1), value=1)
@@ -23,9 +23,22 @@ def estimate(older, last, valid):
     n = tile_sum(valid.float())
     costs = torch.cat([tile_sum((last-torch.roll(older,shift,(-2,-1))).abs().mean(1,keepdim=True)*valid)
                        for shift in OFFSETS],1)
-    best, choice = costs.min(1,keepdim=True)
+    if strategy=='shared':
+        # A frame-wide direction may be used only on tiles where it helps.
+        accepted=(n>=16) & (costs<.85*costs[:,:1])
+        gain=((costs[:,:1]-costs)*accepted).sum(dim=(-2,-1))
+        direction=int(gain.argmax(1).item())
+        best=costs[:,direction:direction+1]
+        choice=torch.full_like(n,direction,dtype=torch.long)
+    elif strategy in ('local','opposite'):
+        best, choice = costs.min(1,keepdim=True)
+    else:
+        raise ValueError('Unknown registration strategy')
     active = (n>=16) & (choice!=0) & (best<.85*costs[:,:1])
     choice = torch.where(active,choice,torch.zeros_like(choice))
+    if strategy=='opposite':
+        inverse=choice.new_tensor([OFFSETS.index((-dy,-dx)) for dy,dx in OFFSETS])
+        choice=inverse[choice]
     selected = choice.repeat_interleave(8,-2).repeat_interleave(8,-1)[:,:,:h,:w]
     selected = selected.masked_fill(~valid,0)
     stats = dict(eligible_tiles=int((n>=16).sum()), moved_tiles=int(active.sum()),
@@ -54,9 +67,10 @@ def displace(levels, selected):
 
 
 class ReceiverGuide:
-    def __init__(self):
+    def __init__(self,strategy='local'):
         self.current = None
         self.cost = {}
+        self.strategy = strategy
 
     def observe(self, module, inputs, output):
         if self.current is not None:
@@ -65,7 +79,7 @@ class ReceiverGuide:
 
     def propagate(self, levels, previous, pose, area):
         old,valid = warp_bev(previous['observation_descriptor'],previous['pose'],pose,area)
-        selected,valid,stats = estimate(old,self.current,valid)
+        selected,valid,stats = estimate(old,self.current,valid,self.strategy)
         packet,decoded = tile_packet(selected,valid)
         self.cost = dict(tiles=stats['eligible_tiles'],moved_tiles=stats['moved_tiles'],
                          moved_sites=int(decoded.count_nonzero()), packet_bytes=packet.numel(),

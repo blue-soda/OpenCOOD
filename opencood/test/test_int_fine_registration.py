@@ -46,3 +46,13 @@ class TestFineRegistration(unittest.TestCase):
             if shift!=(0,0):
                 self.assertTrue(torch.any(choices==OFFSETS.index(shift)))
 
+    def test_shared_direction_and_opposite_placebo(self):
+        old=torch.rand((1,8,24,24),generator=torch.Generator().manual_seed(304))
+        valid=torch.ones_like(old[:,:1],dtype=torch.bool)
+        now=torch.roll(old,(1,-1),(-2,-1))
+        local=estimate(old,now,valid)[0]
+        self.assertTrue(torch.equal(local,estimate(old,now,valid,'shared')[0]))
+        opposite=estimate(old,now,valid,'opposite')[0]
+        self.assertTrue(torch.equal(local!=0,opposite!=0))
+        self.assertTrue((opposite[local!=0]==OFFSETS.index((-1,1))).all())
+

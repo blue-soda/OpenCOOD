@@ -58,10 +58,12 @@ def run(a):
     assert all(digest(Path(r['pcd']))==plan['members'][r['pcd']] for r in rows)
     traces=[json.loads(s) for s in (a.training/'frames.jsonl').read_bytes().splitlines()]
     with (a.output/'frames.jsonl').open('x',buffering=1) as log:
-        for name in ('book','amplitude'):
-            for guided in (False,True):
+        for name in (('book',) if a.direction_controls else ('book','amplitude')):
+            strategies=('shared','opposite') if a.direction_controls else ('ego','local')
+            for strategy in strategies:
+                guided=strategy!='ego'
                 edge=AuditBook(source.bounds,cap,book['levels']) if name=='book' else AuditAmplitude(source.bounds,'amplitude',cap)
-                guide=ReceiverGuide() if guided else None
+                guide=ReceiverGuide(strategy) if guided else None
                 if guide:
                     edge.transport=guide.propagate
                     hook=source.core.observation.register_forward_hook(guide.observe)
@@ -79,6 +81,8 @@ def run(a):
                         guide.save(state)
                     row=dict(frame=meta['frame'],scene=meta['scene'],name=name,guided=guided,age=state['since_refresh'],
                              task=hashlib.sha256(state['value'].contiguous().cpu().numpy().tobytes()).hexdigest(),**stats)
+                    if a.direction_controls:
+                        row['strategy']=strategy
                     if trace['refresh'] is None:
                         row.update(demand=edge.ledger['demand_addresses'],**edge.errors)
                         if guide:row.update(guide.cost)
@@ -95,6 +99,7 @@ if __name__=='__main__':
     for k in ('inputs','scans','book','training','output'):
         p.add_argument('--'+k,type=Path,required=True)
     p.add_argument('--eighths',type=int,choices=(7,8),required=True)
+    p.add_argument('--direction-controls',action='store_true')
     a=p.parse_args()
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
