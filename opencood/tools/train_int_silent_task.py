@@ -352,7 +352,7 @@ def run(a):
                 row['box_cells'] = box_counts(gt_boxes,torch.cat(maps,1)[0].cpu().numpy(),source.bounds,spatial.shape[-2:])
             row['bytes'] = edge.stats['tile']['bytes']
             log.write(json.dumps(row,allow_nan=False)+'\n')
-    assert (i+1,labels) == ((211,168) if train or fit_eval else (211,0) if audit else (1014,458))
+    assert (i+1,labels) == ((211,168) if train or fit_eval or routing else (211,0) if audit else (1014,458))
     report = dict(status='COMPLETED', scans=i+1, labels=labels, steps=steps, cross_windows=cross)
     if train:
         hook.remove()
