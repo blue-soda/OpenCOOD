@@ -85,6 +85,8 @@ def run(args):
         if args.charge:
             routes = dict(tile=('tile','silent'),charge=('charge','silent'),fp=('float_bytes','silent'),
                           fp_charge=('float_bytes_charge','silent'),charge_base=('charge','base'))
+        elif args.controls:
+            routes = dict(point_base=('point','base'),tile_score=('tile','continuous'))
     else:
         paired = PairedEdge(source.bounds, book['cap']//2, book['levels'], [12], calibration=True)
         routes = {n:('12',n) for n in ('base','silent','continuous')}
@@ -175,10 +177,12 @@ if __name__=='__main__':
     p.add_argument('--audit',action='store_true')
     p.add_argument('--grouped',action='store_true')
     p.add_argument('--charge',action='store_true')
+    p.add_argument('--controls',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
     if a.charge and not a.grouped:p.error('spatial charge requires grouped routing')
+    if a.controls and (not a.grouped or a.charge):p.error('controls require the uncharged grouped sender')
     if not a.audit and a.vehicle is None:p.error('development evaluation needs vehicle directory')
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
