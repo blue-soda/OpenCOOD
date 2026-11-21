@@ -25,8 +25,15 @@ def run(a):
     assert digest(plan_path)=='1be45bac9fe7301f91616fa4a7bc2c9c14447ac4053421338d4680ac259e82e6'
     plan=read(plan_path)
     assert digest(manifest)==plan['manifest_sha256'] and digest(a.inputs/'config.yaml')==plan['config_sha256']
-    ref={r['frame']:r for r in map(json.loads,a.prior.read_bytes().splitlines()) if 'ap' in r}
-    assert len(ref)==458
+    records=list(map(json.loads,a.prior.read_bytes().splitlines()))
+    if a.remainder_online:
+        contract=read(a.prior.parent/'contract.json')
+        assert contract['remainder'] and len(records)==4780 and read(a.prior.parent/'report.json')['status']=='COMPLETED'
+        ref={r['frame']:r['arms']['carry'] for r in records if 'ap' in r['arms']['carry']}
+        assert len(ref)==1280
+    else:
+        ref={r['frame']:r for r in records if 'ap' in r}
+        assert len(ref)==458
     counts=np.zeros((3,4),dtype=int)
     fields=Counter()
     id_fields=Counter()
@@ -60,7 +67,7 @@ def run(a):
             log.write(json.dumps(dict(frame=frame,scene=row['scene'],segment=row['segment'],
                       gt_xyz_sha256=hashlib.sha256(gt.tobytes()).hexdigest(),distance_bins=ranges.tolist(),points=supports))+'\n')
             processed.add(frame)
-    assert processed==set(ref) and counts.sum()==5792
+    assert processed==set(ref) and counts.sum()==(17179 if a.remainder_online else 5792)
     write_json(a.output/'report.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                prior=digest(a.prior),manifest=digest(manifest),model_forwards=0,scans=len(processed),gt=int(counts.sum()),
                raw_annotations=labels,fields=fields,non_null_id_fields=id_fields,
@@ -69,6 +76,7 @@ def run(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser()
     for k in ('inputs','vehicle','long-base','prior','output'):p.add_argument('--'+k,type=Path,required=True)
+    p.add_argument('--remainder-online',action='store_true')
     a=p.parse_args()
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
