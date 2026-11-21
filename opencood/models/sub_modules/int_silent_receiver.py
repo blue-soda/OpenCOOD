@@ -80,7 +80,7 @@ class SilentReceiver:
 
 class PairedEdge:
     """Compute the current joint grant without future inputs, labels or detections."""
-    def __init__(self, bounds, cap, book, thresholds, calibration, native=False):
+    def __init__(self, bounds, cap, book, thresholds, calibration, native=False, factorial=False):
         self.bounds, self.cap, self.book = bounds, cap, book
         self.calibration = calibration
         self.native = native
@@ -92,6 +92,9 @@ class PairedEdge:
                              float_address=SilentReceiver(t, floating=True), float_bytes=SilentReceiver(t, floating=True))
             if native:
                 del self.arms['float_bytes']
+            if factorial:
+                self.arms['float_address_reset'] = SilentReceiver(t, floating=True, forget=True)
+                self.arms['float_bytes_reset'] = SilentReceiver(t, floating=True, forget=True)
 
     def start(self, meta, shape, reason):
         self.meta, self.shape, self.reason = meta, shape, reason
@@ -122,10 +125,10 @@ class PairedEdge:
             if not self.calibration and not self.native:
                 # A floating record costs 12 bytes. A four-level record uses
                 # 8 address bytes and three packed amplitude bits.
-                common = min(limits['carry'], limits['reset'], limits['float_address'],
-                             96 * limits['float_bytes'] // 67)
-                limits = dict.fromkeys(candidates, common)
-                limits['float_bytes'] = (8 * common + (3 * common + 7) // 8) // 12
+                common = min(96 * limit // 67 if key.startswith('float_bytes') else limit
+                             for key, limit in limits.items())
+                byte_grant = (8 * common + (3 * common + 7) // 8) // 12
+                limits = {key: byte_grant if key.startswith('float_bytes') else common for key in candidates}
             for key, arm in self.arms.items():
                 self.result[key], self.stats[key] = arm.receive(
                     candidates[key], limits[key], int(self.meta['frame']), read, self.book)

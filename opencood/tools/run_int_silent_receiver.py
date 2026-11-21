@@ -48,7 +48,7 @@ def run(args):
         calibration_report = read(args.calibration/'report.json')
         assert calibration_report['status'] == 'COMPLETED' and calibration_report['scans'] == 211
         thresholds = [calibration_report['threshold']]
-    paired = PairedEdge(source.bounds, book['cap']//2, book['levels'], thresholds, calibration, args.native)
+    paired = PairedEdge(source.bounds, book['cap']//2, book['levels'], thresholds, calibration, args.native, args.factorial)
     names = list(paired.arms)
     paths = names[:1] if calibration else names
     core = source.core
@@ -73,7 +73,7 @@ def run(args):
         assert fit_hash == fit_report['weights']
         params = torch.load(args.fit/'heads.pt', map_location='cpu')
         for n in names:
-            heads[n].load_state_dict(params[n])
+            heads[n].load_state_dict(params['carry' if args.factorial else n])
     opts = {n: torch.optim.Adam(h.parameters(), lr=1e-5) for n,h in heads.items()} if args.mode == 'fit' else {}
     criterion = PointPillarDirLoss(cfg['loss']['args']).cuda().eval() if opts else None
     features = []
@@ -83,7 +83,7 @@ def run(args):
         hook = core.reg_head.register_forward_pre_hook(capture)
     data, stream = loader(rows, cfg, 0, 303)
     write_json(args.output/'contract.json', dict(mode=args.mode, native_grants=args.native, remainder=args.remainder,
-        thresholds=thresholds, seed=303,
+        thresholds=thresholds, seed=303, factorial=args.factorial, shared_adapted_head='carry' if args.factorial else None,
         scenes=sorted({r['scene'] for r in rows}), data=identity, book=digest(book_path), fit=fit_hash,
         calibration=None if calibration else digest(args.calibration/'report.json'),
         params_per_arm=0 if not heads else sum(p.numel() for p in heads[paths[0]].parameters()),
@@ -135,7 +135,7 @@ def run(args):
                     elif gt is not None:
                         rec['frozen'] = score(data.post, ego, pred, gt, record_matches=True)
                         rec['adapted'] = score(data.post, ego, dict(pred, rm=heads[n](x)), gt, record_matches=True)
-                        if args.remainder and n in ('carry','reset'):
+                        if args.remainder and not args.factorial and n in ('carry','reset'):
                             other = 'reset' if n == 'carry' else 'carry'
                             rec['swapped'] = score(data.post, ego, dict(pred, rm=heads[other](x)), gt, record_matches=True)
                 row['arms'][n] = rec
@@ -146,9 +146,12 @@ def run(args):
                 for n in names:
                     totals[n] += paired.stats[n]['addresses']
                 if not calibration and not args.native:
-                    a, b, c, d = (paired.stats[n] for n in names)
+                    a, b, c, d = (paired.stats[n] for n in ('carry','reset','float_address','float_bytes'))
                     assert a['addresses'] == b['addresses'] == c['addresses'] and a['bytes'] == b['bytes']
                     assert 0 <= a['bytes'] - d['bytes'] < 12
+                    if args.factorial:
+                        assert c['addresses'] == paired.stats['float_address_reset']['addresses']
+                        assert d['bytes'] == paired.stats['float_bytes_reset']['bytes']
             log.write(json.dumps(row)+'\n')
     expected_scans, expected_labels = (211, 0 if calibration else 168)
     if args.mode == 'dev':
@@ -173,11 +176,14 @@ if __name__ == '__main__':
     parser.add_argument('mode', choices=['calibration','fit','dev'])
     parser.add_argument('--native', action='store_true', help='each development arm grants its own traffic')
     parser.add_argument('--remainder', action='store_true', help='fixed paired transfer on the other validation scenes')
+    parser.add_argument('--factorial', action='store_true', help='cross FP32 encoding with retention at both matched budgets')
     for k in ('long-base','output','vehicle','calibration','fit'):
         parser.add_argument('--'+k, type=Path, required=k in ('long-base','output'))
     args = parser.parse_args()
     if args.native and args.mode != 'dev':
         parser.error('native grants are a development control')
+    if args.factorial and (args.mode != 'dev' or args.native):
+        parser.error('factorial evaluation requires paired frozen inference')
     if args.remainder and (args.mode != 'dev' or args.native):
         parser.error('transfer requires paired frozen inference')
     if args.mode != 'calibration' and args.calibration is None:

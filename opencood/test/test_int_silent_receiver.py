@@ -26,3 +26,16 @@ class ThresholdTest(unittest.TestCase):
     def test_threshold_crossing_survives_denied_grant(self):
         for forget in (True, False):
             self.assertEqual(self.run_trace(forget, [9, 9], [0,1]), [(0,0,1),(1,6,0)])
+
+    def test_fp32_forgetting_preserves_subquantum_increments_in_carry_only(self):
+        zero = torch.zeros(1, 1, 1, 1)
+        for forget in (True, False):
+            arm = SilentReceiver(6, floating=True, forget=forget)
+            arm.refresh(zero)
+            counts = []
+            for frame, value in enumerate((.51, 1.02, 1.53)):
+                c = arm.prepare(zero + value, torch.tensor([0]), lambda x: x.clone())
+                out, stats = arm.receive(c, 1, frame, zero.bool().fill_(True), None)
+                counts.append(stats['addresses'])
+            self.assertEqual(counts, [0,0,0 if forget else 1])
+            self.assertAlmostEqual(float(out.item()), 0. if forget else 1.53, places=6)
