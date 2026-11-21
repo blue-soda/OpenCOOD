@@ -121,4 +121,6 @@ class NativeEventWriter:
         assert torch.equal(actual, self.expected)
         self.native['whole_addresses'] = int(events.count_nonzero())
         self.native['whole_units'] = int(events.abs().sum())
+        if getattr(self, 'capture_addresses', False):
+            self.addresses = (events!=0).sum(1,keepdim=True)*self.executor.refine_skip.extra
         self.expected = None

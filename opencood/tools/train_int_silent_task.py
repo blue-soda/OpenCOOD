@@ -167,11 +167,12 @@ def run(a):
     source.eval().requires_grad_(False)
     train = a.phase == 'fit'
     release = a.phase in ('release_train','release_dev')
-    native = release or a.phase in ('native_train','native_dev')
+    routing = a.phase == 'routing'
+    native = routing or release or a.phase in ('native_train','native_dev')
     audit = a.phase in ('charge_train','edge_audit','native_train','release_train')
     charge_test = a.phase in ('charge_train','charge_dev')
     fit_eval = a.phase == 'fit_eval'
-    if train or audit or fit_eval:
+    if train or audit or fit_eval or routing:
         rows, traces, data_id = training_rows(a.long_base, book_path, audit)
     else:
         a.inputs = a.long_base/'inputs'
@@ -210,6 +211,7 @@ def run(a):
         elif n != 'drive':
             if native:
                 drive = NativeEventWriter(TaskDrive(fit, 'pulse'), exe, native_budget, n, audit)
+                drive.capture_addresses = routing
                 model.coarse_projector.event_observer = drive.observe_events
             drive.adapter.copy_(weights['pulse' if charge_test or native else n])
         model.coarse_executor, exe.drive = exe, drive
@@ -223,7 +225,7 @@ def run(a):
             projector.event_linear = SignedProjectionAccumulator(projector, audit)
         models[n], drives[n] = model, drive
     data, stream = loader(rows, cfg, 0, 303)
-    criterion = PointPillarDirLoss(cfg['loss']['args']).cuda().eval() if train or fit_eval else None
+    criterion = PointPillarDirLoss(cfg['loss']['args']).cuda().eval() if train or fit_eval or routing else None
     costs = conv_costs(core)
     contract = dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                     data=data_id, scenes=sorted({r['scene'] for r in rows}), book=digest(book_path),
@@ -253,7 +255,7 @@ def run(a):
             edge.start(meta, spatial.shape[-2:], reason)
             labelled = meta['supervised']
             labels += int(labelled)
-            gt = data.post.generate_gt_bbx(dict(ego=ego)) if labelled and not train else None
+            gt = data.post.generate_gt_bbx(dict(ego=ego)) if labelled and not train and not routing else None
             row = dict(frame=meta['frame'], scene=meta['scene'], segment=meta['segment'], refresh=reason, arms={})
             end = reason is None and (depth == 1 or i+1 == len(rows) or traces[i+1]['refresh'] is not None)
             for n, model in models.items():
@@ -334,6 +336,20 @@ def run(a):
                 depth = 0 if end else depth+1
                 counts = [r['executed'] for r in row['arms'].values()]
                 assert all(c == counts[0] for c in counts)
+            if routing and labelled and reason is None:
+                from opencood.tools.eval_int_silent_middle import box_counts
+                from opencood.utils import box_utils, pcd_utils
+                gt_boxes = data.post.generate_gt_bbx(dict(ego=ego))
+                cloud,_ = pcd_utils.read_pcd(rows[i]['pcd'])
+                cloud = pcd_utils.mask_ego_points(pcd_utils.mask_points_by_range(cloud,cfg['preprocess']['cav_lidar_range']))[:,:3]
+                row['points'] = [len(box_utils.get_points_in_rotated_box_3d(cloud,box)) for box in gt_boxes.cpu().numpy()]
+                gate = models['drive'].coarse_executor.refine_skip
+                maps = [gate.extra.long()]
+                for n in names[1:]:
+                    addresses = drives[n].addresses
+                    assert int(addresses.sum()) == row['arms'][n]['native']['sent']
+                    maps.append(addresses)
+                row['box_cells'] = box_counts(gt_boxes,torch.cat(maps,1)[0].cpu().numpy(),source.bounds,spatial.shape[-2:])
             row['bytes'] = edge.stats['tile']['bytes']
             log.write(json.dumps(row,allow_nan=False)+'\n')
     assert (i+1,labels) == ((211,168) if train or fit_eval else (211,0) if audit else (1014,458))
@@ -348,7 +364,7 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    p.add_argument('phase', choices=('fit','dev','charge_train','charge_dev','fit_eval','edge_audit','native_train','native_dev','release_train','release_dev'))
+    p.add_argument('phase', choices=('fit','dev','charge_train','charge_dev','fit_eval','edge_audit','native_train','native_dev','release_train','release_dev','routing'))
     for k in ('long-base','drive','output','vehicle','fit'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','drive','output'))
     a=p.parse_args()
