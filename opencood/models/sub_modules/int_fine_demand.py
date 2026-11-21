@@ -106,14 +106,19 @@ class QuotaFineEdge(FineEdgeSender):
             key=change.long().abs()*(1<<32)+tie
             chosen=torch.topk(key,self.cap,sorted=False).indices
             ids,change=ids[chosen],change[chosen]
-        if self.mode!='amplitude':
-            change=change.sign()
-        receiver.view(-1).index_add_(0,ids,change)
+        change,extra=self.deliver(receiver,ids,change)
         self.levels=aligned
         self.previous=None
         self.ledger=dict(addresses=len(ids),units=int(change.abs().sum(dtype=torch.int64)),
                          demand_addresses=demand, cells=value.numel(),cache_bytes=aligned.numel()*aligned.element_size())
+        self.ledger.update(extra)
         return aligned.float()*self.quantum
+
+    def deliver(self,receiver,ids,change):
+        if self.mode!='amplitude':
+            change=change.sign()
+        receiver.view(-1).index_add_(0,ids,change)
+        return change,{}
 
     def commit(self,state,drop):
         if self.phase=='refresh':

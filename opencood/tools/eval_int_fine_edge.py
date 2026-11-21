@@ -11,6 +11,7 @@ from opencood.models.sub_modules.int_cross_scale_dw import CrossScaleCache
 from opencood.models.sub_modules.int_deep_spike_projection import DeepSpikeProjection
 from opencood.models.sub_modules.int_fine_edge import FineEdgeSender
 from opencood.models.sub_modules.int_fine_demand import QuotaFineEdge
+from opencood.models.sub_modules.int_fine_codebook import FineCodebook
 from opencood.models.sub_modules.int_middle_decay_projection import MiddleDecayProjection
 from opencood.models.sub_modules.int_pyramid_regions import plan_host_coalesced_refresh
 from opencood.tools.check_int_deep_spike_stream import prepare_stream, read
@@ -46,12 +47,22 @@ def run(args):
         assert not {t['scene'] for t in train}.intersection(r['scene'] for r in rows)
         cap=min(t['arms']['deferred']['fine']['addresses'] for t in train if t['refresh'] is None)//2
         modes=('continuous','unit_carry','unit_round','amplitude')
+    calibration=None
+    if args.book:
+        calibration=read(args.book)
+        assert calibration['status']=='COMPLETED' and calibration['cap']==cap
+        assert not set(calibration['scenes']).intersection(r['scene'] for r in rows)
+        modes=('continuous','power','power_ann','calibrated')
     models = {}
     for mode in modes:
         phase = mode if mode in ('ordinary','refresh') else 'all'
         sender = None if mode=='continuous' else FineEdgeSender(source.bounds,dense=mode=='dense',send_on=phase)
         if cap is not None and mode!='continuous':
-            sender=QuotaFineEdge(source.bounds,mode,cap)
+            if calibration is None:
+                sender=QuotaFineEdge(source.bounds,mode,cap)
+            else:
+                table=calibration['levels'] if mode=='calibrated' else [1,2,4,8]
+                sender=FineCodebook(source.bounds,cap,table,analog=mode=='power_ann')
         model = CrossScaleCache(source,'sparse_amplitude',planner=plan_host_coalesced_refresh,
                                 deep_projector=DeepSpikeProjection(source.core.deblocks[2],q,'amplitude'),
                                 fine_to_coarse=sender)
@@ -61,6 +72,7 @@ def run(args):
     write_json(args.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                params=sum(p.numel() for p in source.parameters()), reference=digest(args.reference/'frames.jsonl'),
                reference_masks_from='simultaneous continuous causal replay',modes=modes,seed=303,q=.25,cap=cap,
+               book=digest(args.book) if args.book else None,
                trace=digest(args.inputs/'traces.json'),weights={k:digest(args.inputs/k) for k in
                ('parent.pth','protected_light_final.pth','readout.pth','quantum.json')},device=torch.cuda.get_device_name()))
     data,stream=loader(rows,cfg,0,303)
@@ -112,6 +124,12 @@ def run(args):
                         assert torch.equal(state[k],states['carry'][k]), (frame,k)
                     if reason is None:
                         assert all(torch.equal(a,b) for a,b in zip(state['edge_cache'],states['carry']['edge_cache']))
+                if name=='power':
+                    ref_pred=pred
+                if name=='power_ann':
+                    assert all(torch.equal(pred[k],ref_pred[k]) for k in pred)
+                    for k in ('value','coarse','deep','fine_levels','coarse_projection','deep_projection'):
+                        assert torch.equal(state[k],states['power'][k]), (frame,k)
                 if gt is not None:
                     # Normalize threshold keys before comparing the archived JSON scores.
                     entry.update(json.loads(json.dumps(score(data.post,ego,pred,gt))))
@@ -132,6 +150,7 @@ if __name__=='__main__':
     p.add_argument('--engineering',action='store_true')
     p.add_argument('--phase-test',action='store_true')
     p.add_argument('--quota-source',type=Path)
+    p.add_argument('--book',type=Path)
     args=p.parse_args()
     args.output.mkdir(exist_ok=False,parents=True)
     run(args)
