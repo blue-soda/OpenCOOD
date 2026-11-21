@@ -12,6 +12,8 @@ from opencood.models.sub_modules.int_compact_middle_update import FineInnovation
 from opencood.models.sub_modules.int_cross_scale_dw import CrossScaleCache
 from opencood.models.sub_modules.int_deep_spike_projection import DeepSpikeProjection
 from opencood.models.sub_modules.int_fine_codebook import FineCodebook
+from opencood.models.sub_modules.int_fine_float_receiver import FloatQuotaReceiver
+from opencood.models.sub_modules.int_fine_registration import ReceiverGuide
 from opencood.models.sub_modules.int_middle_decay_projection import MiddleDecayProjection
 from opencood.models.sub_modules.int_nonzero_fusion import NonzeroFusionCache
 from opencood.models.sub_modules.int_pyramid_regions import plan_host_coalesced_refresh
@@ -54,10 +56,18 @@ def run(args):
     first_segment = read(args.long_base/'r309_full_plan.json')['ordered_stream'][0]['segment']
     book = read(args.book)
     assert book['levels'] == [3, 6, 13, 28] and book['cap'] == 428149
-    cap = book['cap'] // 2
+    cap = (book['cap'] // 2)*args.eighths//8
     edges = dict(carry=FineCodebook(source.bounds, cap, book['levels']),
                  amplitude=FullAmplitude(source.bounds, 'amplitude', cap), continuous=None)
     core = source.core
+    guide = None
+    if args.registration:
+        edges = dict(carry=edges['carry'], amplitude=edges['amplitude'],
+                     float_guided=FloatQuotaReceiver(source.bounds,cap),float_ego=FloatQuotaReceiver(source.bounds,cap))
+        guide = ReceiverGuide()
+        for name,edge in edges.items():
+            if name!='float_ego':
+                edge.transport=guide.propagate
     fusion = core.readout.layers[0].double_conv[0]
     layer = NonzeroFusionCache(fusion[0]).eval()
     fusion[0] = layer
@@ -67,7 +77,8 @@ def run(args):
     factory = partial(CachedResidualPolicy, compiler=compact_group_bucket)
     write_json(args.output/'contract.json', dict(native=hashes, code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         book=digest(args.book), cap=cap, params=sum(p.numel() for p in source.parameters()), optimizer_steps=0,
-        remainder=args.remainder, scenes=sorted({r['scene'] for r in rows}), selector='per-arm live CachedResidualPolicy / compact_group_bucket'))
+        remainder=args.remainder, registration=args.registration, modes=list(edges), eighths=args.eighths,
+        scenes=sorted({r['scene'] for r in rows}), selector='per-arm live CachedResidualPolicy / compact_group_bucket'))
     with (args.output/'frames.jsonl').open('x', buffering=1) as log:
         for i, sample in enumerate(stream):
             meta = sample['meta']
@@ -90,7 +101,13 @@ def run(args):
                 model.coarse_projector.begin(prev, reason)
                 layer.begin(prev, reason, True)
                 policy.observation = None
+                use_guide = guide is not None and name!='float_ego'
+                if use_guide:
+                    hook = core.observation.register_forward_hook(guide.observe)
                 (pred, state, info), other = measured_step(model, spatial, prev, meta, policy)
+                if use_guide:
+                    hook.remove()
+                    guide.save(state)
                 assert info['full_refresh'] == reason == trace['refresh']
                 stats = dict(refresh=reason)
                 if reason is None:
@@ -105,8 +122,10 @@ def run(args):
                     stats['middle_mask_sha256'] = hashlib.sha256(exe.skip.cpu().numpy().tobytes()).hexdigest()
                     exe.inputs = None
                     if edge is not None:
-                        stats.update(addresses=edge.ledger['addresses'], bytes=edge.ledger['bytes'], units=edge.ledger['units'])
-                        assert stats['addresses'] == cap
+                        stats.update({k:edge.ledger[k] for k in ('addresses','bytes','units','sent_abs_float','demand_addresses') if k in edge.ledger})
+                        if use_guide:
+                            stats['registration']=dict(guide.cost)
+                        assert stats['addresses'] == min(cap,edge.ledger['demand_addresses'])
                 else:
                     assert policy.observation is None
                 if edge is not None:
@@ -127,7 +146,11 @@ if __name__ == '__main__':
     for key in ('inputs','scans','book','vehicle','long-base','output'):
         parser.add_argument('--'+key,type=Path,required=True)
     parser.add_argument('--remainder', action='store_true')
+    parser.add_argument('--registration',action='store_true')
+    parser.add_argument('--eighths',type=int,choices=(7,8),default=8)
     args = parser.parse_args()
+    if (args.remainder and args.registration) or (args.eighths!=8 and not args.registration):
+        parser.error('registration budgets are restricted to the development comparison')
     args.output.mkdir(parents=True, exist_ok=False)
     run(args)
 

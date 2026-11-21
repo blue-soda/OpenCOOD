@@ -88,17 +88,24 @@ class QuotaFineEdge(FineEdgeSender):
         self.frame_number=int(meta['frame'])
         self.active=None
 
+    def aligned_receiver(self,area):
+        previous=self.previous
+        return warp_bev(previous['fine_levels'].float(),previous['pose'],self.pose,area)[0].int().contiguous()
+
+    def target_levels(self,value):
+        return (value/self.quantum).round().int()
+
     def __call__(self,value):
         if self.phase=='refresh':
             return super().__call__(value)
         self.read=fine_support(self.active,value.shape[-2:])
         sites=self.read.flatten().nonzero().flatten()
         area=block_lidar_range(self.bounds,self.shape,value.shape[-2:],2)
-        aligned=warp_bev(self.previous['fine_levels'].float(),self.previous['pose'],self.pose,area)[0].int().contiguous()
+        aligned=self.aligned_receiver(area)
         if self.transport is not None:
             aligned=self.transport(aligned,self.previous,self.pose,area)
         receiver=aligned.view(value.shape[1],-1)
-        target=(value.flatten(2)[0,:,sites]/self.quantum).round().int()
+        target=self.target_levels(value.flatten(2)[0,:,sites])
         delta=target-self.reference_levels(receiver,sites,area)
         channel,slot=delta.nonzero(as_tuple=True)
         ids=channel*receiver.shape[1]+sites[slot]
@@ -106,14 +113,22 @@ class QuotaFineEdge(FineEdgeSender):
         demand=len(ids)
         if demand>self.cap:
             tie=((ids+self.frame_number)*2654435761)%(1<<32)
-            key=change.long().abs()*(1<<32)+tie
+            magnitude=change.abs()
+            if magnitude.is_floating_point():
+                # Nonnegative finite FP32 bit patterns are ordered by magnitude.
+                magnitude=magnitude.contiguous().view(torch.int32)
+            key=magnitude.long()*(1<<32)+tie
             chosen=torch.topk(key,self.cap,sorted=False).indices
             ids,change=ids[chosen],change[chosen]
         change,extra=self.deliver(receiver,ids,change)
         self.levels=aligned
         self.previous=None
-        self.ledger=dict(addresses=len(ids),units=int(change.abs().sum(dtype=torch.int64)),
+        self.ledger=dict(addresses=len(ids),
                          demand_addresses=demand, cells=value.numel(),cache_bytes=aligned.numel()*aligned.element_size())
+        if change.is_floating_point():
+            self.ledger['sent_abs_float']=float(change.abs().sum(dtype=torch.float64))
+        else:
+            self.ledger['units']=int(change.abs().sum(dtype=torch.int64))
         self.ledger.update(extra)
         return aligned.float()*self.quantum
 

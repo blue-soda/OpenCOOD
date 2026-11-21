@@ -3,9 +3,29 @@ import unittest
 import torch
 
 from opencood.models.sub_modules.int_fine_registration import OFFSETS, displace, estimate, tile_packet
+from opencood.models.sub_modules.int_fine_float_receiver import FloatQuotaReceiver
 
 
 class TestFineRegistration(unittest.TestCase):
+    def test_float_receiver_keeps_subquantum_changes_and_ranks_signed_values(self):
+        edge=FloatQuotaReceiver((0,0,-1,8,8,1),2)
+        meta=dict(frame='000001',pose=torch.eye(4))
+        value=torch.full((1,1,4,4),.0625)
+        edge.begin(None,meta,(8,8),'initial')
+        self.assertTrue(torch.equal(edge(value),value))
+        state=dict(pose=meta['pose'])
+        edge.commit(state,False)
+        edge.begin(state,meta,(8,8),None)
+        edge.active=torch.ones((1,1,2,2),dtype=torch.bool)
+        target=value.clone()
+        target.flatten()[:3]+=torch.tensor([.03125,-.09375,.125])
+        expected=target.clone()
+        expected.flatten()[0]=value.flatten()[0]
+        self.assertTrue(torch.equal(edge(target),expected))
+        self.assertEqual(edge.ledger['demand_addresses'],3)
+        self.assertEqual(edge.ledger['bytes'],8)
+        self.assertNotIn('units',edge.ledger)
+
     def test_partial_tiles_and_each_displacement(self):
         h,w=17,19
         generator=torch.Generator().manual_seed(303)
