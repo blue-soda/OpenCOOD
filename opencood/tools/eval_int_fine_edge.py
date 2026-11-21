@@ -10,6 +10,7 @@ from opencood.models.sub_modules.int_compact_middle_update import FineInnovation
 from opencood.models.sub_modules.int_cross_scale_dw import CrossScaleCache
 from opencood.models.sub_modules.int_deep_spike_projection import DeepSpikeProjection
 from opencood.models.sub_modules.int_fine_edge import FineEdgeSender
+from opencood.models.sub_modules.int_fine_demand import QuotaFineEdge
 from opencood.models.sub_modules.int_middle_decay_projection import MiddleDecayProjection
 from opencood.models.sub_modules.int_pyramid_regions import plan_host_coalesced_refresh
 from opencood.tools.check_int_deep_spike_stream import prepare_stream, read
@@ -38,10 +39,19 @@ def run(args):
     modes = ('continuous','carry','dense') if args.engineering else ('continuous','carry','drop')
     if args.phase_test:
         modes = ('continuous','ordinary','refresh')
+    cap=None
+    if args.quota_source:
+        assert digest(args.quota_source)=='033356e8202a519b63db092e35f9f77fa232c31ba6b2abc8346a0f873412db76'
+        train=[json.loads(line) for line in args.quota_source.read_bytes().splitlines()]
+        assert not {t['scene'] for t in train}.intersection(r['scene'] for r in rows)
+        cap=min(t['arms']['deferred']['fine']['addresses'] for t in train if t['refresh'] is None)//2
+        modes=('continuous','unit_carry','unit_round','amplitude')
     models = {}
     for mode in modes:
         phase = mode if mode in ('ordinary','refresh') else 'all'
         sender = None if mode=='continuous' else FineEdgeSender(source.bounds,dense=mode=='dense',send_on=phase)
+        if cap is not None and mode!='continuous':
+            sender=QuotaFineEdge(source.bounds,mode,cap)
         model = CrossScaleCache(source,'sparse_amplitude',planner=plan_host_coalesced_refresh,
                                 deep_projector=DeepSpikeProjection(source.core.deblocks[2],q,'amplitude'),
                                 fine_to_coarse=sender)
@@ -50,7 +60,7 @@ def run(args):
         models[mode]=model
     write_json(args.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                params=sum(p.numel() for p in source.parameters()), reference=digest(args.reference/'frames.jsonl'),
-               reference_masks_from='simultaneous continuous causal replay',modes=modes,seed=303,q=.25,
+               reference_masks_from='simultaneous continuous causal replay',modes=modes,seed=303,q=.25,cap=cap,
                trace=digest(args.inputs/'traces.json'),weights={k:digest(args.inputs/k) for k in
                ('parent.pth','protected_light_final.pth','readout.pth','quantum.json')},device=torch.cuda.get_device_name()))
     data,stream=loader(rows,cfg,0,303)
@@ -78,6 +88,8 @@ def run(args):
                     sender.begin(prev,meta,spatial.shape[-2:],reason)
                     if reason is None:
                         model.coarse_executor.skip=mask
+                        if cap is not None:
+                            sender.active=~mask
                 (pred,state,info),core=measured_step(model,spatial,prev,meta,request)
                 if reason is None:
                     exe=model.coarse_executor
@@ -119,6 +131,7 @@ if __name__=='__main__':
         p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--engineering',action='store_true')
     p.add_argument('--phase-test',action='store_true')
+    p.add_argument('--quota-source',type=Path)
     args=p.parse_args()
     args.output.mkdir(exist_ok=False,parents=True)
     run(args)

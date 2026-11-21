@@ -72,3 +72,56 @@ class DemandFineEdge(FineEdgeSender):
             state['fine_levels']=self.levels
             self.levels=None
 
+
+class QuotaFineEdge(FineEdgeSender):
+    """One unit or one signed amplitude per admitted address in the read region."""
+    def __init__(self,bounds,mode,cap):
+        super().__init__(bounds,send_on='ordinary')
+        if mode not in ('unit_carry','unit_round','amplitude') or cap<=0:
+            raise ValueError('Unknown admission policy or invalid quota')
+        self.mode=mode
+        self.cap=cap
+
+    def begin(self,previous,meta,spatial_shape,reason):
+        super().begin(previous,meta,spatial_shape,reason)
+        self.frame_number=int(meta['frame'])
+        self.active=None
+
+    def __call__(self,value):
+        if self.phase=='refresh':
+            return super().__call__(value)
+        self.read=fine_support(self.active,value.shape[-2:])
+        sites=self.read.flatten().nonzero().flatten()
+        area=block_lidar_range(self.bounds,self.shape,value.shape[-2:],2)
+        aligned=warp_bev(self.previous['fine_levels'].float(),self.previous['pose'],self.pose,area)[0].int().contiguous()
+        receiver=aligned.view(value.shape[1],-1)
+        target=(value.flatten(2)[0,:,sites]/self.quantum).round().int()
+        delta=target-receiver[:,sites]
+        channel,slot=delta.nonzero(as_tuple=True)
+        ids=channel*receiver.shape[1]+sites[slot]
+        change=delta[channel,slot]
+        demand=len(ids)
+        if demand>self.cap:
+            tie=((ids+self.frame_number)*2654435761)%(1<<32)
+            key=change.long().abs()*(1<<32)+tie
+            chosen=torch.topk(key,self.cap,sorted=False).indices
+            ids,change=ids[chosen],change[chosen]
+        if self.mode!='amplitude':
+            change=change.sign()
+        receiver.view(-1).index_add_(0,ids,change)
+        self.levels=aligned
+        self.previous=None
+        self.ledger=dict(addresses=len(ids),units=int(change.abs().sum(dtype=torch.int64)),
+                         demand_addresses=demand, cells=value.numel(),cache_bytes=aligned.numel()*aligned.element_size())
+        return aligned.float()*self.quantum
+
+    def commit(self,state,drop):
+        if self.phase=='refresh':
+            return super().commit(state,False)
+        state['fine_levels']=self.levels
+        if self.mode=='unit_round':
+            raw=state['value']
+            rounded=(raw/self.quantum).round()*self.quantum
+            state['value']=torch.where(self.read,rounded,raw)
+        self.read=self.levels=None
+
