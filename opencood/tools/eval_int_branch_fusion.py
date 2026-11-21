@@ -60,6 +60,11 @@ def run(args):
         paired = PairedEdge(source.bounds,book['cap']//2,book['levels'],[12],calibration=True)
         model = build(source,q,EdgeView(paired,'12'))
     costs = conv_costs(source.core)
+    pillar_macs=[0]
+    def count_pillar(module,inputs,output):
+        pillar_macs[0]+=output.numel()*module.in_features
+    pillar_hooks=([module.register_forward_hook(count_pillar) for module in source.pillar_vfe.modules()
+                   if isinstance(module,torch.nn.Linear)] if args.arithmetic_only else [])
     data, stream = loader(rows,cfg,0,303)
     historic = None
     arm_name = 'amplitude' if args.route=='amplitude' else 'carry'
@@ -72,7 +77,7 @@ def run(args):
         calibration=digest(args.calibration/'report.json') if paired else None,
         scenes=sorted({r['scene'] for r in rows}),params=sum(p.numel() for p in source.parameters()),
         collect_rms=args.collect_rms,quanta=digest(args.quanta) if args.quanta else None,
-        direct=args.direct,weighted_check=args.weighted_check))
+        direct=args.direct,weighted_check=args.weighted_check,arithmetic_only=args.arithmetic_only))
     ordinary=labels=0
     with (args.output/'frames.jsonl').open('x',buffering=1) as log:
         for i,(sample,trace) in enumerate(zip(stream,traces)):
@@ -83,6 +88,7 @@ def run(args):
                 prev=None if reason=='initial' else dict(scene='')
                 selector=ObservedPolicy(model,partial(CachedResidualPolicy,compiler=compact_group_bucket))
             ego=to_device(sample['ego'],torch.device('cuda'))
+            pillar_macs[0]=0
             spatial=spatial_input(source,ego)
             assert model.refresh_reason(prev,meta)==reason
             if paired: paired.start(meta,spatial.shape[-2:],reason)
@@ -94,6 +100,20 @@ def run(args):
             (pred,state,info),other=measured_step(model,spatial,prev,meta,selector)
             assert info['full_refresh']==reason
             record=dict(frame=meta['frame'],scene=meta['scene'],segment=meta['segment'],refresh=reason,fusion=layer.ledger)
+            if args.arithmetic_only:
+                components=dict(pillar_mac=pillar_macs[0],merge_add=layer.ledger['merge_add'])
+                for name,projector in [('middle',model.coarse_projector),('deep',model.deep_projector)]:
+                    v=projector.ledger
+                    assert bool(v['rebuilt'])==(reason is not None) and projector.mode=='amplitude'
+                    components[name]=dict(fp64_mac=v['dense_mac'] if v['rebuilt'] else 0,
+                                          integer_mac=0 if v['rebuilt'] else v['amplitude_mac'],
+                                          unit_ac_if_expanded=0 if v['rebuilt'] else v['unit_ac'],
+                                          decode_mul=v['dense_mac']//projector.weight.shape[0],
+                                          decode_bias=projector.block[0].bias is not None)
+                taps=info['edge'] if reason is None else {}
+                components['depthwise_integer_mac']=taps.get('cold_nonzero_taps',0)+taps.get('delta_nonzero_taps',0)
+                components['depthwise_decode_ops']=2*taps.get('sites',0)*model.stage.edge.weight.shape[0]
+                record['arithmetic']=components
             if args.quanta and probe:record['lattice']=probe.ledger
             if reason is None:
                 ordinary+=1
@@ -126,13 +146,15 @@ def run(args):
                      else historic[i]['arms'][arm_name]['core'])
                 if not args.quanta:
                     assert old==record['legacy_core'],(meta['frame'],old,record['legacy_core'])
-            if meta['supervised']:
+            if meta['supervised'] and not args.arithmetic_only:
                 labels+=1
                 gt=data.post.generate_gt_bbx(dict(ego=ego))
                 record.update(score(data.post,ego,pred,gt,record_matches=True))
             log.write(json.dumps(record)+'\n')
     expected={'train':(211,0),'dev':(1014,458),'transfer':(4780,1280)}
-    assert (i+1,labels)==expected[args.partition]
+    size,expected_labels=expected[args.partition]
+    assert (i+1,labels)==(size,0 if args.arithmetic_only else expected_labels)
+    for hook in pillar_hooks:hook.remove()
     report=dict(status='COMPLETED',scans=len(rows),ordinary=ordinary,labels=labels,optimizer_steps=0)
     if args.collect_rms:
         report.update(quanta=probe.calibrated(),samples_per_channel=probe.samples)
@@ -146,10 +168,13 @@ if __name__=='__main__':
     p.add_argument('--collect-rms',action='store_true')
     p.add_argument('--direct',action='store_true')
     p.add_argument('--weighted-check',action='store_true')
+    p.add_argument('--arithmetic-only',action='store_true')
     p.add_argument('--quanta',type=Path)
     for k in ('long-base','vehicle','calibration','output'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','output'))
     a=p.parse_args()
+    if a.arithmetic_only and (a.route!='half' or a.quanta or a.collect_rms):
+        p.error('arithmetic replay requires the original half-budget detector')
     if a.route=='amplitude' and a.partition=='train':p.error('use the historical paired stream for amplitude')
     if a.direct and not a.quanta:p.error('direct signed fusion needs a frozen lattice')
     if a.weighted_check and (not a.direct or a.partition!='train'):
