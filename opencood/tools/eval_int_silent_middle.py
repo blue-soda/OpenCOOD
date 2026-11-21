@@ -150,6 +150,10 @@ def run(args):
         routes = {n:('12',n) for n in ('base','silent','continuous')}
     for receiver in paired.arms.values():
         receiver.capture_sites = True
+    if args.wire_audit:
+        from opencood.tools.audit_int_wire_codec import wire_audit
+        for key in ('point','tile','float_bytes'):
+            paired.arms[key].wire_audit=wire_audit
     core = source.core
     fusion = core.readout.layers[0].double_conv[0]
     layer = (BranchFusion(fusion[0],verify=False) if args.grouped else NonzeroFusionCache(fusion[0])).eval()
@@ -316,10 +320,13 @@ if __name__=='__main__':
     p.add_argument('--group-factorial',action='store_true')
     p.add_argument('--trace-audit',action='store_true')
     p.add_argument('--trace-readout',type=Path)
+    p.add_argument('--wire-audit',action='store_true')
     p.add_argument('--remainder',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
+    if a.wire_audit and (not a.audit or not a.group_factorial):
+        p.error('wire audit requires the frozen training factorial')
     if a.trace_readout and (not a.drive or a.trace_audit or a.group_factorial or a.protect or a.reserve):
         p.error('trace readout requires the frozen grouped drive')
     if a.trace_audit and (not a.audit or not a.drive or a.group_factorial or a.reserve or a.protect):

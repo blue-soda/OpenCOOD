@@ -78,6 +78,8 @@ class SilentReceiver:
                      read_tiles=int(read_tiles.sum()), silent_tiles=int((read_tiles & ~sent_tiles).sum()))
         if not self.floating:
             stats['units'] = int(sent.abs().sum(dtype=torch.int64))
+        if getattr(self,'wire_audit',None) is not None:
+            stats['codec']=self.wire_audit(ids,sent,read,book,self.floating)
         return self.levels if self.floating else self.levels.float() * .25, stats
 
 
