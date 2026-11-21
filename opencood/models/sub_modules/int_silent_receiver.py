@@ -24,6 +24,7 @@ class SilentReceiver:
         self.forget = forget
         self.offset = None
         self.levels = None
+        self.capture_sites = False
 
     def refresh(self, value):
         self.levels = value.clone() if self.floating else (value * 4).round().int()
@@ -69,6 +70,8 @@ class SilentReceiver:
         self.levels.view(-1).index_add_(0, ids, sent)
         active = torch.zeros_like(read)
         active.view(-1)[ids % read.numel()] = True
+        if self.capture_sites:
+            self.event_sites = active
         read_tiles = F.max_pool2d(read.float(), 8, 8, ceil_mode=True).bool()
         sent_tiles = F.max_pool2d(active.float(), 8, 8, ceil_mode=True).bool()
         stats = dict(eligible=demand, addresses=len(ids), bytes=8 * len(ids) + payload_bytes,

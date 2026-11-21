@@ -107,9 +107,10 @@ def select_skip(cost,eligible,frame,shape):
 
 class FineInnovationUpdate:
     """Select middle holds using an eight-channel innovation from the already computed fine state."""
-    def __init__(self,decay,receive_fine=None):
+    def __init__(self,decay,receive_fine=None,refine_skip=None):
         self.decay=decay
         self.receive_fine=receive_fine
+        self.refine_skip=refine_skip
 
     def __call__(self,core,fine,old,valid,coverage,state,meta,dt,spatial_shape,bounds):
         from opencood.models.sub_modules.int_block_cache import block_lidar_range
@@ -124,6 +125,8 @@ class FineInnovationUpdate:
         held=old*self.gain if self.gain!=1 else old
         if self.receive_fine is not None:
             fine=self.receive_fine(fine,~self.skip)
+        if self.refine_skip is not None:
+            self.skip=self.refine_skip(self.skip,valid,coverage,score,meta['frame'])
         out,self.counts=compact_update(core,fine,old,valid,dt,~self.skip,held)
         self.inputs=(fine,old,valid,held)
         return out
