@@ -53,7 +53,7 @@ def synthetic():
     assert not estimate(first,first,valid)[0].any()
 
 
-def next_errors(last, target, choices, valid, read_area):
+def next_errors(last, target, choices, valid, read_area, foreground=None):
     result = {}
     identity = (target-last).abs().mean(1,keepdim=True)
     forecast = identity.clone()
@@ -61,13 +61,35 @@ def next_errors(last, target, choices, valid, read_area):
         mask = choices==k
         error = (target-torch.roll(last,shift,(-2,-1))).abs().mean(1,keepdim=True)
         forecast[mask] = error[mask]
-    for k,sel in dict(all=valid, moved=choices!=0, read=valid & read_area, moved_read=(choices!=0) & read_area).items():
+    regions = dict(all=valid, moved=choices!=0, read=valid & read_area, moved_read=(choices!=0) & read_area)
+    if foreground is not None:
+        regions.update(box_read=valid & read_area & foreground, outside_read=valid & read_area & ~foreground)
+    for k,sel in regions.items():
         result[k] = dict(sites=int(sel.sum()),identity=float(identity[sel].double().sum()),
                          motion=float(forecast[sel].double().sum()))
     return result
 
 
-def measure(previous, recent, current, area, read_area, source_key):
+def box_mask(post, label, area, read_area):
+    boxes,mask,ids = post.generate_object_center_dairv2x_single([{'params':{'vehicles':read(label)}}])
+    ego = dict(object_bbx_center=torch.from_numpy(boxes[None]).float(), object_bbx_mask=torch.from_numpy(mask[None]).float(),
+               object_ids=ids, transformation_matrix_clean=torch.eye(4))
+    corners = post.generate_gt_bbx(dict(ego=ego)).to(read_area.device)
+    h,w = read_area.shape[-2:]
+    y = area[1]+(torch.arange(h,device=corners.device)+.5)*(area[4]-area[1])/h
+    x = area[0]+(torch.arange(w,device=corners.device)+.5)*(area[3]-area[0])/w
+    yy,xx = torch.meshgrid(y,x,indexing='ij')
+    cells = torch.stack((xx,yy),-1)
+    occupied = torch.zeros_like(read_area)
+    for box in corners[:,:4,:2]:
+        displacement = cells-box.mean(0)
+        u,v = box[1]-box[0],box[3]-box[0]
+        inside = ((displacement*u).sum(-1).abs()<=.5*u.square().sum()) & ((displacement*v).sum(-1).abs()<=.5*v.square().sum())
+        occupied |= inside
+    return occupied,len(corners)
+
+
+def measure(previous, recent, current, area, read_area, source_key, guided=False, score_boxes=None):
     oldest, valid0 = warp_bev(descriptor(previous[source_key]), previous['pose'],current['pose'],area)
     last, valid1 = warp_bev(recent[source_key],recent['pose'],current['pose'],area)
     choices, valid, result = estimate(oldest,descriptor(last),valid0 & valid1)
@@ -75,7 +97,17 @@ def measure(previous, recent, current, area, read_area, source_key):
     if source_key == 'observation':
         prior_task, task_valid = warp_bev(recent['value'],recent['pose'],current['pose'],area)
         assert torch.equal(valid1,task_valid)
-        result['task'] = next_errors(prior_task,current['value'],choices,valid,read_area)
+        if guided:
+            selected,support,stats = estimate(descriptor(last),descriptor(current['observation']),valid0 & valid1)
+            assert torch.equal(support,valid)
+            foreground = None
+            if score_boxes:
+                foreground,count = score_boxes()
+                result['boxes'] = count
+            result['guided'] = dict(stats,**next_errors(prior_task,current['value'],selected,valid,read_area,foreground))
+        else:
+            foreground = None
+        result['task'] = next_errors(prior_task,current['value'],choices,valid,read_area,foreground)
     return result
 
 
@@ -97,7 +129,8 @@ def run(a):
     source_key = 'observation' if a.observation else 'value'
     if a.observation:
         source.core.observation.register_forward_hook(lambda module, args, result: captured.append(result.detach().clone()))
-    _,stream = loader(rows,cfg,0,303)
+    data,stream = loader(rows,cfg,0,303)
+    label_count = 0
     with (a.output/'frames.jsonl').open('x',buffering=1) as log:
         for i,(sample,trace) in enumerate(zip(stream,traces)):
             meta = sample['meta']
@@ -118,12 +151,20 @@ def run(a):
                 if .8<=ratio<=1.25:
                     shape = state['value'].shape[-2:]
                     area = block_lidar_range(source.bounds,spatial.shape[-2:],shape,2)
-                    row.update(measure(older,last,state,area,fine_support(~skip,shape),source_key))
+                    read_area = fine_support(~skip,shape)
+                    score_boxes = None
+                    original = plan['rows'][i]
+                    if a.guided and original['supervised']:
+                        label = Path(original['label'])
+                        assert digest(label)==plan['members'][str(label)]
+                        score_boxes = lambda: box_mask(data.post,label,area,read_area)
+                        label_count += 1
+                    row.update(measure(older,last,state,area,read_area,source_key,a.guided,score_boxes))
             log.write(json.dumps(row)+'\n')
             older = {k: last[k] for k in ('pose',source_key)} if last else None
             last = state
     assert i+1==len(rows)==211
-    write_json(a.output/'report.json',dict(status='COMPLETED',scans=len(rows),labels=0,optimizer_steps=0,
+    write_json(a.output/'report.json',dict(status='COMPLETED',scans=len(rows),labels=label_count,optimizer_steps=0,
         training=report['plan'],trace=report['frames'],book=digest(a.book),motion_source=source_key,
         code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()))
 
@@ -133,7 +174,10 @@ if __name__=='__main__':
     for k in ('inputs','scans','book','training','output'):
         p.add_argument('--'+k,type=Path,required=True)
     p.add_argument('--observation',action='store_true')
+    p.add_argument('--guided',action='store_true')
     a = p.parse_args()
+    if a.guided and not a.observation:
+        p.error('--guided requires --observation')
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
 
