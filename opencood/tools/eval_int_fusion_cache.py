@@ -23,8 +23,8 @@ from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.train_int_deep_block_adapt import local_request,trace_masks
 
 
-def complete_scenes(a, short_rows):
-    """Recover complete historical segments for the same six development scenes."""
+def complete_scenes(a, short_rows, remainder=False):
+    """Recover complete segments from the six development scenes or their complement."""
     manifest=a.long_base/'r328_manifest.json'
     plan_path=a.long_base/'r309_full_plan.json'
     trace_path=a.long_base/'r309_full_frames.jsonl'
@@ -39,7 +39,7 @@ def complete_scenes(a, short_rows):
     scenes={r['scene'] for r in short_rows}
     rows,traces=[],[]
     for r,t,identity in zip(native,frozen,plan['ordered_stream']):
-        if r['scene'] not in scenes:continue
+        if (r['scene'] in scenes)==remainder:continue
         assert all(r[k]==v for k,v in identity.items())
         assert all(r[k]==t[k] for k in ('frame','scene','segment','supervised'))
         for key,folder in (('pcd','velodyne'),('label','label/lidar')):
@@ -50,8 +50,11 @@ def complete_scenes(a, short_rows):
             r[key]=str(path)
         rows.append(r)
         traces.append(t)
-    assert len(rows)==1014 and len({r['segment'] for r in rows})==34
-    assert {r['frame'] for r in short_rows} <= {r['frame'] for r in rows}
+    if remainder:
+        assert len(rows)==4780 and not any(r['scene'] in scenes for r in rows)
+    else:
+        assert len(rows)==1014 and len({r['segment'] for r in rows})==34
+        assert {r['frame'] for r in short_rows} <= {r['frame'] for r in rows}
     return rows,traces,hashes
 
 
