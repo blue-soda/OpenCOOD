@@ -23,12 +23,61 @@ from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.train_int_deep_block_adapt import local_request,trace_masks
 
 
+def complete_scenes(a, short_rows):
+    """Recover complete historical segments for the same six development scenes."""
+    manifest=a.long_base/'r328_manifest.json'
+    plan_path=a.long_base/'r309_full_plan.json'
+    trace_path=a.long_base/'r309_full_frames.jsonl'
+    hashes={p.name:digest(p) for p in (manifest,plan_path,trace_path)}
+    assert hashes[plan_path.name]=='1be45bac9fe7301f91616fa4a7bc2c9c14447ac4053421338d4680ac259e82e6'
+    assert hashes[trace_path.name]=='adb39a232c147201ecfb708b165742a8a22717b9ad831308a6e868ed5e80d982'
+    plan=read(plan_path)
+    assert hashes[manifest.name]==plan['manifest_sha256'] and digest(a.inputs/'config.yaml')==plan['config_sha256']
+    native=read(manifest)['val']
+    frozen=[json.loads(line) for line in trace_path.read_bytes().splitlines()]
+    assert len(native)==len(frozen)==len(plan['ordered_stream'])==5794
+    scenes={r['scene'] for r in short_rows}
+    rows,traces=[],[]
+    for r,t,identity in zip(native,frozen,plan['ordered_stream']):
+        if r['scene'] not in scenes:continue
+        assert all(r[k]==v for k,v in identity.items())
+        assert all(r[k]==t[k] for k in ('frame','scene','segment','supervised'))
+        for key,folder in (('pcd','velodyne'),('label','label/lidar')):
+            if r[key] is None:continue
+            path=a.vehicle/folder/Path(r[key]).name
+            receipt=plan['input_files'][r[key]]
+            assert path.stat().st_size==receipt['bytes'] and digest(path)==receipt['sha256'],path
+            r[key]=str(path)
+        rows.append(r)
+        traces.append(t)
+    assert len(rows)==1014 and len({r['segment'] for r in rows})==34
+    assert {r['frame'] for r in short_rows} <= {r['frame'] for r in rows}
+    return rows,traces,hashes
+
+
+def replay_written(trace):
+    def request(frame,mandatory):
+        written=torch.zeros_like(mandatory)
+        written.view(-1)[trace['written_indices']]=True
+        assert int(written.sum())==trace['written'] and not bool((mandatory & ~written).any())
+        assert int((~frame.valid).sum())==trace['invalid']
+        return written
+    return request if trace['refresh'] is None else None
+
+
 @torch.no_grad()
 def run(a):
     source,cfg,rows,traces,starts,_,q=prepare_stream(a.inputs,a.scans)
     book=read(a.book)
     assert book['levels']==[3,6,13,28] and book['cap']==428149
-    old=[json.loads(x) for x in a.prior.read_bytes().splitlines()]
+    if a.long_base:
+        rows,traces,hashes=complete_scenes(a,rows)
+        starts={r['frame'] for i,r in enumerate(rows) if i==0 or rows[i-1]['segment']!=r['segment']}
+        old=[None]*len(rows)
+        protocol=dict(native=hashes,scope='complete six development scenes, historical R309 written masks')
+    else:
+        old=[json.loads(x) for x in a.prior.read_bytes().splitlines()]
+        protocol=dict(prior=digest(a.prior))
     core=source.core
     base=core.readout.layers[0].double_conv[0]
     layer=(NonzeroFusionCache(base[0]) if a.nonzero else ExactFusionCache(base[0])).eval()
@@ -49,19 +98,20 @@ def run(a):
     data,stream=loader(rows,cfg,0,303)
     per=conv_costs(core)
     write_json(a.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
-               params=sum(p.numel() for p in source.parameters()),block=layer.block,book=digest(a.book),prior=digest(a.prior),
+               params=sum(p.numel() for p in source.parameters()),block=layer.block,book=digest(a.book),**protocol,
                trace=digest(a.inputs/'traces.json'),amplitude=a.amplitude,nonzero=a.nonzero,optimizer_steps=0))
     n=0
     with (a.output/'frames.jsonl').open('x',buffering=1) as log:
         for sample,trace,ref in zip(stream,traces,old):
             meta=sample['meta']
             frame,reason=meta['frame'],trace['refresh']
-            assert frame==trace['frame']==ref['frame']
-            if frame in starts:states=dict.fromkeys(models)
+            assert frame==trace['frame'] and (ref is None or ref['frame']==frame)
+            if frame in starts:
+                states=dict.fromkeys(models,dict(scene='') if a.long_base and reason!='initial' else None)
             ego=to_device(sample['ego'],torch.device('cuda'))
             spatial=spatial_input(source,ego)
-            req=local_request(trace_masks(trace,spatial.device))
-            row=dict(frame=frame,scene=meta['scene'],refresh=reason,arms={})
+            req=replay_written(trace) if a.long_base else local_request(trace_masks(trace,spatial.device))
+            row=dict(frame=frame,scene=meta['scene'],segment=meta['segment'],refresh=reason,arms={})
             for name,(model,sender) in models.items():
                 prev=states[name]
                 assert model.refresh_reason(prev,meta)==reason
@@ -73,13 +123,18 @@ def run(a):
                     other+=sum(per[k]*v for k,v in model.coarse_executor.counts.items())
                     model.coarse_executor.inputs=None
                 sender.commit(state,False)
-                original=ref['arms']['amplitude' if a.amplitude else 'calibrated']
-                assert sender.ledger==original['fine']
-                assert other+2*384*128*9*layer.ledger['sites']==original['core']
+                if ref is not None:
+                    original=ref['arms']['amplitude' if a.amplitude else 'calibrated']
+                    assert sender.ledger==original['fine']
+                    assert other+2*384*128*9*layer.ledger['sites']==original['core']
+                elif reason is None:
+                    actual=(state['deep_age']==0).flatten().nonzero().flatten().tolist()
+                    assert actual==trace['written_indices']
                 state['fusion_cache']=layer.new
                 row['arms'][name]=dict(layer.ledger,core=other+layer.ledger['float_conv'])
                 if name=='dense':
                     reference=pred
+                    row['frame_age']=state['since_refresh']
                     if meta['supervised']:
                         gt=data.post.generate_gt_bbx(dict(ego=ego))
                         row.update(score(data.post,ego,pred,gt))
@@ -90,15 +145,20 @@ def run(a):
                 states[name]=state
             log.write(json.dumps(row)+'\n')
             n+=1
-    assert n==len(rows)==len(old)==272
+    assert n==len(rows)==len(old)==(1014 if a.long_base else 272)
     write_json(a.output/'report.json',dict(status='COMPLETED',scans=n,bitwise_equal=True))
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    for k in ('inputs','scans','book','prior','output'):p.add_argument('--'+k,type=Path,required=True)
+    for k in ('inputs','scans','book','output'):p.add_argument('--'+k,type=Path,required=True)
+    src=p.add_mutually_exclusive_group(required=True)
+    src.add_argument('--prior',type=Path)
+    src.add_argument('--long-base',type=Path)
+    p.add_argument('--vehicle',type=Path)
     p.add_argument('--amplitude',action='store_true')
     p.add_argument('--nonzero',action='store_true')
     a=p.parse_args()
+    if a.long_base and not a.vehicle:p.error('--long-base requires --vehicle')
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
 
