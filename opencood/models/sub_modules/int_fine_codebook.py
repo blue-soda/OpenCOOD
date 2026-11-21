@@ -21,12 +21,13 @@ def unpack_symbols(data,count):
 
 
 class FineCodebook(QuotaFineEdge):
-    def __init__(self,bounds,cap,levels=None,analog=False):
+    def __init__(self,bounds,cap,levels=None,analog=False,unit=False):
         super().__init__(bounds,'amplitude',cap)
         if levels is not None and (len(levels)!=4 or sorted(set(levels))!=list(levels) or min(levels)<1):
             raise ValueError('Expected four increasing positive integer amplitudes')
         self.book=levels
         self.analog=analog
+        self.unit=unit
 
     def deliver(self,receiver,ids,change):
         if self.book is None:
@@ -42,7 +43,10 @@ class FineCodebook(QuotaFineEdge):
         assert torch.equal(decoded,symbols)
         received=table[decoded%4]*torch.where(decoded>=4,-1,1).int()
         flat=receiver.view(-1)
-        if self.analog:
+        if self.unit:
+            positions=torch.arange(len(ids),device=ids.device).repeat_interleave(received.abs().long())
+            flat.index_add_(0,ids[positions],received.sign()[positions])
+        elif self.analog:
             # Independent floating point accumulation in physical feature units.
             out=flat.float()*self.quantum
             out.index_add_(0,ids,received.float()*self.quantum)

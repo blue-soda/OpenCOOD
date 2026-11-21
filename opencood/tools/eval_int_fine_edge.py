@@ -57,6 +57,8 @@ def run(args):
         assert calibration['status']=='COMPLETED' and calibration['cap']==cap
         assert not set(calibration['scenes']).intersection(r['scene'] for r in rows)
         modes=('continuous','power','power_ann','calibrated')
+        if args.engineering:
+            modes=('continuous','calibrated','calibrated_ann','calibrated_unit')
         if args.adapter:
             adapter=read(args.adapter)
             assert adapter['book']==digest(args.book) and adapter['steps']==200
@@ -69,8 +71,8 @@ def run(args):
             if calibration is None or mode=='amplitude':
                 sender=QuotaFineEdge(source.bounds,mode,cap)
             else:
-                table=calibration['levels'] if mode=='calibrated' else [1,2,4,8]
-                sender=FineCodebook(source.bounds,cap,table,analog=mode=='power_ann')
+                table=calibration['levels'] if mode.startswith('calibrated') else [1,2,4,8]
+                sender=FineCodebook(source.bounds,cap,table,analog=mode.endswith('_ann'),unit=mode.endswith('_unit'))
         model = CrossScaleCache(source,'sparse_amplitude',planner=plan_host_coalesced_refresh,
                                 deep_projector=DeepSpikeProjection(source.core.deblocks[2],q,'amplitude'),
                                 fine_to_coarse=sender)
@@ -140,12 +142,13 @@ def run(args):
                         assert torch.equal(state[k],states['carry'][k]), (frame,k)
                     if reason is None:
                         assert all(torch.equal(a,b) for a,b in zip(state['edge_cache'],states['carry']['edge_cache']))
-                if name=='power':
+                if name in ('power','calibrated'):
                     ref_pred=pred
-                if name=='power_ann':
+                if name in ('power_ann','calibrated_ann','calibrated_unit'):
                     assert all(torch.equal(pred[k],ref_pred[k]) for k in pred)
+                    base=name.split('_')[0]
                     for k in ('value','coarse','deep','fine_levels','coarse_projection','deep_projection'):
-                        assert torch.equal(state[k],states['power'][k]), (frame,k)
+                        assert torch.equal(state[k],states[base][k]), (frame,k)
                 if gt is not None:
                     # Normalize threshold keys before comparing the archived JSON scores.
                     entry.update(json.loads(json.dumps(score(data.post,ego,pred,gt))))
