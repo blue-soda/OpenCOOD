@@ -43,7 +43,7 @@ class DeepSpikeProjection(DeepPhaseProjection):
         linear = self.weight.double().T @ levels.flatten(2).double()
         return linear.long().reshape(size[0], -1, *size[-2:])
 
-    def event_linear(self, changes, linear):
+    def event_linear(self, changes, linear, unit_weight=None):
         flat = changes.flatten(2)[0]
         channels, sites = flat.nonzero(as_tuple=True)
         values = flat[channels, sites]
@@ -52,6 +52,7 @@ class DeepSpikeProjection(DeepPhaseProjection):
         chunk = max(1, 1048576 // fanout)
         out = linear.flatten(2)[0]
         if self.mode == 'unit':
+            table = self.weight if unit_weight is None else unit_weight
             for sign in (-1, 1):
                 selected = values.sign() == sign
                 ends = values[selected].abs().cumsum(0)
@@ -62,7 +63,7 @@ class DeepSpikeProjection(DeepPhaseProjection):
                 for start in range(0, units, chunk):
                     positions = torch.arange(start, min(start + chunk, units), device=flat.device)
                     idx = torch.searchsorted(ends, positions, right=True)
-                    weights = self.weight[src[idx]].long()
+                    weights = table[src[idx]].long()
                     out.index_add_(1, dst[idx], (weights if sign > 0 else -weights).T)
         else:
             for start in range(0, len(values), chunk):
@@ -70,9 +71,10 @@ class DeepSpikeProjection(DeepPhaseProjection):
                 weighted = self.weight[channels[slot]].long() * values[slot, None]
                 out.index_add_(1, sites[slot], weighted.T)
 
-    def finish(self, levels, linear, changes, rebuilt):
+    def finish(self, levels, linear, changes, rebuilt, decode_scale=None):
         conv, bn, relu = self.block
-        image = F.pixel_shuffle(linear.float(), self.stride) * self.scale
+        scale = self.scale if decode_scale is None else decode_scale
+        image = F.pixel_shuffle(linear.float(), self.stride) * scale
         if conv.bias is not None:
             image = image + conv.bias.view(1, -1, 1, 1)
         nonzero = int(torch.count_nonzero(changes))
