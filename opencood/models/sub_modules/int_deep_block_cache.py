@@ -68,7 +68,8 @@ class DeepBlockCache:
         self.phase = phase
         self.crop_first = crop_first
         self.counted_host = counted_host
-        if deep_projector is not None and deep_interface is not None:
+        if (deep_projector is not None and deep_interface is not None
+                and not getattr(deep_projector, 'accepts_quantized_readout', False)):
             raise ValueError('Test the projection cache with unmodified float task features')
         self.deep_projector = deep_projector
         if operator == 'heavy':
