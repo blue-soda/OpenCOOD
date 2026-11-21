@@ -5,7 +5,6 @@ from pathlib import Path
 import subprocess
 
 import torch
-from torch.nn import functional as F
 
 from opencood.models.sub_modules.int_block_cache import block_lidar_range
 from opencood.models.sub_modules.int_feature_memory import warp_bev
@@ -16,32 +15,7 @@ from opencood.tools.probe_int_deep_block_cache import spatial_input
 from opencood.tools.run_int_ego import loader, to_device, write_json
 from opencood.tools.train_int_fraction_history import HistoryExperiment, numeric_mask
 
-OFFSETS = [(0,0)] + [(dy,dx) for dy in (-1,0,1) for dx in (-1,0,1) if dy or dx]
-
-
-def descriptor(value):
-    return value.abs().reshape(1,8,-1,*value.shape[-2:]).mean(2)
-
-
-def estimate(older, last, valid):
-    # Common support for all shifts, including border tiles, prevents padding wins.
-    h,w = valid.shape[-2:]
-    border = F.pad((~valid).float(), (1,1,1,1), value=1)
-    valid = F.max_pool2d(border,3,1)==0
-    pad = (0,-w%8,0,-h%8)
-    def tile_sum(x):
-        return F.avg_pool2d(F.pad(x,pad),8,8,divisor_override=1)
-    n = tile_sum(valid.float())
-    costs = torch.cat([tile_sum((last-torch.roll(older,shift,(-2,-1))).abs().mean(1,keepdim=True)*valid)
-                       for shift in OFFSETS],1)
-    best, choice = costs.min(1,keepdim=True)
-    active = (n>=16) & (choice!=0) & (best<.85*costs[:,:1])
-    choice = torch.where(active,choice,torch.zeros_like(choice))
-    selected = choice.repeat_interleave(8,-2).repeat_interleave(8,-1)[:,:,:h,:w]
-    selected = selected.masked_fill(~valid,0)
-    stats = dict(eligible_tiles=int((n>=16).sum()), moved_tiles=int(active.sum()),
-                 history_identity=float(costs[:,:1][active].sum()), history_motion=float(best[active].sum()))
-    return selected, valid, stats
+from opencood.models.sub_modules.int_fine_registration import descriptor, estimate, OFFSETS
 
 
 def synthetic():

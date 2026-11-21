@@ -81,6 +81,7 @@ class QuotaFineEdge(FineEdgeSender):
             raise ValueError('Unknown admission policy or invalid quota')
         self.mode=mode
         self.cap=cap
+        self.transport=None
 
     def begin(self,previous,meta,spatial_shape,reason):
         super().begin(previous,meta,spatial_shape,reason)
@@ -94,6 +95,8 @@ class QuotaFineEdge(FineEdgeSender):
         sites=self.read.flatten().nonzero().flatten()
         area=block_lidar_range(self.bounds,self.shape,value.shape[-2:],2)
         aligned=warp_bev(self.previous['fine_levels'].float(),self.previous['pose'],self.pose,area)[0].int().contiguous()
+        if self.transport is not None:
+            aligned=self.transport(aligned,self.previous,self.pose,area)
         receiver=aligned.view(value.shape[1],-1)
         target=(value.flatten(2)[0,:,sites]/self.quantum).round().int()
         delta=target-self.reference_levels(receiver,sites,area)
