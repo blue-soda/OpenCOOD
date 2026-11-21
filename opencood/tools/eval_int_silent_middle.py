@@ -11,6 +11,7 @@ from torch.nn import functional as F
 
 from opencood.models.sub_modules.int_compact_middle_update import FineInnovationUpdate, conv_costs, supports
 from opencood.models.sub_modules.int_branch_fusion import BranchFusion
+from opencood.models.sub_modules.int_block_cache import block_lidar_range
 from opencood.models.sub_modules.int_grouped_receiver import GroupedEdge
 from opencood.models.sub_modules.int_nonzero_fusion import NonzeroFusionCache
 from opencood.models.sub_modules.int_silent_receiver import PairedEdge, EdgeView
@@ -42,6 +43,8 @@ class SilencePolicy:
         footprint = F.max_pool2d(center, 5, 1, 2)
         eligible = ~previous_skip & valid.bool() & coverage
         silent = eligible & (footprint == 0)
+        if getattr(self,'audit_targets',False):
+            self.eligible_mask,self.silent_mask = eligible,silent
         self.base = ~previous_skip
         self.extra = torch.zeros_like(silent)
         if self.mode == 'silent':
@@ -65,6 +68,24 @@ class InspectMiddle(FineInnovationUpdate):
     def __call__(self, *args):
         self.result = super().__call__(*args)
         return self.result
+
+
+def target_support(truth, policies, bounds, spatial_shape):
+    point,tile = policies['point_base'],policies['tile_score']
+    assert torch.equal(point.eligible_mask,tile.eligible_mask)
+    masks = torch.cat((point.eligible_mask,point.silent_mask,tile.silent_mask),dim=1)[0].cpu().numpy()
+    h,w = masks.shape[-2:]
+    area = block_lidar_range(bounds,spatial_shape,(h,w),4)
+    yy,xx = np.meshgrid(area[1]+(np.arange(h)+.5)*(area[4]-area[1])/h,
+                        area[0]+(np.arange(w)+.5)*(area[3]-area[0])/w,indexing='ij')
+    cells = np.stack((xx,yy),axis=-1)
+    result=[]
+    for box in truth.detach().cpu().numpy()[:,:4,:2]:
+        u,v = box[1]-box[0],box[3]-box[0]
+        displacement = cells-box.mean(0)
+        inside = (np.abs(displacement@u)<=.5*(u@u)) & (np.abs(displacement@v)<=.5*(v@v))
+        result.append([int(inside.sum()),*masks[:,inside].sum(axis=1).tolist()])
+    return result
 
 
 @torch.no_grad()
@@ -103,6 +124,7 @@ def run(args):
         view = EdgeView(paired,key)
         model = build(source,q,view)
         gate = SilencePolicy(paired.arms[key],mode)
+        gate.audit_targets = args.target_audit
         model.coarse_executor = InspectMiddle(False,model.coarse_executor.receive_fine,gate)
         models[n],policies[n] = model,gate
     costs = conv_costs(core)
@@ -162,6 +184,8 @@ def run(args):
                 if gt is not None: rec.update(score(data.post,ego,pred,gt,record_matches=True))
                 row['arms'][n]=rec
             row['wire']=paired.stats if args.grouped else paired.stats['12']
+            if args.target_audit and reason is None and gt is not None:
+                row['target_support']=target_support(gt,policies,source.bounds,spatial.shape[-2:])
             if reason is None and not args.grouped:
                 a,b,c=(row['arms'][n] for n in names)
                 assert a['base']==b['base']==c['base'] and b['extra']==c['extra']==b['full_silent']
@@ -178,11 +202,13 @@ if __name__=='__main__':
     p.add_argument('--grouped',action='store_true')
     p.add_argument('--charge',action='store_true')
     p.add_argument('--controls',action='store_true')
+    p.add_argument('--target-audit',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
     if a.charge and not a.grouped:p.error('spatial charge requires grouped routing')
     if a.controls and (not a.grouped or a.charge):p.error('controls require the uncharged grouped sender')
+    if a.target_audit and (not a.controls or a.audit):p.error('target audit requires development controls')
     if not a.audit and a.vehicle is None:p.error('development evaluation needs vehicle directory')
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
