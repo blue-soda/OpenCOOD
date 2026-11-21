@@ -10,6 +10,8 @@ import torch
 from torch.nn import functional as F
 
 from opencood.models.sub_modules.int_compact_middle_update import FineInnovationUpdate, conv_costs, supports
+from opencood.models.sub_modules.int_branch_fusion import BranchFusion
+from opencood.models.sub_modules.int_grouped_receiver import GroupedEdge
 from opencood.models.sub_modules.int_nonzero_fusion import NonzeroFusionCache
 from opencood.models.sub_modules.int_silent_receiver import PairedEdge, EdgeView
 from opencood.tools.check_int_deep_spike_stream import prepare_stream, read
@@ -76,26 +78,34 @@ def run(args):
     source, cfg, short, _, _, _, q = prepare_stream(args.inputs, base/'clips')
     data_rows, traces, identity = (training_rows(base,book_path,True) if args.audit
                                   else complete_scenes(args,short))
-    paired = PairedEdge(source.bounds, book['cap']//2, book['levels'], [12], calibration=True)
-    receiver = paired.arms['12']
-    receiver.capture_sites = True
+    if args.grouped:
+        paired = GroupedEdge(source.bounds,16384,book['levels'])
+        routes = dict(point=('point','silent'),tile=('tile','silent'),reset=('reset','silent'),
+                      fp=('float_bytes','silent'),tile_base=('tile','base'))
+    else:
+        paired = PairedEdge(source.bounds, book['cap']//2, book['levels'], [12], calibration=True)
+        routes = {n:('12',n) for n in ('base','silent','continuous')}
+    for receiver in paired.arms.values():
+        receiver.capture_sites = True
     core = source.core
     fusion = core.readout.layers[0].double_conv[0]
-    layer = NonzeroFusionCache(fusion[0]).eval()
+    layer = (BranchFusion(fusion[0],verify=False) if args.grouped else NonzeroFusionCache(fusion[0])).eval()
     fusion[0] = layer
-    names = ('base','silent','continuous')
+    names = tuple(routes)
     models, policies = {}, {}
     for n in names:
-        view = EdgeView(paired,'12')
+        key,mode = routes[n]
+        view = EdgeView(paired,key)
         model = build(source,q,view)
-        gate = SilencePolicy(receiver,n)
+        gate = SilencePolicy(paired.arms[key],mode)
         model.coarse_executor = InspectMiddle(False,model.coarse_executor.receive_fine,gate)
         models[n],policies[n] = model,gate
     costs = conv_costs(core)
     data, stream = loader(data_rows,cfg,0,303)
     write_json(args.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         data=identity,scenes=sorted({r['scene'] for r in data_rows}),calibration=digest(args.calibration/'report.json'),
-        threshold=12,cap=paired.cap,book=digest(book_path),cost_per_site=costs,training=False,audit=args.audit))
+        threshold=12,cap=paired.cap,book=digest(book_path),cost_per_site=costs,training=False,audit=args.audit,
+        grouped=args.grouped,routes=routes,params=sum(p.numel() for p in source.parameters())))
     labelled=ordinary=0
     with (args.output/'frames.jsonl').open('x',buffering=1) as log:
         for i,(sample,trace) in enumerate(zip(stream,traces)):
@@ -116,11 +126,16 @@ def run(args):
                 prev,selector=states[n],selectors[n]
                 assert model.refresh_reason(prev,meta)==reason
                 model.coarse_projector.begin(prev,reason)
-                layer.begin(prev,reason,True)
+                if args.grouped:
+                    layer.begin(prev,reason)
+                else:
+                    layer.begin(prev,reason,True)
                 selector.observation=None
                 (pred,state,info),cost=measured_step(model,spatial,prev,meta,selector)
                 assert reason==info['full_refresh']
                 rec=dict(core=cost+layer.ledger['float_conv'])
+                if args.grouped:
+                    rec['fusion']=layer.ledger['float_conv']
                 if reason is None:
                     exe,gate=model.coarse_executor,policies[n]
                     rec.update(gate.stats,executed=exe.counts,middle=sum(costs[k]*v for k,v in exe.counts.items()))
@@ -137,12 +152,12 @@ def run(args):
                         rec.update(max_error=float(err.max()),hold_l1=float(delta.sum(dtype=torch.float64)),
                                    hold_cells=delta.numel())
                     exe.inputs=exe.result=None
-                state['fusion_cache']=layer.new
+                state['branch_fusion' if args.grouped else 'fusion_cache']=layer.new
                 states[n]=state
                 if gt is not None: rec.update(score(data.post,ego,pred,gt,record_matches=True))
                 row['arms'][n]=rec
-            row['wire']=paired.stats['12']
-            if reason is None:
+            row['wire']=paired.stats if args.grouped else paired.stats['12']
+            if reason is None and not args.grouped:
                 a,b,c=(row['arms'][n] for n in names)
                 assert a['base']==b['base']==c['base'] and b['extra']==c['extra']==b['full_silent']
             log.write(json.dumps(row)+'\n')
@@ -155,6 +170,7 @@ def run(args):
 if __name__=='__main__':
     p=argparse.ArgumentParser()
     p.add_argument('--audit',action='store_true')
+    p.add_argument('--grouped',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
