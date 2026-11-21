@@ -111,7 +111,7 @@ def run(args):
     assert frozen['status']=='COMPLETED' and frozen['threshold']==12
     source, cfg, short, _, _, _, q = prepare_stream(args.inputs, base/'clips')
     data_rows, traces, identity = (training_rows(base,book_path,True) if args.audit
-                                  else complete_scenes(args,short))
+                                  else complete_scenes(args,short,remainder=args.remainder))
     if args.grouped:
         paired = GroupedEdge(source.bounds,16384,book['levels'],charge=args.charge)
         routes = dict(point=('point','silent'),tile=('tile','silent'),reset=('reset','silent'),
@@ -127,6 +127,8 @@ def run(args):
             routes = dict(tile=('tile','silent'),old=('tile','silent'),drive=('tile','silent'))
             if args.protect:
                 routes={n:('tile','silent') for n in ('combined','prior','sparse','innovation','random')}
+                if args.matched_protection:
+                    routes=dict(combined=('tile','silent'),random=('tile','silent'),drive=('tile','silent'),point=('point','silent'))
             elif args.reserve:
                 paired=ReservedEdge(source.bounds,16384,book['levels'])
                 routes={n:(n,'silent') for n in paired.arms}
@@ -140,6 +142,7 @@ def run(args):
     layer = (BranchFusion(fusion[0],verify=False) if args.grouped else NonzeroFusionCache(fusion[0])).eval()
     fusion[0] = layer
     names = tuple(routes)
+    guarded=tuple(n for n in names if args.protect and n not in ('point','drive'))
     models, policies = {}, {}
     fit = DriveFit() if args.fit_drive else None
     drive_fit = read(args.drive/'report.json') if args.drive else None
@@ -149,9 +152,9 @@ def run(args):
         model = build(source,q,view)
         gate = SilencePolicy(paired.arms[key],mode)
         gate.audit_targets = args.target_audit
-        if args.protect:gate.guard=ProtectedMiddle(n)
+        if n in guarded:gate.guard=ProtectedMiddle(n)
         model.coarse_executor = InspectMiddle(False,model.coarse_executor.receive_fine,gate)
-        if drive_fit and (args.protect or args.reserve or n in ('old','drive')):
+        if drive_fit and (n in guarded or args.reserve or n in ('old','drive')):
             model.coarse_executor.drive=SilentDrive(drive_fit['fit']['coefficients'],'drive' if args.protect or args.reserve else n)
         models[n],policies[n] = model,gate
     costs = conv_costs(core)
@@ -186,7 +189,7 @@ def run(args):
             row=dict(frame=meta['frame'],scene=meta['scene'],segment=meta['segment'],refresh=reason,arms={})
             for n,model in models.items():
                 prev,selector=states[n],selectors[n]
-                if args.protect and reason is None:
+                if n in guarded and reason is None:
                     guard=policies[n].guard
                     guard.sparse=sparse
                     if n in ('prior','combined'):
@@ -211,7 +214,7 @@ def run(args):
                         rec['drive_ops']=exe.drive_ops
                         rec['core']+=exe.drive_ops
                     assert exe.counts==support_counts(~exe.skip)
-                    if args.protect:
+                    if n in guarded:
                         baseline=gate.base & ~(gate.extra|gate.guard.chosen)
                         before=support_counts(baseline)
                         assert [exe.counts[k]-before[k] for k in ('output','radius1','radius2')]==gate.stats['guard']['increments']
@@ -243,12 +246,12 @@ def run(args):
                 row['arms'][n]=rec
             row['wire']=paired.stats if args.grouped else paired.stats['12']
             if args.protect and reason is None:
-                assert all(row['arms'][n]['executed']==row['arms']['combined']['executed'] for n in names)
+                assert all(row['arms'][n]['executed']==row['arms']['combined']['executed'] for n in guarded)
                 if args.audit:
                     row['shared_protection']={n:{other:int((policies[n].guard.chosen & policies[other].guard.chosen).sum())
-                                                  for other in names[:j]} for j,n in enumerate(names)}
+                                                  for other in guarded[:j]} for j,n in enumerate(guarded)}
                 if gt is not None:
-                    masks=torch.cat([policies[n].guard.chosen for n in names],1)[0].cpu().numpy()
+                    masks=torch.cat([policies[n].guard.chosen for n in guarded],1)[0].cpu().numpy()
                     row['guard_box_cells']=box_counts(gt,masks,source.bounds,spatial.shape[-2:])
             if args.target_audit and reason is None and gt is not None:
                 row['target_support']=target_support(gt,policies,source.bounds,spatial.shape[-2:])
@@ -256,8 +259,8 @@ def run(args):
                 a,b,c=(row['arms'][n] for n in names)
                 assert a['base']==b['base']==c['base'] and b['extra']==c['extra']==b['full_silent']
             log.write(json.dumps(row)+'\n')
-    assert i+1==len(data_rows)==(211 if args.audit else 1014)
-    assert labelled==(0 if args.audit else 458)
+    assert i+1==len(data_rows)==(211 if args.audit else 4780 if args.remainder else 1014)
+    assert labelled==(0 if args.audit else 1280 if args.remainder else 458)
     report=dict(status='COMPLETED',scans=len(data_rows),labels=labelled,ordinary=ordinary,optimizer_steps=0)
     if fit:report['fit']=fit.finish()
     write_json(args.output/'report.json',report)
@@ -274,9 +277,13 @@ if __name__=='__main__':
     p.add_argument('--drive',type=Path)
     p.add_argument('--protect',action='store_true')
     p.add_argument('--reserve',action='store_true')
+    p.add_argument('--matched-protection',action='store_true')
+    p.add_argument('--remainder',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
+    if a.matched_protection and not a.protect:p.error('matched protection requires the protected middle')
+    if a.remainder and (a.audit or not a.matched_protection):p.error('use the matched frozen transfer configuration')
     if a.protect and not a.drive:p.error('protected updates require the frozen silent drive')
     if a.reserve and (not a.drive or a.protect):p.error('reserved messages require grouped drive without receiver protection')
     if a.charge and not a.grouped:p.error('spatial charge requires grouped routing')
