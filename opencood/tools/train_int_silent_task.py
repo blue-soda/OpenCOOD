@@ -123,6 +123,25 @@ class ChargeDrive(TaskDrive):
         return cost + 21 * proposal.numel()
 
 
+def projection_events(exe, projector, name):
+    ids = exe.refine_skip.extra.flatten().nonzero().flatten()
+    flat = lambda x: x[0].flatten(1)[:, ids].T
+    old = flat(exe.inputs[1])
+    actual = flat(exe.result)
+    prior = (old * 4).round().long()
+    projected = flat(projector.events)
+    assert torch.equal(projected, (actual*4).round().long()-prior)
+    base = actual if name=='drive' else exe.drive.saved[3]
+    without = (base*4).round().long()-prior
+    def count(value):
+        return dict(values=value.numel(),addresses=int(value.count_nonzero()),ones=int((value.abs()==1).sum()),
+                    units=int(value.abs().sum()))
+    return dict(quiet=count(projected),whole=count(projector.events),base_only=count(without),
+                introduced=int(((without==0)&(projected!=0)).sum()),
+                removed=int(((without!=0)&(projected==0)).sum()),
+                changed=int((without!=projected).sum()))
+
+
 def readout_loss(core, dense_readout, middle, tangent, branches, actual, criterion, target):
     # Forward logits are the real integer/sparse detector's. The backward surrogate
     # uses the direct middle projection, with frozen fine and deep branch outputs.
@@ -147,8 +166,8 @@ def run(a):
     core = source.core
     source.eval().requires_grad_(False)
     train = a.phase == 'fit'
-    audit = a.phase == 'charge_train'
-    charge_test = audit or a.phase == 'charge_dev'
+    audit = a.phase in ('charge_train','edge_audit')
+    charge_test = a.phase in ('charge_train','charge_dev')
     fit_eval = a.phase == 'fit_eval'
     if train or audit or fit_eval:
         rows, traces, data_id = training_rows(a.long_base, book_path, audit)
@@ -249,6 +268,8 @@ def run(a):
                         rec['core'] += rec['scale_ops']
                         if isinstance(drive,ChargeDrive):
                             rec.update(drive.extra_stats)
+                    if a.phase == 'edge_audit':
+                        rec['projection'] = projection_events(exe, model.coarse_projector, n)
                     if train:
                         with torch.enable_grad():
                             area = block_lidar_range(source.bounds,spatial.shape[-2:],exe.result.shape[-2:],4)
@@ -301,7 +322,7 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    p.add_argument('phase', choices=('fit','dev','charge_train','charge_dev','fit_eval'))
+    p.add_argument('phase', choices=('fit','dev','charge_train','charge_dev','fit_eval','edge_audit'))
     for k in ('long-base','drive','output','vehicle','fit'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','drive','output'))
     a=p.parse_args()
