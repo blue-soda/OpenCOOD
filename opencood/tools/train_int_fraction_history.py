@@ -154,6 +154,8 @@ def evaluate(args,exp,cfg,short):
     assert fit_report['status']=='COMPLETED' and fit_report['optimizer_steps_per_arm']==8
     assert read(args.fit/'contract.json')['book']==digest(args.book)
     theta=dict(continuous=0.,**fit_report['theta'])
+    if args.swap:
+        theta['carry'],theta['drop']=theta['drop'],theta['carry']
     support={r['frame']:r for r in map(json.loads,args.support.read_bytes().splitlines())}
     assert len(prior)==len(rows)==1014 and len(support)==458
     data,stream=loader(rows,cfg,0,303)
@@ -192,7 +194,7 @@ def evaluate(args,exp,cfg,short):
             log.write(json.dumps(row)+'\n')
     assert i+1==len(rows)
     return dict(status='COMPLETED',scans=len(rows),training_fit=digest(args.fit/'report.json'),
-                reference=digest(args.prior),native=hashes,theta=theta)
+                reference=digest(args.prior),native=hashes,theta=theta,swapped=args.swap)
 
 
 @torch.no_grad()
@@ -203,7 +205,7 @@ def run(args):
     exp=HistoryExperiment(source,q,book)
     write_json(args.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                book=digest(args.book),params=sum(p.numel() for p in source.parameters()),seed=303,
-               trained_degrees_per_arm=1,criterion='PointPillarDirLoss',mode=args.mode))
+               trained_degrees_per_arm=1,criterion='PointPillarDirLoss',mode=args.mode,swapped=args.swap))
     result=fit(args,exp,cfg) if args.mode=='fit' else evaluate(args,exp,cfg,short)
     write_json(args.output/'report.json',result)
 
@@ -212,6 +214,7 @@ if __name__=='__main__':
     p.add_argument('mode',choices=['fit','eval'])
     for k in ('inputs','scans','book','output'):p.add_argument('--'+k,type=Path,required=True)
     for k in ('training','fit','prior','support','long-base','vehicle'):p.add_argument('--'+k,type=Path)
+    p.add_argument('--swap',action='store_true')
     args=p.parse_args()
     required=['training'] if args.mode=='fit' else ['fit','prior','support','long_base','vehicle']
     if any(getattr(args,k) is None for k in required):p.error('missing inputs: '+', '.join(required))
