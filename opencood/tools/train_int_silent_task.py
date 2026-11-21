@@ -166,8 +166,9 @@ def run(a):
     core = source.core
     source.eval().requires_grad_(False)
     train = a.phase == 'fit'
-    native = a.phase in ('native_train','native_dev')
-    audit = a.phase in ('charge_train','edge_audit','native_train')
+    release = a.phase in ('release_train','release_dev')
+    native = release or a.phase in ('native_train','native_dev')
+    audit = a.phase in ('charge_train','edge_audit','native_train','release_train')
     charge_test = a.phase in ('charge_train','charge_dev')
     fit_eval = a.phase == 'fit_eval'
     if train or audit or fit_eval:
@@ -180,7 +181,7 @@ def run(a):
     native_budget = {}
     if native:
         from opencood.models.sub_modules.int_native_silent_events import NativeEventWriter
-        names = ('drive','discard','integrate','misaligned')
+        names = ('drive','integrate','amplitude') if release else ('drive','discard','integrate','misaligned')
     if charge_test:
         names = ('pulse', 'carry', 'shuffled')
     dense_readout = copy.deepcopy(core.readout) if train else None
@@ -216,6 +217,10 @@ def run(a):
             def observe(events, executor=exe, name=n):
                 executor.projection_record = projection_events(executor, events, name)
             model.coarse_projector.event_observer = observe
+        if release and n != 'drive':
+            from opencood.models.sub_modules.int_native_silent_events import SignedProjectionAccumulator
+            projector = model.coarse_projector
+            projector.event_linear = SignedProjectionAccumulator(projector, audit)
         models[n], drives[n] = model, drive
     data, stream = loader(rows, cfg, 0, 303)
     criterion = PointPillarDirLoss(cfg['loss']['args']).cuda().eval() if train or fit_eval else None
@@ -280,6 +285,8 @@ def run(a):
                         rec['grant'] = native_budget['addresses']
                     elif native:
                         rec['native'] = drive.native
+                        if release:
+                            rec['projection_arithmetic'] = model.coarse_projector.event_linear.stats
                     elif n != 'drive':
                         count = rec['extra'] * 256
                         rec.update(emitted=drive.emitted, values=count, scale_ops=2*count if n!='continuous' else 0,
@@ -341,7 +348,7 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    p.add_argument('phase', choices=('fit','dev','charge_train','charge_dev','fit_eval','edge_audit','native_train','native_dev'))
+    p.add_argument('phase', choices=('fit','dev','charge_train','charge_dev','fit_eval','edge_audit','native_train','native_dev','release_train','release_dev'))
     for k in ('long-base','drive','output','vehicle','fit'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','drive','output'))
     a=p.parse_args()
