@@ -79,9 +79,12 @@ def run(args):
     data_rows, traces, identity = (training_rows(base,book_path,True) if args.audit
                                   else complete_scenes(args,short))
     if args.grouped:
-        paired = GroupedEdge(source.bounds,16384,book['levels'])
+        paired = GroupedEdge(source.bounds,16384,book['levels'],charge=args.charge)
         routes = dict(point=('point','silent'),tile=('tile','silent'),reset=('reset','silent'),
                       fp=('float_bytes','silent'),tile_base=('tile','base'))
+        if args.charge:
+            routes = dict(tile=('tile','silent'),charge=('charge','silent'),fp=('float_bytes','silent'),
+                          fp_charge=('float_bytes_charge','silent'),charge_base=('charge','base'))
     else:
         paired = PairedEdge(source.bounds, book['cap']//2, book['levels'], [12], calibration=True)
         routes = {n:('12',n) for n in ('base','silent','continuous')}
@@ -105,7 +108,7 @@ def run(args):
     write_json(args.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         data=identity,scenes=sorted({r['scene'] for r in data_rows}),calibration=digest(args.calibration/'report.json'),
         threshold=12,cap=paired.cap,book=digest(book_path),cost_per_site=costs,training=False,audit=args.audit,
-        grouped=args.grouped,routes=routes,params=sum(p.numel() for p in source.parameters())))
+        grouped=args.grouped,charge=args.charge,routes=routes,params=sum(p.numel() for p in source.parameters())))
     labelled=ordinary=0
     with (args.output/'frames.jsonl').open('x',buffering=1) as log:
         for i,(sample,trace) in enumerate(zip(stream,traces)):
@@ -171,9 +174,11 @@ if __name__=='__main__':
     p=argparse.ArgumentParser()
     p.add_argument('--audit',action='store_true')
     p.add_argument('--grouped',action='store_true')
+    p.add_argument('--charge',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
+    if a.charge and not a.grouped:p.error('spatial charge requires grouped routing')
     if not a.audit and a.vehicle is None:p.error('development evaluation needs vehicle directory')
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
