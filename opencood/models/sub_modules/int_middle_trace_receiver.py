@@ -21,7 +21,9 @@ def unpack_directions(data):
 class MiddleTraceReceiver:
     def __init__(self, mode, readout, verify=False):
         self.mode = mode
-        self.bias,self.scale = torch.tensor(readout[mode],device='cuda',dtype=torch.float32)[:,:,None]
+        # Preserve the sign arm's channel calibration when permuting its locations.
+        readout_mode = 'sign' if mode=='shuffled' else mode
+        self.bias,self.scale = torch.tensor(readout[readout_mode],device='cuda',dtype=torch.float32)[:,:,None]
         self.verify = verify
         self.reset()
 
