@@ -123,20 +123,20 @@ class ChargeDrive(TaskDrive):
         return cost + 21 * proposal.numel()
 
 
-def projection_events(exe, projector, name):
+def projection_events(exe, events, name):
     ids = exe.refine_skip.extra.flatten().nonzero().flatten()
     flat = lambda x: x[0].flatten(1)[:, ids].T
     old = flat(exe.inputs[1])
     actual = flat(exe.result)
     prior = (old * 4).round().long()
-    projected = flat(projector.events)
+    projected = flat(events)
     assert torch.equal(projected, (actual*4).round().long()-prior)
     base = actual if name=='drive' else exe.drive.saved[3]
     without = (base*4).round().long()-prior
     def count(value):
         return dict(values=value.numel(),addresses=int(value.count_nonzero()),ones=int((value.abs()==1).sum()),
                     units=int(value.abs().sum()))
-    return dict(quiet=count(projected),whole=count(projector.events),base_only=count(without),
+    return dict(quiet=count(projected),whole=count(events),base_only=count(without),
                 introduced=int(((without==0)&(projected!=0)).sum()),
                 removed=int(((without!=0)&(projected==0)).sum()),
                 changed=int((without!=projected).sum()))
@@ -204,6 +204,10 @@ def run(a):
         elif n != 'drive':
             drive.adapter.copy_(weights['pulse' if charge_test else n])
         model.coarse_executor, exe.drive = exe, drive
+        if a.phase == 'edge_audit':
+            def observe(events, executor=exe, name=n):
+                executor.projection_record = projection_events(executor, events, name)
+            model.coarse_projector.event_observer = observe
         models[n], drives[n] = model, drive
     data, stream = loader(rows, cfg, 0, 303)
     criterion = PointPillarDirLoss(cfg['loss']['args']).cuda().eval() if train or fit_eval else None
@@ -269,7 +273,7 @@ def run(a):
                         if isinstance(drive,ChargeDrive):
                             rec.update(drive.extra_stats)
                     if a.phase == 'edge_audit':
-                        rec['projection'] = projection_events(exe, model.coarse_projector, n)
+                        rec['projection'] = exe.projection_record
                     if train:
                         with torch.enable_grad():
                             area = block_lidar_range(source.bounds,spatial.shape[-2:],exe.result.shape[-2:],4)

@@ -110,5 +110,7 @@ class MiddleDecayProjection(DeepSpikeProjection):
                            scaled_levels=self.numerator.numel() if self.leak and self.predictor=='factor' else 0,
                            scaled_linear=linear.numel() if self.leak and self.predictor=='factor' else 0,
                            denominator=self.den)
+        if hasattr(self, 'event_observer'):
+            self.event_observer(self.events)
         self.previous = self.aligned = self.events = self.maintenance = self.numerator = None
         return decoded, packed
