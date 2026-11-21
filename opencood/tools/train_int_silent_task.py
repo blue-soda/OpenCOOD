@@ -149,7 +149,8 @@ def run(a):
     train = a.phase == 'fit'
     audit = a.phase == 'charge_train'
     charge_test = audit or a.phase == 'charge_dev'
-    if train or audit:
+    fit_eval = a.phase == 'fit_eval'
+    if train or audit or fit_eval:
         rows, traces, data_id = training_rows(a.long_base, book_path, audit)
     else:
         a.inputs = a.long_base/'inputs'
@@ -186,7 +187,7 @@ def run(a):
         model.coarse_executor, exe.drive = exe, drive
         models[n], drives[n] = model, drive
     data, stream = loader(rows, cfg, 0, 303)
-    criterion = PointPillarDirLoss(cfg['loss']['args']).cuda().eval() if train else None
+    criterion = PointPillarDirLoss(cfg['loss']['args']).cuda().eval() if train or fit_eval else None
     costs = conv_costs(core)
     contract = dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                     data=data_id, scenes=sorted({r['scene'] for r in rows}), book=digest(book_path),
@@ -277,6 +278,8 @@ def run(a):
                             carry[n] = None
                             losses[n].clear()
                     exe.inputs = exe.result = None
+                if fit_eval and labelled and reason is None:
+                    rec['task_loss'] = float(criterion(pred, ego['label_dict']))
                 if gt is not None:
                     rec.update(score(data.post,ego,pred,gt,record_matches=True))
                 row['arms'][n] = rec
@@ -286,7 +289,7 @@ def run(a):
                 assert all(c == counts[0] for c in counts)
             row['bytes'] = edge.stats['tile']['bytes']
             log.write(json.dumps(row,allow_nan=False)+'\n')
-    assert (i+1,labels) == ((211,168) if train else (211,0) if audit else (1014,458))
+    assert (i+1,labels) == ((211,168) if train or fit_eval else (211,0) if audit else (1014,458))
     report = dict(status='COMPLETED', scans=i+1, labels=labels, steps=steps, cross_windows=cross)
     if train:
         hook.remove()
@@ -298,7 +301,7 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    p.add_argument('phase', choices=('fit','dev','charge_train','charge_dev'))
+    p.add_argument('phase', choices=('fit','dev','charge_train','charge_dev','fit_eval'))
     for k in ('long-base','drive','output','vehicle','fit'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','drive','output'))
     a=p.parse_args()
