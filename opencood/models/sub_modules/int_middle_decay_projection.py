@@ -6,22 +6,27 @@ from opencood.models.sub_modules.int_deep_spike_projection import DeepSpikeProje
 
 class MiddleDecayProjection(DeepSpikeProjection):
     def __init__(self, block, predictor, execution):
-        if predictor not in ('zero', 'rounded', 'factor'):
+        if predictor not in ('zero', 'rounded', 'factor', 'phase'):
             raise ValueError('Unknown decay predictor')
         quantum = block[0].weight.new_full((block[0].in_channels,), .25)
         super().__init__(block, quantum, execution)
         self.predictor = predictor
-        self.scales = {d:self.scale / d for d in (1,8,64,512)}
+        denominators = (343,392,448,512) if predictor=='phase' else (1,8,64,512)
+        self.scales = {d:self.scale / d for d in denominators}
+        self.divisors = {d:self.scale.new_tensor(float(d)) for d in denominators}
         self.unit_tables = {}
-        if execution == 'unit' and predictor == 'factor':
-            self.unit_tables = {d:self.weight.int() * d for d in (8,64,512)}
+        if execution == 'unit' and predictor in ('phase','factor'):
+            self.unit_tables = {d:self.weight.int() * d for d in denominators[1:]}
 
     def begin(self, state, refresh):
         self.age = 0 if refresh is not None else state['since_refresh']+1
         self.previous = None if not self.age else state['coarse_projection']
         self.aligned = None
         self.leak = self.predictor != 'zero' and self.age in (1,2,3)
-        self.den = 8**min(self.age,3) if self.predictor=='factor' else 1
+        phase = min(self.age,3)
+        self.den = 8**phase if self.predictor in ('factor','phase') else 1
+        if self.predictor == 'phase':
+            self.den *= 7**(3-phase)
 
     def align_task(self, value, past_pose, current_pose, bounds):
         aligned,valid,route = super().align_task(value,past_pose,current_pose,bounds)
@@ -36,6 +41,18 @@ class MiddleDecayProjection(DeepSpikeProjection):
             return value, target.round() * self.quantum
         before = self.aligned[:,:value.shape[1]]
         self.maintenance = None
+        if self.predictor == 'phase':
+            # A constant integer numerator now represents a decaying physical value.
+            # Device tensor divisor preserves dyadic sender levels under FP32 division.
+            if self.mode == 'dense':
+                predicted = before.double() / self.den
+                self.events = (target.double()-predicted).round().long()
+                self.numerator = ((predicted + self.events)*self.den).round().long()
+            else:
+                predicted = before.float() / self.divisors[self.den]
+                self.events = (target-predicted).round().long()
+                self.numerator = before + self.events*self.den
+            return value, (self.numerator.float()/self.divisors[self.den])*.25
         if self.predictor == 'factor':
             prior = before * 7 if self.leak else before
             if self.mode == 'dense':
@@ -53,6 +70,15 @@ class MiddleDecayProjection(DeepSpikeProjection):
                 self.maintenance = prior - before
             self.events = self.numerator - prior
         return value, self.numerator.float() * (.25 / self.den)
+
+    def fresh(self, deep):
+        if self.predictor != 'phase':
+            return super().fresh(deep)
+        level = self.levels(deep)
+        numerator = level * self.den
+        if int(numerator.abs().max()) * self.weight_bound >= 2**51:
+            raise ValueError('Exact dense refresh bound exceeded')
+        return self.finish(numerator,self.dense_linear(numerator),level,True,self.scales[self.den])
 
     def advance(self, deep, written, previous, past_pose, current_pose, bounds, route=None):
         if previous is not self.previous or route is None or self.aligned is None:

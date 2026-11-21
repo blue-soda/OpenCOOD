@@ -18,12 +18,14 @@ from opencood.tools.train_int_deep_block_adapt import local_request, trace_masks
 
 
 @torch.no_grad()
-def run(inputs, scans, reference, out, unit_prefix):
+def run(inputs, scans, reference, out, unit_prefix, shared_phase):
     source,cfg,rows,traces,starts,members,q=prepare_stream(inputs,scans)
     assert read(reference/'contract.json')['members']==members
     old={r['frame']:r for r in map(json.loads,(reference/'frames.jsonl').read_text().splitlines())}
     arms={'zero':('zero','amplitude'),'rounded':('rounded','amplitude'),
           'factor':('factor','amplitude'),'factor_dense':('factor','dense')}
+    if shared_phase:
+        arms={'factor':('factor','amplitude'),'phase':('phase','amplitude'),'phase_dense':('phase','dense')}
     if unit_prefix:
         arms={'factor':('factor','amplitude'),'factor_unit':('factor','unit')}
         ids={f for clip in read(inputs/'plan.json')['clips'][:2] for f in clip[:12]}
@@ -77,7 +79,19 @@ def run(inputs, scans, reference, out, unit_prefix):
                     assert all(torch.equal(state[k],states[ref][k]) for k in
                                ('coarse_projection','coarse','deep','deep_projection'))
                     assert all(torch.equal(v,preds[ref][k]) for k,v in pred.items())
-                if gt is not None and name in ('zero','factor'):
+                if name=='phase_dense':
+                    assert all(torch.equal(state[k],states['phase'][k]) for k in
+                               ('coarse_projection','coarse','deep','deep_projection'))
+                    assert all(torch.equal(v,preds['phase'][k]) for k,v in pred.items())
+                if name=='phase':
+                    multiplier=7**(3-min(receiver.age,3))
+                    assert torch.equal(cache,states['factor']['coarse_projection']*multiplier)
+                    assert torch.equal(state['deep'],states['factor']['deep'])
+                    assert torch.equal(state['deep_projection'],states['factor']['deep_projection'])
+                    assert receiver.ledger['units']==models['factor'].coarse_projector.ledger['units']
+                    entry['max_head_abs_vs_factor']={k:float((v-preds['factor'][k]).abs().max())
+                                                     for k,v in pred.items()}
+                if gt is not None and name in ('zero','factor','phase'):
                     entry.update(score(data.post,ego,pred,gt))
                 row['arms'][name]=entry
             log.write(json.dumps(row)+'\n')
@@ -90,7 +104,9 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser()
     for name in ('inputs','scans','reference','output'):
         parser.add_argument('--'+name,required=True,type=Path)
-    parser.add_argument('--unit-prefix',action='store_true')
+    mode=parser.add_mutually_exclusive_group()
+    mode.add_argument('--unit-prefix',action='store_true')
+    mode.add_argument('--shared-phase',action='store_true')
     args=parser.parse_args()
     args.output.mkdir(parents=True,exist_ok=False)
-    run(args.inputs,args.scans,args.reference,args.output,args.unit_prefix)
+    run(args.inputs,args.scans,args.reference,args.output,args.unit_prefix,args.shared_phase)
