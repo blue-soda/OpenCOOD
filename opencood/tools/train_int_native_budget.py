@@ -57,7 +57,7 @@ def make_trace(model,rows):
 def run(a):
     torch.manual_seed(303)
     train=a.mode=='fit'
-    source,cfg,_,_,_,_,q=prepare_stream(a.long_base/'inputs',a.long_base/'clips')
+    source,cfg,short,_,_,_,q=prepare_stream(a.long_base/'inputs',a.long_base/'clips')
     source.eval().requires_grad_(False)
     core=source.core
     plan=read(a.plan)
@@ -69,6 +69,14 @@ def run(a):
         for key in ('pcd','label'):
             if r[key]:assert digest(Path(r[key]))==plan['members'][r[key]]
     assert all(r['split']=='train' for r in rows)
+    totals=identity['splits'][split]
+    historical_traces=None
+    if a.mode=='dev':
+        from opencood.tools.eval_int_fusion_cache import complete_scenes
+        a.inputs=a.long_base/'inputs'
+        rows,historical_traces,_=complete_scenes(a,short,remainder=False)
+        split='dev'
+        totals=dict(scans=1014,labels=458,scenes=list(dict.fromkeys(r['scene'] for r in rows)))
     calibration=read(a.quota)
     assert calibration['selected']=='age'
     rates=calibration['models']['age']['rates']
@@ -114,12 +122,12 @@ def run(a):
                   split=split,plan=identity['plan'],quota=digest(a.quota),rates=rates,seed=303,
                   params=sum(p.numel() for p in source.parameters()),adapter=2560,frozen_drive=2560,
                   drive=digest(a.drive/'report.json'),frozen_source=read(a.long_base/'inputs/r297.json')['source_frozen_digest'],
-                  book=digest(a.long_base/'book_train/report.json'),scenes=identity['splits'][split]['scenes'],
+                  book=digest(a.long_base/'book_train/report.json'),scenes=totals['scenes'],
                   optimizer='Adam lr=.005, clip=5, one ordered pass, identical 2-frame ordinary windows',
                   backward='fixed selected units, direct middle projection STE, pose-aligned state and residual',
                   fits_parent=digest(a.fit/'adapters.pt') if not train else None)
     write_json(a.output/'contract.json',contract)
-    reasons=make_trace(models[names[0]],rows)
+    reasons=(make_trace(models[names[0]],rows) if historical_traces is None else [r['refresh'] for r in historical_traces])
     ds,stream=loader(rows,cfg,0,303)
     costs=conv_costs(core)
     factory=partial(CachedResidualPolicy,compiler=compact_group_bucket)
@@ -132,7 +140,7 @@ def run(a):
             meta=sample['meta']
             assert meta['frame']==rows[i]['frame']
             if i==0 or meta['segment']!=rows[i-1]['segment']:
-                states=dict.fromkeys(names)
+                states=dict.fromkeys(names,None if reason=='initial' else dict(scene=''))
                 selectors={n:ObservedPolicy(models[n],factory) for n in names}
             if reason:
                 depth=0
@@ -210,7 +218,6 @@ def run(a):
             log.write(json.dumps(item,allow_nan=False)+'\n')
             if (i+1)%50==0:
                 write_json(a.output/'status.json',dict(scans=i+1,steps=steps,previous_gradients=cross))
-    totals=identity['splits'][split]
     assert len(rows)==i+1==totals['scans'] and labels==totals['labels']
     report=dict(status='COMPLETED',scans=i+1,labels=labels,ordinary_labels=ordinary_labels,
                 steps=steps,previous_gradients=cross)
@@ -224,10 +231,15 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    p.add_argument('mode',choices=('fit','internal'))
+    p.add_argument('mode',choices=('fit','internal','dev'))
     for k in ('long-base','plan','drive','quota','fit','output'):
         p.add_argument('--'+k,type=Path,required=k!='fit')
+    p.add_argument('--vehicle',type=Path)
+    p.add_argument('--internal-verdict',type=Path)
     a=p.parse_args()
-    if a.mode=='internal' and not a.fit:p.error('internal evaluation requires the frozen fit directory')
+    if a.mode=='dev':
+        if not a.vehicle or not a.internal_verdict or read(a.internal_verdict).get('promote') is not True:
+            p.error('development requires an accepted frozen internal comparison')
+    if a.mode!='fit' and not a.fit:p.error('internal evaluation requires the frozen fit directory')
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
