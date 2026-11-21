@@ -85,7 +85,7 @@ class Sender:
         return stored, self.sent
 
 
-def score(post, ego, prediction, gt):
+def score(post, ego, prediction, gt, record_matches=False):
     boxes, scores = post.post_process(dict(ego=ego), dict(ego=prediction))
     stats = {t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.5, .7)}
     for t in stats:
@@ -95,6 +95,7 @@ def score(post, ego, prediction, gt):
     bins = np.digitize(np.linalg.norm(truth[:, :, :2].mean(1), axis=1), (30., 50.))
     counts = np.bincount(bins, minlength=3)
     hits = np.zeros(3, dtype=int)
+    matched = []
     if boxes is not None:
         remaining = list(common_utils.convert_format(truth))
         ids = list(range(len(truth)))
@@ -105,10 +106,16 @@ def score(post, ego, prediction, gt):
             overlap = common_utils.compute_iou(polys[i], remaining)
             pick = int(np.argmax(overlap))
             if overlap[pick] >= .7:
-                hits[bins[ids.pop(pick)]] += 1
+                idx = ids.pop(pick)
+                hits[bins[idx]] += 1
+                if record_matches:
+                    matched.append(idx)
                 remaining.pop(pick)
     assert sum(stats[.7]['tp']) == hits.sum() and counts.sum() == stats[.7]['gt']
-    return dict(ap=stats, hits=hits.tolist(), targets=counts.tolist())
+    result = dict(ap=stats, hits=hits.tolist(), targets=counts.tolist())
+    if record_matches:
+        result['hit_ids'] = matched
+    return result
 
 
 @torch.no_grad()

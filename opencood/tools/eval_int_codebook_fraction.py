@@ -1,5 +1,6 @@
 """Paired fine task-memory intervention at fixed middle jobs and deep write opportunities."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -36,8 +37,12 @@ def run(args):
     layer=NonzeroFusionCache(fusion[0]).eval()
     fusion[0]=layer
     models={}
-    for name in ('carry','drop'):
-        edge=FineCodebook(source.bounds,book['cap'],book['levels'])
+    modes=('continuous',) if args.continuous else ('carry','drop')
+    support={r['frame']:r for r in map(json.loads,args.support.read_bytes().splitlines())} if args.support else {}
+    if args.support:
+        assert len(support)==sum(r['supervised'] for r in rows)
+    for name in modes:
+        edge=None if name=='continuous' else FineCodebook(source.bounds,book['cap'],book['levels'])
         def receive(value,active,sender=edge):
             sender.active=active
             return sender(value)
@@ -47,13 +52,15 @@ def run(args):
         model=CrossScaleCache(source,'sparse_amplitude',planner=plan_host_coalesced_refresh,
                               deep_projector=DeepSpikeProjection(core.deblocks[2],q,'amplitude'),fine_to_coarse=transform)
         model.coarse_interface=model.coarse_projector=MiddleDecayProjection(core.deblocks[1],'zero','amplitude')
-        model.coarse_executor=FineInnovationUpdate(False,receive) if name=='carry' else MatchedMiddle()
+        model.coarse_executor=MatchedMiddle() if name=='drop' else FineInnovationUpdate(False,receive if edge else None)
         models[name]=(model,edge)
     per=conv_costs(core)
     data,stream=loader(rows,cfg,0,303)
     write_json(args.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                native=hashes,prior=digest(args.prior),book=digest(args.book),optimizer_steps=0,seed=303,
-               params=sum(p.numel() for p in source.parameters()),quantum=.25,intervention='ordinary after readout, round fine task on read area'))
+               params=sum(p.numel() for p in source.parameters()),quantum=.25,modes=modes,
+               support=digest(args.support) if args.support else None,
+               intervention='continuous fine-to-middle' if args.continuous else 'ordinary after readout, round fine task on read area'))
     with (args.output/'frames.jsonl').open('x',buffering=1) as log:
         for i,(sample,trace,ref) in enumerate(zip(stream,traces,prior)):
             meta=sample['meta']
@@ -65,10 +72,16 @@ def run(args):
             spatial=spatial_input(source,ego)
             gt=data.post.generate_gt_bbx(dict(ego=ego)) if meta['supervised'] else None
             row=dict(frame=frame,scene=meta['scene'],segment=meta['segment'],refresh=reason,frame_age=ref['frame_age'],arms={})
+            if args.support and gt is not None:
+                cpu_gt=data.post.generate_gt_bbx(dict(ego=sample['ego']))
+                receipt=support[frame]
+                assert hashlib.sha256(cpu_gt.numpy().tobytes()).hexdigest()==receipt['gt_xyz_sha256']
+                assert torch.allclose(cpu_gt,gt.cpu(),rtol=0,atol=1e-4)
+                assert len(receipt['points'])==len(gt)
             for name,(model,edge) in models.items():
                 prev=states[name]
                 assert model.refresh_reason(prev,meta)==reason
-                edge.begin(prev,meta,spatial.shape[-2:],reason)
+                if edge is not None:edge.begin(prev,meta,spatial.shape[-2:],reason)
                 model.coarse_projector.begin(prev,reason)
                 layer.begin(prev,reason,True)
                 if name=='drop' and reason is None:
@@ -79,9 +92,11 @@ def run(args):
                 if reason is None:
                     exe=model.coarse_executor
                     other+=sum(per[k]*v for k,v in exe.counts.items())
-                    if name=='carry':
+                    if name!='drop':
                         mask=exe.skip
                         exe.inputs=None
+                        if args.support:
+                            row['middle_mask_sha256']=hashlib.sha256(mask.cpu().numpy().tobytes()).hexdigest()
                     else:
                         assert exe.counts==models['carry'][0].coarse_executor.counts
                         task=state['value']
@@ -92,11 +107,12 @@ def run(args):
                         assert stats['max_delta']<=edge.quantum/2
                         state['value']=revised
                     assert (state['deep_age']==0).flatten().nonzero().flatten().tolist()==trace['written_indices']
-                    stats.update(addresses=edge.ledger['addresses'],bytes=edge.ledger['bytes'],units=edge.ledger['units'])
-                edge.commit(state,False)
+                    if edge is not None:
+                        stats.update(addresses=edge.ledger['addresses'],bytes=edge.ledger['bytes'],units=edge.ledger['units'])
+                if edge is not None:edge.commit(state,False)
                 state['fusion_cache']=layer.new
                 stats['core']=other+layer.ledger['float_conv']
-                if gt is not None:stats.update(score(data.post,ego,pred,gt))
+                if gt is not None:stats.update(score(data.post,ego,pred,gt,record_matches=bool(args.support)))
                 if name=='carry':
                     assert stats['core']==ref['arms']['local']['core']
                     if gt is not None:
@@ -106,13 +122,15 @@ def run(args):
                 states[name]=state
             log.write(json.dumps(row)+'\n')
     assert i+1==len(rows)
-    write_json(args.output/'report.json',dict(status='COMPLETED',scans=len(rows),carry_prior_exact=True))
+    write_json(args.output/'report.json',dict(status='COMPLETED',scans=len(rows),carry_prior_exact='carry' in models))
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
     for key in ('inputs','scans','book','prior','vehicle','long-base','output'):
         parser.add_argument('--'+key,type=Path,required=True)
+    parser.add_argument('--continuous',action='store_true')
+    parser.add_argument('--support',type=Path)
     args=parser.parse_args()
     args.output.mkdir(parents=True,exist_ok=False)
     run(args)
