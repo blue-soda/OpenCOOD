@@ -19,6 +19,7 @@ from opencood.tools.eval_int_deep_block_online import CachedResidualPolicy, Obse
 from opencood.tools.eval_int_fusion_cache import complete_scenes
 from opencood.tools.eval_int_middle_cap import score
 from opencood.tools.eval_int_online_half import build
+from opencood.tools.eval_int_codebook_fraction import FullAmplitude
 from opencood.tools.launch_int_memory import digest
 from opencood.tools.probe_int_deep_block_cache import compact_group_bucket, spatial_input
 from opencood.tools.run_int_ego import loader,to_device,write_json
@@ -50,8 +51,9 @@ def run(args):
     edge = paired = None
     if args.route=='ann':
         model = local_model(source,indexed=True)
-    elif args.route=='half':
-        edge = FineCodebook(source.bounds,book['cap']//2,book['levels'])
+    elif args.route in ('half','amplitude'):
+        edge = (FineCodebook(source.bounds,book['cap']//2,book['levels']) if args.route=='half' else
+                FullAmplitude(source.bounds,'amplitude',book['cap']//2))
         model = build(source,q,edge)
     else:
         assert read(args.calibration/'report.json')['threshold']==12
@@ -60,7 +62,8 @@ def run(args):
     costs = conv_costs(source.core)
     data, stream = loader(rows,cfg,0,303)
     historic = None
-    if args.route=='half' and not audit:
+    arm_name = 'amplitude' if args.route=='amplitude' else 'carry'
+    if args.route in ('half','amplitude') and not audit:
         part='remainder' if args.partition=='transfer' else 'dev'
         historic=[json.loads(s) for s in (base/('half_online_'+part)/'frames.jsonl').read_bytes().splitlines()]
         assert len(historic)==len(rows)
@@ -100,7 +103,11 @@ def run(args):
                     exe.inputs=None
                 written=(state['deep_age']==0).flatten().nonzero().flatten().tolist()
                 if args.route=='ann' and not audit: assert written==trace['written_indices']
-                if historic: assert written==historic[i]['arms']['carry']['written']
+                if historic: assert written==historic[i]['arms'][arm_name]['written']
+                if args.route=='amplitude':
+                    record['addresses']=edge.ledger['addresses']
+                    record['payload_bytes']=edge.ledger['bytes']
+                    assert record['addresses']==historic[i]['arms'][arm_name]['addresses']
             if edge: edge.commit(state,False)
             state['branch_fusion']=layer.new
             prev=state
@@ -116,7 +123,7 @@ def run(args):
                 record.update(other=other,legacy_core=other+original_fusion,core=other+layer.ledger['float_conv'])
             if not audit:
                 old=(trace['arms']['indexed_crop_online']['core_conv_flops'] if args.route=='ann'
-                     else historic[i]['arms']['carry']['core'])
+                     else historic[i]['arms'][arm_name]['core'])
                 if not args.quanta:
                     assert old==record['legacy_core'],(meta['frame'],old,record['legacy_core'])
             if meta['supervised']:
@@ -134,7 +141,7 @@ def run(args):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    p.add_argument('--route',choices=['ann','half','threshold'],required=True)
+    p.add_argument('--route',choices=['ann','half','amplitude','threshold'],required=True)
     p.add_argument('--partition',choices=['train','dev','transfer'],required=True)
     p.add_argument('--collect-rms',action='store_true')
     p.add_argument('--direct',action='store_true')
@@ -143,6 +150,7 @@ if __name__=='__main__':
     for k in ('long-base','vehicle','calibration','output'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','output'))
     a=p.parse_args()
+    if a.route=='amplitude' and a.partition=='train':p.error('use the historical paired stream for amplitude')
     if a.direct and not a.quanta:p.error('direct signed fusion needs a frozen lattice')
     if a.weighted_check and (not a.direct or a.partition!='train'):
         p.error('the weighted control is a training-side direct fusion audit')
