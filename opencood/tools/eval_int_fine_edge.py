@@ -1,5 +1,6 @@
 """Frozen fine-edge quality intervention and independent dense-receiver replay."""
 import argparse
+import copy
 import json
 from pathlib import Path
 import subprocess
@@ -24,9 +25,11 @@ from opencood.tools.train_int_deep_block_adapt import local_request, trace_masks
 
 
 class MatchedMiddle:
+    projection=None
+
     def __call__(self, core, fine, old, valid, coverage, state, meta, dt, spatial_shape, bounds):
         assert not bool((self.skip & ~coverage).any())
-        output,self.counts = compact_update(core,fine,old,valid,dt,~self.skip,old)
+        output,self.counts = compact_update(core,fine,old,valid,dt,~self.skip,old,self.projection)
         return output
 
 
@@ -48,17 +51,22 @@ def run(args):
         cap=min(t['arms']['deferred']['fine']['addresses'] for t in train if t['refresh'] is None)//2
         modes=('continuous','unit_carry','unit_round','amplitude')
     calibration=None
+    adapter=None
     if args.book:
         calibration=read(args.book)
         assert calibration['status']=='COMPLETED' and calibration['cap']==cap
         assert not set(calibration['scenes']).intersection(r['scene'] for r in rows)
         modes=('continuous','power','power_ann','calibrated')
+        if args.adapter:
+            adapter=read(args.adapter)
+            assert adapter['book']==digest(args.book) and adapter['steps']==200
+            modes=('continuous','power','calibrated','amplitude')
     models = {}
     for mode in modes:
         phase = mode if mode in ('ordinary','refresh') else 'all'
         sender = None if mode=='continuous' else FineEdgeSender(source.bounds,dense=mode=='dense',send_on=phase)
         if cap is not None and mode!='continuous':
-            if calibration is None:
+            if calibration is None or mode=='amplitude':
                 sender=QuotaFineEdge(source.bounds,mode,cap)
             else:
                 table=calibration['levels'] if mode=='calibrated' else [1,2,4,8]
@@ -68,11 +76,19 @@ def run(args):
                                 fine_to_coarse=sender)
         model.coarse_interface=model.coarse_projector=MiddleDecayProjection(source.core.deblocks[1],'zero','amplitude')
         model.coarse_executor=FineInnovationUpdate(False) if sender is None else MatchedMiddle()
+        if adapter is not None and sender is not None:
+            layer=copy.deepcopy(source.core.coarse_light[2])
+            gain=layer.weight.new_tensor(adapter['arms'][mode]['gain'])
+            offset=layer.weight.new_tensor(adapter['arms'][mode]['offset'])
+            layer.weight.mul_(gain[:,None,None,None])
+            layer.bias.mul_(gain).add_(offset)
+            model.coarse_executor.projection=layer
         models[mode]=model
     write_json(args.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                params=sum(p.numel() for p in source.parameters()), reference=digest(args.reference/'frames.jsonl'),
                reference_masks_from='simultaneous continuous causal replay',modes=modes,seed=303,q=.25,cap=cap,
                book=digest(args.book) if args.book else None,
+               adapter=digest(args.adapter) if args.adapter else None,
                trace=digest(args.inputs/'traces.json'),weights={k:digest(args.inputs/k) for k in
                ('parent.pth','protected_light_final.pth','readout.pth','quantum.json')},device=torch.cuda.get_device_name()))
     data,stream=loader(rows,cfg,0,303)
@@ -151,6 +167,7 @@ if __name__=='__main__':
     p.add_argument('--phase-test',action='store_true')
     p.add_argument('--quota-source',type=Path)
     p.add_argument('--book',type=Path)
+    p.add_argument('--adapter',type=Path)
     args=p.parse_args()
     args.output.mkdir(exist_ok=False,parents=True)
     run(args)

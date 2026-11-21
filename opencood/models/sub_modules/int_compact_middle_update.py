@@ -58,7 +58,7 @@ def spatial_conv(module,x,ids,width,shape,lut):
     return F.linear(neighborhood.reshape(len(ids),-1),module.weight.flatten(1),module.bias)
 
 
-def compact_update(core,fine,old,valid,dt,active,held):
+def compact_update(core,fine,old,valid,dt,active,held,projection=None):
     a,b,c=supports(active)
     h,w=a.shape[-2:]
     ids,one,two=[s.flatten().nonzero().flatten() for s in (a,b,c)]
@@ -69,7 +69,7 @@ def compact_update(core,fine,old,valid,dt,active,held):
     patch=patches(points(fine),two,w,fine.shape[-2:],2)
     dw=(patch*enc[0].weight.reshape(1,-1,9)).sum(2)
     if enc[0].bias is not None:dw+=enc[0].bias
-    observed=pw(enc[2],dw.relu())
+    observed=pw(enc[2] if projection is None else projection,dw.relu())
     valid2=points(valid)[two]
     old2=points(old)[two].masked_fill(~valid2,0.)
     x=observed+pw(upd.candidate.history,torch.cat((old2,valid2.to(old2.dtype)),1))
