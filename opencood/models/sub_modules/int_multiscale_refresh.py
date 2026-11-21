@@ -75,7 +75,7 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
         self.variant='middle_deep_light_'+mode;self.train(False)
 
     def step_spatial(self,spatial,state,meta,detach_state=True,requests=None,deep_interface=None,phase=nullcontext,
-                     deep_projector=None):
+                     deep_projector=None, coarse_interface=None):
         if spatial.shape[0]!=1 or requests is not None:raise ValueError('Single stream; no local masks yet')
         reason,dt=reset_reason(state,meta);stamp=int(meta['timestamp_us'])
         refresh=reason
@@ -83,6 +83,7 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
             if state['since_refresh']+1>=self.period:refresh='period'
             elif (stamp-state['refresh_timestamp_us'])/1e6>=self.max_age-1e-6:refresh='age'
         values=[];x=spatial
+        coarse_stored = None
         for key,encoder,light,update,stride in (
             ('value',self.core.observation,None,self.core.fine_update,2),
             ('coarse',self.core.coarse_encoder,self.core.coarse_light,self.core.coarse_update,4),
@@ -98,7 +99,10 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
             with phase(compute):
                 if refresh and hasattr(self.core,'refresh_updates') and key in self.core.refresh_updates:
                     update=self.core.refresh_updates[key]
-                update.delta_t=dt;x=update(current,old,valid);values.append(x)
+                update.delta_t=dt;x=update(current,old,valid)
+                if key == 'coarse' and coarse_interface is not None:
+                    coarse_stored, x = coarse_interface(x, None)
+                values.append(x)
         with phase('readout'):
             if deep_interface is not None:
                 values[-1], sent = deep_interface(values[-1], None)
@@ -117,6 +121,8 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
             pred=dict(psm=self.core.cls_head(features),rm=self.core.reg_head(features))
             if self.core.dir_head is not None:pred['dm']=self.core.dir_head(features)
         with phase('state_commit'):
+            if coarse_stored is not None:
+                values[1] = coarse_stored
             new={k:v.detach() if detach_state else v for k,v in zip(self.state_keys,values)}
             if projection_state is not None:
                 new['deep_projection'] = projection_state.detach() if detach_state else projection_state

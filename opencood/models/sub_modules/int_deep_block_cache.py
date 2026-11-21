@@ -28,6 +28,7 @@ class OrdinaryDeepInputs(NamedTuple):
     age: torch.Tensor
     dt: float
     deep_route: Optional[Tuple[torch.Tensor, torch.Tensor]]
+    coarse_stored: Optional[torch.Tensor] = None
 
 
 class PackedLightDeepStage(PackedPyramidStage):
@@ -55,7 +56,7 @@ class PackedLightDeepStage(PackedPyramidStage):
 class DeepBlockCache:
     def __init__(self, source, tile, operator='heavy', deep_interface=None,
                  planner=plan_coalesced_refresh, phase=nullcontext, crop_first=False, counted_host=False,
-                 deep_projector=None):
+                 deep_projector=None, coarse_interface=None):
         if source.training or not source.light_observations or tile < 1:
             raise ValueError('Frozen light-observation source and positive tile size required')
         self.source = source
@@ -64,6 +65,7 @@ class DeepBlockCache:
         self.operator = operator
         # Optional mapping from the computed state and written mask to stored and readout values.
         self.deep_interface = deep_interface
+        self.coarse_interface = coarse_interface
         self.planner = planner
         self.phase = phase
         self.crop_first = crop_first
@@ -95,6 +97,7 @@ class DeepBlockCache:
         _, dt = reset_reason(state, meta)
         current = spatial
         features = []
+        coarse_stored = None
         for key, encoder, update, stride in (
             ('value', self.core.observation, self.core.fine_update, 2),
             ('coarse', self.core.coarse_light, self.core.coarse_update, 4),
@@ -121,7 +124,7 @@ class DeepBlockCache:
             else:
                 aligned, valid = warp_bev(value, state['pose'], meta['pose'], bounds)
             return OrdinaryDeepInputs(features[0], features[1], old, aligned[:, :-1], valid,
-                                      aligned[:, -1:] + dt, dt, route)
+                                      aligned[:, -1:] + dt, dt, route, coarse_stored)
 
     def mandatory(self, frame):
         required = ~frame.valid | (frame.age >= self.source.max_age - 1e-6)
@@ -143,6 +146,8 @@ class DeepBlockCache:
     def step_spatial(self, spatial, state, meta, requests=None, dense_reference=False):
         if self.refresh_reason(state, meta):
             kwargs = {} if self.deep_interface is None else {'deep_interface': self.deep_interface}
+            if self.coarse_interface is not None:
+                kwargs['coarse_interface'] = self.coarse_interface
             if self.phase is not nullcontext:
                 kwargs['phase'] = self.phase
             if self.deep_projector is not None:
@@ -184,7 +189,8 @@ class DeepBlockCache:
             info = dict(stage_conv_ratio=0., actual_write_fraction=0., fallback=False)
         with self.phase('state_commit'):
             stored, sent = (deep, deep) if self.deep_interface is None else self.deep_interface(deep, written)
-            new = dict(value=frame.fine, coarse=frame.coarse, deep=stored,
+            coarse_state = frame.coarse if frame.coarse_stored is None else frame.coarse_stored
+            new = dict(value=frame.fine, coarse=coarse_state, deep=stored,
                        deep_age=torch.where(written, torch.zeros_like(frame.age), frame.age),
                        pose=copy.deepcopy(meta['pose']), scene=meta['segment'], timestamp_us=int(meta['timestamp_us']),
                        refresh_timestamp_us=state['refresh_timestamp_us'], since_refresh=state['since_refresh'] + 1)

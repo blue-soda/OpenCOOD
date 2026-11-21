@@ -46,7 +46,7 @@ def build_source(inputs, cfg):
 
 
 @torch.no_grad()
-def run(inputs, scans, out):
+def prepare_stream(inputs, scans):
     torch.manual_seed(303)
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
@@ -76,6 +76,13 @@ def run(inputs, scans, out):
     source_hash = model_digest(source)
     assert source_hash == ref['source_frozen_digest'], source_hash
     q, _, _ = load_quantum(inputs / 'quantum.json', plan, 512)
+    return source, cfg, rows, traces, starts, members, q
+
+
+@torch.no_grad()
+def run(inputs, scans, out):
+    source, cfg, rows, traces, starts, members, q = prepare_stream(inputs, scans)
+    source_hash = model_digest(source)
     block = source.core.deblocks[2]
     projectors = {name: DeepSpikeProjection(block, q, mode) for name, mode in
                   [('dense', 'dense'), ('amplitude', 'amplitude'), ('unit', 'unit'),
