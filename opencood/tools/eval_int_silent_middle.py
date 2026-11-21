@@ -15,6 +15,7 @@ from opencood.models.sub_modules.int_block_cache import block_lidar_range
 from opencood.models.sub_modules.int_grouped_receiver import GroupedEdge
 from opencood.models.sub_modules.int_silent_drive import DriveFit, SilentDrive
 from opencood.models.sub_modules.int_silent_trace import CorrectionTraceAudit
+from opencood.models.sub_modules.int_middle_trace_receiver import MiddleTraceReceiver
 from opencood.models.sub_modules.int_protected_middle import ProtectedMiddle, aligned_confidence, sparse_returns
 from opencood.models.sub_modules.int_reserved_sender import ReservedEdge
 from opencood.models.sub_modules.int_nonzero_fusion import NonzeroFusionCache
@@ -72,11 +73,15 @@ class SilencePolicy:
 
 
 class InspectMiddle(FineInnovationUpdate):
-    def __call__(self, *args):
-        self.result = super().__call__(*args)
+    def __call__(self,core,fine,old,valid,coverage,state,meta,dt,spatial_shape,bounds):
+        self.result = super().__call__(core,fine,old,valid,coverage,state,meta,dt,spatial_shape,bounds)
         if getattr(self,'drive',None) is not None:
             fine,old,_,_=self.inputs
             self.drive_ops=self.drive.apply(fine,old,self.refine_skip.extra,self.result)
+            if hasattr(self,'trace_receiver'):
+                area=block_lidar_range(bounds,spatial_shape,old.shape[-2:],4)
+                self.trace_stats=self.trace_receiver.apply(fine,old,valid,~self.skip,self.refine_skip.extra,
+                                                          self.result,self.drive.weight,area,meta['pose'])
         return self.result
 
 
@@ -126,7 +131,9 @@ def run(args):
             routes = dict(tile=('tile','silent'))
         elif args.drive:
             routes = dict(tile=('tile','silent'),old=('tile','silent'),drive=('tile','silent'))
-            if args.trace_audit:
+            if args.trace_readout:
+                routes={n:('tile','silent') for n in ('drive','bias','sign','shuffled','amplitude')}
+            elif args.trace_audit:
                 routes={'drive':('tile','silent')}
             elif args.group_factorial:
                 routes=dict(point_full=('point','base'),tile_full=('tile','base'),
@@ -153,6 +160,7 @@ def run(args):
     fit = DriveFit() if args.fit_drive else None
     trace_audit=CorrectionTraceAudit() if args.trace_audit else None
     drive_fit = read(args.drive/'report.json') if args.drive else None
+    trace_readout=read(args.trace_readout)['readout'] if args.trace_readout else None
     for n in names:
         key,mode = routes[n]
         view = EdgeView(paired,key)
@@ -161,8 +169,10 @@ def run(args):
         gate.audit_targets = args.target_audit
         if n in guarded:gate.guard=ProtectedMiddle(n)
         model.coarse_executor = InspectMiddle(False,model.coarse_executor.receive_fine,gate)
-        if drive_fit and (n in guarded or args.reserve or n in ('old','drive','point_drive')):
+        if drive_fit and (n in guarded or args.reserve or trace_readout or n in ('old','drive','point_drive')):
             model.coarse_executor.drive=SilentDrive(drive_fit['fit']['coefficients'],'old' if n=='old' else 'drive')
+        if trace_readout and n!='drive':
+            model.coarse_executor.trace_receiver=MiddleTraceReceiver(n,trace_readout,args.audit)
         models[n],policies[n] = model,gate
     costs = conv_costs(core)
     data, stream = loader(data_rows,cfg,0,303)
@@ -170,7 +180,8 @@ def run(args):
         data=identity,scenes=sorted({r['scene'] for r in data_rows}),calibration=digest(args.calibration/'report.json'),
         threshold=12,cap=paired.cap,book=digest(book_path),cost_per_site=costs,training=False,audit=args.audit,
         grouped=args.grouped,charge=args.charge,routes=routes,params=sum(p.numel() for p in source.parameters()),
-        drive_fit=digest(args.drive/'report.json') if args.drive else None,fit_drive=args.fit_drive))
+        drive_fit=digest(args.drive/'report.json') if args.drive else None,fit_drive=args.fit_drive,
+        trace_readout=digest(args.trace_readout) if args.trace_readout else None))
     labelled=ordinary=0
     with (args.output/'frames.jsonl').open('x',buffering=1) as log:
         for i,(sample,trace) in enumerate(zip(stream,traces)):
@@ -198,6 +209,8 @@ def run(args):
             row=dict(frame=meta['frame'],scene=meta['scene'],segment=meta['segment'],refresh=reason,arms={})
             for n,model in models.items():
                 prev,selector=states[n],selectors[n]
+                if reason is not None and hasattr(model.coarse_executor,'trace_receiver'):
+                    model.coarse_executor.trace_receiver.reset()
                 if n in guarded and reason is None:
                     guard=policies[n].guard
                     guard.sparse=sparse
@@ -222,6 +235,9 @@ def run(args):
                     if getattr(exe,'drive',None) is not None:
                         rec['drive_ops']=exe.drive_ops
                         rec['core']+=exe.drive_ops
+                    if hasattr(exe,'trace_receiver'):
+                        rec['trace']=exe.trace_stats
+                        rec['core']+=exe.trace_stats['record_ops']+exe.trace_stats['read_ops']
                     assert exe.counts==support_counts(~exe.skip)
                     if n in guarded:
                         baseline=gate.base & ~(gate.extra|gate.guard.chosen)
@@ -241,6 +257,12 @@ def run(args):
                                 area=block_lidar_range(source.bounds,spatial.shape[-2:],old.shape[-2:],4)
                                 trace_audit.observe(meta,area,~exe.skip,valid,gate.extra,exe.result,predicted,full)
                             held=torch.where(gate.extra,predicted,held)
+                            if hasattr(exe,'trace_receiver'):
+                                receiver=exe.trace_receiver
+                                ids=receiver.audit_ids
+                                if len(ids):
+                                    flat=held[0].flatten(1)
+                                    flat[:,ids]=(flat[:,ids]+receiver.audit_adjustment).clamp_min(0)
                         ref=torch.where(exe.skip,held,full)
                         err=(ref-exe.result).abs()
                         assert torch.allclose(ref,exe.result,atol=1e-4,rtol=1e-5),(meta['frame'],float(err.max()))
@@ -293,10 +315,13 @@ if __name__=='__main__':
     p.add_argument('--matched-protection',action='store_true')
     p.add_argument('--group-factorial',action='store_true')
     p.add_argument('--trace-audit',action='store_true')
+    p.add_argument('--trace-readout',type=Path)
     p.add_argument('--remainder',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
+    if a.trace_readout and (not a.drive or a.trace_audit or a.group_factorial or a.protect or a.reserve):
+        p.error('trace readout requires the frozen grouped drive')
     if a.trace_audit and (not a.audit or not a.drive or a.group_factorial or a.reserve or a.protect):
         p.error('trace audit requires the original frozen grouped drive on training data')
     if a.matched_protection and not a.protect:p.error('matched protection requires the protected middle')
