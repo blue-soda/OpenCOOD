@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 from opencood.hypes_yaml.yaml_utils import load_yaml
 from opencood.models.sub_modules.int_block_cache import block_lidar_range
-from opencood.models.sub_modules.int_compact_middle_update import compact_update, conv_costs, supports
+from opencood.models.sub_modules.int_compact_middle_update import TILE, compact_update, conv_costs, select_skip, supports, tile_sum
 from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.models.sub_modules.int_pyramid_regions import plan_host_coalesced_refresh
 from opencood.tools.calibrate_int_middle_budget import detector,training_rows,aligned_previous,event_counts
@@ -22,25 +22,6 @@ from opencood.tools.probe_int_deep_block_cache import spatial_input
 from opencood.tools.probe_int_middle_motion import occupancy
 from opencood.tools.run_int_ego import loader,to_device,write_json
 from opencood.tools.train_int_deep_block_adapt import trace_masks,local_request
-
-
-TILE=8
-def tile_sum(x):
-    return (F.avg_pool2d(x,TILE)*TILE**2).flatten()
-
-
-def select_skip(cost,eligible,frame,shape):
-    h,w=shape
-    hw=(h//TILE,w//TILE)
-    ids=eligible.nonzero().flatten()
-    # Independent tie rule uses a permuted flat tile index.
-    tie=((ids+int(frame))*2654435761)%(1<<32)
-    ids=ids[tie.argsort()]
-    chosen=ids[cost[ids].argsort(stable=True)[:len(eligible)//4]]
-    grid=eligible.new_zeros(hw).flatten()
-    grid[chosen]=True
-    return F.pad(grid.view(1,1,*hw).repeat_interleave(TILE,-2).repeat_interleave(TILE,-1),
-                 (0,w%TILE,0,h%TILE))
 
 
 def inspect(source,spatial,state,prev,meta,ego,engineering):

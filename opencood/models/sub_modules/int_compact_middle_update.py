@@ -1,4 +1,5 @@
 """Compact ordinary middle update with exact two-layer spatial support."""
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -84,3 +85,22 @@ def compact_update(core,fine,old,valid,dt,active,held):
     result=held.clone()
     result[0].flatten(1)[:,ids]=torch.where(visible,older+z*(candidate-older),candidate).T
     return result,dict(output=len(ids),radius1=len(one),radius2=len(two))
+
+
+TILE=8
+def tile_sum(x):
+    return (F.avg_pool2d(x,TILE)*TILE**2).flatten()
+
+
+def select_skip(cost,eligible,frame,shape):
+    h,w=shape
+    hw=(h//TILE,w//TILE)
+    ids=eligible.nonzero().flatten()
+    # Independent tie rule uses a permuted flat tile index.
+    tie=((ids+int(frame))*2654435761)%(1<<32)
+    order=np.lexsort((tie.cpu().numpy(),cost[ids].cpu().numpy()))
+    chosen=ids[torch.as_tensor(order[:len(eligible)//4],device=ids.device)]
+    grid=eligible.new_zeros(hw).flatten()
+    grid[chosen]=True
+    return F.pad(grid.view(1,1,*hw).repeat_interleave(TILE,-2).repeat_interleave(TILE,-1),
+                 (0,w%TILE,0,h%TILE))
