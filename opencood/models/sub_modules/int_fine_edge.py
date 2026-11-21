@@ -6,13 +6,17 @@ from opencood.models.sub_modules.int_feature_memory import warp_bev
 
 
 class FineEdgeSender:
-    def __init__(self, bounds, dense=False):
+    def __init__(self, bounds, dense=False, send_on='all'):
+        if send_on not in ('all','ordinary','refresh'):
+            raise ValueError('Unknown fine edge phase')
         self.bounds = bounds
         self.dense = dense
+        self.send_on = send_on
         self.quantum = .25
 
     def begin(self, previous, meta, spatial_shape, reason):
         self.previous = None if reason else previous
+        self.phase = 'refresh' if reason else 'ordinary'
         self.pose = meta['pose']
         self.shape = spatial_shape
         self.levels = None
@@ -43,6 +47,8 @@ class FineEdgeSender:
                 self.levels.view(-1).index_add_(0,indices,changes)
                 assert torch.equal(self.levels,target)
         self.previous = None
+        if self.send_on!='all' and self.phase!=self.send_on:
+            return value
         return self.levels.float()*self.quantum
 
     def commit(self, state, drop):

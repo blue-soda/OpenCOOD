@@ -36,9 +36,12 @@ def run(args):
     checks = [json.loads(line) for line in (args.reference/'frames.jsonl').read_bytes().splitlines()]
     assert members==read(args.prior/'contract.json')['members']
     modes = ('continuous','carry','dense') if args.engineering else ('continuous','carry','drop')
+    if args.phase_test:
+        modes = ('continuous','ordinary','refresh')
     models = {}
     for mode in modes:
-        sender = None if mode=='continuous' else FineEdgeSender(source.bounds,dense=mode=='dense')
+        phase = mode if mode in ('ordinary','refresh') else 'all'
+        sender = None if mode=='continuous' else FineEdgeSender(source.bounds,dense=mode=='dense',send_on=phase)
         model = CrossScaleCache(source,'sparse_amplitude',planner=plan_host_coalesced_refresh,
                                 deep_projector=DeepSpikeProjection(source.core.deblocks[2],q,'amplitude'),
                                 fine_to_coarse=sender)
@@ -88,7 +91,7 @@ def run(args):
                 if sender is not None:
                     sender.commit(state,name=='drop')
                     entry['fine']=sender.ledger
-                if name=='carry':
+                if name in ('carry','ordinary','refresh'):
                     ref_pred=pred
                     assert torch.equal(states['continuous']['value'],state['value'])
                 if name=='dense':
@@ -115,6 +118,7 @@ if __name__=='__main__':
     for name in ('inputs','scans','prior','reference','output'):
         p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--engineering',action='store_true')
+    p.add_argument('--phase-test',action='store_true')
     args=p.parse_args()
     args.output.mkdir(exist_ok=False,parents=True)
     run(args)
