@@ -59,7 +59,7 @@ def run(args):
     models = {n: build(source, quantum, views[n]) for n in paths}
     costs = conv_costs(core)
     if args.mode == 'dev':
-        rows, traces, identity = complete_scenes(args, short)
+        rows, traces, identity = complete_scenes(args, short, remainder=args.remainder)
     else:
         rows, traces, identity = training_rows(base, book_path, calibration)
     heads = {n: copy.deepcopy(core.reg_head).eval() for n in paths} if not calibration else {}
@@ -82,7 +82,8 @@ def run(args):
             features.append(inputs[0].detach())
         hook = core.reg_head.register_forward_pre_hook(capture)
     data, stream = loader(rows, cfg, 0, 303)
-    write_json(args.output/'contract.json', dict(mode=args.mode, native_grants=args.native, thresholds=thresholds, seed=303,
+    write_json(args.output/'contract.json', dict(mode=args.mode, native_grants=args.native, remainder=args.remainder,
+        thresholds=thresholds, seed=303,
         scenes=sorted({r['scene'] for r in rows}), data=identity, book=digest(book_path), fit=fit_hash,
         calibration=None if calibration else digest(args.calibration/'report.json'),
         params_per_arm=0 if not heads else sum(p.numel() for p in heads[paths[0]].parameters()),
@@ -134,6 +135,9 @@ def run(args):
                     elif gt is not None:
                         rec['frozen'] = score(data.post, ego, pred, gt, record_matches=True)
                         rec['adapted'] = score(data.post, ego, dict(pred, rm=heads[n](x)), gt, record_matches=True)
+                        if args.remainder and n in ('carry','reset'):
+                            other = 'reset' if n == 'carry' else 'carry'
+                            rec['swapped'] = score(data.post, ego, dict(pred, rm=heads[other](x)), gt, record_matches=True)
                 row['arms'][n] = rec
             if calibration:
                 row['arms'] = paired.stats
@@ -146,8 +150,10 @@ def run(args):
                     assert a['addresses'] == b['addresses'] == c['addresses'] and a['bytes'] == b['bytes']
                     assert 0 <= a['bytes'] - d['bytes'] < 12
             log.write(json.dumps(row)+'\n')
-    assert i+1 == len(rows) == (1014 if args.mode == 'dev' else 211)
-    assert labelled == (458 if args.mode == 'dev' else 0 if calibration else 168)
+    expected_scans, expected_labels = (211, 0 if calibration else 168)
+    if args.mode == 'dev':
+        expected_scans, expected_labels = (4780, 1280) if args.remainder else (1014, 458)
+    assert i+1 == len(rows) == expected_scans and labelled == expected_labels
     result = dict(status='COMPLETED', scans=len(rows), labelled=labelled, ordinary=ordinary,
                   addresses=totals, steps_per_arm=labelled if opts else 0)
     if calibration:
@@ -166,11 +172,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('mode', choices=['calibration','fit','dev'])
     parser.add_argument('--native', action='store_true', help='each development arm grants its own traffic')
+    parser.add_argument('--remainder', action='store_true', help='fixed paired transfer on the other validation scenes')
     for k in ('long-base','output','vehicle','calibration','fit'):
         parser.add_argument('--'+k, type=Path, required=k in ('long-base','output'))
     args = parser.parse_args()
     if args.native and args.mode != 'dev':
         parser.error('native grants are a development control')
+    if args.remainder and (args.mode != 'dev' or args.native):
+        parser.error('transfer requires paired frozen inference')
     if args.mode != 'calibration' and args.calibration is None:
         parser.error('calibration result required')
     if args.mode == 'dev' and (args.fit is None or args.vehicle is None):
