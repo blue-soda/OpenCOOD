@@ -125,7 +125,10 @@ def run(args):
             routes = dict(tile=('tile','silent'))
         elif args.drive:
             routes = dict(tile=('tile','silent'),old=('tile','silent'),drive=('tile','silent'))
-            if args.protect:
+            if args.group_factorial:
+                routes=dict(point_full=('point','base'),tile_full=('tile','base'),
+                            point_drive=('point','silent'),drive=('tile','silent'))
+            elif args.protect:
                 routes={n:('tile','silent') for n in ('combined','prior','sparse','innovation','random')}
                 if args.matched_protection:
                     routes=dict(combined=('tile','silent'),random=('tile','silent'),drive=('tile','silent'),point=('point','silent'))
@@ -154,8 +157,8 @@ def run(args):
         gate.audit_targets = args.target_audit
         if n in guarded:gate.guard=ProtectedMiddle(n)
         model.coarse_executor = InspectMiddle(False,model.coarse_executor.receive_fine,gate)
-        if drive_fit and (n in guarded or args.reserve or n in ('old','drive')):
-            model.coarse_executor.drive=SilentDrive(drive_fit['fit']['coefficients'],'drive' if args.protect or args.reserve else n)
+        if drive_fit and (n in guarded or args.reserve or n in ('old','drive','point_drive')):
+            model.coarse_executor.drive=SilentDrive(drive_fit['fit']['coefficients'],'old' if n=='old' else 'drive')
         models[n],policies[n] = model,gate
     costs = conv_costs(core)
     data, stream = loader(data_rows,cfg,0,303)
@@ -278,12 +281,14 @@ if __name__=='__main__':
     p.add_argument('--protect',action='store_true')
     p.add_argument('--reserve',action='store_true')
     p.add_argument('--matched-protection',action='store_true')
+    p.add_argument('--group-factorial',action='store_true')
     p.add_argument('--remainder',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
     if a.matched_protection and not a.protect:p.error('matched protection requires the protected middle')
-    if a.remainder and (a.audit or not a.matched_protection):p.error('use the matched frozen transfer configuration')
+    if a.group_factorial and (not a.drive or a.protect or a.reserve):p.error('group factorial requires only the frozen grouped drive')
+    if a.remainder and (a.audit or not (a.matched_protection or a.group_factorial)):p.error('use a matched frozen transfer configuration')
     if a.protect and not a.drive:p.error('protected updates require the frozen silent drive')
     if a.reserve and (not a.drive or a.protect):p.error('reserved messages require grouped drive without receiver protection')
     if a.charge and not a.grouped:p.error('spatial charge requires grouped routing')
