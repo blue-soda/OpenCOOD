@@ -19,6 +19,6 @@ class FineCodebookTest(unittest.TestCase):
             old=torch.arange(8,dtype=torch.int)
             sent,ledger=sender.deliver(old,torch.arange(8),changes)
             self.assertTrue(torch.equal(sent,expected))
-            self.assertTrue(torch.equal(old,torch.arange(8)+expected))
+            self.assertTrue(torch.equal(old,torch.arange(8,dtype=old.dtype)+expected))
             self.assertEqual(ledger['bytes'],3)
 
