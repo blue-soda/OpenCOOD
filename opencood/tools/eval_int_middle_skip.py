@@ -6,6 +6,8 @@ import subprocess
 
 import torch
 
+from opencood.models.sub_modules.int_block_cache import block_lidar_range
+from opencood.models.sub_modules.int_deep_phase_projection import DeepPhaseProjection
 from opencood.models.sub_modules.int_compact_middle_update import FineInnovationUpdate,conv_costs
 from opencood.models.sub_modules.int_middle_decay_projection import MiddleDecayProjection
 from opencood.tools.calibrate_int_middle_budget import detector
@@ -66,16 +68,17 @@ def run(inputs,scans,prior,out):
                     entry.update(support=m.counts,skipped=int(m.skip.sum()),gain=m.gain)
                     # Independently align previous integer levels and reconstruct messages on held sites.
                     shape=state['coarse'].shape
-                    from opencood.models.sub_modules.int_block_cache import block_lidar_range
                     area=block_lidar_range(source.bounds,spatial.shape[-2:],shape[-2:],4)
                     # Call base coordinate router, without preparing the production receiver a second time.
-                    from opencood.models.sub_modules.int_deep_phase_projection import DeepPhaseProjection
                     _,_,(idx,missing)=DeepPhaseProjection.align_task(receiver,previous['coarse'][:,:1],previous['pose'],meta['pose'],area)
                     old=previous['coarse_projection'][:,:shape[1]].flatten(2).index_select(2,idx).view(shape).masked_fill_(missing,0)
                     delta=state['coarse_projection'][:,:shape[1]]-old
-                    units=delta.abs().sum(dtype=torch.float64)/receiver.den
-                    assert float(units)==entry['middle']['units']
-                    entry['held_units']=int(delta.masked_select(m.skip).abs().sum()/receiver.den)
+                    total=int(delta.abs().sum())
+                    expected=entry['middle']['units']*receiver.den
+                    assert total==expected,(frame,name,total,expected)
+                    held_total=int(delta.masked_select(m.skip).abs().sum())
+                    assert held_total%receiver.den==0
+                    entry['held_units']=held_total//receiver.den
                     if name=='phase_phase':
                         fine,old,valid,held=m.inputs
                         dense=model.core.coarse_update(model.core.coarse_light(fine),old,valid)
