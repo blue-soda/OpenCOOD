@@ -79,7 +79,7 @@ class NativeEventWriter:
             total = increment
         valid = (total.abs() >= .125) & ((total > 0) | (prior > 0))
         eligible = valid.flatten().nonzero().flatten()
-        grant = self.budget['addresses']
+        grant = self.budget(total.numel()) if callable(self.budget) else self.budget['addresses']
         count = min(len(eligible), grant)
         if count < len(eligible):
             scores = total.flatten()[eligible].abs()
@@ -98,6 +98,8 @@ class NativeEventWriter:
         units.view(-1)[eligible] = released
         # Convert to the detector's actual quarter-grid, including unserved cells.
         output_flat[:, ids] = (prior + units) * .25
+        if getattr(self, 'record_training_mask', False):
+            self.selected = units != 0
         self.expected = units
         if integrate:
             remaining = total - units*.25
@@ -113,7 +115,7 @@ class NativeEventWriter:
         # Existing task drive already counted its two affine maps and residual adds.
         # Two power-of-two scales for the trained ternary correction, then difference,
         # prior scale, grid increment, grid decode, and (for carry) integrate/scale/reset.
-        return cost + (6 + 3*int(integrate))*units.numel() + (2*count if self.mode=='amplitude' else 0)
+        return cost + (4 + 2*int(self.drive.name=='pulse') + 3*int(integrate))*units.numel() + (2*count if self.mode=='amplitude' else 0)
 
     def observe_events(self, events):
         ids = self.executor.refine_skip.extra.flatten().nonzero().flatten()
