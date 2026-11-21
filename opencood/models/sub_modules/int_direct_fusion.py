@@ -29,9 +29,14 @@ extern "C" __global__ void fusion_nonzero(
             int end = row[pixel+1];
             for (int i = row[pixel]; i < end; ++i) {
                 float code = codes[i], w = weight[(tap*128+channel[i])*128+oc];
+#ifdef WEIGHTED_CONTROL
+                value = __fmaf_rn(code,w,value);
+                units += (code == 1.f || code == -1.f);
+#else
                 if (code == 1.f) { value = __fadd_rn(value,w); ++units; }
                 else if (code == -1.f) { value = __fsub_rn(value,w); ++units; }
                 else { value = __fmaf_rn(code,w,value); }
+#endif
                 ++count;
             }
         }
@@ -43,8 +48,8 @@ extern "C" __global__ void fusion_nonzero(
 
 
 class SignedKernel(NonzeroFusionKernel):
-    def __init__(self):
-        super().__init__(_SOURCE)
+    def __init__(self, weighted=False):
+        super().__init__(('#define WEIGHTED_CONTROL\n' if weighted else '') + _SOURCE)
 
     def update(self, codes, weight, sites, output, incremental):
         if not len(sites):
@@ -66,7 +71,7 @@ class SignedKernel(NonzeroFusionKernel):
 
 
 class DirectFusion(nn.Module):
-    def __init__(self, conv, quanta, verify):
+    def __init__(self, conv, quanta, verify, weighted_check=False):
         super().__init__()
         if (conv.in_channels, conv.out_channels, conv.kernel_size, conv.padding,
                 conv.stride, conv.dilation, conv.groups) != (384,128,(3,3),(1,1),(1,1),(1,1),1):
@@ -80,6 +85,7 @@ class DirectFusion(nn.Module):
         self.register_buffer('kernels', torch.stack([
             w.permute(2,3,1,0).contiguous() for w in folded.split(128, dim=1)]))
         self.kernel = SignedKernel()
+        self.weighted = SignedKernel(weighted=True) if weighted_check else None
 
     def begin(self, prior, reason):
         self.previous = None if reason or prior is None else prior['branch_fusion']
@@ -106,12 +112,20 @@ class DirectFusion(nn.Module):
         outputs, branches = [], []
         for i in range(3):
             out = (value.new_empty(h*w,128) if self.previous is None else old_outputs[i].clone())
+            if self.weighted:
+                control = torch.empty_like(out) if self.previous is None else old_outputs[i].clone()
             static_ids = (~use_delta[i]).flatten().nonzero().flatten()
             st, su = self.kernel.update(levels[i], self.kernels[i], static_ids, out, False)
+            if self.weighted:
+                assert self.weighted.update(levels[i], self.kernels[i], static_ids, control, False) == (st,su)
             dt = du = 0
             if change is not None:
                 active = (use_delta[i] & (delta[i] > 0)).flatten().nonzero().flatten()
                 dt, du = self.kernel.update(change[i], self.kernels[i], active, out, True)
+                if self.weighted:
+                    assert self.weighted.update(change[i], self.kernels[i], active, control, True) == (dt,du)
+            if self.weighted:
+                assert torch.equal(out,control)
             branches.append(dict(static_chosen=st, delta_chosen=dt, one_static=su, one_delta=du))
             outputs.append(out)
         result = (outputs[0]+outputs[1]+outputs[2]).T.reshape(1,128,h,w)
@@ -121,6 +135,8 @@ class DirectFusion(nn.Module):
         self.previous = None
         self.ledger = dict(branches=branches, cache_bytes=levels.numel()*4+sum(o.numel()*4 for o in outputs),
                            merge_add=(2+int(self.bias is not None))*outputs[0].numel())
+        if self.weighted:
+            self.ledger['weighted_equal_branches'] = len(outputs)
         if self.verify:
             reference = F.conv2d(n.float()*self.quanta, self.weight, self.bias, padding=1)
             self.ledger['max_dense_error'] = float((result-reference).abs().max())

@@ -40,7 +40,7 @@ def run(args):
     grid = read(args.quanta) if args.quanta else None
     if grid:
         assert grid['status']=='COMPLETED' and grid['scans']==211 and grid['labels']==0
-    layer = (DirectFusion(fusion[0],grid['quanta'],audit) if args.direct else
+    layer = (DirectFusion(fusion[0],grid['quanta'],audit,args.weighted_check) if args.direct else
              BranchFusion(fusion[0],verify=audit)).eval()
     fusion[0] = layer
     probe = None
@@ -68,7 +68,8 @@ def run(args):
         route=args.route,partition=args.partition,input_hashes=hashes,book=digest(book_path),seed=303,
         calibration=digest(args.calibration/'report.json') if paired else None,
         scenes=sorted({r['scene'] for r in rows}),params=sum(p.numel() for p in source.parameters()),
-        collect_rms=args.collect_rms,quanta=digest(args.quanta) if args.quanta else None,direct=args.direct))
+        collect_rms=args.collect_rms,quanta=digest(args.quanta) if args.quanta else None,
+        direct=args.direct,weighted_check=args.weighted_check))
     ordinary=labels=0
     with (args.output/'frames.jsonl').open('x',buffering=1) as log:
         for i,(sample,trace) in enumerate(zip(stream,traces)):
@@ -137,11 +138,14 @@ if __name__=='__main__':
     p.add_argument('--partition',choices=['train','dev','transfer'],required=True)
     p.add_argument('--collect-rms',action='store_true')
     p.add_argument('--direct',action='store_true')
+    p.add_argument('--weighted-check',action='store_true')
     p.add_argument('--quanta',type=Path)
     for k in ('long-base','vehicle','calibration','output'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','output'))
     a=p.parse_args()
     if a.direct and not a.quanta:p.error('direct signed fusion needs a frozen lattice')
+    if a.weighted_check and (not a.direct or a.partition!='train'):
+        p.error('the weighted control is a training-side direct fusion audit')
     if (a.collect_rms or a.quanta) and a.route!='half':p.error('fusion lattice requires the frozen half route')
     if a.collect_rms and (a.partition!='train' or a.quanta):p.error('RMS calibration requires raw training projections')
     if a.route=='threshold' and (a.partition!='train' or a.calibration is None):
