@@ -13,6 +13,7 @@ from opencood.models.sub_modules.int_compact_middle_update import FineInnovation
 from opencood.models.sub_modules.int_branch_fusion import BranchFusion
 from opencood.models.sub_modules.int_block_cache import block_lidar_range
 from opencood.models.sub_modules.int_grouped_receiver import GroupedEdge
+from opencood.models.sub_modules.int_silent_drive import DriveFit, SilentDrive
 from opencood.models.sub_modules.int_nonzero_fusion import NonzeroFusionCache
 from opencood.models.sub_modules.int_silent_receiver import PairedEdge, EdgeView
 from opencood.tools.check_int_deep_spike_stream import prepare_stream, read
@@ -67,6 +68,9 @@ class SilencePolicy:
 class InspectMiddle(FineInnovationUpdate):
     def __call__(self, *args):
         self.result = super().__call__(*args)
+        if getattr(self,'drive',None) is not None:
+            fine,old,_,_=self.inputs
+            self.drive_ops=self.drive.apply(fine,old,self.refine_skip.extra,self.result)
         return self.result
 
 
@@ -108,6 +112,10 @@ def run(args):
                           fp_charge=('float_bytes_charge','silent'),charge_base=('charge','base'))
         elif args.controls:
             routes = dict(point_base=('point','base'),tile_score=('tile','continuous'))
+        elif args.fit_drive:
+            routes = dict(tile=('tile','silent'))
+        elif args.drive:
+            routes = dict(tile=('tile','silent'),old=('tile','silent'),drive=('tile','silent'))
     else:
         paired = PairedEdge(source.bounds, book['cap']//2, book['levels'], [12], calibration=True)
         routes = {n:('12',n) for n in ('base','silent','continuous')}
@@ -119,6 +127,8 @@ def run(args):
     fusion[0] = layer
     names = tuple(routes)
     models, policies = {}, {}
+    fit = DriveFit() if args.fit_drive else None
+    drive_fit = read(args.drive/'report.json') if args.drive else None
     for n in names:
         key,mode = routes[n]
         view = EdgeView(paired,key)
@@ -126,13 +136,16 @@ def run(args):
         gate = SilencePolicy(paired.arms[key],mode)
         gate.audit_targets = args.target_audit
         model.coarse_executor = InspectMiddle(False,model.coarse_executor.receive_fine,gate)
+        if drive_fit and n in ('old','drive'):
+            model.coarse_executor.drive=SilentDrive(drive_fit['fit']['coefficients'],n)
         models[n],policies[n] = model,gate
     costs = conv_costs(core)
     data, stream = loader(data_rows,cfg,0,303)
     write_json(args.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         data=identity,scenes=sorted({r['scene'] for r in data_rows}),calibration=digest(args.calibration/'report.json'),
         threshold=12,cap=paired.cap,book=digest(book_path),cost_per_site=costs,training=False,audit=args.audit,
-        grouped=args.grouped,charge=args.charge,routes=routes,params=sum(p.numel() for p in source.parameters())))
+        grouped=args.grouped,charge=args.charge,routes=routes,params=sum(p.numel() for p in source.parameters()),
+        drive_fit=digest(args.drive/'report.json') if args.drive else None,fit_drive=args.fit_drive))
     labelled=ordinary=0
     with (args.output/'frames.jsonl').open('x',buffering=1) as log:
         for i,(sample,trace) in enumerate(zip(stream,traces)):
@@ -167,10 +180,14 @@ def run(args):
                     exe,gate=model.coarse_executor,policies[n]
                     rec.update(gate.stats,executed=exe.counts,middle=sum(costs[k]*v for k,v in exe.counts.items()))
                     rec['core']+=rec['middle']
+                    if getattr(exe,'drive',None) is not None:
+                        rec['drive_ops']=exe.drive_ops
+                        rec['core']+=exe.drive_ops
                     assert exe.counts==support_counts(~exe.skip)
                     if args.audit:
                         fine,old,valid,held=exe.inputs
                         full=core.coarse_update(core.coarse_light(fine),old,valid)
+                        if fit:fit.observe(meta['scene'],fine,old,gate.extra,full)
                         ref=torch.where(exe.skip,held,full)
                         err=(ref-exe.result).abs()
                         assert torch.allclose(ref,exe.result,atol=1e-4,rtol=1e-5),(meta['frame'],float(err.max()))
@@ -192,8 +209,9 @@ def run(args):
             log.write(json.dumps(row)+'\n')
     assert i+1==len(data_rows)==(211 if args.audit else 1014)
     assert labelled==(0 if args.audit else 458)
-    write_json(args.output/'report.json',dict(status='COMPLETED',scans=len(data_rows),labels=labelled,
-        ordinary=ordinary,optimizer_steps=0))
+    report=dict(status='COMPLETED',scans=len(data_rows),labels=labelled,ordinary=ordinary,optimizer_steps=0)
+    if fit:report['fit']=fit.finish()
+    write_json(args.output/'report.json',report)
 
 
 if __name__=='__main__':
@@ -203,12 +221,17 @@ if __name__=='__main__':
     p.add_argument('--charge',action='store_true')
     p.add_argument('--controls',action='store_true')
     p.add_argument('--target-audit',action='store_true')
+    p.add_argument('--fit-drive',action='store_true')
+    p.add_argument('--drive',type=Path)
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
     if a.charge and not a.grouped:p.error('spatial charge requires grouped routing')
     if a.controls and (not a.grouped or a.charge):p.error('controls require the uncharged grouped sender')
     if a.target_audit and (not a.controls or a.audit):p.error('target audit requires development controls')
+    if a.fit_drive or a.drive:
+        if not a.grouped or a.charge or a.controls or bool(a.fit_drive)!=a.audit or (a.fit_drive and a.drive):
+            p.error('fit the grouped silent drive on training scans and apply only to development')
     if not a.audit and a.vehicle is None:p.error('development evaluation needs vehicle directory')
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
