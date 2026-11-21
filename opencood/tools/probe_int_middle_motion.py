@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from opencood.hypes_yaml.yaml_utils import load_yaml
 from opencood.models.sub_modules.int_block_cache import block_lidar_range
 from opencood.models.sub_modules.int_feature_memory import warp_bev
+from opencood.models.sub_modules.int_deep_spike_projection import DeepSpikeProjection
 from opencood.tools.calibrate_int_middle_budget import detector, training_rows
 from opencood.tools.check_int_deep_spike_stream import build_source, read
 from opencood.tools.check_int_temporal_feature import model_digest
@@ -118,8 +119,58 @@ def probe(history, target, meta, area):
     return rec
 
 
+def event_pair(delta):
+    return [int(delta.abs().sum(dtype=torch.float64)), int(delta.count_nonzero())]
+
+
+class DecayReceiver:
+    """Exact integer linear cache for dyadically scaled, signed innovation messages."""
+    def __init__(self, block):
+        q=block[0].weight.new_full((block[0].in_channels,), .25)
+        self.project=DeepSpikeProjection(block,q,'amplitude')
+
+    def step(self,value,previous,meta,area,age):
+        target=value/.25
+        level=target.round()
+        if age==0:
+            self.denominator=1
+            self.numerator=level.long()
+            self.linear=self.project.dense_linear(self.numerator)
+            return dict(denominator=1,refresh_dense_mac=level.numel()*self.linear.shape[1])
+        prior,_,(index,missing)=self.project.align_task(previous['levels'],previous['pose'],meta['pose'],area)
+        def align(integer):
+            return integer.flatten(2).index_select(2,index).view_as(integer).masked_fill_(missing,0)
+        old=align(self.numerator)
+        linear=align(self.linear)
+        leak=age in (1,2,3)
+        gain=.875 if leak else 1.
+        rounded=(gain*prior).round()
+        if leak:
+            old.mul_(7)
+            linear.mul_(7)
+            self.denominator*=8
+        den=self.denominator
+        assert den<=512
+        events=(target-old.float()/den).round().long()
+        self.numerator=old+events*den
+        # Scale the event amplitude to the numerator coordinate of this cycle.
+        # Integer GEMM is a separate exact reference and excluded from candidate costs.
+        bound=int(self.numerator.abs().max())*self.project.weight_bound
+        assert bound<2**51
+        self.project.event_linear(events*den,linear)
+        assert torch.equal(linear,self.project.dense_linear(self.numerator))
+        self.linear=linear
+        err=(self.numerator.float()/den-target).abs()
+        assert float(err.max())<=.50001
+        return dict(denominator=den,zero=event_pair(level-prior),rounded=event_pair(level-rounded),
+                    prior_maintenance=event_pair(rounded-prior),factor=event_pair(events),
+                    numerator_bound=bound,level_scalars=level.numel(),linear_scalars=linear.numel(),
+                    max_error_q=float(err.max()),sum_error_q=float(err.sum(dtype=torch.float64)),
+                    baseline_error_q=float((level-target).abs().sum(dtype=torch.float64)))
+
+
 @torch.no_grad()
-def run(inputs, training, counts, out):
+def run(inputs, training, counts, out, receiver=False):
     torch.manual_seed(303)
     torch.backends.cuda.matmul.allow_tf32=False
     torch.backends.cudnn.allow_tf32=False
@@ -138,13 +189,14 @@ def run(inputs, training, counts, out):
     assert model_digest(source)==ref['source_frozen_digest']
     q,_,_=load_quantum(inputs/'quantum.json',plan,512)
     model=detector(source,q,'carry',.25)
+    decoder=DecayReceiver(source.core.deblocks[1]) if receiver else None
     _,stream=loader(rows,cfg,0,303)
     write_json(out/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         train_plan=digest(training/'train_plan.json'), inputs={f:digest(inputs/f) for f in
         ('parent.pth','protected_light_final.pth','readout.pth','traces.json','quantum.json','config.yaml')},
         source=ref['source_frozen_digest'], cal=TRAIN_COUNTS, region_order=['last_occupied','last_empty','new'],
         metrics=['units','addresses'], offsets=OFFSETS, gains=GAINS, descriptor_channels=list(range(0,256,32)),
-        seed=303, tile=TILE, labels_used=0,quantum=.25,device=torch.cuda.get_device_name(),
+        receiver=receiver, seed=303, tile=TILE, labels_used=0,quantum=.25,device=torch.cuda.get_device_name(),
         params=sum(p.numel() for p in source.parameters()),torch=torch.__version__))
     n=0
     history=deque(maxlen=2)
@@ -164,12 +216,19 @@ def run(inputs, training, counts, out):
             if rec['refresh'] is None:
                 age+=1
                 area=block_lidar_range(source.bounds,spatial.shape[-2:],level.shape[-2:],4)
-                rec.update(probe(history,level,meta,area),age=age)
-                units,addresses=map(sum,zip(*rec['zero']))
+                if receiver:
+                    rec.update(decoder.step(state['coarse'],history[-1],meta,area,age),age=age)
+                    units,addresses=rec['zero']
+                else:
+                    rec.update(probe(history,level,meta,area),age=age)
+                    units,addresses=map(sum,zip(*rec['zero']))
                 assert [addresses,units]==check['carry'][0], rec['frame']
-                assert sum(v[0] for v in rec['oracle'])<=units
+                if not receiver:
+                    assert sum(v[0] for v in rec['oracle'])<=units
             else:
                 age=0
+                if receiver:
+                    rec.update(decoder.step(state['coarse'],None,meta,None,age))
             history.append(dict(levels=level,pose=meta['pose'],stamp=meta['timestamp_us'],occupied=occupancy(ego,level)))
             log.write(json.dumps(rec)+'\n')
             n+=1
@@ -181,6 +240,7 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser()
     for arg in ('inputs','training','counts','output'):
         parser.add_argument('--'+arg,required=True,type=Path)
+    parser.add_argument('--decay-receiver',action='store_true')
     args=parser.parse_args()
     args.output.mkdir(parents=True,exist_ok=False)
-    run(args.inputs,args.training,args.counts,args.output)
+    run(args.inputs,args.training,args.counts,args.output,args.decay_receiver)
