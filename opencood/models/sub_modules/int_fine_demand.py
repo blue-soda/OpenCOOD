@@ -96,7 +96,7 @@ class QuotaFineEdge(FineEdgeSender):
         aligned=warp_bev(self.previous['fine_levels'].float(),self.previous['pose'],self.pose,area)[0].int().contiguous()
         receiver=aligned.view(value.shape[1],-1)
         target=(value.flatten(2)[0,:,sites]/self.quantum).round().int()
-        delta=target-receiver[:,sites]
+        delta=target-self.reference_levels(receiver,sites,area)
         channel,slot=delta.nonzero(as_tuple=True)
         ids=channel*receiver.shape[1]+sites[slot]
         change=delta[channel,slot]
@@ -113,6 +113,9 @@ class QuotaFineEdge(FineEdgeSender):
                          demand_addresses=demand, cells=value.numel(),cache_bytes=aligned.numel()*aligned.element_size())
         self.ledger.update(extra)
         return aligned.float()*self.quantum
+
+    def reference_levels(self,receiver,sites,area):
+        return receiver[:,sites]
 
     def deliver(self,receiver,ids,change):
         if self.mode!='amplitude':

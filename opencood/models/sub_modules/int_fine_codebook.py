@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 
 from opencood.models.sub_modules.int_fine_demand import QuotaFineEdge
+from opencood.models.sub_modules.int_feature_memory import warp_bev
 
 
 def pack_symbols(symbols):
@@ -55,4 +56,12 @@ class FineCodebook(QuotaFineEdge):
             flat.index_add_(0,ids,received)
         return received,dict(bytes=payload.numel(),codes=torch.bincount(decoded,minlength=8).tolist(),
                              abs_error=int((received-change).abs().sum()))
+
+
+class AdjacentFineCodebook(FineCodebook):
+    """Encode the change between task targets, then add the codes to the actual receiver."""
+    def reference_levels(self,receiver,sites,area):
+        previous_target=(self.previous['value']/self.quantum).round()
+        aligned=warp_bev(previous_target,self.previous['pose'],self.pose,area)[0]
+        return aligned[0].flatten(1)[:,sites].int()
 
