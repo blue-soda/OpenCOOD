@@ -10,6 +10,7 @@ import torch
 from opencood.models.sub_modules.int_branch_fusion import BranchFusion
 from opencood.models.sub_modules.int_compact_middle_update import conv_costs
 from opencood.models.sub_modules.int_fine_codebook import FineCodebook
+from opencood.models.sub_modules.int_fusion_lattice import FusionInputLattice
 from opencood.models.sub_modules.int_silent_receiver import PairedEdge, EdgeView
 from opencood.tools.check_int_deep_spike_stream import prepare_stream,read
 from opencood.tools.check_int_pyramid_cache import measured_step
@@ -37,6 +38,13 @@ def run(args):
     fusion = source.core.readout.layers[0].double_conv[0]
     layer = BranchFusion(fusion[0],verify=audit).eval()
     fusion[0] = layer
+    probe = None
+    if args.collect_rms or args.quanta:
+        grid = read(args.quanta) if args.quanta else None
+        if grid:
+            assert grid['status']=='COMPLETED' and grid['scans']==211 and grid['labels']==0
+        probe=FusionInputLattice(grid['quanta'] if grid else None)
+        layer.register_forward_pre_hook(probe.observe)
     edge = paired = None
     if args.route=='ann':
         model = local_model(source,indexed=True)
@@ -57,7 +65,8 @@ def run(args):
     write_json(args.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         route=args.route,partition=args.partition,input_hashes=hashes,book=digest(book_path),seed=303,
         calibration=digest(args.calibration/'report.json') if paired else None,
-        scenes=sorted({r['scene'] for r in rows}),params=sum(p.numel() for p in source.parameters())))
+        scenes=sorted({r['scene'] for r in rows}),params=sum(p.numel() for p in source.parameters()),
+        collect_rms=args.collect_rms,quanta=digest(args.quanta) if args.quanta else None))
     ordinary=labels=0
     with (args.output/'frames.jsonl').open('x',buffering=1) as log:
         for i,(sample,trace) in enumerate(zip(stream,traces)):
@@ -75,9 +84,11 @@ def run(args):
             if args.route!='ann': model.coarse_projector.begin(prev,reason)
             selector.observation=None
             layer.begin(prev,reason)
+            if probe:probe.begin(reason)
             (pred,state,info),other=measured_step(model,spatial,prev,meta,selector)
             assert info['full_refresh']==reason
             record=dict(frame=meta['frame'],scene=meta['scene'],segment=meta['segment'],refresh=reason,fusion=layer.ledger)
+            if args.quanta:record['lattice']=probe.ledger
             if reason is None:
                 ordinary+=1
                 if args.route!='ann':
@@ -97,7 +108,8 @@ def run(args):
             if not audit:
                 old=(trace['arms']['indexed_crop_online']['core_conv_flops'] if args.route=='ann'
                      else historic[i]['arms']['carry']['core'])
-                assert old==record['legacy_core'],(meta['frame'],old,record['legacy_core'])
+                if not args.quanta:
+                    assert old==record['legacy_core'],(meta['frame'],old,record['legacy_core'])
             if meta['supervised']:
                 labels+=1
                 gt=data.post.generate_gt_bbx(dict(ego=ego))
@@ -105,17 +117,23 @@ def run(args):
             log.write(json.dumps(record)+'\n')
     expected={'train':(211,0),'dev':(1014,458),'transfer':(4780,1280)}
     assert (i+1,labels)==expected[args.partition]
-    write_json(args.output/'report.json',dict(status='COMPLETED',scans=len(rows),ordinary=ordinary,
-        labels=labels,optimizer_steps=0))
+    report=dict(status='COMPLETED',scans=len(rows),ordinary=ordinary,labels=labels,optimizer_steps=0)
+    if args.collect_rms:
+        report.update(quanta=probe.calibrated(),samples_per_channel=probe.samples)
+    write_json(args.output/'report.json',report)
 
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
     p.add_argument('--route',choices=['ann','half','threshold'],required=True)
     p.add_argument('--partition',choices=['train','dev','transfer'],required=True)
+    p.add_argument('--collect-rms',action='store_true')
+    p.add_argument('--quanta',type=Path)
     for k in ('long-base','vehicle','calibration','output'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','output'))
     a=p.parse_args()
+    if (a.collect_rms or a.quanta) and a.route!='half':p.error('fusion lattice requires the frozen half route')
+    if a.collect_rms and (a.partition!='train' or a.quanta):p.error('RMS calibration requires raw training projections')
     if a.route=='threshold' and (a.partition!='train' or a.calibration is None):
         p.error('threshold route is the training-side engineering audit')
     if a.partition!='train' and a.vehicle is None:p.error('historical evaluation requires vehicle data')
