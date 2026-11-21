@@ -29,6 +29,8 @@ def run(args):
     per = conv_costs(source.core)
     channel = source.core.deep_light[0].in_channels
     modes = ('dense', 'amplitude') if args.quality else ('dense', 'unit')
+    if args.sparse_cold:
+        modes = ('dense','static','sparse_amplitude','sparse_unit')
     models = {}
     for mode in modes:
         model = CrossScaleCache(source, mode, planner=plan_host_coalesced_refresh,
@@ -97,6 +99,7 @@ if __name__ == '__main__':
     for name in ('inputs','scans','prior','output'):
         parser.add_argument('--'+name, type=Path, required=True)
     parser.add_argument('--quality', action='store_true')
+    parser.add_argument('--sparse-cold', action='store_true')
     args = parser.parse_args()
     args.output.mkdir(exist_ok=False, parents=True)
     run(args)

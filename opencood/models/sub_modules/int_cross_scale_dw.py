@@ -10,7 +10,7 @@ from opencood.models.sub_modules.int_deep_block_cache import DeepBlockCache, Pac
 class CrossScaleDepthwise:
     """Store only globally valid output stencils from the previous ordinary scan."""
     def __init__(self, conv, mode, quantum=.25):
-        if (mode not in ('dense','amplitude','unit') or conv.kernel_size!=(3,3)
+        if (mode not in ('dense','amplitude','unit','static','sparse_amplitude','sparse_unit') or conv.kernel_size!=(3,3)
                 or conv.stride!=(2,2) or conv.padding!=(1,1) or conv.dilation!=(1,1)
                 or conv.groups!=conv.in_channels or conv.out_channels!=conv.in_channels):
             raise ValueError('Expected a 3x3 stride-two depthwise receiver')
@@ -81,19 +81,26 @@ class CrossScaleDepthwise:
             ref=F.conv2d(crop,self.weight.double().reshape(self.c,1,3,3),stride=2,padding=1,groups=self.c)
             linear=ref[0].flatten(1).T.long().contiguous()
         else:
-            cold=~reuse
+            cold=torch.ones_like(reuse) if self.mode=='static' else ~reuse
             if bool(cold.any()):
                 v=self.lookup(self.levels,taps[cold])
-                linear[cold]=(v*weight[None]).sum(1)
-                ledger['cold_nonzero_taps']+=int(v.count_nonzero())
-            if bool(reuse.any()):
+                if self.mode in ('static','sparse_amplitude','sparse_unit'):
+                    site,tap,channel=v.nonzero(as_tuple=True)
+                    result=v.new_zeros(v.shape[0],self.c)
+                    result.view(-1).index_add_(0,site*self.c+channel,v[site,tap,channel]*weight[tap,channel])
+                    linear[cold]=result
+                    ledger['cold_nonzero_taps']+=len(site)
+                else:
+                    linear[cold]=(v*weight[None]).sum(1)
+                    ledger['cold_nonzero_taps']+=int(v.count_nonzero())
+            if self.mode!='static' and bool(reuse.any()):
                 changes=self.lookup(self.events,taps[reuse])
                 site,tap,channel=changes.nonzero(as_tuple=True)
                 amp=changes[site,tap,channel]
                 slot=site*self.c+channel
                 old=self.previous[0][src[reuse]].contiguous()
                 coeff=self.weight[channel,tap].long()
-                if self.mode=='amplitude':
+                if self.mode in ('amplitude','sparse_amplitude'):
                     old.view(-1).index_add_(0,slot,amp*coeff)
                 else:
                     pos=torch.arange(len(amp),device=amp.device).repeat_interleave(amp.abs())

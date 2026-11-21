@@ -17,8 +17,9 @@ class CrossScaleTest(unittest.TestCase):
     def test_geometry_and_signed_updates(self):
         torch.manual_seed(303)
         conv = nn.Conv2d(2,2,3,2,1,groups=2)
-        edges = [CrossScaleDepthwise(conv,m) for m in ('dense','amplitude','unit')]
-        caches = [None]*3
+        edges = [CrossScaleDepthwise(conv,m) for m in
+                 ('dense','amplitude','unit','static','sparse_amplitude','sparse_unit')]
+        caches = [None]*len(edges)
         previous = torch.zeros(1,2,7,9,dtype=torch.long)
         full = (0,0,7,9)
         for step,(shift,box) in enumerate([(0,full),(0,full),(2,full),(1,full),(0,(2,2,7,9)),(0,full),(0,full)]):
