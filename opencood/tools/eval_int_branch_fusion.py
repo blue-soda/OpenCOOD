@@ -60,6 +60,11 @@ def run(args):
         paired = PairedEdge(source.bounds,book['cap']//2,book['levels'],[12],calibration=True)
         model = build(source,q,EdgeView(paired,'12'))
     costs = conv_costs(source.core)
+    if args.static_refresh:
+        for projector in (model.coarse_projector,model.deep_projector):
+            assert projector.mode=='amplitude'
+            projector.static_refresh=True
+            projector.verify_static_refresh=audit
     refresh_audit=None
     if args.refresh_audit:
         from opencood.tools.audit_int_refresh_projection import RefreshProjectionAudit
@@ -81,7 +86,8 @@ def run(args):
         calibration=digest(args.calibration/'report.json') if paired else None,
         scenes=sorted({r['scene'] for r in rows}),params=sum(p.numel() for p in source.parameters()),
         collect_rms=args.collect_rms,quanta=digest(args.quanta) if args.quanta else None,
-        direct=args.direct,weighted_check=args.weighted_check,arithmetic_only=args.arithmetic_only))
+        direct=args.direct,weighted_check=args.weighted_check,arithmetic_only=args.arithmetic_only,
+        static_refresh=args.static_refresh,refresh_audit=args.refresh_audit))
     ordinary=labels=0
     with (args.output/'frames.jsonl').open('x',buffering=1) as log:
         for i,(sample,trace) in enumerate(zip(stream,traces)):
@@ -111,15 +117,19 @@ def run(args):
                 for name,projector in [('middle',model.coarse_projector),('deep',model.deep_projector)]:
                     v=projector.ledger
                     assert bool(v['rebuilt'])==(reason is not None) and projector.mode=='amplitude'
-                    components[name]=dict(fp64_mac=v['dense_mac'] if v['rebuilt'] else 0,
-                                          integer_mac=0 if v['rebuilt'] else v['amplitude_mac'],
-                                          unit_ac_if_expanded=0 if v['rebuilt'] else v['unit_ac'],
+                    dense_refresh=v['rebuilt'] and not v.get('static_refresh',False)
+                    components[name]=dict(fp64_mac=v['dense_mac'] if dense_refresh else 0,
+                                          integer_mac=0 if dense_refresh else v['amplitude_mac'],
+                                          unit_ac_if_expanded=0 if dense_refresh else v['unit_ac'],
                                           decode_mul=v['dense_mac']//projector.weight.shape[0],
                                           decode_bias=projector.block[0].bias is not None)
                 taps=info['edge'] if reason is None else {}
                 components['depthwise_integer_mac']=taps.get('cold_nonzero_taps',0)+taps.get('delta_nonzero_taps',0)
                 components['depthwise_decode_ops']=2*taps.get('sites',0)*model.stage.edge.weight.shape[0]
                 record['arithmetic']=components
+                if args.static_refresh and meta['supervised']:
+                    _,scores=data.post.post_process(dict(ego=ego),dict(ego=pred))
+                    record['post_scores']=[] if scores is None else scores.sort(descending=True).values.cpu().tolist()
             if args.quanta and probe:record['lattice']=probe.ledger
             if reason is None:
                 ordinary+=1
@@ -176,10 +186,13 @@ if __name__=='__main__':
     p.add_argument('--weighted-check',action='store_true')
     p.add_argument('--arithmetic-only',action='store_true')
     p.add_argument('--refresh-audit',action='store_true')
+    p.add_argument('--static-refresh',action='store_true')
     p.add_argument('--quanta',type=Path)
     for k in ('long-base','vehicle','calibration','output'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','output'))
     a=p.parse_args()
+    if a.static_refresh and (not a.arithmetic_only or a.refresh_audit):
+        p.error('static refresh requires an independent arithmetic replay')
     if a.refresh_audit and (not a.arithmetic_only or a.partition!='train'):
         p.error('refresh projection checks use the frozen training-side arithmetic replay')
     if a.arithmetic_only and (a.route!='half' or a.quanta or a.collect_rms):

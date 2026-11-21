@@ -27,6 +27,8 @@ class DeepSpikeProjection(DeepPhaseProjection):
         self.weight = torch.round(w / scale).short().flatten(1).contiguous()
         self.weight_bound = int(self.weight.long().abs().sum(dim=0).max())
         self.ledger = {}
+        self.static_refresh = False
+        self.verify_static_refresh = False
 
     def levels(self, deep):
         values = (deep / self.quantum).round()
@@ -87,6 +89,14 @@ class DeepSpikeProjection(DeepPhaseProjection):
 
     def fresh(self, deep):
         levels = self.levels(deep)
+        if self.static_refresh:
+            linear=levels.new_zeros((levels.shape[0],self.weight.shape[1],*levels.shape[-2:]))
+            self.event_linear(levels,linear)
+            if self.verify_static_refresh:
+                assert torch.equal(linear,self.dense_linear(levels))
+            result=self.finish(levels,linear,levels,True)
+            self.ledger['static_refresh']=True
+            return result
         return self.finish(levels, self.dense_linear(levels), levels, True)
 
     def advance(self, deep, written, previous, past_pose, current_pose, bounds, route=None):
