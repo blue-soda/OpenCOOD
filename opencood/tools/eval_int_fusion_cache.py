@@ -10,6 +10,7 @@ from opencood.models.sub_modules.int_cross_scale_dw import CrossScaleCache
 from opencood.models.sub_modules.int_deep_spike_projection import DeepSpikeProjection
 from opencood.models.sub_modules.int_exact_fusion_cache import ExactFusionCache
 from opencood.models.sub_modules.int_fine_codebook import FineCodebook
+from opencood.models.sub_modules.int_fine_demand import QuotaFineEdge
 from opencood.models.sub_modules.int_middle_decay_projection import MiddleDecayProjection
 from opencood.models.sub_modules.int_pyramid_regions import plan_host_coalesced_refresh
 from opencood.tools.check_int_deep_spike_stream import prepare_stream,read
@@ -33,7 +34,8 @@ def run(a):
     base[0]=layer
     models={}
     for name in ('dense','local'):
-        sender=FineCodebook(source.bounds,book['cap'],book['levels'])
+        sender=(QuotaFineEdge(source.bounds,'amplitude',book['cap']) if a.amplitude
+                else FineCodebook(source.bounds,book['cap'],book['levels']))
         def receive(fine,active,s=sender):
             s.active=active
             return s(fine)
@@ -47,7 +49,7 @@ def run(a):
     per=conv_costs(core)
     write_json(a.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                params=sum(p.numel() for p in source.parameters()),block=layer.block,book=digest(a.book),prior=digest(a.prior),
-               trace=digest(a.inputs/'traces.json'),optimizer_steps=0))
+               trace=digest(a.inputs/'traces.json'),amplitude=a.amplitude,optimizer_steps=0))
     n=0
     with (a.output/'frames.jsonl').open('x',buffering=1) as log:
         for sample,trace,ref in zip(stream,traces,old):
@@ -70,8 +72,9 @@ def run(a):
                     other+=sum(per[k]*v for k,v in model.coarse_executor.counts.items())
                     model.coarse_executor.inputs=None
                 sender.commit(state,False)
-                assert sender.ledger==ref['arms']['calibrated']['fine']
-                assert other+2*384*128*9*layer.ledger['sites']==ref['arms']['calibrated']['core']
+                original=ref['arms']['amplitude' if a.amplitude else 'calibrated']
+                assert sender.ledger==original['fine']
+                assert other+2*384*128*9*layer.ledger['sites']==original['core']
                 state['fusion_cache']=layer.new
                 row['arms'][name]=dict(layer.ledger,core=other+layer.ledger['float_conv'])
                 if name=='dense':
@@ -92,6 +95,7 @@ def run(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser()
     for k in ('inputs','scans','book','prior','output'):p.add_argument('--'+k,type=Path,required=True)
+    p.add_argument('--amplitude',action='store_true')
     a=p.parse_args()
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
