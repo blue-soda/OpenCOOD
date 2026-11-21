@@ -149,8 +149,8 @@ if __name__ == '__main__':
     parser.add_argument('--registration',action='store_true')
     parser.add_argument('--eighths',type=int,choices=(7,8),default=8)
     args = parser.parse_args()
-    if (args.remainder and args.registration) or (args.eighths!=8 and not args.registration):
-        parser.error('registration budgets are restricted to the development comparison')
+    if args.remainder and (args.registration or args.eighths!=8):
+        parser.error('the frozen transfer comparison requires ego alignment and the half budget')
     args.output.mkdir(parents=True, exist_ok=False)
     run(args)
 
