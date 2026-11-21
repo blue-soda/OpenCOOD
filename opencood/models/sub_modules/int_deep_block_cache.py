@@ -57,7 +57,7 @@ class PackedLightDeepStage(PackedPyramidStage):
 class DeepBlockCache:
     def __init__(self, source, tile, operator='heavy', deep_interface=None,
                  planner=plan_coalesced_refresh, phase=nullcontext, crop_first=False, counted_host=False,
-                 deep_projector=None, coarse_interface=None, coarse_projector=None):
+                 deep_projector=None, coarse_interface=None, coarse_projector=None, coarse_executor=None):
         if source.training or not source.light_observations or tile < 1:
             raise ValueError('Frozen light-observation source and positive tile size required')
         self.source = source
@@ -66,6 +66,7 @@ class DeepBlockCache:
         self.operator = operator
         # Optional mapping from the computed state and written mask to stored and readout values.
         self.deep_interface = deep_interface
+        self.coarse_executor = coarse_executor
         self.coarse_interface = coarse_interface
         self.coarse_projector = coarse_projector
         self.planner = planner
@@ -105,10 +106,12 @@ class DeepBlockCache:
             ('value', self.core.observation, self.core.fine_update, 2),
             ('coarse', self.core.coarse_light, self.core.coarse_update, 4),
         ):
+            local_middle = key == 'coarse' and self.coarse_executor is not None
             with self.phase('fine_coarse_compute'):
-                encoded = encoder(current)
+                encoded = None if local_middle else encoder(current)
             with self.phase('fine_coarse_warp'):
-                bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], encoded.shape[-2:], stride)
+                shape = state[key].shape[-2:] if local_middle else encoded.shape[-2:]
+                bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], shape, stride)
                 if key == 'coarse' and self.coarse_projector is not None:
                     old, valid, coarse_route = self.coarse_projector.align_task(
                         state[key], state['pose'], meta['pose'], bounds)
@@ -116,7 +119,13 @@ class DeepBlockCache:
                     old, valid = warp_bev(state[key], state['pose'], meta['pose'], bounds)
             with self.phase('fine_coarse_compute'):
                 update.delta_t = dt
-                current = update(encoded, old, valid)
+                if local_middle:
+                    if coarse_route is None:
+                        raise ValueError('Local middle updates require the shared receiver alignment')
+                    current = self.coarse_executor(self.core, current, old, valid, ~coarse_route[1],
+                                                   state, meta, dt, spatial.shape[-2:], self.source.bounds)
+                else:
+                    current = update(encoded, old, valid)
             if key == 'coarse' and self.coarse_interface is not None:
                 coarse_stored, current = self.coarse_interface(current, None)
             features.append(current)

@@ -104,3 +104,23 @@ def select_skip(cost,eligible,frame,shape):
     grid[chosen]=True
     return F.pad(grid.view(1,1,*hw).repeat_interleave(TILE,-2).repeat_interleave(TILE,-1),
                  (0,w%TILE,0,h%TILE))
+
+class FineInnovationUpdate:
+    """Select middle holds using an eight-channel innovation from the already computed fine state."""
+    def __init__(self,decay):
+        self.decay=decay
+
+    def __call__(self,core,fine,old,valid,coverage,state,meta,dt,spatial_shape,bounds):
+        from opencood.models.sub_modules.int_block_cache import block_lidar_range
+        from opencood.models.sub_modules.int_feature_memory import warp_bev
+
+        area=block_lidar_range(bounds,spatial_shape,fine.shape[-2:],2)
+        previous=warp_bev(state['value'][:,::16],state['pose'],meta['pose'],area)[0]
+        score=F.avg_pool2d((fine[:,::16]-previous).abs().mean(1,keepdim=True),3,2,1,count_include_pad=False)
+        eligible=tile_sum((~coverage).float())==0
+        self.skip=select_skip(tile_sum(score),eligible,meta['frame'],old.shape[-2:])
+        self.gain=.875 if self.decay and state['since_refresh']<3 else 1.
+        held=old*self.gain if self.gain!=1 else old
+        out,self.counts=compact_update(core,fine,old,valid,dt,~self.skip,held)
+        self.inputs=(fine,old,valid,held)
+        return out
