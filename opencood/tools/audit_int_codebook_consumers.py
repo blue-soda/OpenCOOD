@@ -9,7 +9,7 @@ import torch
 from torch.nn import functional as F
 from opencood.hypes_yaml.yaml_utils import load_yaml
 from opencood.models.sub_modules.int_block_cache import block_lidar_range
-from opencood.models.sub_modules.int_compact_middle_update import FineInnovationUpdate, conv_costs
+from opencood.models.sub_modules.int_compact_middle_update import FineInnovationUpdate, conv_costs, supports
 from opencood.models.sub_modules.int_cross_scale_dw import CrossScaleCache
 from opencood.models.sub_modules.int_deep_spike_projection import DeepSpikeProjection
 from opencood.models.sub_modules.int_feature_memory import warp_bev
@@ -41,6 +41,42 @@ def geometry(route,h,w,k):
             taps=(yy*w+xx).masked_fill((yy<0)|(yy>=h)|(xx<0)|(xx>=w),-1)
             good=good & (padded[r+y:r+y+h,r+x:r+x+w]==taps)
     return good
+
+
+def shallow_ledger(model,state,previous,meta,spatial_shape):
+    levels=state['fine_levels']
+    active=supports(~model.coarse_executor.skip)[2][0,0]
+    state['shallow_support']=active
+    h,w=levels.shape[-2:]
+    oh,ow=active.shape
+    def route(shape,stride):
+        height,width=shape
+        bounds=block_lidar_range(model.source.bounds,spatial_shape,shape,stride)
+        codes=torch.arange(1,height*width+1,dtype=torch.float32,device=levels.device).view(1,1,height,width)
+        return warp_bev(codes,previous['pose'],meta['pose'],bounds)[0][0,0].long()-1
+    fine=route((h,w),2)
+    coarse=route((oh,ow),4)
+    oy=coarse.clamp_min(0)//ow*2
+    ox=coarse.clamp_min(0)%ow*2
+    good=active&(coarse>=0)
+    padded=F.pad(fine,(1,1,1,1),value=-1)
+    for dy in range(3):
+        for dx in range(3):
+            yy,xx=oy+dy-1,ox+dx-1
+            prior=(yy*w+xx).masked_fill((yy<0)|(yy>=h)|(xx<0)|(xx>=w),-1)
+            good=good & (padded[dy:dy+2*oh:2,dx:dx+2*ow:2]==prior)
+    valid=previous.get('shallow_support')
+    reuse=good&valid.flatten()[coarse.clamp_min(0)] if valid is not None else torch.zeros_like(active)
+    old=previous['fine_levels'].flatten(2).index_select(2,fine.clamp_min(0).flatten()).view_as(levels)
+    delta=levels-old.masked_fill(fine<0,0)
+    def taps(values):
+        summed=values.sum(dim=1,keepdim=True,dtype=torch.float32)
+        return (F.avg_pool2d(summed,3,2,1)*9).round().int()[0,0]
+    static=taps(levels!=0)
+    return dict(sites=int(active.sum()),reuse=int(reuse.sum()),dense=int(active.sum())*levels.shape[1]*9,
+                static=int(static[active].sum()),cold=int(static[active&~reuse].sum()),
+                corrections=int(taps(delta!=0)[reuse].sum()),unit_ac=int(taps(delta.abs())[reuse].sum()),
+                sent_addresses=int(delta.count_nonzero()),sent_units=int(delta.abs().sum()))
 
 
 class ReadoutAudit:
@@ -91,6 +127,7 @@ class ReadoutAudit:
                  aligned=int(aligned[i].sum())*fanout,
                  clean_fixed=0 if self.fresh else int((fixed[i]==0).sum()),
                  clean_aligned=int(((aligned[i]==0)&eligible).sum()),sites=h*w,eligible=int(eligible.sum())))
+            entry[-1]['dirty_static']=int(static[i][fixed[i]!=0].sum())*fanout
         self.current[name]=value.detach().clone()
         return entry
 
@@ -191,6 +228,10 @@ def run(a):
                 sender.commit(state,False)
                 for key,part in stats.items():assert sum(z['dense'] for z in part)*2==costs[key]
                 row['arms'][n]=dict(core=dict(costs),readout=stats,fine=sender.ledger)
+                if a.shallow and reason is None:
+                    edge=shallow_ledger(model,state,prev,meta,spatial.shape[-2:])
+                    assert edge['sent_addresses']==sender.ledger['addresses'] and edge['sent_units']==sender.ledger['units']
+                    row['arms'][n]['shallow']=edge
                 audit.finish()
                 states[n]=state
             log.write(json.dumps(row)+'\n')
@@ -206,6 +247,7 @@ if __name__=='__main__':
     p=argparse.ArgumentParser()
     for key in ('inputs','scans','prior','book','output'):p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--training',action='store_true')
+    p.add_argument('--shallow',action='store_true')
     args=p.parse_args()
     args.output.mkdir(exist_ok=False,parents=True)
     run(args)
