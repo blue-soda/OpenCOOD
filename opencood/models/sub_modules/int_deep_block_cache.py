@@ -29,6 +29,7 @@ class OrdinaryDeepInputs(NamedTuple):
     dt: float
     deep_route: Optional[Tuple[torch.Tensor, torch.Tensor]]
     coarse_stored: Optional[torch.Tensor] = None
+    coarse_route: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
 
 
 class PackedLightDeepStage(PackedPyramidStage):
@@ -56,7 +57,7 @@ class PackedLightDeepStage(PackedPyramidStage):
 class DeepBlockCache:
     def __init__(self, source, tile, operator='heavy', deep_interface=None,
                  planner=plan_coalesced_refresh, phase=nullcontext, crop_first=False, counted_host=False,
-                 deep_projector=None, coarse_interface=None):
+                 deep_projector=None, coarse_interface=None, coarse_projector=None):
         if source.training or not source.light_observations or tile < 1:
             raise ValueError('Frozen light-observation source and positive tile size required')
         self.source = source
@@ -66,6 +67,7 @@ class DeepBlockCache:
         # Optional mapping from the computed state and written mask to stored and readout values.
         self.deep_interface = deep_interface
         self.coarse_interface = coarse_interface
+        self.coarse_projector = coarse_projector
         self.planner = planner
         self.phase = phase
         self.crop_first = crop_first
@@ -98,6 +100,7 @@ class DeepBlockCache:
         current = spatial
         features = []
         coarse_stored = None
+        coarse_route = None
         for key, encoder, update, stride in (
             ('value', self.core.observation, self.core.fine_update, 2),
             ('coarse', self.core.coarse_light, self.core.coarse_update, 4),
@@ -106,7 +109,11 @@ class DeepBlockCache:
                 encoded = encoder(current)
             with self.phase('fine_coarse_warp'):
                 bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], encoded.shape[-2:], stride)
-                old, valid = warp_bev(state[key], state['pose'], meta['pose'], bounds)
+                if key == 'coarse' and self.coarse_projector is not None:
+                    old, valid, coarse_route = self.coarse_projector.align_task(
+                        state[key], state['pose'], meta['pose'], bounds)
+                else:
+                    old, valid = warp_bev(state[key], state['pose'], meta['pose'], bounds)
             with self.phase('fine_coarse_compute'):
                 update.delta_t = dt
                 current = update(encoded, old, valid)
@@ -126,14 +133,15 @@ class DeepBlockCache:
             else:
                 aligned, valid = warp_bev(value, state['pose'], meta['pose'], bounds)
             return OrdinaryDeepInputs(features[0], features[1], old, aligned[:, :-1], valid,
-                                      aligned[:, -1:] + dt, dt, route, coarse_stored)
+                                      aligned[:, -1:] + dt, dt, route, coarse_stored, coarse_route)
 
     def mandatory(self, frame):
         required = ~frame.valid | (frame.age >= self.source.max_age - 1e-6)
         return expand_tiles(tile_mask(required, self.tile), self.tile, required.shape[-2:])
 
-    def predict(self, frame, deep, deep_projection=None):
-        projected = [self.core.deblocks[0](frame.fine), self.core.deblocks[1](frame.coarse)]
+    def predict(self, frame, deep, deep_projection=None, coarse_projection=None):
+        projected = [self.core.deblocks[0](frame.fine),
+                     self.core.deblocks[1](frame.coarse) if coarse_projection is None else coarse_projection]
         projected.append(self.core.deblocks[2](deep) if deep_projection is None else deep_projection)
         features = self.core.readout(torch.cat(projected, 1))
         output = dict(psm=self.core.cls_head(features), rm=self.core.reg_head(features))
@@ -150,6 +158,8 @@ class DeepBlockCache:
             kwargs = {} if self.deep_interface is None else {'deep_interface': self.deep_interface}
             if self.coarse_interface is not None:
                 kwargs['coarse_interface'] = self.coarse_interface
+            if self.coarse_projector is not None:
+                kwargs['coarse_projector'] = self.coarse_projector
             if self.phase is not nullcontext:
                 kwargs['phase'] = self.phase
             if self.deep_projector is not None:
@@ -202,4 +212,10 @@ class DeepBlockCache:
                 bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], sent.shape[-2:], 8)
                 projected, new['deep_projection'] = self.deep_projector.advance(
                     sent, written, state['deep_projection'], state['pose'], meta['pose'], bounds, frame.deep_route)
-            return self.predict(frame, sent, projected), new, dict(info, reset=None, full_refresh=None)
+            coarse_projected = None
+            if self.coarse_projector is not None:
+                bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], frame.coarse.shape[-2:], 4)
+                coarse_written = torch.ones_like(frame.coarse[:, :1], dtype=torch.bool)
+                coarse_projected, new['coarse_projection'] = self.coarse_projector.advance(
+                    frame.coarse, coarse_written, state['coarse_projection'], state['pose'], meta['pose'], bounds, frame.coarse_route)
+            return self.predict(frame, sent, projected, coarse_projected), new, dict(info, reset=None, full_refresh=None)

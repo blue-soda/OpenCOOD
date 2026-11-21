@@ -75,7 +75,7 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
         self.variant='middle_deep_light_'+mode;self.train(False)
 
     def step_spatial(self,spatial,state,meta,detach_state=True,requests=None,deep_interface=None,phase=nullcontext,
-                     deep_projector=None, coarse_interface=None):
+                     deep_projector=None, coarse_interface=None, coarse_projector=None):
         if spatial.shape[0]!=1 or requests is not None:raise ValueError('Single stream; no local masks yet')
         reason,dt=reset_reason(state,meta);stamp=int(meta['timestamp_us'])
         refresh=reason
@@ -109,8 +109,12 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
                 readout_values = (*values[:-1], sent)
             else:
                 readout_values = values
-            projections = [self.core.deblocks[0](readout_values[0]),
-                           self.core.deblocks[1](readout_values[1])]
+            coarse_projection_state = None
+            if coarse_projector is None:
+                coarse_projected = self.core.deblocks[1](readout_values[1])
+            else:
+                coarse_projected, coarse_projection_state = coarse_projector.fresh(readout_values[1])
+            projections = [self.core.deblocks[0](readout_values[0]), coarse_projected]
             projection_state = None
             if deep_projector is None:
                 projections.append(self.core.deblocks[2](readout_values[2]))
@@ -124,6 +128,8 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
             if coarse_stored is not None:
                 values[1] = coarse_stored
             new={k:v.detach() if detach_state else v for k,v in zip(self.state_keys,values)}
+            if coarse_projection_state is not None:
+                new['coarse_projection'] = coarse_projection_state.detach() if detach_state else coarse_projection_state
             if projection_state is not None:
                 new['deep_projection'] = projection_state.detach() if detach_state else projection_state
             new.update(pose=copy.deepcopy(meta['pose']),scene=meta['segment'],timestamp_us=stamp,
