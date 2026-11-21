@@ -1,4 +1,5 @@
 """Write resource-limited signed units directly to the detector's middle task membrane."""
+import numpy as np
 import torch
 from opencood.models.sub_modules.int_block_cache import block_lidar_range
 from opencood.models.sub_modules.int_feature_memory import warp_bev
@@ -48,7 +49,8 @@ class NativeEventWriter:
         count = min(len(eligible), grant)
         if count < len(eligible):
             scores = total.flatten()[eligible].abs()
-            order = torch.argsort(scores, descending=True, stable=True)
+            ranked = np.argsort(-scores.cpu().numpy(), kind='stable')
+            order = torch.as_tensor(ranked[:count], device=eligible.device)
             eligible = eligible[order[:count]]
         units = torch.zeros_like(total, memory_format=torch.contiguous_format)
         units.view(-1)[eligible] = total.flatten()[eligible].sign()
