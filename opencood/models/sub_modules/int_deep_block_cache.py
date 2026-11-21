@@ -57,7 +57,8 @@ class PackedLightDeepStage(PackedPyramidStage):
 class DeepBlockCache:
     def __init__(self, source, tile, operator='heavy', deep_interface=None,
                  planner=plan_coalesced_refresh, phase=nullcontext, crop_first=False, counted_host=False,
-                 deep_projector=None, coarse_interface=None, coarse_projector=None, coarse_executor=None):
+                 deep_projector=None, coarse_interface=None, coarse_projector=None, coarse_executor=None,
+                 fine_to_coarse=None):
         if source.training or not source.light_observations or tile < 1:
             raise ValueError('Frozen light-observation source and positive tile size required')
         self.source = source
@@ -67,6 +68,7 @@ class DeepBlockCache:
         # Optional mapping from the computed state and written mask to stored and readout values.
         self.deep_interface = deep_interface
         self.coarse_executor = coarse_executor
+        self.fine_to_coarse = fine_to_coarse
         self.coarse_interface = coarse_interface
         self.coarse_projector = coarse_projector
         self.planner = planner
@@ -107,6 +109,8 @@ class DeepBlockCache:
             ('coarse', self.core.coarse_light, self.core.coarse_update, 4),
         ):
             local_middle = key == 'coarse' and self.coarse_executor is not None
+            if key == 'coarse' and self.fine_to_coarse is not None:
+                current = self.fine_to_coarse(current)
             with self.phase('fine_coarse_compute'):
                 encoded = None if local_middle else encoder(current)
             with self.phase('fine_coarse_warp'):
@@ -165,6 +169,8 @@ class DeepBlockCache:
     def step_spatial(self, spatial, state, meta, requests=None, dense_reference=False):
         if self.refresh_reason(state, meta):
             kwargs = {} if self.deep_interface is None else {'deep_interface': self.deep_interface}
+            if self.fine_to_coarse is not None:
+                kwargs['fine_to_coarse'] = self.fine_to_coarse
             if self.coarse_interface is not None:
                 kwargs['coarse_interface'] = self.coarse_interface
             if self.coarse_projector is not None:

@@ -75,7 +75,7 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
         self.variant='middle_deep_light_'+mode;self.train(False)
 
     def step_spatial(self,spatial,state,meta,detach_state=True,requests=None,deep_interface=None,phase=nullcontext,
-                     deep_projector=None, coarse_interface=None, coarse_projector=None):
+                     deep_projector=None, coarse_interface=None, coarse_projector=None, fine_to_coarse=None):
         if spatial.shape[0]!=1 or requests is not None:raise ValueError('Single stream; no local masks yet')
         reason,dt=reset_reason(state,meta);stamp=int(meta['timestamp_us'])
         refresh=reason
@@ -90,6 +90,8 @@ class MultiscaleRefreshDetector(TemporalPyramidDetector):
             ('deep',self.core.deep_encoder,self.core.deep_light,self.core.deep_update,8)):
             compute, warp = ('deep_compute', 'deep_warp') if key == 'deep' else ('fine_coarse_compute', 'fine_coarse_warp')
             with phase(compute):
+                if key == 'coarse' and fine_to_coarse is not None:
+                    x = fine_to_coarse(x)
                 current=(encoder if refresh or light is None or not getattr(self,'light_observations',True) else light)(x)
             with phase(warp):
                 if reason:old=torch.zeros_like(current);valid=torch.zeros_like(current[:,:1],dtype=torch.bool)
