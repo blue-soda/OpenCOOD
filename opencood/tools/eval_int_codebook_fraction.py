@@ -11,6 +11,7 @@ from opencood.models.sub_modules.int_compact_middle_update import FineInnovation
 from opencood.models.sub_modules.int_cross_scale_dw import CrossScaleCache
 from opencood.models.sub_modules.int_deep_spike_projection import DeepSpikeProjection
 from opencood.models.sub_modules.int_fine_codebook import AdjacentFineCodebook,FineCodebook
+from opencood.models.sub_modules.int_fine_demand import QuotaFineEdge
 from opencood.models.sub_modules.int_middle_decay_projection import MiddleDecayProjection
 from opencood.models.sub_modules.int_nonzero_fusion import NonzeroFusionCache
 from opencood.models.sub_modules.int_pyramid_regions import plan_host_coalesced_refresh
@@ -24,6 +25,12 @@ from opencood.tools.probe_int_deep_block_cache import spatial_input
 from opencood.tools.run_int_ego import loader, to_device, write_json
 
 
+class FullAmplitude(QuotaFineEdge):
+    def deliver(self,receiver,ids,change):
+        sent,extra=super().deliver(receiver,ids,change)
+        return sent,dict(extra,bytes=sent.numel()*sent.element_size())
+
+
 @torch.no_grad()
 def run(args):
     source,cfg,short,_,_,_,q=prepare_stream(args.inputs,args.scans)
@@ -32,18 +39,23 @@ def run(args):
     assert len(prior)==len(rows) and read(args.prior.parent/'report.json')['bitwise_equal']
     book=read(args.book)
     assert book['levels']==[3,6,13,28] and book['cap']==428149
+    cap=book['cap']//args.budget_divisor
     core=source.core
     fusion=core.readout.layers[0].double_conv[0]
     layer=NonzeroFusionCache(fusion[0]).eval()
     fusion[0]=layer
     models={}
     modes=('continuous',) if args.continuous else ('carry','adjacent' if args.adjacent else 'drop')
+    if args.budget_divisor!=1:
+        modes=('carry','adjacent','amplitude')
     support={r['frame']:r for r in map(json.loads,args.support.read_bytes().splitlines())} if args.support else {}
     if args.support:
         assert len(support)==sum(r['supervised'] for r in rows)
     for name in modes:
         edge_type=AdjacentFineCodebook if name=='adjacent' else FineCodebook
-        edge=None if name=='continuous' else edge_type(source.bounds,book['cap'],book['levels'])
+        edge=None if name=='continuous' else edge_type(source.bounds,cap,book['levels'])
+        if name=='amplitude':
+            edge=FullAmplitude(source.bounds,'amplitude',cap)
         def receive(value,active,sender=edge):
             sender.active=active
             return sender(value)
@@ -53,13 +65,13 @@ def run(args):
         model=CrossScaleCache(source,'sparse_amplitude',planner=plan_host_coalesced_refresh,
                               deep_projector=DeepSpikeProjection(core.deblocks[2],q,'amplitude'),fine_to_coarse=transform)
         model.coarse_interface=model.coarse_projector=MiddleDecayProjection(core.deblocks[1],'zero','amplitude')
-        model.coarse_executor=MatchedMiddle() if name in ('drop','adjacent') else FineInnovationUpdate(False,receive if edge else None)
+        model.coarse_executor=FineInnovationUpdate(False,receive if edge else None) if name in ('continuous','carry') else MatchedMiddle()
         models[name]=(model,edge)
     per=conv_costs(core)
     data,stream=loader(rows,cfg,0,303)
     write_json(args.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
                native=hashes,prior=digest(args.prior),book=digest(args.book),optimizer_steps=0,seed=303,
-               params=sum(p.numel() for p in source.parameters()),quantum=.25,modes=modes,
+               params=sum(p.numel() for p in source.parameters()),quantum=.25,modes=modes,cap=cap,budget_divisor=args.budget_divisor,
                support=digest(args.support) if args.support else None,
                intervention=('continuous fine-to-middle' if args.continuous else 'adjacent task difference' if args.adjacent
                              else 'ordinary after readout, round fine task on read area')))
@@ -86,7 +98,7 @@ def run(args):
                 if edge is not None:edge.begin(prev,meta,spatial.shape[-2:],reason)
                 model.coarse_projector.begin(prev,reason)
                 layer.begin(prev,reason,True)
-                if name in ('drop','adjacent') and reason is None:
+                if name not in ('carry','continuous') and reason is None:
                     model.coarse_executor.skip=mask
                     edge.active=~mask
                 (pred,state,info),other=measured_step(model,spatial,prev,meta,replay_written(trace))
@@ -111,16 +123,20 @@ def run(args):
                     assert (state['deep_age']==0).flatten().nonzero().flatten().tolist()==trace['written_indices']
                     if edge is not None:
                         stats.update(addresses=edge.ledger['addresses'],bytes=edge.ledger['bytes'],units=edge.ledger['units'])
-                if edge is not None:edge.commit(state,False)
-                if name=='adjacent':
+                if edge is not None:
+                    edge.commit(state,False)
+                    if args.budget_divisor!=1 and reason is not None:
+                        stats['refresh_level_bytes']=edge.ledger['cache_bytes']
+                if name in ('adjacent','amplitude'):
                     assert torch.equal(state['value'],states['carry']['value'])
                     if reason is None:
                         assert model.coarse_executor.counts==models['carry'][0].coarse_executor.counts
-                        assert stats['addresses']==row['arms']['carry']['addresses'] and stats['bytes']==row['arms']['carry']['bytes']
+                        assert stats['addresses']==row['arms']['carry']['addresses']==cap
+                        assert stats['bytes']==(row['arms']['carry']['bytes'] if name=='adjacent' else cap*4)
                 state['fusion_cache']=layer.new
                 stats['core']=other+layer.ledger['float_conv']
                 if gt is not None:stats.update(score(data.post,ego,pred,gt,record_matches=bool(args.support)))
-                if name=='carry':
+                if name=='carry' and args.budget_divisor==1:
                     assert stats['core']==ref['arms']['local']['core']
                     if gt is not None:
                         assert {str(t):v for t,v in stats['ap'].items()}==ref['ap']
@@ -129,7 +145,7 @@ def run(args):
                 states[name]=state
             log.write(json.dumps(row)+'\n')
     assert i+1==len(rows)
-    write_json(args.output/'report.json',dict(status='COMPLETED',scans=len(rows),carry_prior_exact='carry' in models))
+    write_json(args.output/'report.json',dict(status='COMPLETED',scans=len(rows),carry_prior_exact='carry' in models and args.budget_divisor==1))
 
 
 if __name__=='__main__':
@@ -140,7 +156,10 @@ if __name__=='__main__':
     control.add_argument('--continuous',action='store_true')
     control.add_argument('--adjacent',action='store_true')
     parser.add_argument('--support',type=Path)
+    parser.add_argument('--budget-divisor',type=int,choices=(1,2,4),default=1)
     args=parser.parse_args()
+    if args.budget_divisor!=1 and (not args.adjacent or args.support is None):
+        parser.error('budget curve requires --adjacent and --support')
     args.output.mkdir(parents=True,exist_ok=False)
     run(args)
 

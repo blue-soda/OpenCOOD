@@ -68,6 +68,8 @@ class FeedbackAudit(CapturedCodebook):
 def run(a):
     source,cfg,_,_,_,_,q=prepare_stream(a.inputs,a.scans)
     book=read(a.book)
+    assert book['cap']==428149
+    book=dict(book,cap=book['cap']//a.budget_divisor)
     exp=HistoryExperiment(source,q,book)
     model,_=exp.models['carry']
     edge=FeedbackAudit(source.bounds,book)
@@ -97,11 +99,12 @@ def run(a):
     assert i+1==len(rows)==211 and ordinary==165
     write_json(a.output/'report.json',dict(status='COMPLETED',scans=len(rows),ordinary=ordinary,
                code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),labels=0,optimizer_steps=0,
-               train=digest(a.training/'plan.json'),book=digest(a.book)))
+               train=digest(a.training/'plan.json'),book=digest(a.book),cap=book['cap'],budget_divisor=a.budget_divisor))
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
     for k in ('inputs','scans','book','training','output'):p.add_argument('--'+k,type=Path,required=True)
+    p.add_argument('--budget-divisor',type=int,choices=(1,2,4),default=1)
     a=p.parse_args()
     a.output.mkdir(parents=True,exist_ok=False)
     run(a)
