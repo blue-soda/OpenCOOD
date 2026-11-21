@@ -188,10 +188,18 @@ def run(args):
                         fine,old,valid,held=exe.inputs
                         full=core.coarse_update(core.coarse_light(fine),old,valid)
                         if fit:fit.observe(meta['scene'],fine,old,gate.extra,full)
+                        if getattr(exe,'drive',None) is not None:
+                            weight=exe.drive.weight
+                            change=old*weight[:,0].view(1,-1,1,1)+weight[:,1].view(1,-1,1,1)
+                            if exe.drive.mode=='drive':
+                                change+=F.conv2d(fine[:,::16,::2,::2],weight[:,2:,None,None])
+                            predicted=(old+change).clamp_min(0)
+                            held=torch.where(gate.extra,predicted,held)
                         ref=torch.where(exe.skip,held,full)
                         err=(ref-exe.result).abs()
                         assert torch.allclose(ref,exe.result,atol=1e-4,rtol=1e-5),(meta['frame'],float(err.max()))
-                        assert torch.equal(exe.result.masked_select(exe.skip),held.masked_select(exe.skip))
+                        if getattr(exe,'drive',None) is None:
+                            assert torch.equal(exe.result.masked_select(exe.skip),held.masked_select(exe.skip))
                         delta=(full-held)[0,:,gate.extra[0,0]].abs()
                         rec.update(max_error=float(err.max()),hold_l1=float(delta.sum(dtype=torch.float64)),
                                    hold_cells=delta.numel())
@@ -230,7 +238,7 @@ if __name__=='__main__':
     if a.controls and (not a.grouped or a.charge):p.error('controls require the uncharged grouped sender')
     if a.target_audit and (not a.controls or a.audit):p.error('target audit requires development controls')
     if a.fit_drive or a.drive:
-        if not a.grouped or a.charge or a.controls or bool(a.fit_drive)!=a.audit or (a.fit_drive and a.drive):
+        if not a.grouped or a.charge or a.controls or (a.fit_drive and (not a.audit or a.drive)):
             p.error('fit the grouped silent drive on training scans and apply only to development')
     if not a.audit and a.vehicle is None:p.error('development evaluation needs vehicle directory')
     a.output.mkdir(parents=True,exist_ok=False)
