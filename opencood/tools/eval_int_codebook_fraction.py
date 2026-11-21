@@ -99,7 +99,9 @@ def run(args):
                 if gt is not None:stats.update(score(data.post,ego,pred,gt))
                 if name=='carry':
                     assert stats['core']==ref['arms']['local']['core']
-                    assert all(stats[k]==ref[k] for k in ('ap','hits','targets') if k in ref)
+                    if gt is not None:
+                        assert {str(t):v for t,v in stats['ap'].items()}==ref['ap']
+                        assert stats['hits']==ref['hits'] and stats['targets']==ref['targets']
                 row['arms'][name]=stats
                 states[name]=state
             log.write(json.dumps(row)+'\n')
