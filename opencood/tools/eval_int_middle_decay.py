@@ -27,7 +27,8 @@ def run(inputs, scans, reference, out, unit_prefix, shared_phase):
     if shared_phase:
         arms={'factor':('factor','amplitude'),'phase':('phase','amplitude'),'phase_dense':('phase','dense')}
     if unit_prefix:
-        arms={'factor':('factor','amplitude'),'factor_unit':('factor','unit')}
+        name='phase' if shared_phase else 'factor'
+        arms={name:(name,'amplitude'),name+'_unit':(name,'unit')}
         ids={f for clip in read(inputs/'plan.json')['clips'][:2] for f in clip[:12]}
         rows=[r for r in rows if r['frame'] in ids]
         traces=[t for t in traces if t['frame'] in ids]
@@ -74,16 +75,16 @@ def run(inputs, scans, reference, out, unit_prefix, shared_phase):
                 if name=='zero' and reason is None:
                     assert receiver.ledger['units']==archived['middle']['units']
                     assert receiver.ledger['nonzero']==archived['middle']['changed_channels']
-                if name in ('factor_unit','factor_dense','rounded'):
-                    ref='zero' if name=='rounded' else 'factor'
+                if name in ('factor_unit','phase_unit','factor_dense','rounded'):
+                    ref='zero' if name=='rounded' else name.split('_')[0]
                     assert all(torch.equal(state[k],states[ref][k]) for k in
                                ('coarse_projection','coarse','deep','deep_projection'))
                     assert all(torch.equal(v,preds[ref][k]) for k,v in pred.items())
                 if name=='phase_dense':
-                    assert all(torch.equal(state[k],states['phase'][k]) for k in
-                               ('coarse_projection','coarse','deep','deep_projection'))
+                    for k in ('coarse_projection','coarse','deep','deep_projection'):
+                        assert torch.equal(state[k],states['phase'][k]), (meta['frame'],k)
                     assert all(torch.equal(v,preds['phase'][k]) for k,v in pred.items())
-                if name=='phase':
+                if name=='phase' and not unit_prefix:
                     multiplier=7**(3-min(receiver.age,3))
                     assert torch.equal(cache,states['factor']['coarse_projection']*multiplier)
                     assert torch.equal(state['deep'],states['factor']['deep'])
@@ -104,9 +105,8 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser()
     for name in ('inputs','scans','reference','output'):
         parser.add_argument('--'+name,required=True,type=Path)
-    mode=parser.add_mutually_exclusive_group()
-    mode.add_argument('--unit-prefix',action='store_true')
-    mode.add_argument('--shared-phase',action='store_true')
+    parser.add_argument('--unit-prefix',action='store_true')
+    parser.add_argument('--shared-phase',action='store_true')
     args=parser.parse_args()
     args.output.mkdir(parents=True,exist_ok=False)
     run(args.inputs,args.scans,args.reference,args.output,args.unit_prefix,args.shared_phase)

@@ -45,7 +45,13 @@ class MiddleDecayProjection(DeepSpikeProjection):
             # A constant integer numerator now represents a decaying physical value.
             # Device tensor divisor preserves dyadic sender levels under FP32 division.
             if self.mode == 'dense':
-                predicted = before.double() / self.den
+                # Reduce the exact rational number to a dyadic before tie-to-even
+                # rounding. Reciprocal multiplication by an odd divisor can perturb ties.
+                previous_phase = min(self.age-1,3)
+                odd = 7**(3-previous_phase)
+                reduced = torch.div(before,odd,rounding_mode='trunc')
+                assert torch.equal(reduced*odd,before)
+                predicted = reduced.double() * ((.875 if self.leak else 1.)/8**previous_phase)
                 self.events = (target.double()-predicted).round().long()
                 self.numerator = ((predicted + self.events)*self.den).round().long()
             else:
