@@ -13,7 +13,7 @@ class GroupedReceiverTest(unittest.TestCase):
         ids = torch.arange(2)
         for expected in (0,1):
             receiver.aligned_debt = receiver.debt
-            candidate = Candidates(torch.zeros_like(read,dtype=torch.int),ids,torch.tensor([20,12]))
+            candidate = Candidates(torch.zeros_like(read,dtype=torch.int),ids,torch.tensor([20,12],dtype=torch.int))
             receiver.receive(candidate,1,1,read,[3,6,13,28])
             self.assertEqual(receiver.event_sites.flatten().nonzero().item(),expected)
             self.assertEqual(receiver.debt.flatten()[expected].item(),0)
