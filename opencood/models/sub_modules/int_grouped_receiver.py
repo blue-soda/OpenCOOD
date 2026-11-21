@@ -5,6 +5,28 @@ from opencood.models.sub_modules.int_fine_demand import fine_support
 from opencood.models.sub_modules.int_silent_receiver import Candidates, PairedEdge, SilentReceiver
 
 
+def take_grouped(ids,change,tile,order,limit,frame):
+    """Take whole tiles in priority order and resolve the boundary by amplitude."""
+    if limit>=ids.numel():
+        return torch.arange(ids.numel(),device=ids.device)
+    if not limit:
+        return ids[:0]
+    sizes=torch.bincount(tile,minlength=len(order))
+    end=sizes[order].cumsum(0)
+    cut=int(torch.searchsorted(end,limit))
+    full=torch.zeros(len(order),device=ids.device,dtype=torch.bool)
+    full[order[:cut]]=True
+    keep=full[tile].nonzero().flatten()
+    last=(tile==order[cut]).nonzero().flatten()
+    take=limit-len(keep)
+    if take<len(last):
+        magnitude=change[last].abs().contiguous()
+        if magnitude.is_floating_point():magnitude=magnitude.view(torch.int32)
+        tie=((ids[last]+frame)*2654435761)%(1<<32)
+        last=last[torch.topk(magnitude.long()*(1<<32)+tie,take,sorted=False).indices]
+    return torch.cat((keep,last))
+
+
 class GroupedReceiver(SilentReceiver):
     def __init__(self, threshold, side=12, **kwargs):
         super().__init__(threshold, **kwargs)
@@ -30,21 +52,7 @@ class GroupedReceiver(SilentReceiver):
             mass = self.tile_mass(count,tile,change,read)
             tile_ids = torch.arange(count,device=ids.device)
             order = torch.argsort(mass*count + count-1-tile_ids,descending=True)
-            sizes = torch.bincount(tile,minlength=count)
-            end = sizes[order].cumsum(0)
-            cut = int(torch.searchsorted(end,limit))
-            full = torch.zeros(count,device=ids.device,dtype=torch.bool)
-            full[order[:cut]] = True
-            keep = full[tile].nonzero().flatten()
-            last = (tile==order[cut]).nonzero().flatten()
-            take = limit-len(keep)
-            if take < len(last):
-                magnitude = change[last].abs().contiguous()
-                if self.floating:
-                    magnitude = magnitude.view(torch.int32)
-                tie = ((ids[last]+frame)*2654435761) % (1<<32)
-                last = last[torch.topk(magnitude.long()*(1<<32)+tie,take,sorted=False).indices]
-            selected = torch.cat((keep,last))
+            selected = take_grouped(ids,change,tile,order,limit,frame)
             assert len(selected)==limit
             candidates = Candidates(candidates.levels,ids[selected],change[selected])
         value, stats = super().receive(candidates,limit,frame,read,book)

@@ -15,6 +15,7 @@ from opencood.models.sub_modules.int_block_cache import block_lidar_range
 from opencood.models.sub_modules.int_grouped_receiver import GroupedEdge
 from opencood.models.sub_modules.int_silent_drive import DriveFit, SilentDrive
 from opencood.models.sub_modules.int_protected_middle import ProtectedMiddle, aligned_confidence, sparse_returns
+from opencood.models.sub_modules.int_reserved_sender import ReservedEdge
 from opencood.models.sub_modules.int_nonzero_fusion import NonzeroFusionCache
 from opencood.models.sub_modules.int_silent_receiver import PairedEdge, EdgeView
 from opencood.tools.check_int_deep_spike_stream import prepare_stream, read
@@ -126,6 +127,9 @@ def run(args):
             routes = dict(tile=('tile','silent'),old=('tile','silent'),drive=('tile','silent'))
             if args.protect:
                 routes={n:('tile','silent') for n in ('combined','prior','sparse','innovation','random')}
+            elif args.reserve:
+                paired=ReservedEdge(source.bounds,16384,book['levels'])
+                routes={n:(n,'silent') for n in paired.arms}
     else:
         paired = PairedEdge(source.bounds, book['cap']//2, book['levels'], [12], calibration=True)
         routes = {n:('12',n) for n in ('base','silent','continuous')}
@@ -147,8 +151,8 @@ def run(args):
         gate.audit_targets = args.target_audit
         if args.protect:gate.guard=ProtectedMiddle(n)
         model.coarse_executor = InspectMiddle(False,model.coarse_executor.receive_fine,gate)
-        if drive_fit and (args.protect or n in ('old','drive')):
-            model.coarse_executor.drive=SilentDrive(drive_fit['fit']['coefficients'],'drive' if args.protect else n)
+        if drive_fit and (args.protect or args.reserve or n in ('old','drive')):
+            model.coarse_executor.drive=SilentDrive(drive_fit['fit']['coefficients'],'drive' if args.protect or args.reserve else n)
         models[n],policies[n] = model,gate
     costs = conv_costs(core)
     data, stream = loader(data_rows,cfg,0,303)
@@ -168,8 +172,13 @@ def run(args):
             ego=to_device(sample['ego'],torch.device('cuda'))
             spatial=spatial_input(source,ego)
             reason=trace['refresh']
-            if args.protect and reason is None:
+            if (args.protect or args.reserve) and reason is None:
                 sparse=sparse_returns(ego['processed_lidar'],spatial.shape[-2:])
+                if args.reserve:
+                    for n,arm in paired.arms.items():
+                        if n=='tile':continue
+                        prior=aligned_confidence(states[n],meta,spatial.shape[-2:],source.bounds)
+                        arm.guide(prior*(1+sparse.float())+.1*sparse.float(),meta['frame'])
             paired.start(meta,spatial.shape[-2:],reason)
             gt=data.post.generate_gt_bbx(dict(ego=ego)) if meta['supervised'] else None
             labelled += int(meta['supervised'])
@@ -228,7 +237,7 @@ def run(args):
                     exe.inputs=exe.result=None
                 state['branch_fusion' if args.grouped else 'fusion_cache']=layer.new
                 states[n]=state
-                if args.protect and n in ('combined','prior'):
+                if (args.protect and n in ('combined','prior')) or (args.reserve and n!='tile'):
                     state['guard_confidence']=pred['psm'].amax(1,keepdim=True).sigmoid()
                 if gt is not None: rec.update(score(data.post,ego,pred,gt,record_matches=True))
                 row['arms'][n]=rec
@@ -261,10 +270,12 @@ if __name__=='__main__':
     p.add_argument('--fit-drive',action='store_true')
     p.add_argument('--drive',type=Path)
     p.add_argument('--protect',action='store_true')
+    p.add_argument('--reserve',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
     if a.protect and not a.drive:p.error('protected updates require the frozen silent drive')
+    if a.reserve and (not a.drive or a.protect):p.error('reserved messages require grouped drive without receiver protection')
     if a.charge and not a.grouped:p.error('spatial charge requires grouped routing')
     if a.controls and (not a.grouped or a.charge):p.error('controls require the uncharged grouped sender')
     if a.target_audit and (not a.controls or a.audit):p.error('target audit requires development controls')
