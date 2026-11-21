@@ -14,6 +14,7 @@ from opencood.models.sub_modules.int_branch_fusion import BranchFusion
 from opencood.models.sub_modules.int_block_cache import block_lidar_range
 from opencood.models.sub_modules.int_grouped_receiver import GroupedEdge
 from opencood.models.sub_modules.int_silent_drive import DriveFit, SilentDrive
+from opencood.models.sub_modules.int_protected_middle import ProtectedMiddle, aligned_confidence, sparse_returns
 from opencood.models.sub_modules.int_nonzero_fusion import NonzeroFusionCache
 from opencood.models.sub_modules.int_silent_receiver import PairedEdge, EdgeView
 from opencood.tools.check_int_deep_spike_stream import prepare_stream, read
@@ -62,6 +63,9 @@ class SilencePolicy:
         self.stats = dict(base=support_counts(self.base),eligible=int(eligible.sum()),
                           center_silent=int((eligible & (center==0)).sum()),full_silent=int(silent.sum()),
                           extra=int(self.extra.sum()),overlap_silent=int((self.extra&silent).sum()))
+        if hasattr(self,'guard'):
+            self.extra,info=self.guard.select(self.base,silent,innovation,frame)
+            self.stats.update(guard=info,extra=int(self.extra.sum()),overlap_silent=int(self.extra.sum()))
         return previous_skip | self.extra
 
 
@@ -78,6 +82,10 @@ def target_support(truth, policies, bounds, spatial_shape):
     point,tile = policies['point_base'],policies['tile_score']
     assert torch.equal(point.eligible_mask,tile.eligible_mask)
     masks = torch.cat((point.eligible_mask,point.silent_mask,tile.silent_mask),dim=1)[0].cpu().numpy()
+    return box_counts(truth,masks,bounds,spatial_shape)
+
+
+def box_counts(truth,masks,bounds,spatial_shape):
     h,w = masks.shape[-2:]
     area = block_lidar_range(bounds,spatial_shape,(h,w),4)
     yy,xx = np.meshgrid(area[1]+(np.arange(h)+.5)*(area[4]-area[1])/h,
@@ -116,6 +124,8 @@ def run(args):
             routes = dict(tile=('tile','silent'))
         elif args.drive:
             routes = dict(tile=('tile','silent'),old=('tile','silent'),drive=('tile','silent'))
+            if args.protect:
+                routes={n:('tile','silent') for n in ('combined','prior','sparse','innovation','random')}
     else:
         paired = PairedEdge(source.bounds, book['cap']//2, book['levels'], [12], calibration=True)
         routes = {n:('12',n) for n in ('base','silent','continuous')}
@@ -135,9 +145,10 @@ def run(args):
         model = build(source,q,view)
         gate = SilencePolicy(paired.arms[key],mode)
         gate.audit_targets = args.target_audit
+        if args.protect:gate.guard=ProtectedMiddle(n)
         model.coarse_executor = InspectMiddle(False,model.coarse_executor.receive_fine,gate)
-        if drive_fit and n in ('old','drive'):
-            model.coarse_executor.drive=SilentDrive(drive_fit['fit']['coefficients'],n)
+        if drive_fit and (args.protect or n in ('old','drive')):
+            model.coarse_executor.drive=SilentDrive(drive_fit['fit']['coefficients'],'drive' if args.protect else n)
         models[n],policies[n] = model,gate
     costs = conv_costs(core)
     data, stream = loader(data_rows,cfg,0,303)
@@ -157,6 +168,8 @@ def run(args):
             ego=to_device(sample['ego'],torch.device('cuda'))
             spatial=spatial_input(source,ego)
             reason=trace['refresh']
+            if args.protect and reason is None:
+                sparse=sparse_returns(ego['processed_lidar'],spatial.shape[-2:])
             paired.start(meta,spatial.shape[-2:],reason)
             gt=data.post.generate_gt_bbx(dict(ego=ego)) if meta['supervised'] else None
             labelled += int(meta['supervised'])
@@ -164,6 +177,11 @@ def run(args):
             row=dict(frame=meta['frame'],scene=meta['scene'],segment=meta['segment'],refresh=reason,arms={})
             for n,model in models.items():
                 prev,selector=states[n],selectors[n]
+                if args.protect and reason is None:
+                    guard=policies[n].guard
+                    guard.sparse=sparse
+                    if n in ('prior','combined'):
+                        guard.prior=aligned_confidence(prev,meta,spatial.shape[-2:],source.bounds)
                 assert model.refresh_reason(prev,meta)==reason
                 model.coarse_projector.begin(prev,reason)
                 if args.grouped:
@@ -184,6 +202,10 @@ def run(args):
                         rec['drive_ops']=exe.drive_ops
                         rec['core']+=exe.drive_ops
                     assert exe.counts==support_counts(~exe.skip)
+                    if args.protect:
+                        baseline=gate.base & ~(gate.extra|gate.guard.chosen)
+                        before=support_counts(baseline)
+                        assert [exe.counts[k]-before[k] for k in ('output','radius1','radius2')]==gate.stats['guard']['increments']
                     if args.audit:
                         fine,old,valid,held=exe.inputs
                         full=core.coarse_update(core.coarse_light(fine),old,valid)
@@ -206,9 +228,16 @@ def run(args):
                     exe.inputs=exe.result=None
                 state['branch_fusion' if args.grouped else 'fusion_cache']=layer.new
                 states[n]=state
+                if args.protect and n in ('combined','prior'):
+                    state['guard_confidence']=pred['psm'].amax(1,keepdim=True).sigmoid()
                 if gt is not None: rec.update(score(data.post,ego,pred,gt,record_matches=True))
                 row['arms'][n]=rec
             row['wire']=paired.stats if args.grouped else paired.stats['12']
+            if args.protect and reason is None:
+                assert all(row['arms'][n]['executed']==row['arms']['combined']['executed'] for n in names)
+                if gt is not None:
+                    masks=torch.cat([policies[n].guard.chosen for n in names],1)[0].cpu().numpy()
+                    row['guard_box_cells']=box_counts(gt,masks,source.bounds,spatial.shape[-2:])
             if args.target_audit and reason is None and gt is not None:
                 row['target_support']=target_support(gt,policies,source.bounds,spatial.shape[-2:])
             if reason is None and not args.grouped:
@@ -231,9 +260,11 @@ if __name__=='__main__':
     p.add_argument('--target-audit',action='store_true')
     p.add_argument('--fit-drive',action='store_true')
     p.add_argument('--drive',type=Path)
+    p.add_argument('--protect',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
+    if a.protect and not a.drive:p.error('protected updates require the frozen silent drive')
     if a.charge and not a.grouped:p.error('spatial charge requires grouped routing')
     if a.controls and (not a.grouped or a.charge):p.error('controls require the uncharged grouped sender')
     if a.target_audit and (not a.controls or a.audit):p.error('target audit requires development controls')
