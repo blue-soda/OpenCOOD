@@ -77,7 +77,13 @@ class InspectMiddle(FineInnovationUpdate):
         self.result = super().__call__(core,fine,old,valid,coverage,state,meta,dt,spatial_shape,bounds)
         if getattr(self,'drive',None) is not None:
             fine,old,_,_=self.inputs
-            self.drive_ops=self.drive.apply(fine,old,self.refine_skip.extra,self.result)
+            drive_sites=self.refine_skip.extra
+            if hasattr(self,'gate_memory'):
+                area=block_lidar_range(bounds,spatial_shape,old.shape[-2:],4)
+                drive_sites=self.gate_memory.prepare(old,drive_sites,area,meta['pose'])
+            self.drive_ops=self.drive.apply(fine,old,drive_sites,self.result)
+            if hasattr(self,'gate_memory'):
+                self.gate_stats=self.gate_memory.update(old,valid,self.result)
             if hasattr(self,'trace_receiver'):
                 area=block_lidar_range(bounds,spatial_shape,old.shape[-2:],4)
                 self.trace_stats=self.trace_receiver.apply(fine,old,valid,~self.skip,self.refine_skip.extra,
@@ -131,7 +137,9 @@ def run(args):
             routes = dict(tile=('tile','silent'))
         elif args.drive:
             routes = dict(tile=('tile','silent'),old=('tile','silent'),drive=('tile','silent'))
-            if args.trace_readout:
+            if args.gate_memory:
+                routes={n:('tile','silent') for n in ('drive','relax','shuffle_gate','shuffle_target')}
+            elif args.trace_readout:
                 routes={n:('tile','silent') for n in ('drive','bias','sign','shuffled','amplitude')}
             elif args.trace_audit or args.gate_audit:
                 routes={'drive':('tile','silent')}
@@ -178,10 +186,15 @@ def run(args):
         if n in guarded:gate.guard=ProtectedMiddle(n)
         model.coarse_executor = InspectMiddle(False,model.coarse_executor.receive_fine,gate)
         if gate_audit is not None:model.coarse_executor.capture=gate_audit.capture
-        if drive_fit and (n in guarded or args.reserve or trace_readout or n in ('old','drive','point_drive')):
+        if drive_fit and (n in guarded or args.reserve or trace_readout or args.gate_memory or n in ('old','drive','point_drive')):
             model.coarse_executor.drive=SilentDrive(drive_fit['fit']['coefficients'],'old' if n=='old' else 'drive')
         if trace_readout and n!='drive':
             model.coarse_executor.trace_receiver=MiddleTraceReceiver(n,trace_readout,args.audit)
+        if args.gate_memory and n!='drive':
+            from opencood.models.sub_modules.int_silent_gate_memory import SilentGateMemory
+            memory=SilentGateMemory(n,args.audit)
+            model.coarse_executor.gate_memory=memory
+            model.coarse_executor.capture=memory.capture
         models[n],policies[n] = model,gate
     costs = conv_costs(core)
     data, stream = loader(data_rows,cfg,0,303)
@@ -221,6 +234,8 @@ def run(args):
                 prev,selector=states[n],selectors[n]
                 if reason is not None and hasattr(model.coarse_executor,'trace_receiver'):
                     model.coarse_executor.trace_receiver.reset()
+                if reason is not None and hasattr(model.coarse_executor,'gate_memory'):
+                    model.coarse_executor.gate_memory.reset()
                 if n in guarded and reason is None:
                     guard=policies[n].guard
                     guard.sparse=sparse
@@ -248,6 +263,9 @@ def run(args):
                     if hasattr(exe,'trace_receiver'):
                         rec['trace']=exe.trace_stats
                         rec['core']+=exe.trace_stats['record_ops']+exe.trace_stats['read_ops']
+                    if hasattr(exe,'gate_memory'):
+                        rec['memory']=exe.gate_stats
+                        rec['core']+=exe.gate_stats['gate_ops']
                     assert exe.counts==support_counts(~exe.skip)
                     if n in guarded:
                         baseline=gate.base & ~(gate.extra|gate.guard.chosen)
@@ -270,6 +288,9 @@ def run(args):
                                 area=block_lidar_range(source.bounds,spatial.shape[-2:],old.shape[-2:],4)
                                 trace_audit.observe(meta,area,~exe.skip,valid,gate.extra,exe.result,predicted,full)
                             held=torch.where(gate.extra,predicted,held)
+                            if hasattr(exe,'gate_memory'):
+                                mem=exe.gate_memory
+                                held[0].flatten(1)[:,mem.ids]=mem.reference
                             if hasattr(exe,'trace_receiver'):
                                 receiver=exe.trace_receiver
                                 ids=receiver.audit_ids
@@ -330,12 +351,15 @@ if __name__=='__main__':
     p.add_argument('--group-factorial',action='store_true')
     p.add_argument('--trace-audit',action='store_true')
     p.add_argument('--gate-audit',action='store_true')
+    p.add_argument('--gate-memory',action='store_true')
     p.add_argument('--trace-readout',type=Path)
     p.add_argument('--wire-audit',action='store_true')
     p.add_argument('--remainder',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
+    if a.gate_memory and (not a.drive or a.trace_readout or a.gate_audit or a.trace_audit or a.group_factorial or a.reserve or a.protect):
+        p.error('gate memory requires the frozen grouped drive')
     if a.wire_audit and (not a.audit or not a.group_factorial):
         p.error('wire audit requires the frozen training factorial')
     if a.trace_readout and (not a.drive or a.trace_audit or a.group_factorial or a.protect or a.reserve):
