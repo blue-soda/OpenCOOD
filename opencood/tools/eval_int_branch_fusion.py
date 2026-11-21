@@ -60,6 +60,10 @@ def run(args):
         paired = PairedEdge(source.bounds,book['cap']//2,book['levels'],[12],calibration=True)
         model = build(source,q,EdgeView(paired,'12'))
     costs = conv_costs(source.core)
+    refresh_audit=None
+    if args.refresh_audit:
+        from opencood.tools.audit_int_refresh_projection import RefreshProjectionAudit
+        refresh_audit=RefreshProjectionAudit()
     pillar_macs=[0]
     def count_pillar(module,inputs,output):
         pillar_macs[0]+=output.numel()*module.in_features
@@ -100,6 +104,8 @@ def run(args):
             (pred,state,info),other=measured_step(model,spatial,prev,meta,selector)
             assert info['full_refresh']==reason
             record=dict(frame=meta['frame'],scene=meta['scene'],segment=meta['segment'],refresh=reason,fusion=layer.ledger)
+            if refresh_audit is not None and reason is not None:
+                record['refresh_projection']=refresh_audit.measure(model,state,prev,reason,meta,spatial.shape[-2:])
             if args.arithmetic_only:
                 components=dict(pillar_mac=pillar_macs[0],merge_add=layer.ledger['merge_add'])
                 for name,projector in [('middle',model.coarse_projector),('deep',model.deep_projector)]:
@@ -169,10 +175,13 @@ if __name__=='__main__':
     p.add_argument('--direct',action='store_true')
     p.add_argument('--weighted-check',action='store_true')
     p.add_argument('--arithmetic-only',action='store_true')
+    p.add_argument('--refresh-audit',action='store_true')
     p.add_argument('--quanta',type=Path)
     for k in ('long-base','vehicle','calibration','output'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','output'))
     a=p.parse_args()
+    if a.refresh_audit and (not a.arithmetic_only or a.partition!='train'):
+        p.error('refresh projection checks use the frozen training-side arithmetic replay')
     if a.arithmetic_only and (a.route!='half' or a.quanta or a.collect_rms):
         p.error('arithmetic replay requires the original half-budget detector')
     if a.route=='amplitude' and a.partition=='train':p.error('use the historical paired stream for amplitude')
