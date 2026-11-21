@@ -14,6 +14,7 @@ from opencood.models.sub_modules.int_branch_fusion import BranchFusion
 from opencood.models.sub_modules.int_block_cache import block_lidar_range
 from opencood.models.sub_modules.int_grouped_receiver import GroupedEdge
 from opencood.models.sub_modules.int_silent_drive import DriveFit, SilentDrive
+from opencood.models.sub_modules.int_silent_trace import CorrectionTraceAudit
 from opencood.models.sub_modules.int_protected_middle import ProtectedMiddle, aligned_confidence, sparse_returns
 from opencood.models.sub_modules.int_reserved_sender import ReservedEdge
 from opencood.models.sub_modules.int_nonzero_fusion import NonzeroFusionCache
@@ -125,7 +126,9 @@ def run(args):
             routes = dict(tile=('tile','silent'))
         elif args.drive:
             routes = dict(tile=('tile','silent'),old=('tile','silent'),drive=('tile','silent'))
-            if args.group_factorial:
+            if args.trace_audit:
+                routes={'drive':('tile','silent')}
+            elif args.group_factorial:
                 routes=dict(point_full=('point','base'),tile_full=('tile','base'),
                             point_drive=('point','silent'),drive=('tile','silent'))
             elif args.protect:
@@ -148,6 +151,7 @@ def run(args):
     guarded=tuple(n for n in names if args.protect and n not in ('point','drive'))
     models, policies = {}, {}
     fit = DriveFit() if args.fit_drive else None
+    trace_audit=CorrectionTraceAudit() if args.trace_audit else None
     drive_fit = read(args.drive/'report.json') if args.drive else None
     for n in names:
         key,mode = routes[n]
@@ -178,6 +182,8 @@ def run(args):
             ego=to_device(sample['ego'],torch.device('cuda'))
             spatial=spatial_input(source,ego)
             reason=trace['refresh']
+            if trace_audit is not None and reason is not None:
+                trace_audit.reset()
             if (args.protect or args.reserve) and reason is None:
                 sparse=sparse_returns(ego['processed_lidar'],spatial.shape[-2:])
                 if args.reserve:
@@ -231,6 +237,9 @@ def run(args):
                             if exe.drive.mode=='drive':
                                 change+=F.conv2d(fine[:,::16,::2,::2],weight[:,2:,None,None])
                             predicted=(old+change).clamp_min(0)
+                            if trace_audit is not None:
+                                area=block_lidar_range(source.bounds,spatial.shape[-2:],old.shape[-2:],4)
+                                trace_audit.observe(meta,area,~exe.skip,valid,gate.extra,exe.result,predicted,full)
                             held=torch.where(gate.extra,predicted,held)
                         ref=torch.where(exe.skip,held,full)
                         err=(ref-exe.result).abs()
@@ -266,6 +275,7 @@ def run(args):
     assert labelled==(0 if args.audit else 1280 if args.remainder else 458)
     report=dict(status='COMPLETED',scans=len(data_rows),labels=labelled,ordinary=ordinary,optimizer_steps=0)
     if fit:report['fit']=fit.finish()
+    if trace_audit is not None:write_json(args.output/'trace_stats.json',trace_audit.report())
     write_json(args.output/'report.json',report)
 
 
@@ -282,10 +292,13 @@ if __name__=='__main__':
     p.add_argument('--reserve',action='store_true')
     p.add_argument('--matched-protection',action='store_true')
     p.add_argument('--group-factorial',action='store_true')
+    p.add_argument('--trace-audit',action='store_true')
     p.add_argument('--remainder',action='store_true')
     for k in ('long-base','calibration','vehicle','output'):
         p.add_argument('--'+k,type=Path,required=k!='vehicle')
     a=p.parse_args()
+    if a.trace_audit and (not a.audit or not a.drive or a.group_factorial or a.reserve or a.protect):
+        p.error('trace audit requires the original frozen grouped drive on training data')
     if a.matched_protection and not a.protect:p.error('matched protection requires the protected middle')
     if a.group_factorial and (not a.drive or a.protect or a.reserve):p.error('group factorial requires only the frozen grouped drive')
     if a.remainder and (a.audit or not (a.matched_protection or a.group_factorial)):p.error('use a matched frozen transfer configuration')
