@@ -41,7 +41,7 @@ def check(code, operation):
 
 class NonzeroFusionKernel:
     """Compile with PyTorch's bundled NVRTC and launch on the current stream."""
-    def __init__(self):
+    def __init__(self, source=_KERNEL):
         lib=Path(torch.__file__).resolve().parent/'lib'
         paths=sorted(lib.glob('libnvrtc*.so*'))
         libs=[p for p in paths if 'builtins' not in p.name]
@@ -49,7 +49,7 @@ class NonzeroFusionKernel:
         self.driver=ct.CDLL('libcuda.so.1')
         torch.cuda.current_stream()
         prog=ct.c_void_p()
-        check(self.rtc.nvrtcCreateProgram(ct.byref(prog),_KERNEL.encode(),b'fusion.cu',0,None,None),'create program')
+        check(self.rtc.nvrtcCreateProgram(ct.byref(prog),source.encode(),b'fusion.cu',0,None,None),'create program')
         major,minor=torch.cuda.get_device_capability()
         opt=(ct.c_char_p*1)(f'--gpu-architecture=compute_{major}{minor}'.encode())
         try:

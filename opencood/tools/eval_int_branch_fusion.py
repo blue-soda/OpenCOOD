@@ -8,6 +8,7 @@ import subprocess
 import torch
 
 from opencood.models.sub_modules.int_branch_fusion import BranchFusion
+from opencood.models.sub_modules.int_direct_fusion import DirectFusion
 from opencood.models.sub_modules.int_compact_middle_update import conv_costs
 from opencood.models.sub_modules.int_fine_codebook import FineCodebook
 from opencood.models.sub_modules.int_fusion_lattice import FusionInputLattice
@@ -36,13 +37,14 @@ def run(args):
     rows,traces,hashes = (training_rows(base,book_path,True) if audit else
         complete_scenes(args,short,remainder=args.partition=='transfer'))
     fusion = source.core.readout.layers[0].double_conv[0]
-    layer = BranchFusion(fusion[0],verify=audit).eval()
+    grid = read(args.quanta) if args.quanta else None
+    if grid:
+        assert grid['status']=='COMPLETED' and grid['scans']==211 and grid['labels']==0
+    layer = (DirectFusion(fusion[0],grid['quanta'],audit) if args.direct else
+             BranchFusion(fusion[0],verify=audit)).eval()
     fusion[0] = layer
     probe = None
-    if args.collect_rms or args.quanta:
-        grid = read(args.quanta) if args.quanta else None
-        if grid:
-            assert grid['status']=='COMPLETED' and grid['scans']==211 and grid['labels']==0
+    if args.collect_rms or (args.quanta and not args.direct):
         probe=FusionInputLattice(grid['quanta'] if grid else None)
         layer.register_forward_pre_hook(probe.observe)
     edge = paired = None
@@ -66,7 +68,7 @@ def run(args):
         route=args.route,partition=args.partition,input_hashes=hashes,book=digest(book_path),seed=303,
         calibration=digest(args.calibration/'report.json') if paired else None,
         scenes=sorted({r['scene'] for r in rows}),params=sum(p.numel() for p in source.parameters()),
-        collect_rms=args.collect_rms,quanta=digest(args.quanta) if args.quanta else None))
+        collect_rms=args.collect_rms,quanta=digest(args.quanta) if args.quanta else None,direct=args.direct))
     ordinary=labels=0
     with (args.output/'frames.jsonl').open('x',buffering=1) as log:
         for i,(sample,trace) in enumerate(zip(stream,traces)):
@@ -88,7 +90,7 @@ def run(args):
             (pred,state,info),other=measured_step(model,spatial,prev,meta,selector)
             assert info['full_refresh']==reason
             record=dict(frame=meta['frame'],scene=meta['scene'],segment=meta['segment'],refresh=reason,fusion=layer.ledger)
-            if args.quanta:record['lattice']=probe.ledger
+            if args.quanta and probe:record['lattice']=probe.ledger
             if reason is None:
                 ordinary+=1
                 if args.route!='ann':
@@ -101,10 +103,16 @@ def run(args):
             if edge: edge.commit(state,False)
             state['branch_fusion']=layer.new
             prev=state
-            site=layer.ledger['sites']
-            deep_taps=layer.ledger['branches'][2]['executed_taps']
-            original_fusion=(site*384*9*256 if args.route=='ann' else site*256*9*256+deep_taps*256)
-            record.update(other=other,legacy_core=other+original_fusion,core=other+layer.ledger['float_conv'])
+            if args.direct:
+                counts=layer.ledger['branches']
+                ac=sum(b['one_static']+b['one_delta'] for b in counts)*128
+                mac=sum(b['static_chosen']+b['delta_chosen'] for b in counts)*128-ac
+                record.update(other=other,fusion_ac=ac,fusion_mac=mac,core=other+2*mac+ac)
+            else:
+                site=layer.ledger['sites']
+                deep_taps=layer.ledger['branches'][2]['executed_taps']
+                original_fusion=(site*384*9*256 if args.route=='ann' else site*256*9*256+deep_taps*256)
+                record.update(other=other,legacy_core=other+original_fusion,core=other+layer.ledger['float_conv'])
             if not audit:
                 old=(trace['arms']['indexed_crop_online']['core_conv_flops'] if args.route=='ann'
                      else historic[i]['arms']['carry']['core'])
@@ -128,10 +136,12 @@ if __name__=='__main__':
     p.add_argument('--route',choices=['ann','half','threshold'],required=True)
     p.add_argument('--partition',choices=['train','dev','transfer'],required=True)
     p.add_argument('--collect-rms',action='store_true')
+    p.add_argument('--direct',action='store_true')
     p.add_argument('--quanta',type=Path)
     for k in ('long-base','vehicle','calibration','output'):
         p.add_argument('--'+k,type=Path,required=k in ('long-base','output'))
     a=p.parse_args()
+    if a.direct and not a.quanta:p.error('direct signed fusion needs a frozen lattice')
     if (a.collect_rms or a.quanta) and a.route!='half':p.error('fusion lattice requires the frozen half route')
     if a.collect_rms and (a.partition!='train' or a.quanta):p.error('RMS calibration requires raw training projections')
     if a.route=='threshold' and (a.partition!='train' or a.calibration is None):
