@@ -133,7 +133,7 @@ def run(args):
             routes = dict(tile=('tile','silent'),old=('tile','silent'),drive=('tile','silent'))
             if args.trace_readout:
                 routes={n:('tile','silent') for n in ('drive','bias','sign','shuffled','amplitude')}
-            elif args.trace_audit:
+            elif args.trace_audit or args.gate_audit:
                 routes={'drive':('tile','silent')}
             elif args.group_factorial:
                 routes=dict(point_full=('point','base'),tile_full=('tile','base'),
@@ -163,6 +163,10 @@ def run(args):
     models, policies = {}, {}
     fit = DriveFit() if args.fit_drive else None
     trace_audit=CorrectionTraceAudit() if args.trace_audit else None
+    gate_audit=None
+    if args.gate_audit:
+        from opencood.models.sub_modules.int_silent_gate_audit import SilentGateAudit
+        gate_audit=SilentGateAudit()
     drive_fit = read(args.drive/'report.json') if args.drive else None
     trace_readout=read(args.trace_readout)['readout'] if args.trace_readout else None
     for n in names:
@@ -173,6 +177,7 @@ def run(args):
         gate.audit_targets = args.target_audit
         if n in guarded:gate.guard=ProtectedMiddle(n)
         model.coarse_executor = InspectMiddle(False,model.coarse_executor.receive_fine,gate)
+        if gate_audit is not None:model.coarse_executor.capture=gate_audit.capture
         if drive_fit and (n in guarded or args.reserve or trace_readout or n in ('old','drive','point_drive')):
             model.coarse_executor.drive=SilentDrive(drive_fit['fit']['coefficients'],'old' if n=='old' else 'drive')
         if trace_readout and n!='drive':
@@ -199,6 +204,7 @@ def run(args):
             reason=trace['refresh']
             if trace_audit is not None and reason is not None:
                 trace_audit.reset()
+            if gate_audit is not None and reason is not None:gate_audit.reset()
             if (args.protect or args.reserve) and reason is None:
                 sparse=sparse_returns(ego['processed_lidar'],spatial.shape[-2:])
                 if args.reserve:
@@ -257,6 +263,9 @@ def run(args):
                             if exe.drive.mode=='drive':
                                 change+=F.conv2d(fine[:,::16,::2,::2],weight[:,2:,None,None])
                             predicted=(old+change).clamp_min(0)
+                            if gate_audit is not None:
+                                area=block_lidar_range(source.bounds,spatial.shape[-2:],old.shape[-2:],4)
+                                gate_audit.observe(meta,area,old,valid,gate.extra,~exe.skip,exe.result,predicted,full)
                             if trace_audit is not None:
                                 area=block_lidar_range(source.bounds,spatial.shape[-2:],old.shape[-2:],4)
                                 trace_audit.observe(meta,area,~exe.skip,valid,gate.extra,exe.result,predicted,full)
@@ -302,6 +311,7 @@ def run(args):
     report=dict(status='COMPLETED',scans=len(data_rows),labels=labelled,ordinary=ordinary,optimizer_steps=0)
     if fit:report['fit']=fit.finish()
     if trace_audit is not None:write_json(args.output/'trace_stats.json',trace_audit.report())
+    if gate_audit is not None:write_json(args.output/'gate_stats.json',gate_audit.scenes)
     write_json(args.output/'report.json',report)
 
 
@@ -319,6 +329,7 @@ if __name__=='__main__':
     p.add_argument('--matched-protection',action='store_true')
     p.add_argument('--group-factorial',action='store_true')
     p.add_argument('--trace-audit',action='store_true')
+    p.add_argument('--gate-audit',action='store_true')
     p.add_argument('--trace-readout',type=Path)
     p.add_argument('--wire-audit',action='store_true')
     p.add_argument('--remainder',action='store_true')
@@ -329,7 +340,7 @@ if __name__=='__main__':
         p.error('wire audit requires the frozen training factorial')
     if a.trace_readout and (not a.drive or a.trace_audit or a.group_factorial or a.protect or a.reserve):
         p.error('trace readout requires the frozen grouped drive')
-    if a.trace_audit and (not a.audit or not a.drive or a.group_factorial or a.reserve or a.protect):
+    if (a.trace_audit or a.gate_audit) and (not a.audit or not a.drive or a.group_factorial or a.reserve or a.protect or a.trace_readout):
         p.error('trace audit requires the original frozen grouped drive on training data')
     if a.matched_protection and not a.protect:p.error('matched protection requires the protected middle')
     if a.group_factorial and (not a.drive or a.protect or a.reserve):p.error('group factorial requires only the frozen grouped drive')

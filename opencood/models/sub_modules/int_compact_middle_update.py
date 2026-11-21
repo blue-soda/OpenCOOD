@@ -58,7 +58,7 @@ def spatial_conv(module,x,ids,width,shape,lut):
     return F.linear(neighborhood.reshape(len(ids),-1),module.weight.flatten(1),module.bias)
 
 
-def compact_update(core,fine,old,valid,dt,active,held,projection=None):
+def compact_update(core,fine,old,valid,dt,active,held,projection=None,capture=None):
     a,b,c=supports(active)
     h,w=a.shape[-2:]
     ids,one,two=[s.flatten().nonzero().flatten() for s in (a,b,c)]
@@ -82,6 +82,7 @@ def compact_update(core,fine,old,valid,dt,active,held,projection=None):
     clock=torch.full_like(visible,dt,dtype=x.dtype)
     gate=torch.cat((observed[selected],older,visible.to(x.dtype),clock),1)
     z=pw(upd.gate[2],pw(upd.gate[0],gate).relu()).sigmoid()
+    if capture is not None:capture(ids,z,candidate)
     result=held.clone()
     result[0].flatten(1)[:,ids]=torch.where(visible,older+z*(candidate-older),candidate).T
     return result,dict(output=len(ids),radius1=len(one),radius2=len(two))
@@ -127,6 +128,6 @@ class FineInnovationUpdate:
             fine=self.receive_fine(fine,~self.skip)
         if self.refine_skip is not None:
             self.skip=self.refine_skip(self.skip,valid,coverage,score,meta['frame'])
-        out,self.counts=compact_update(core,fine,old,valid,dt,~self.skip,held)
+        out,self.counts=compact_update(core,fine,old,valid,dt,~self.skip,held,capture=getattr(self,'capture',None))
         self.inputs=(fine,old,valid,held)
         return out
