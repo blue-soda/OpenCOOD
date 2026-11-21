@@ -82,6 +82,28 @@ class DeepBlockCacheTests(unittest.TestCase):
         self.meta = dict(timestamp_us=0, segment='a', pose=np.eye(4))
 
     @torch.no_grad()
+    def test_middle_storage_and_send_split_on_refresh_and_ordinary(self):
+        calls = []
+        def interface(value, mask):
+            sent = torch.round(value / .25) * .25
+            calls.append((value, sent))
+            return value, sent
+        cache = DeepBlockCache(self.source, 2, 'light', coarse_interface=interface)
+        received = []
+        hook = self.source.core.deblocks[1].register_forward_pre_hook(
+            lambda module, args: received.append(args[0]))
+        try:
+            state = None
+            for stamp in (0, 100000):
+                _, state, _ = cache.step_spatial(self.spatial, state, dict(self.meta, timestamp_us=stamp))
+                self.assertTrue(torch.equal(state['coarse'], calls[-1][0]))
+                self.assertTrue(torch.equal(received[-1], calls[-1][1]))
+                self.assertFalse(torch.equal(received[-1], state['coarse']))
+            self.assertEqual(len(calls), 2)
+        finally:
+            hook.remove()
+
+    @torch.no_grad()
     def test_empty_optional_mask_skips_heavy_and_retains_deep_state(self):
         _, old, _ = self.cache.step_spatial(self.spatial, None, self.meta)
         next_meta = dict(self.meta, timestamp_us=100000)

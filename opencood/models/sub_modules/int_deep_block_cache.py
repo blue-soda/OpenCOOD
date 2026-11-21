@@ -110,6 +110,8 @@ class DeepBlockCache:
             with self.phase('fine_coarse_compute'):
                 update.delta_t = dt
                 current = update(encoded, old, valid)
+            if key == 'coarse' and self.coarse_interface is not None:
+                coarse_stored, current = self.coarse_interface(current, None)
             features.append(current)
         with self.phase('deep_warp'):
             bounds = block_lidar_range(self.source.bounds, spatial.shape[-2:], state['deep'].shape[-2:], 8)
