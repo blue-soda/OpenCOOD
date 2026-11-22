@@ -125,7 +125,8 @@ def run(a):
                 expected = exact[i]['arms']['temporal']
                 assert exact[i]['frame']==meta['frame']
                 if a.arm=='temporal':
-                    assert all(v==expected[k] for k,v in item['arms']['temporal'].items())
+                    actual = json.loads(json.dumps(item['arms']['temporal'],allow_nan=False))
+                    assert all(v==expected[k] for k,v in actual.items()),(meta['frame'],[k for k,v in actual.items() if v!=expected[k]])
                 if reason is None:check_next=False
             else:
                 x,y = item['arms'].values()
