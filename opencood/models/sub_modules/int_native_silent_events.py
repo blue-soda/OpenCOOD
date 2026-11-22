@@ -78,14 +78,9 @@ class NativeEventWriter:
         else:
             total = increment
         valid = (total.abs() >= .125) & ((total > 0) | (prior > 0))
-        eligible = valid.flatten().nonzero().flatten()
         grant = self.budget(total.numel()) if callable(self.budget) else self.budget['addresses']
-        count = min(len(eligible), grant)
-        if count < len(eligible):
-            scores = total.flatten()[eligible].abs()
-            ranked = np.argsort(-scores.cpu().numpy(), kind='stable')
-            order = torch.as_tensor(ranked[:count], device=eligible.device)
-            eligible = eligible[order[:count]]
+        eligible = self.select_addresses(valid, total, grant)
+        count = len(eligible)
         units = torch.zeros_like(total, memory_format=torch.contiguous_format)
         chosen = total.flatten()[eligible]
         if self.mode == 'amplitude':
@@ -116,6 +111,16 @@ class NativeEventWriter:
         # Two power-of-two scales for the trained ternary correction, then difference,
         # prior scale, grid increment, grid decode, and (for carry) integrate/scale/reset.
         return cost + (4 + 2*int(self.drive.name=='pulse') + 3*int(integrate))*units.numel() + (2*count if self.mode=='amplitude' else 0)
+
+    def select_addresses(self, valid, total, grant):
+        eligible = valid.flatten().nonzero().flatten()
+        count = min(len(eligible), grant)
+        if count < len(eligible):
+            scores = total.flatten()[eligible].abs()
+            ranked = np.argsort(-scores.cpu().numpy(), kind='stable')
+            order = torch.as_tensor(ranked[:count], device=eligible.device)
+            eligible = eligible[order]
+        return eligible
 
     def observe_events(self, events):
         ids = self.executor.refine_skip.extra.flatten().nonzero().flatten()
