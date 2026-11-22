@@ -23,8 +23,14 @@ def run(a):
     torch.manual_seed(303)
     parent = read(a.cross/'contract.json')
     channel = a.channel_calibration is not None
-    assert (parent['group']=='original' or (channel and parent['group']=='additional')) and read(a.cross/'report.json')['status']=='COMPLETED'
-    assert parent['weights']==digest(a.fit/'adapters.pt') and parent['plan']==digest(a.plan)
+    if a.adapter_internal:
+        assert channel and parent['split']=='internal' and a.shallow=='full' and a.arm=='anchor_float'
+        assert a.channel_receiver=='signed' and a.kernel_trace
+    else:
+        assert parent['group']=='original' or (channel and parent['group']=='additional')
+    assert read(a.cross/'report.json')['status']=='COMPLETED'
+    weight_field='fits_parent' if a.adapter_internal else 'weights'
+    assert parent[weight_field]==digest(a.fit/'adapters.pt') and parent['plan']==digest(a.plan)
     assert parent['quota']==digest(a.quota) and parent['drive']==digest(a.drive/'report.json')
     assert parent['frozen_source']==read(a.long_base/'inputs/r297.json')['source_frozen_digest']
     baseline = [json.loads(l) for l in (a.cross/'frames.jsonl').read_bytes().splitlines()]
@@ -37,7 +43,7 @@ def run(a):
         assert table['status']=='COMPLETED' and table['source']==parent['frozen_source'] and table['plan']==parent['plan']
         assert table['labels']==table['optimizer_steps']==0
         if a.shallow=='full':
-            assert parent['group']=='additional' and not (set(table['scenes']) & set(parent['scenes']))
+            assert (a.adapter_internal or parent['group']=='additional') and not (set(table['scenes']) & set(parent['scenes']))
         assert a.arm in ('anchor_float','anchor_absolute')
         if a.scale_rule in ('assigned','shuffled'):
             scales=table[a.scale_rule]
@@ -51,7 +57,8 @@ def run(a):
         if a.channel_receiver!='legacy':
             kernel=read(a.kernel_trace/'contract.json')
             assert kernel['parent']==parent and kernel['calibration']==digest(a.channel_calibration)
-            assert kernel['rule']==(a.bounded_sender or ('float' if a.arm=='anchor_float' else a.scale_rule))
+            float_rule='exact_escape' if a.adapter_internal else 'float'
+            assert kernel['rule']==(a.bounded_sender or (float_rule if a.arm=='anchor_float' else a.scale_rule))
             if a.cost_calibration:assert kernel['cost_calibration']==digest(a.cost_calibration)
             assert read(a.kernel_trace/'report.json')['status']=='COMPLETED'
             kernel_records=[json.loads(l) for l in (a.kernel_trace/'frames.jsonl').read_bytes().splitlines()]
@@ -60,7 +67,11 @@ def run(a):
         assert read(a.exact_pair/'contract.json')['parent']==parent
         exact = [json.loads(l) for l in (a.exact_pair/'frames.jsonl').read_bytes().splitlines()]
     plan = read(a.plan)
-    rows = [r for r in plan['rows']['fit'] if r['scene'] in parent['scenes']]
+    split='internal' if a.adapter_internal else 'fit'
+    rows = [r for r in plan['rows'][split] if r['scene'] in parent['scenes']]
+    if a.adapter_internal:
+        assert len(rows)==len(plan['rows'][split])
+        assert not {r['scene'] for r in plan['rows']['fit']}.intersection(parent['scenes'])
     if a.shallow=='engineering':
         rows = [r for r in rows if r['scene']==parent['scenes'][0]]
         measured,baseline = [records[:len(rows)] for records in (measured,baseline)]
@@ -195,6 +206,7 @@ if __name__=='__main__':
     p.add_argument('--cost-calibration',type=Path)
     p.add_argument('--channel-receiver',choices=('legacy','signed','mac'),default='legacy')
     p.add_argument('--kernel-trace',type=Path)
+    p.add_argument('--adapter-internal',action='store_true')
     p.add_argument('--bounded-sender',choices=('history_escape','current_escape','hold_only'))
     p.add_argument('--shallow',choices=('engineering','full'))
     p.add_argument('--arm',choices=('temporal','float_current','instant','fixed_amplitude','fixed_unit','motion_amplitude','motion_unit',

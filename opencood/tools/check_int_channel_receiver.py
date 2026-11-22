@@ -21,11 +21,17 @@ def run(a):
     assert parent['plan']==table['plan']==digest(a.plan)
     assert parent['frozen_source']==table['source']==read(a.long_base/'inputs/r297.json')['source_frozen_digest']
     probe=a.rule in ('history_escape','current_escape','exact_escape','hold_only')
-    if probe and parent['group']=='original':
+    if a.adapter_internal:
+        assert probe and parent['split']=='internal' and read(a.cross/'report.json')['status']=='COMPLETED'
+        fit_scenes={r['scene'] for r in plan['rows']['fit']}
+        assert list(dict.fromkeys(r['scene'] for r in plan['rows']['internal']))==parent['scenes']
+        assert not fit_scenes.intersection(parent['scenes'])
+    elif probe and parent['group']=='original':
         assert parent['scenes']==table['scenes']
     else:
         assert parent['group']=='additional' and not set(parent['scenes']).intersection(table['scenes'])
-    rows=[dict(r,label=None,supervised=False) for r in plan['rows']['fit'] if r['scene'] in parent['scenes']]
+    split='internal' if a.adapter_internal else 'fit'
+    rows=[dict(r,label=None,supervised=False) for r in plan['rows'][split] if r['scene'] in parent['scenes']]
     trace=[(r['frame'],r['refresh']) for r in map(json.loads,(a.cross/'frames.jsonl').read_bytes().splitlines())]
     assert [f for f,_ in trace]==[r['frame'] for r in rows]
     for r in rows:assert r['split']=='train' and digest(Path(r['pcd']))==plan['members'][r['pcd']]
@@ -73,6 +79,7 @@ if __name__=='__main__':
     p=argparse.ArgumentParser()
     p.add_argument('rule',choices=('assigned','float','generic','event','history_escape','current_escape','exact_escape','hold_only'))
     p.add_argument('--cost-calibration',type=Path)
+    p.add_argument('--adapter-internal',action='store_true')
     for k in ('long-base','plan','cross','calibration','output'):p.add_argument('--'+k,type=Path,required=True)
     a=p.parse_args()
     a.output.mkdir(parents=True,exist_ok=False)
