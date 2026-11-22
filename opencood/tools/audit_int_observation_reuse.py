@@ -14,10 +14,19 @@ from opencood.tools.train_int_silent_task import (
 
 
 def count_taps(mask, layer):
-    counts = mask.sum(1, keepdim=True).float()
-    kernel = counts.new_ones((1, 1, *layer.kernel_size))
-    return F.conv2d(counts, kernel, stride=layer.stride, padding=layer.padding,
-                    dilation=layer.dilation).long()
+    counts = mask.sum(1, keepdim=True)
+    ph,pw = layer.padding
+    padded = F.pad(counts,(pw,pw,ph,ph))
+    sh,sw = layer.stride
+    dh,dw = layer.dilation
+    kh,kw = layer.kernel_size
+    height = (padded.shape[2]-1-dh*(kh-1))//sh+1
+    width = (padded.shape[3]-1-dw*(kw-1))//sw+1
+    total = padded.new_zeros((1,1,height,width))
+    for y in range(0,kh*dh,dh):
+        for x in range(0,kw*dw,dw):
+            total += padded[:,:,y:y+height*sh:sh,x:x+width*sw:sw]
+    return total
 
 
 class ObservationAudit:
