@@ -29,6 +29,7 @@ def run(a):
     baseline = [json.loads(l) for l in (a.cross/'frames.jsonl').read_bytes().splitlines()]
     measured = baseline if channel else [json.loads(l) for l in (a.live/'frames.jsonl').read_bytes().splitlines()]
     exact = None
+    kernel_records=None
     scales=None
     if channel:
         table=read(a.channel_calibration)
@@ -42,6 +43,12 @@ def run(a):
         elif a.scale_rule=='fine':
             scales=[.125]*128
         assert a.arm=='anchor_absolute' or a.scale_rule=='uniform'
+        if a.channel_receiver!='legacy':
+            kernel=read(a.kernel_trace/'contract.json')
+            assert kernel['parent']==parent and kernel['calibration']==digest(a.channel_calibration)
+            assert kernel['rule']==('float' if a.arm=='anchor_float' else a.scale_rule)
+            assert read(a.kernel_trace/'report.json')['status']=='COMPLETED'
+            kernel_records=[json.loads(l) for l in (a.kernel_trace/'frames.jsonl').read_bytes().splitlines()]
     elif a.shallow:
         assert read(a.exact_pair/'report.json')['status']=='COMPLETED'
         assert read(a.exact_pair/'contract.json')['parent']==parent
@@ -65,7 +72,8 @@ def run(a):
     conv = NonzeroObservationConv(original).eval()
     pulse = None
     if a.shallow:
-        pulse = (AnchoredObservationConv(original,scales=scales) if a.arm.startswith('anchor_') else
+        pulse = (AnchoredObservationConv(original,scales=scales,signed=a.channel_receiver!='mac',
+                    signed_rebuild=a.channel_receiver=='signed') if a.arm.startswith('anchor_') else
                  ShallowPulseConv(original,floating=a.arm=='float_current')).eval()
     core.observation[0].conv2 = conv
     visits = []
@@ -101,6 +109,7 @@ def run(a):
         quantum=scales if scales is not None else .25 if a.shallow and a.arm not in ('float_current','temporal','anchor_float') else None,
         accumulation_scale=scales if scales is not None else pulse.quantum if pulse is not None else None,
         scale_rule=a.scale_rule if channel else None, calibration=digest(a.channel_calibration) if channel else None,
+        channel_receiver=a.channel_receiver, kernel_trace=digest(a.kernel_trace/'frames.jsonl') if kernel_records else None,
         tile=4 if a.shallow and a.arm.startswith(('motion_','fixed_')) else None,
         fraction=.5 if a.shallow and a.arm.startswith(('motion_','fixed_')) else None))
     factory = partial(CachedResidualPolicy,compiler=compact_group_bucket)
@@ -135,6 +144,10 @@ def run(a):
                 if adapted:
                     rec['shallow'] = pulse.record
                     rec['observation_mac'] = pulse.record['rebuild_mac']+pulse.record['delta_mac']+pulse.record.get('reference_mac',0)
+                    if kernel_records is not None:
+                        assert kernel_records[i]['frame']==meta['frame']
+                        cached=kernel_records[i]['arms']['temporal_'+a.channel_receiver]
+                        assert all(cached[k]==v for k,v in pulse.record.items())
                 else:
                     assert len(visits)==1 and visits[0]==ref[n]
                     rec['observation_mac'] = visits.pop()['mac']
@@ -168,12 +181,16 @@ if __name__=='__main__':
     p.add_argument('--live',type=Path)
     p.add_argument('--channel-calibration',type=Path)
     p.add_argument('--scale-rule',choices=('uniform','assigned','shuffled','fine'),default='uniform')
+    p.add_argument('--channel-receiver',choices=('legacy','signed','mac'),default='legacy')
+    p.add_argument('--kernel-trace',type=Path)
     p.add_argument('--shallow',choices=('engineering','full'))
     p.add_argument('--arm',choices=('temporal','float_current','instant','fixed_amplitude','fixed_unit','motion_amplitude','motion_unit',
                                     'anchor_float','anchor_absolute','anchor_relative'))
     p.add_argument('--exact-pair',type=Path)
     args=p.parse_args()
     if args.channel_calibration and not args.shallow:p.error('channel evaluation requires an engineering or scoring phase')
+    if args.channel_receiver!='legacy' and not (args.channel_calibration and args.kernel_trace):
+        p.error('matched receiver evaluation requires calibration and a receiver trace')
     if not args.channel_calibration and not args.live:p.error('original evaluation requires the live convolution receipt')
     if args.shallow and not (args.arm and (args.exact_pair or args.channel_calibration)):p.error('missing shallow evaluation provenance')
     args.output.mkdir(parents=True,exist_ok=False)
