@@ -7,6 +7,7 @@ import subprocess
 import torch
 
 from opencood.models.sub_modules.int_shallow_anchor import AnchoredObservationConv
+from opencood.models.sub_modules.int_bounded_sender import BoundedObservationConv
 from opencood.tools.train_int_silent_task import digest,loader,prepare_stream,read,spatial_input,to_device,write_json
 
 
@@ -19,7 +20,11 @@ def run(a):
     plan=read(a.plan)
     assert parent['plan']==table['plan']==digest(a.plan)
     assert parent['frozen_source']==table['source']==read(a.long_base/'inputs/r297.json')['source_frozen_digest']
-    assert parent['group']=='additional' and not set(parent['scenes']).intersection(table['scenes'])
+    probe=a.rule in ('history_escape','current_escape','exact_escape')
+    if probe and parent['group']=='original':
+        assert parent['scenes']==table['scenes']
+    else:
+        assert parent['group']=='additional' and not set(parent['scenes']).intersection(table['scenes'])
     rows=[dict(r,label=None,supervised=False) for r in plan['rows']['fit'] if r['scene'] in parent['scenes']]
     trace=[(r['frame'],r['refresh']) for r in map(json.loads,(a.cross/'frames.jsonl').read_bytes().splitlines())]
     assert [f for f,_ in trace]==[r['frame'] for r in rows]
@@ -33,7 +38,16 @@ def run(a):
     block=source.core.observation[0]
     specs={'legacy':(True,False,True),'static_mac':(False,False,False),'static_signed':(True,True,False),
            'temporal_mac':(False,False,True),'temporal_signed':(True,True,True)}
-    convs={n:AnchoredObservationConv(block.conv2,scales,*opts) for n,opts in specs.items()}
+    if probe:
+        convs={}
+        for signed in (False,True):
+            key='temporal_signed' if signed else 'temporal_mac'
+            convs[key]=(AnchoredObservationConv(block.conv2,signed=signed,signed_rebuild=signed)
+                        if a.rule=='exact_escape' else
+                        BoundedObservationConv(block.conv2,history=a.rule=='history_escape',signed=signed))
+    else:
+        convs={n:AnchoredObservationConv(block.conv2,scales,*opts) for n,opts in specs.items()}
+    first=next(iter(convs.values()))
     _,stream=loader(rows,cfg,0,303)
     write_json(a.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         calibration=digest(a.calibration),cost_calibration=digest(a.cost_calibration) if a.cost_calibration else None,
@@ -49,14 +63,14 @@ def run(a):
                 conv.begin(mode,reason,meta,spatial.shape[2:],source.bounds,True)
                 conv(x)
                 results[n]=conv.record
-                assert torch.equal(convs['legacy'].anchor_state[2],conv.anchor_state[2])
+                assert torch.equal(first.anchor_state[2],conv.anchor_state[2])
             f.write(json.dumps(dict(frame=frame,scene=meta['scene'],refresh=reason,arms=results),allow_nan=False)+'\n')
     write_json(a.output/'report.json',dict(status='COMPLETED',scans=len(rows),optimizer_steps=0,labels=0))
 
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    p.add_argument('rule',choices=('assigned','float','generic','event'))
+    p.add_argument('rule',choices=('assigned','float','generic','event','history_escape','current_escape','exact_escape'))
     p.add_argument('--cost-calibration',type=Path)
     for k in ('long-base','plan','cross','calibration','output'):p.add_argument('--'+k,type=Path,required=True)
     a=p.parse_args()

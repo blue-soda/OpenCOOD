@@ -10,6 +10,7 @@ import torch
 from opencood.models.sub_modules.int_nonzero_observation import NonzeroObservationConv
 from opencood.models.sub_modules.int_shallow_pulse import ShallowPulseConv
 from opencood.models.sub_modules.int_shallow_anchor import AnchoredObservationConv
+from opencood.models.sub_modules.int_bounded_sender import BoundedObservationConv
 from opencood.tools.eval_int_address_cross import (
     AddressWriter, BranchFusion, CachedResidualPolicy, EdgeView, GroupedEdge, InspectMiddle,
     ObservedPolicy, SignedProjectionAccumulator, SilencePolicy, TaskDrive, build, compact_group_bucket,
@@ -50,7 +51,7 @@ def run(a):
         if a.channel_receiver!='legacy':
             kernel=read(a.kernel_trace/'contract.json')
             assert kernel['parent']==parent and kernel['calibration']==digest(a.channel_calibration)
-            assert kernel['rule']==('float' if a.arm=='anchor_float' else a.scale_rule)
+            assert kernel['rule']==(a.bounded_sender or ('float' if a.arm=='anchor_float' else a.scale_rule))
             if a.cost_calibration:assert kernel['cost_calibration']==digest(a.cost_calibration)
             assert read(a.kernel_trace/'report.json')['status']=='COMPLETED'
             kernel_records=[json.loads(l) for l in (a.kernel_trace/'frames.jsonl').read_bytes().splitlines()]
@@ -76,7 +77,9 @@ def run(a):
     original = core.observation[0].conv2
     conv = NonzeroObservationConv(original).eval()
     pulse = None
-    if a.shallow:
+    if a.bounded_sender:
+        pulse=BoundedObservationConv(original,history=a.bounded_sender=='history_escape',signed=a.channel_receiver=='signed').eval()
+    elif a.shallow:
         pulse = (AnchoredObservationConv(original,scales=scales,signed=a.channel_receiver!='mac',
                     signed_rebuild=a.channel_receiver=='signed') if a.arm.startswith('anchor_') else
                  ShallowPulseConv(original,floating=a.arm=='float_current')).eval()
@@ -116,6 +119,7 @@ def run(a):
         scale_rule=a.scale_rule if channel else None, calibration=digest(a.channel_calibration) if channel else None,
         cost_calibration=digest(a.cost_calibration) if a.cost_calibration else None,
         channel_receiver=a.channel_receiver, kernel_trace=digest(a.kernel_trace/'frames.jsonl') if kernel_records else None,
+        **(dict(bounded_sender=a.bounded_sender, sender_quantum=.25, sender_tolerance=1/16) if a.bounded_sender else {}),
         tile=4 if a.shallow and a.arm.startswith(('motion_','fixed_')) else None,
         fraction=.5 if a.shallow and a.arm.startswith(('motion_','fixed_')) else None))
     factory = partial(CachedResidualPolicy,compiler=compact_group_bucket)
@@ -190,11 +194,14 @@ if __name__=='__main__':
     p.add_argument('--cost-calibration',type=Path)
     p.add_argument('--channel-receiver',choices=('legacy','signed','mac'),default='legacy')
     p.add_argument('--kernel-trace',type=Path)
+    p.add_argument('--bounded-sender',choices=('history_escape','current_escape'))
     p.add_argument('--shallow',choices=('engineering','full'))
     p.add_argument('--arm',choices=('temporal','float_current','instant','fixed_amplitude','fixed_unit','motion_amplitude','motion_unit',
                                     'anchor_float','anchor_absolute','anchor_relative'))
     p.add_argument('--exact-pair',type=Path)
     args=p.parse_args()
+    if args.bounded_sender and (args.arm!='anchor_float' or args.channel_receiver=='legacy' or not args.kernel_trace):
+        p.error('bounded sender requires the anchor_float receiver and matching kernel trace')
     if args.channel_calibration and not args.shallow:p.error('channel evaluation requires an engineering or scoring phase')
     if args.scale_rule in ('generic','event') and not args.cost_calibration:p.error('cost-aware rules require a locked allocation')
     if args.channel_receiver!='legacy' and not (args.channel_calibration and args.kernel_trace):
