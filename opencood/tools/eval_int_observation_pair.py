@@ -9,6 +9,7 @@ import torch
 
 from opencood.models.sub_modules.int_nonzero_observation import NonzeroObservationConv
 from opencood.models.sub_modules.int_shallow_pulse import ShallowPulseConv
+from opencood.models.sub_modules.int_shallow_anchor import AnchoredObservationConv
 from opencood.tools.eval_int_address_cross import (
     AddressWriter, BranchFusion, CachedResidualPolicy, EdgeView, GroupedEdge, InspectMiddle,
     ObservedPolicy, SignedProjectionAccumulator, SilencePolicy, TaskDrive, build, compact_group_bucket,
@@ -47,7 +48,10 @@ def run(a):
     core.readout.layers[0].double_conv[0][0] = fusion
     original = core.observation[0].conv2
     conv = NonzeroObservationConv(original).eval()
-    pulse = ShallowPulseConv(original,floating=a.arm=='float_current').eval() if a.shallow else None
+    pulse = None
+    if a.shallow:
+        pulse = (AnchoredObservationConv(original) if a.arm.startswith('anchor_') else
+                 ShallowPulseConv(original,floating=a.arm=='float_current')).eval()
     core.observation[0].conv2 = conv
     visits = []
     hook = conv.register_forward_hook(lambda m,inputs,out:visits.append(m.visits))
@@ -79,8 +83,10 @@ def run(a):
         parent=parent,live_trace=digest(a.live/'frames.jsonl'),dense_trace=digest(a.cross/'frames.jsonl'),
         adapter='amplitude',training=False,scenes=list(dict.fromkeys(r['scene'] for r in rows)),
         shallow=a.shallow,arm=a.arm, exact_pair=digest(a.exact_pair/'frames.jsonl') if a.shallow else None,
-        quantum=.25 if a.shallow and a.arm not in ('float_current','temporal') else None,
-        tile=4 if a.shallow else None, fraction=.5 if a.shallow else None))
+        quantum=.25 if a.shallow and a.arm not in ('float_current','temporal','anchor_float') else None,
+        accumulation_scale=pulse.quantum if pulse is not None else None,
+        tile=4 if a.shallow and a.arm.startswith(('motion_','fixed_')) else None,
+        fraction=.5 if a.shallow and a.arm.startswith(('motion_','fixed_')) else None))
     factory = partial(CachedResidualPolicy,compiler=compact_group_bucket)
     labels = 0
     with (a.output/'frames.jsonl').open('x',buffering=1) as file:
@@ -112,7 +118,7 @@ def run(a):
                     states[n],writers[n].charge,reason,'A',None,costs)
                 if adapted:
                     rec['shallow'] = pulse.record
-                    rec['observation_mac'] = pulse.record['rebuild_mac']+pulse.record['delta_mac']
+                    rec['observation_mac'] = pulse.record['rebuild_mac']+pulse.record['delta_mac']+pulse.record.get('reference_mac',0)
                 else:
                     assert len(visits)==1 and visits[0]==ref[n]
                     rec['observation_mac'] = visits.pop()['mac']
@@ -142,7 +148,8 @@ if __name__=='__main__':
     for key in ('long-base','plan','quota','drive','fit','cross','live','output'):
         p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--shallow',choices=('engineering','full'))
-    p.add_argument('--arm',choices=('temporal','float_current','instant','fixed_amplitude','fixed_unit','motion_amplitude','motion_unit'))
+    p.add_argument('--arm',choices=('temporal','float_current','instant','fixed_amplitude','fixed_unit','motion_amplitude','motion_unit',
+                                    'anchor_float','anchor_absolute','anchor_relative'))
     p.add_argument('--exact-pair',type=Path)
     args=p.parse_args()
     if args.shallow and not (args.exact_pair and args.arm):p.error('shallow evaluation requires an arm and a frozen exact detector receipt')
