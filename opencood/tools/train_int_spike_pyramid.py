@@ -29,9 +29,13 @@ class Sender(nn.Module):
         super().__init__()
         self.log_step = nn.Parameter(torch.full((1, channels, 1, 1), math.log(.25)))
         self.cap = cap
+        self.step_multiplier = 1.
+
+    def step(self):
+        return self.log_step.exp().clamp(.02, 4.) * self.step_multiplier
 
     def forward(self, target, prior):
-        step = self.log_step.exp().clamp(.02, 4.)
+        step = self.step()
         residual = (target - prior) / step
         clipped = residual.clamp(-self.cap, self.cap)
         code = clipped.round()
@@ -152,10 +156,13 @@ def fine_target_loss(core, spatial, received, labels):
 
 
 def replay(rows, cfg, source, net, criterion, optimizer, epoch, out, point_bins, memoryless=False,
-           fine_distill_weight=0., anchor_mode=None, order_seed=303, frame_log=None):
+           fine_distill_weight=0., anchor_mode=None, order_seed=303, frame_log=None, window_mode=None):
     train = optimizer is not None
     if train:
         rows = training_order(rows, length=5, seed=order_seed + epoch)
+    if window_mode:
+        from opencood.models.sub_modules.int_planar_window import attach_window
+        rows = attach_window(rows,window_mode=='rigid')
     ds, stream = loader(rows, cfg, 0, 303)
     stats = {t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.5, .7)}
     state, pending, total, labels, updates = None, [], 0., 0, 0
@@ -164,6 +171,7 @@ def replay(rows, cfg, source, net, criterion, optimizer, epoch, out, point_bins,
     imitation_total = 0.
     anchor = TranslationAnchor(cfg['preprocess']['args']['voxel_size'][:2]) if anchor_mode else None
     resets = placements = 0
+    outside = observed = moved = 0
     if train:
         optimizer.zero_grad(set_to_none=True)
     for i, sample in enumerate(stream):
@@ -190,8 +198,17 @@ def replay(rows, cfg, source, net, criterion, optimizer, epoch, out, point_bins,
         with torch.set_grad_enabled(train and (not memoryless or row['supervised'])):
             # Keep the clip and optimizer boundaries identical for the independent-frame arm.
             initial_state = None if memoryless else state
-            pred, state, activity = (net(network_input, source.core, initial_state) if crop is None
-                                     else net(network_input, source.core, initial_state, crop))
+            if window_mode:
+                assert crop is None
+                transform = row['window_transform']
+                moved += int(transform is not None)
+                outside += sample['meta'].get('outside_window',0)
+                observed += sample['meta'].get('before_alignment',sample['meta']['point_count_after_crop'])
+                pred, state, activity = net(network_input,source.core,initial_state,
+                                            ordinary=row['window_ordinary'],transform=transform)
+            else:
+                pred, state, activity = (net(network_input, source.core, initial_state) if crop is None
+                                         else net(network_input, source.core, initial_state, crop))
             rates += activity
             if row['supervised']:
                 loss = criterion(pred, ego['label_dict'])
@@ -261,6 +278,9 @@ def replay(rows, cfg, source, net, criterion, optimizer, epoch, out, point_bins,
                   rates=(rates/len(rows)).tolist())
     if anchor is not None:
         result.update(anchor_resets=resets, shifted_scans=placements)
+    if window_mode:
+        result.update(window_mode=window_mode,transformed_scans=moved,observed_points=observed,
+                      points_outside_window=outside)
     if train and fine_distill_weight:
         result['positive_fine_imitation_loss'] = imitation_total / labels
     if not train:

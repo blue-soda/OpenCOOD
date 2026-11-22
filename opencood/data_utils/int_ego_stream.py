@@ -138,6 +138,12 @@ class DairEgoStreamDataset(Dataset):
         points = points[rng.permutation(len(points))]
         points = pcd_utils.mask_points_by_range(points, self.config['preprocess']['cav_lidar_range'])
         points = pcd_utils.mask_ego_points(points)
+        if meta.get('window_transform') is not None:
+            from opencood.models.sub_modules.int_planar_window import place_points
+            meta['before_alignment'] = len(points)
+            points = place_points(points,meta['window_transform'])
+            points = pcd_utils.mask_points_by_range(points,self.config['preprocess']['cav_lidar_range'])
+            meta['outside_window'] = meta['before_alignment'] - len(points)
         processed = self.pre.collate_batch([self.pre.preprocess(points)])
         processed['batch_size'] = 1
         meta['point_count_after_crop'] = len(points)

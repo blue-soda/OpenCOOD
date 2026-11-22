@@ -23,7 +23,7 @@ class ConvLedger:
 
     def count(self, conv, events, first):
         stage, sender = self.inputs[conv]
-        q = sender.log_step.exp().clamp(.02,4.)
+        q = sender.step()
         raw = events / q
         code = raw.round()
         assert (raw - code).abs().max() < 1e-4 and code.abs().max() <= sender.cap

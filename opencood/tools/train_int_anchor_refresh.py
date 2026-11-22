@@ -14,10 +14,11 @@ from torch import nn
 
 from opencood.tools import train_int_spike_pyramid as fit
 from opencood.tools.audit_int_spike_pyramid_ops import ConvLedger
+from opencood.models.sub_modules.int_planar_window import current_readout
 
 
 class RecoveryPyramid(fit.SpikePyramid):
-    def __init__(self, core, initial, variant):
+    def __init__(self, core, initial, variant, bounds=None):
         super().__init__(core, 32, [32, 16, 16])
         self.load_state_dict(torch.load(initial, map_location='cpu')['net'])
         with torch.no_grad():
@@ -29,12 +30,27 @@ class RecoveryPyramid(fit.SpikePyramid):
         self.heads.requires_grad_(True)
         self.variant = variant
         self.refreshes = 0
+        self.bounds = bounds
+        self.ordinary_multiplier = 2.
+        self.warp_values = 0
+        self.senders = tuple(m for m in self.modules() if isinstance(m,fit.Sender))
 
-    def forward(self, spatial, core, state):
+    def forward(self, spatial, core, state, ordinary=False, transform=None):
+        readout = core.readout
+        if self.variant in ('coarse_fixed','coarse_rigid'):
+            for sender in self.senders:
+                sender.step_multiplier = self.ordinary_multiplier if ordinary else 1.
+            if transform is not None:
+                def readout(x):
+                    x = core.readout(x)
+                    self.warp_values += x.numel()
+                    return current_readout(x,transform,self.bounds)
         decoder = SimpleNamespace(deblocks=core.deblocks, readout=core.readout,
                                   cls_head=self.heads['cls_head'], reg_head=self.heads['reg_head'],
                                   dir_head=self.heads['dir_head'] if 'dir_head' in self.heads else None)
-        if state is not None or self.variant == 'native':
+        if transform is not None:
+            decoder.readout = readout
+        if state is not None or self.variant != 'refresh':
             return super().forward(spatial, decoder, state)
         # One exact spatial pass initializes *both* convolution accumulators and sent levels.
         # Subsequent signed changes thus update the very same learned convolution weights.
@@ -93,17 +109,19 @@ def paired_interval(records, reference, observed, reference_ap):
     return np.percentile([100*(ap(a,d)-ap(b,d)) for d in draws],[2.5,97.5]).tolist()
 
 
-def evaluate(a, rows, cfg, source, net, criterion, epoch):
-    report_path = a.output/'internal.json'
+def evaluate(a, rows, cfg, source, net, criterion, epoch, name='internal', clear=False, window_mode=None):
+    report_path = a.output/(name+'.json')
     if report_path.exists():
         return
-    frame_log = a.output/'internal_frames.tmp'
+    frame_log = a.output/(name+'_frames.tmp')
     frame_log.write_text('')
     ledger = ConvLedger(net)
     fit.delta_conv = ledger.count
     net.refreshes = 0
+    net.warp_values = 0
     try:
-        result = fit.replay(periodic(rows),cfg,source,net,criterion,None,epoch,a.output,{},frame_log=frame_log)
+        result = fit.replay(periodic(rows),cfg,source,net,criterion,None,epoch,a.output,{},
+                            frame_log=frame_log,memoryless=clear,window_mode=window_mode)
     finally:
         fit.delta_conv = ledger.original
     assert result['scans']==636 and result['labels']==457 and result['weak_total']==924
@@ -118,9 +136,12 @@ def evaluate(a, rows, cfg, source, net, criterion, epoch):
         return [json.loads(x) for x in path.read_text().splitlines()]
     ref = fit.read(a.reference/'report.json')['ap70']
     ci = paired_interval(load_rows(frame_log), load_rows(a.reference/'frames.jsonl'),result['ap70'],ref)
-    os.replace(frame_log,a.output/'internal_frames.jsonl')
+    os.replace(frame_log,a.output/(name+'_frames.jsonl'))
     result.update(refreshes=net.refreshes,per_scan_residual_stages=costs,checkpoint=fit.digest(a.output/'best.pt'),
                   epoch=epoch,reference_ap70=ref,delta_pp=(result['ap70']-ref)*100,paired_scene_ci95_pp=ci)
+    if window_mode:
+        result.update(clear_each_frame=clear,ordinary_step_multiplier=net.ordinary_multiplier,
+                      bilinear_output_values_per_scan=net.warp_values/n)
     temp = report_path.with_suffix('.tmp')
     fit.write_json(temp,result)
     os.replace(temp,report_path)
@@ -146,7 +167,8 @@ def run(a):
             if r[key]:
                 assert fit.digest(Path(r[key])) == plan['members'][r[key]]
     source = fit.build_source(a.inputs,cfg)
-    net = RecoveryPyramid(source.core,a.initial,a.variant).cuda()
+    net = RecoveryPyramid(source.core,a.initial,a.variant,cfg['preprocess']['cav_lidar_range']).cuda()
+    window_mode = {'coarse_fixed':'fixed','coarse_rigid':'rigid'}.get(a.variant)
     heads = list(net.heads.parameters())
     backbone = [p for k,p in net.named_parameters() if not k.startswith('heads.')]
     opt = torch.optim.AdamW([{'params':backbone},{'params':heads}], weight_decay=.0001)
@@ -160,6 +182,9 @@ def run(a):
                     policy='best trained epoch by monitor AP70, earliest tie; fixed cosine schedule',
                     trainable=sum(p.numel() for p in net.parameters() if p.requires_grad))
     cp = a.output/'contract.json'
+    if window_mode:
+        contract.update(window_mode=window_mode,ordinary_step_multiplier=2.,period=5,
+                        pose='causal translation and yaw to first scan' if window_mode=='rigid' else 'identity')
     if cp.exists():
         assert fit.read(cp)==contract
     else:
@@ -182,12 +207,12 @@ def run(a):
             group['lr'] = lr*scale
         net.refreshes = 0
         trained = fit.replay(train,cfg,source,net,criterion,opt,epoch,attempt,point_bins,
-                             order_seed=a.seed) if epoch else None
+                             order_seed=a.seed,window_mode=window_mode) if epoch else None
         train_refreshes = net.refreshes
         if trained and (trained['updates'] != 174 or not all(0 < r[0] < 1 for r in trained['rates'])):
             raise RuntimeError(('training health',trained))
         net.refreshes = 0
-        val = fit.replay(dev,cfg,source,net,criterion,None,epoch,a.output,point_bins)
+        val = fit.replay(dev,cfg,source,net,criterion,None,epoch,a.output,point_bins,window_mode=window_mode)
         if not all(0 < r[0] < 1 for r in val['rates']):
             raise RuntimeError(('validation activity',val))
         if epoch and val['ap70']>best:
@@ -202,14 +227,20 @@ def run(a):
     net.load_state_dict(saved['net'])
     fit.write_json(a.output/'train_complete.json',dict(epoch=saved['epoch'],best=saved['best'],
                    epochs=a.epochs,updates=a.epochs*174))
-    evaluate(a,internal,cfg,source,net,criterion,saved['epoch'])
+    evaluate(a,internal,cfg,source,net,criterion,saved['epoch'],window_mode=window_mode)
+    if window_mode:
+        evaluate(a,internal,cfg,source,net,criterion,saved['epoch'],'clear_same_phase',True,window_mode)
+        if window_mode=='rigid':
+            evaluate(a,internal,cfg,source,net,criterion,saved['epoch'],'without_alignment',window_mode='fixed')
+        net.ordinary_multiplier=1.
+        evaluate(a,internal,cfg,source,net,criterion,saved['epoch'],'fine_all_frames',window_mode=window_mode)
 
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
     for name in ('plan','inputs','initial','reference','output'):
         p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--variant',choices=['native','refresh'],required=True)
+    p.add_argument('--variant',choices=['native','refresh','coarse_fixed','coarse_rigid'],required=True)
     p.add_argument('--seed',type=int,required=True)
     p.add_argument('--epochs',type=int,default=24)
     run(p.parse_args())
