@@ -110,8 +110,8 @@ def run_step(model,writer,selector,fusion,spatial,meta,prev,old_charge,reason,mo
                 extra_cost['deep_event']=2*v['amplitude_mac']
         if reason is None:
             edge=info['edge']
-            extra_cost['depthwise']=2*(edge['cold_nonzero_taps']+edge['delta_nonzero_taps'])
-            extra_cost['depthwise_decode']=2*edge['sites']*model.stage.edge.weight.shape[0]
+            extra_cost['depthwise']=2*(edge.get('cold_nonzero_taps',0)+edge.get('delta_nonzero_taps',0))
+            extra_cost['depthwise_decode']=2*edge.get('sites',0)*model.stage.edge.weight.shape[0]
     return pred,state,rec
 
 
