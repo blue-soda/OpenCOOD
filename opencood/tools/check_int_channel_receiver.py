@@ -20,7 +20,7 @@ def run(a):
     plan=read(a.plan)
     assert parent['plan']==table['plan']==digest(a.plan)
     assert parent['frozen_source']==table['source']==read(a.long_base/'inputs/r297.json')['source_frozen_digest']
-    probe=a.rule in ('history_escape','current_escape','exact_escape')
+    probe=a.rule in ('history_escape','current_escape','exact_escape','hold_only')
     if probe and parent['group']=='original':
         assert parent['scenes']==table['scenes']
     else:
@@ -44,7 +44,8 @@ def run(a):
             key='temporal_signed' if signed else 'temporal_mac'
             convs[key]=(AnchoredObservationConv(block.conv2,signed=signed,signed_rebuild=signed)
                         if a.rule=='exact_escape' else
-                        BoundedObservationConv(block.conv2,history=a.rule=='history_escape',signed=signed))
+                        BoundedObservationConv(block.conv2,history=a.rule!='current_escape',signed=signed,
+                                               allow_unit=a.rule!='hold_only'))
     else:
         convs={n:AnchoredObservationConv(block.conv2,scales,*opts) for n,opts in specs.items()}
     first=next(iter(convs.values()))
@@ -70,7 +71,7 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    p.add_argument('rule',choices=('assigned','float','generic','event','history_escape','current_escape','exact_escape'))
+    p.add_argument('rule',choices=('assigned','float','generic','event','history_escape','current_escape','exact_escape','hold_only'))
     p.add_argument('--cost-calibration',type=Path)
     for k in ('long-base','plan','cross','calibration','output'):p.add_argument('--'+k,type=Path,required=True)
     a=p.parse_args()

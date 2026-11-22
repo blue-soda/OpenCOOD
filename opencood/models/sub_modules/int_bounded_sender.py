@@ -7,9 +7,10 @@ from opencood.models.sub_modules.int_shallow_anchor import AnchoredObservationCo
 class BoundedObservationConv(AnchoredObservationConv):
     tolerance = 1 / 16
 
-    def __init__(self, original, history, signed=True):
+    def __init__(self, original, history, signed=True, allow_unit=True):
         super().__init__(original, signed=signed, signed_rebuild=signed)
         self.history = history
+        self.allow_unit = allow_unit
         self.previous = None
 
     def begin(self, name, reason, meta, input_shape, bounds, verify):
@@ -28,17 +29,19 @@ class BoundedObservationConv(AnchoredObservationConv):
                 prior = self.previous
                 difference = x - prior
                 hold = (difference.abs() <= self.tolerance) & (positive | (prior == 0))
-                candidate = prior + torch.where(difference > 0, self.quantum, -self.quantum)
-                spike = ((x - candidate).abs() <= self.tolerance) & (candidate >= 0)
-                spike &= positive | (candidate == 0)
+                if self.allow_unit:
+                    candidate = prior + torch.where(difference > 0, self.quantum, -self.quantum)
+                    spike = ((x - candidate).abs() <= self.tolerance) & (candidate >= 0)
+                    spike &= positive | (candidate == 0)
             else:
                 prior = 0.
                 candidate = self.quantum
                 hold = x <= self.tolerance
                 spike = (x - candidate).abs() <= self.tolerance
             # The two admissible intervals are disjoint at these fixed scales.
-            received = torch.where(hold, prior, torch.where(spike, candidate, x))
-            held, unit = int(hold.sum()), int(spike.sum())
+            correction = torch.where(spike, candidate, x) if self.allow_unit else x
+            received = torch.where(hold, prior, correction)
+            held, unit = int(hold.sum()), int(spike.sum()) if self.allow_unit else 0
             emitted = dict(hold=held, unit=unit, exact=x.numel()-held-unit)
         error = (received - x).abs()
         if self.verify:

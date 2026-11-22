@@ -78,7 +78,8 @@ def run(a):
     conv = NonzeroObservationConv(original).eval()
     pulse = None
     if a.bounded_sender:
-        pulse=BoundedObservationConv(original,history=a.bounded_sender=='history_escape',signed=a.channel_receiver=='signed').eval()
+        pulse=BoundedObservationConv(original,history=a.bounded_sender!='current_escape',signed=a.channel_receiver=='signed',
+                                     allow_unit=a.bounded_sender!='hold_only').eval()
     elif a.shallow:
         pulse = (AnchoredObservationConv(original,scales=scales,signed=a.channel_receiver!='mac',
                     signed_rebuild=a.channel_receiver=='signed') if a.arm.startswith('anchor_') else
@@ -194,7 +195,7 @@ if __name__=='__main__':
     p.add_argument('--cost-calibration',type=Path)
     p.add_argument('--channel-receiver',choices=('legacy','signed','mac'),default='legacy')
     p.add_argument('--kernel-trace',type=Path)
-    p.add_argument('--bounded-sender',choices=('history_escape','current_escape'))
+    p.add_argument('--bounded-sender',choices=('history_escape','current_escape','hold_only'))
     p.add_argument('--shallow',choices=('engineering','full'))
     p.add_argument('--arm',choices=('temporal','float_current','instant','fixed_amplitude','fixed_unit','motion_amplitude','motion_unit',
                                     'anchor_float','anchor_absolute','anchor_relative'))
