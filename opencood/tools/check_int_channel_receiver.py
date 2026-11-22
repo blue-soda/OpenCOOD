@@ -25,6 +25,10 @@ def run(a):
     assert [f for f,_ in trace]==[r['frame'] for r in rows]
     for r in rows:assert r['split']=='train' and digest(Path(r['pcd']))==plan['members'][r['pcd']]
     scales=table['assigned'] if a.rule=='assigned' else None
+    if a.rule in ('generic','event'):
+        allocation=read(a.cost_calibration)
+        assert allocation['status']=='COMPLETED' and allocation['calibration']==digest(a.calibration)
+        scales=allocation['assignments'][a.rule]['scales']
     mode='anchor_absolute' if scales else 'anchor_float'
     block=source.core.observation[0]
     specs={'legacy':(True,False,True),'static_mac':(False,False,False),'static_signed':(True,True,False),
@@ -32,7 +36,8 @@ def run(a):
     convs={n:AnchoredObservationConv(block.conv2,scales,*opts) for n,opts in specs.items()}
     _,stream=loader(rows,cfg,0,303)
     write_json(a.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
-        calibration=digest(a.calibration),parent=parent,rule=a.rule,scoring=False))
+        calibration=digest(a.calibration),cost_calibration=digest(a.cost_calibration) if a.cost_calibration else None,
+        parent=parent,rule=a.rule,scoring=False))
     with (a.output/'frames.jsonl').open('x',buffering=1) as f:
         for sample,(frame,reason) in zip(stream,trace):
             meta=sample['meta']
@@ -51,7 +56,8 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser()
-    p.add_argument('rule',choices=('assigned','float'))
+    p.add_argument('rule',choices=('assigned','float','generic','event'))
+    p.add_argument('--cost-calibration',type=Path)
     for k in ('long-base','plan','cross','calibration','output'):p.add_argument('--'+k,type=Path,required=True)
     a=p.parse_args()
     a.output.mkdir(parents=True,exist_ok=False)

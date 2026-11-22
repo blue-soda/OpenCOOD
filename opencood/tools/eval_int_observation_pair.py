@@ -42,11 +42,16 @@ def run(a):
             scales=table[a.scale_rule]
         elif a.scale_rule=='fine':
             scales=[.125]*128
+        elif a.scale_rule in ('generic','event'):
+            allocation=read(a.cost_calibration)
+            assert allocation['status']=='COMPLETED' and allocation['calibration']==digest(a.channel_calibration)
+            scales=allocation['assignments'][a.scale_rule]['scales']
         assert a.arm=='anchor_absolute' or a.scale_rule=='uniform'
         if a.channel_receiver!='legacy':
             kernel=read(a.kernel_trace/'contract.json')
             assert kernel['parent']==parent and kernel['calibration']==digest(a.channel_calibration)
             assert kernel['rule']==('float' if a.arm=='anchor_float' else a.scale_rule)
+            if a.cost_calibration:assert kernel['cost_calibration']==digest(a.cost_calibration)
             assert read(a.kernel_trace/'report.json')['status']=='COMPLETED'
             kernel_records=[json.loads(l) for l in (a.kernel_trace/'frames.jsonl').read_bytes().splitlines()]
     elif a.shallow:
@@ -109,6 +114,7 @@ def run(a):
         quantum=scales if scales is not None else .25 if a.shallow and a.arm not in ('float_current','temporal','anchor_float') else None,
         accumulation_scale=scales if scales is not None else pulse.quantum if pulse is not None else None,
         scale_rule=a.scale_rule if channel else None, calibration=digest(a.channel_calibration) if channel else None,
+        cost_calibration=digest(a.cost_calibration) if a.cost_calibration else None,
         channel_receiver=a.channel_receiver, kernel_trace=digest(a.kernel_trace/'frames.jsonl') if kernel_records else None,
         tile=4 if a.shallow and a.arm.startswith(('motion_','fixed_')) else None,
         fraction=.5 if a.shallow and a.arm.startswith(('motion_','fixed_')) else None))
@@ -180,7 +186,8 @@ if __name__=='__main__':
         p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--live',type=Path)
     p.add_argument('--channel-calibration',type=Path)
-    p.add_argument('--scale-rule',choices=('uniform','assigned','shuffled','fine'),default='uniform')
+    p.add_argument('--scale-rule',choices=('uniform','assigned','shuffled','fine','generic','event'),default='uniform')
+    p.add_argument('--cost-calibration',type=Path)
     p.add_argument('--channel-receiver',choices=('legacy','signed','mac'),default='legacy')
     p.add_argument('--kernel-trace',type=Path)
     p.add_argument('--shallow',choices=('engineering','full'))
@@ -189,6 +196,7 @@ if __name__=='__main__':
     p.add_argument('--exact-pair',type=Path)
     args=p.parse_args()
     if args.channel_calibration and not args.shallow:p.error('channel evaluation requires an engineering or scoring phase')
+    if args.scale_rule in ('generic','event') and not args.cost_calibration:p.error('cost-aware rules require a locked allocation')
     if args.channel_receiver!='legacy' and not (args.channel_calibration and args.kernel_trace):
         p.error('matched receiver evaluation requires calibration and a receiver trace')
     if not args.channel_calibration and not args.live:p.error('original evaluation requires the live convolution receipt')
