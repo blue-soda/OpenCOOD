@@ -33,17 +33,18 @@ def receptive_counts(levels, single, multiple):
 class ShallowPulseConv(nn.Module):
     quantum = .25
 
-    def __init__(self, original, floating=False):
+    def __init__(self, original, floating=False, signed=True):
         super().__init__()
         assert (original.in_channels,original.out_channels,original.kernel_size,original.stride,
                 original.padding,original.dilation,original.groups)==(128,128,(3,3),(1,1),(1,1),(1,1),1)
         self.floating = floating
+        self.signed = signed
         if floating:
             self.quantum = 1.
         self.register_buffer('scaled', (original.weight.detach()*self.quantum).permute(2,3,1,0).contiguous())
         self.bias = original.bias
         self.static = NonzeroFusionKernel()
-        self.add = NonzeroFusionKernel('#define ACCUMULATE\n#define SIGN_ONLY\n'+_KERNEL)
+        self.add = NonzeroFusionKernel('#define ACCUMULATE\n#define SIGN_ONLY\n'+_KERNEL) if signed else None
         self.fma = NonzeroFusionKernel('#define ACCUMULATE\n'+_KERNEL)
         self.states = {}
 
@@ -101,15 +102,20 @@ class ShallowPulseConv(nn.Module):
             many = (change!=0) & ~one
             nz,u,m = receptive_counts(levels,one,many)
             dirty = (u+m)>0
-            increment = dirty & ((u+2*m)<2*nz)
+            incremental_price = (u+2*m) if self.signed else 2*(u+m)
+            increment = dirty & (incremental_price<2*nz)
             fresh = dirty & ~increment
             # Clean zero outputs are reusable as well.
             buffer = old[2].clone()
             rebuild = self.static.run(levels,self.scaled,all_sites[fresh],buffer)
-            unit_visits = self.add.run(change.masked_fill(~one,0),self.scaled,all_sites[increment & (u>0)],buffer)
-            multiple_visits = self.fma.run(change.masked_fill(~many,0),self.scaled,all_sites[increment & (m>0)],buffer)
-            assert (rebuild,unit_visits,multiple_visits)==tuple(int(v) for v in
-                (nz[fresh].sum(),u[increment].sum(),m[increment].sum()))
+            if self.signed:
+                unit_visits = self.add.run(change.masked_fill(~one,0),self.scaled,all_sites[increment & (u>0)],buffer)
+                multiple_visits = self.fma.run(change.masked_fill(~many,0),self.scaled,all_sites[increment & (m>0)],buffer)
+                assert (unit_visits,multiple_visits)==(int(u[increment].sum()),int(m[increment].sum()))
+            else:
+                multiple_visits = self.fma.run(change,self.scaled,all_sites[increment],buffer)
+                assert multiple_visits==int((u[increment]+m[increment]).sum())
+            assert rebuild==int(nz[fresh].sum())
             rec.update(actual_changes=int((one|many).sum()), actual_unit_changes=int(one.sum()))
             rec['control_float'] += sizes
             # Channel reductions, nine-tap reductions, and the per-output cost comparison operands.
