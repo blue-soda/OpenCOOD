@@ -33,10 +33,13 @@ def receptive_counts(levels, single, multiple):
 class ShallowPulseConv(nn.Module):
     quantum = .25
 
-    def __init__(self, original):
+    def __init__(self, original, floating=False):
         super().__init__()
         assert (original.in_channels,original.out_channels,original.kernel_size,original.stride,
                 original.padding,original.dilation,original.groups)==(128,128,(3,3),(1,1),(1,1),(1,1),1)
+        self.floating = floating
+        if floating:
+            self.quantum = 1.
         self.register_buffer('scaled', (original.weight.detach()*self.quantum).permute(2,3,1,0).contiguous())
         self.bias = original.bias
         self.static = NonzeroFusionKernel()
@@ -51,15 +54,15 @@ class ShallowPulseConv(nn.Module):
 
     def forward(self, x):
         assert not torch.is_grad_enabled() and x.dtype==torch.float32 and x.shape[:2]==(1,128)
-        target = (x/self.quantum).round()
+        target = x if self.floating else (x/self.quantum).round()
         assert float(target.min())>=0 and float(target.max())<2**20
         h,w = x.shape[2:]
         old = self.states.get(self.name)
         sizes = x.numel()
         rec = dict(values=sizes, offered=0,sent=0,units=0,transport_changes=0,
                    actual_changes=0,actual_unit_changes=0, support=None,
-                   control_float=sizes, routing_int=0, rounding=sizes)
-        if old is None or self.name=='instant':
+                   control_float=0 if self.floating else sizes, routing_int=0, rounding=0 if self.floating else sizes)
+        if old is None or self.name in ('instant','float_current'):
             levels = target
         else:
             seen,received,_,pose = old
@@ -94,7 +97,8 @@ class ShallowPulseConv(nn.Module):
             reused = delta_sites = 0
         else:
             change = levels-old[1]
-            one,many = change.abs()==1,change.abs()>1
+            one = change.abs()==1
+            many = (change!=0) & ~one
             nz,u,m = receptive_counts(levels,one,many)
             dirty = (u+m)>0
             increment = dirty & ((u+2*m)<2*nz)
@@ -120,7 +124,7 @@ class ShallowPulseConv(nn.Module):
             err = (buffer-reference).abs()
             rec['max_error'] = float(err.max())
             assert bool((err<=.0005+.0001*reference.abs()).all())
-        stored_observation = None if self.name=='instant' else target
+        stored_observation = None if self.name in ('instant','float_current') else target
         self.states[self.name] = (stored_observation,levels,buffer,self.meta['pose'])
         unique = {t.data_ptr():t for t in (stored_observation,levels,buffer) if t is not None}
         rec['state_bytes'] = sum(t.numel()*t.element_size() for t in unique.values())

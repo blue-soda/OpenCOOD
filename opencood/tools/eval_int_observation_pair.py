@@ -47,7 +47,7 @@ def run(a):
     core.readout.layers[0].double_conv[0][0] = fusion
     original = core.observation[0].conv2
     conv = NonzeroObservationConv(original).eval()
-    pulse = ShallowPulseConv(original).eval() if a.shallow else None
+    pulse = ShallowPulseConv(original,floating=a.arm=='float_current').eval() if a.shallow else None
     core.observation[0].conv2 = conv
     visits = []
     hook = conv.register_forward_hook(lambda m,inputs,out:visits.append(m.visits))
@@ -72,14 +72,15 @@ def run(a):
         model.coarse_executor = exe
         models[n],writers[n] = model,writer
     costs = conv_costs(core)
-    reasons = make_trace(models['static'],rows)
+    reasons = make_trace(models[names[0]],rows)
     ds,stream = loader(rows,cfg,0,303)
     assert len(rows)==len(measured)==len(baseline)
     write_json(a.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         parent=parent,live_trace=digest(a.live/'frames.jsonl'),dense_trace=digest(a.cross/'frames.jsonl'),
         adapter='amplitude',training=False,scenes=list(dict.fromkeys(r['scene'] for r in rows)),
         shallow=a.shallow,arm=a.arm, exact_pair=digest(a.exact_pair/'frames.jsonl') if a.shallow else None,
-        quantum=.25 if a.shallow else None, tile=4 if a.shallow else None, fraction=.5 if a.shallow else None))
+        quantum=.25 if a.shallow and a.arm not in ('float_current','temporal') else None,
+        tile=4 if a.shallow else None, fraction=.5 if a.shallow else None))
     factory = partial(CachedResidualPolicy,compiler=compact_group_bucket)
     labels = 0
     with (a.output/'frames.jsonl').open('x',buffering=1) as file:
@@ -140,7 +141,7 @@ if __name__=='__main__':
     for key in ('long-base','plan','quota','drive','fit','cross','live','output'):
         p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--shallow',choices=('engineering','full'))
-    p.add_argument('--arm',choices=('temporal','instant','fixed_amplitude','fixed_unit','motion_amplitude','motion_unit'))
+    p.add_argument('--arm',choices=('temporal','float_current','instant','fixed_amplitude','fixed_unit','motion_amplitude','motion_unit'))
     p.add_argument('--exact-pair',type=Path)
     args=p.parse_args()
     if args.shallow and not (args.exact_pair and args.arm):p.error('shallow evaluation requires an arm and a frozen exact detector receipt')
