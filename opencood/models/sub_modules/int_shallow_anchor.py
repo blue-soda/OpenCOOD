@@ -5,8 +5,10 @@ from opencood.models.sub_modules.int_shallow_pulse import ShallowPulseConv, rece
 
 
 class AnchoredObservationConv(ShallowPulseConv):
-    def __init__(self, original, scales=None, signed=True):
+    def __init__(self, original, scales=None, signed=True, signed_rebuild=False, temporal=True):
         super().__init__(original,signed=signed)
+        self.signed_rebuild=signed_rebuild
+        self.temporal=temporal
         self.register_buffer('raw_weights',original.weight.detach().permute(2,3,1,0).contiguous())
         if scales is None:
             self.step=self.quantum
@@ -72,15 +74,30 @@ class AnchoredObservationConv(ShallowPulseConv):
             _,ru,rm=receptive_counts(absolute,off_one,off_many)
             dirty=(du+dm)>0
             dense_cost,ref_cost,delta_cost=2*nonzero,ru+2*rm,du+2*dm
+            if self.signed_rebuild:
+                if not self.signed:raise ValueError('Signed rebuild requires the signed kernel')
+                absolute_code=absolute/self.step
+                abs_single=absolute_code.abs()==1
+                abs_multi=(absolute_code!=0)&~abs_single
+                _,au,am=receptive_counts(absolute,abs_single,abs_multi)
+                dense_cost=au+2*am
             if not self.signed:
                 ref_cost,delta_cost=2*(ru+rm),2*(du+dm)
-            fresh=dirty & (dense_cost<=ref_cost) & (dense_cost<=delta_cost)
-            use_ref=dirty & ~fresh & (ref_cost<=delta_cost)
-            use_delta=dirty & ~fresh & ~use_ref
+            if self.temporal:
+                fresh=dirty & (dense_cost<=ref_cost) & (dense_cost<=delta_cost)
+                use_ref=dirty & ~fresh & (ref_cost<=delta_cost)
+                use_delta=dirty & ~fresh & ~use_ref
+            else:
+                dirty=fresh=torch.ones_like(dirty)
+                use_ref=use_delta=torch.zeros_like(dirty)
             output=last_output.clone()
             output[use_ref]=ref_output[use_ref]
-            rec['rebuild_mac']=128*self.static.run(absolute,self.raw_weights,ids[fresh],output)
-            assert rec['rebuild_mac']==128*int(nonzero[fresh].sum())
+            if self.signed_rebuild:
+                output[fresh]=0
+                rec['rebuild_ac'],rec['rebuild_mac']=self.accumulate(absolute_code,abs_single,abs_multi,fresh,au,am,output)
+            else:
+                rec['rebuild_mac']=128*self.static.run(absolute,self.raw_weights,ids[fresh],output)
+                assert rec['rebuild_mac']==128*int(nonzero[fresh].sum())
             rec['reference_ac'],rec['reference_mac']=self.accumulate(codes,off_one,off_many,use_ref,ru,rm,output)
             rec['delta_ac'],rec['delta_mac']=self.accumulate(change,one,many,use_delta,du,dm,output)
             rec.update(rebuild_sites=int(fresh.sum()),reference_sites=int(use_ref.sum()),
