@@ -21,14 +21,28 @@ from opencood.tools.eval_int_address_cross import (
 def run(a):
     torch.manual_seed(303)
     parent = read(a.cross/'contract.json')
-    assert parent['group']=='original' and read(a.cross/'report.json')['status']=='COMPLETED'
+    channel = a.channel_calibration is not None
+    assert (parent['group']=='original' or (channel and parent['group']=='additional')) and read(a.cross/'report.json')['status']=='COMPLETED'
     assert parent['weights']==digest(a.fit/'adapters.pt') and parent['plan']==digest(a.plan)
     assert parent['quota']==digest(a.quota) and parent['drive']==digest(a.drive/'report.json')
     assert parent['frozen_source']==read(a.long_base/'inputs/r297.json')['source_frozen_digest']
-    measured = [json.loads(l) for l in (a.live/'frames.jsonl').read_bytes().splitlines()]
     baseline = [json.loads(l) for l in (a.cross/'frames.jsonl').read_bytes().splitlines()]
+    measured = baseline if channel else [json.loads(l) for l in (a.live/'frames.jsonl').read_bytes().splitlines()]
     exact = None
-    if a.shallow:
+    scales=None
+    if channel:
+        table=read(a.channel_calibration)
+        assert table['status']=='COMPLETED' and table['source']==parent['frozen_source'] and table['plan']==parent['plan']
+        assert table['labels']==table['optimizer_steps']==0
+        if a.shallow=='full':
+            assert parent['group']=='additional' and not (set(table['scenes']) & set(parent['scenes']))
+        assert a.arm in ('anchor_float','anchor_absolute')
+        if a.scale_rule in ('assigned','shuffled'):
+            scales=table[a.scale_rule]
+        elif a.scale_rule=='fine':
+            scales=[.125]*128
+        assert a.arm=='anchor_absolute' or a.scale_rule=='uniform'
+    elif a.shallow:
         assert read(a.exact_pair/'report.json')['status']=='COMPLETED'
         assert read(a.exact_pair/'contract.json')['parent']==parent
         exact = [json.loads(l) for l in (a.exact_pair/'frames.jsonl').read_bytes().splitlines()]
@@ -36,7 +50,8 @@ def run(a):
     rows = [r for r in plan['rows']['fit'] if r['scene'] in parent['scenes']]
     if a.shallow=='engineering':
         rows = [r for r in rows if r['scene']==parent['scenes'][0]]
-        measured,baseline,exact = [records[:len(rows)] for records in (measured,baseline,exact)]
+        measured,baseline = [records[:len(rows)] for records in (measured,baseline)]
+        if exact is not None:exact=exact[:len(rows)]
     for r in rows:
         assert r['split']=='train'
         for key in ('pcd','label'):
@@ -50,7 +65,7 @@ def run(a):
     conv = NonzeroObservationConv(original).eval()
     pulse = None
     if a.shallow:
-        pulse = (AnchoredObservationConv(original) if a.arm.startswith('anchor_') else
+        pulse = (AnchoredObservationConv(original,scales=scales) if a.arm.startswith('anchor_') else
                  ShallowPulseConv(original,floating=a.arm=='float_current')).eval()
     core.observation[0].conv2 = conv
     visits = []
@@ -80,11 +95,12 @@ def run(a):
     ds,stream = loader(rows,cfg,0,303)
     assert len(rows)==len(measured)==len(baseline)
     write_json(a.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
-        parent=parent,live_trace=digest(a.live/'frames.jsonl'),dense_trace=digest(a.cross/'frames.jsonl'),
+        parent=parent,live_trace=digest(a.live/'frames.jsonl') if a.live else None,dense_trace=digest(a.cross/'frames.jsonl'),
         adapter='amplitude',training=False,scenes=list(dict.fromkeys(r['scene'] for r in rows)),
-        shallow=a.shallow,arm=a.arm, exact_pair=digest(a.exact_pair/'frames.jsonl') if a.shallow else None,
-        quantum=.25 if a.shallow and a.arm not in ('float_current','temporal','anchor_float') else None,
-        accumulation_scale=pulse.quantum if pulse is not None else None,
+        shallow=a.shallow,arm=a.arm, exact_pair=digest(a.exact_pair/'frames.jsonl') if a.exact_pair else None,
+        quantum=scales if scales is not None else .25 if a.shallow and a.arm not in ('float_current','temporal','anchor_float') else None,
+        accumulation_scale=scales if scales is not None else pulse.quantum if pulse is not None else None,
+        scale_rule=a.scale_rule if channel else None, calibration=digest(a.channel_calibration) if channel else None,
         tile=4 if a.shallow and a.arm.startswith(('motion_','fixed_')) else None,
         fraction=.5 if a.shallow and a.arm.startswith(('motion_','fixed_')) else None))
     factory = partial(CachedResidualPolicy,compiler=compact_group_bucket)
@@ -128,11 +144,13 @@ def run(a):
                     else:assert all(torch.equal(v,first_pred[k]) for k,v in pred.items())
                 item['arms'][n] = rec
             if a.shallow:
-                expected = exact[i]['arms']['temporal']
-                assert exact[i]['frame']==meta['frame']
-                if a.arm=='temporal':
-                    actual = json.loads(json.dumps(item['arms']['temporal'],allow_nan=False))
-                    assert all(v==expected[k] for k,v in actual.items()),(meta['frame'],[k for k,v in actual.items() if v!=expected[k]])
+                if exact is not None:
+                    expected = exact[i]['arms']['temporal']
+                    assert exact[i]['frame']==meta['frame']
+                    if a.arm=='temporal':
+                        actual = json.loads(json.dumps(item['arms']['temporal'],allow_nan=False))
+                        assert all(v==expected[k] for k,v in actual.items()),(meta['frame'],[k for k,v in actual.items() if v!=expected[k]])
+                if channel and gt is not None:assert len(item['points'])==rec['ap'][.7]['gt']
                 if reason is None:check_next=False
             else:
                 x,y = item['arms'].values()
@@ -145,13 +163,18 @@ def run(a):
 
 if __name__=='__main__':
     p = argparse.ArgumentParser()
-    for key in ('long-base','plan','quota','drive','fit','cross','live','output'):
+    for key in ('long-base','plan','quota','drive','fit','cross','output'):
         p.add_argument('--'+key,type=Path,required=True)
+    p.add_argument('--live',type=Path)
+    p.add_argument('--channel-calibration',type=Path)
+    p.add_argument('--scale-rule',choices=('uniform','assigned','shuffled','fine'),default='uniform')
     p.add_argument('--shallow',choices=('engineering','full'))
     p.add_argument('--arm',choices=('temporal','float_current','instant','fixed_amplitude','fixed_unit','motion_amplitude','motion_unit',
                                     'anchor_float','anchor_absolute','anchor_relative'))
     p.add_argument('--exact-pair',type=Path)
     args=p.parse_args()
-    if args.shallow and not (args.exact_pair and args.arm):p.error('shallow evaluation requires an arm and a frozen exact detector receipt')
+    if args.channel_calibration and not args.shallow:p.error('channel evaluation requires an engineering or scoring phase')
+    if not args.channel_calibration and not args.live:p.error('original evaluation requires the live convolution receipt')
+    if args.shallow and not (args.arm and (args.exact_pair or args.channel_calibration)):p.error('missing shallow evaluation provenance')
     args.output.mkdir(parents=True,exist_ok=False)
     run(args)
