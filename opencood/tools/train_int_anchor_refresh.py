@@ -37,21 +37,33 @@ class RecoveryPyramid(fit.SpikePyramid):
 
     def forward(self, spatial, core, state, ordinary=False, transform=None):
         readout = core.readout
+        support = None
         if self.variant in ('coarse_fixed','coarse_rigid'):
             for sender in self.senders:
                 sender.step_multiplier = self.ordinary_multiplier if ordinary else 1.
             if transform is not None:
                 def readout(x):
+                    nonlocal support
                     x = core.readout(x)
-                    self.warp_values += x.numel()
-                    return current_readout(x,transform,self.bounds)
+                    packed = torch.cat((x,torch.ones_like(x[:,:1])),dim=1)
+                    self.warp_values += packed.numel()
+                    sampled = current_readout(packed,transform,self.bounds)
+                    support = sampled[:,-1:]
+                    return sampled[:,:-1]
         decoder = SimpleNamespace(deblocks=core.deblocks, readout=core.readout,
                                   cls_head=self.heads['cls_head'], reg_head=self.heads['reg_head'],
                                   dir_head=self.heads['dir_head'] if 'dir_head' in self.heads else None)
         if transform is not None:
             decoder.readout = readout
         if state is not None or self.variant != 'refresh':
-            return super().forward(spatial, decoder, state)
+            pred, memory, rates = super().forward(spatial, decoder, state)
+            if support is not None:
+                # Zero-padded latent features otherwise score at the learned head bias
+                # (~0.5 probability here). Interpolate a background logit off the map.
+                assert decoder.cls_head.kernel_size == (1,1)
+                bias = decoder.cls_head.bias.view(1,-1,1,1)
+                pred['psm'] = pred['psm'] + (1-support).clamp(0,1)*(-8.-bias)
+            return pred, memory, rates
         # One exact spatial pass initializes *both* convolution accumulators and sent levels.
         # Subsequent signed changes thus update the very same learned convolution weights.
         self.refreshes += 1
