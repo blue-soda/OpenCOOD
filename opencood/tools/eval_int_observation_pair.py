@@ -136,6 +136,11 @@ def run(a):
         fraction=.5 if a.shallow and a.arm.startswith(('motion_','fixed_')) else None))
     factory = partial(CachedResidualPolicy,compiler=compact_group_bucket)
     labels = 0
+    pillar_ops=[]
+    def count_pillar(module,inputs,output):
+        pillar_ops.append(2*output.numel()*module.in_features)
+    pillar_hooks=([m.register_forward_hook(count_pillar) for m in source.pillar_vfe.modules()
+                  if isinstance(m,torch.nn.Linear)] if a.compare_arithmetic else [])
     with (a.output/'frames.jsonl').open('x',buffering=1) as file:
         for i,(sample,reason,ref,base) in enumerate(zip(stream,reasons,measured,baseline)):
             meta = sample['meta']
@@ -146,9 +151,10 @@ def run(a):
                 selectors = {n:ObservedPolicy(models[n],factory) for n in names}
                 check_next = True
             ego = to_device(sample['ego'],torch.device('cuda'))
+            pillar_ops.clear()
             spatial = spatial_input(source,ego)
             edge.start(meta,spatial.shape[-2:],reason)
-            gt = ds.post.generate_gt_bbx(dict(ego=ego)) if meta['supervised'] and a.shallow!='engineering' else None
+            gt = ds.post.generate_gt_bbx(dict(ego=ego)) if meta['supervised'] and a.shallow!='engineering' and not a.compare_arithmetic else None
             labels += int(gt is not None)
             item = dict(frame=meta['frame'],scene=meta['scene'],refresh=reason,arms={})
             if gt is not None:item['points'] = base['points']
@@ -161,8 +167,11 @@ def run(a):
                 else:
                     core.observation[0].conv2 = conv
                     conv.begin(n=='temporal',n=='temporal' and reason is not None)
+                extra_cost=dict(pillar=sum(pillar_ops)) if a.compare_arithmetic else None
                 pred,states[n],rec = run_step(models[n],writers[n],selectors[n],fusion,spatial,meta,
-                    states[n],writers[n].charge,reason,'A',None,costs)
+                    states[n],writers[n].charge,reason,'A',None,costs,extra_cost=extra_cost)
+                if extra_cost is not None:
+                    rec['extra_cost']=extra_cost
                 if adapted:
                     rec['shallow'] = pulse.record
                     rec['observation_mac'] = pulse.record['rebuild_mac']+pulse.record['delta_mac']+pulse.record.get('reference_mac',0)
@@ -192,6 +201,8 @@ def run(a):
                 assert {k:v for k,v in x.items() if k!='observation_mac'}=={k:v for k,v in y.items() if k!='observation_mac'}
             file.write(json.dumps(item,allow_nan=False)+'\n')
     hook.remove()
+    for pillar_hook in pillar_hooks:
+        pillar_hook.remove()
     assert i+1==len(rows)
     write_json(a.output/'report.json',dict(status='COMPLETED',scans=i+1,labels=labels,optimizer_steps=0))
 
@@ -208,6 +219,7 @@ if __name__=='__main__':
     p.add_argument('--kernel-trace',type=Path)
     p.add_argument('--adapter-internal',action='store_true')
     p.add_argument('--bounded-sender',choices=('history_escape','current_escape','hold_only'))
+    p.add_argument('--compare-arithmetic',action='store_true',help='Audit additional projection arithmetic without scoring labels')
     p.add_argument('--shallow',choices=('engineering','full'))
     p.add_argument('--arm',choices=('temporal','float_current','instant','fixed_amplitude','fixed_unit','motion_amplitude','motion_unit',
                                     'anchor_float','anchor_absolute','anchor_relative'))

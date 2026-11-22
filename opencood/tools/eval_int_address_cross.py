@@ -76,7 +76,7 @@ def matched_lists(writers):
                          matched_hash={k:tensor_hash(v.sort().values) for k,v in trimmed.items()})
 
 
-def run_step(model,writer,selector,fusion,spatial,meta,prev,old_charge,reason,mode,forced,costs):
+def run_step(model,writer,selector,fusion,spatial,meta,prev,old_charge,reason,mode,forced,costs,extra_cost=None):
     writer.mode = 'integrate' if mode=='U' else 'amplitude'
     writer.forced = forced
     writer.charge = old_charge
@@ -97,6 +97,21 @@ def run_step(model,writer,selector,fusion,spatial,meta,prev,old_charge,reason,mo
         rec.update(writer.received)
         rec['core'] += exe.drive_ops + sum(costs[k]*v for k,v in exe.counts.items())
         exe.inputs=exe.result=None
+    if extra_cost is not None:
+        extra_cost['fusion_merge']=fusion.ledger['merge_add']
+        for key,p in [('middle',model.coarse_projector),('deep',model.deep_projector)]:
+            v=p.ledger
+            assert bool(v['rebuilt'])==(reason is not None)
+            assert not v.get('static_refresh',False)
+            extra_cost[key+'_decode']=v['dense_mac']//p.weight.shape[0]*(1+int(p.block[0].bias is not None))
+            if reason is not None:
+                extra_cost[key+'_refresh']=2*v['dense_mac']
+            elif key=='deep':
+                extra_cost['deep_event']=2*v['amplitude_mac']
+        if reason is None:
+            edge=info['edge']
+            extra_cost['depthwise']=2*(edge['cold_nonzero_taps']+edge['delta_nonzero_taps'])
+            extra_cost['depthwise_decode']=2*edge['sites']*model.stage.edge.weight.shape[0]
     return pred,state,rec
 
 
