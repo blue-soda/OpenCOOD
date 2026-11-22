@@ -8,6 +8,7 @@ import subprocess
 import torch
 
 from opencood.models.sub_modules.int_nonzero_observation import NonzeroObservationConv
+from opencood.models.sub_modules.int_shallow_pulse import ShallowPulseConv
 from opencood.tools.eval_int_address_cross import (
     AddressWriter, BranchFusion, CachedResidualPolicy, EdgeView, GroupedEdge, InspectMiddle,
     ObservedPolicy, SignedProjectionAccumulator, SilencePolicy, TaskDrive, build, compact_group_bucket,
@@ -25,8 +26,16 @@ def run(a):
     assert parent['frozen_source']==read(a.long_base/'inputs/r297.json')['source_frozen_digest']
     measured = [json.loads(l) for l in (a.live/'frames.jsonl').read_bytes().splitlines()]
     baseline = [json.loads(l) for l in (a.cross/'frames.jsonl').read_bytes().splitlines()]
+    exact = None
+    if a.shallow:
+        assert read(a.exact_pair/'report.json')['status']=='COMPLETED'
+        assert read(a.exact_pair/'contract.json')['parent']==parent
+        exact = [json.loads(l) for l in (a.exact_pair/'frames.jsonl').read_bytes().splitlines()]
     plan = read(a.plan)
     rows = [r for r in plan['rows']['fit'] if r['scene'] in parent['scenes']]
+    if a.shallow=='engineering':
+        rows = [r for r in rows if r['scene']==parent['scenes'][0]]
+        measured,baseline,exact = [records[:len(rows)] for records in (measured,baseline,exact)]
     for r in rows:
         assert r['split']=='train'
         for key in ('pcd','label'):
@@ -36,7 +45,9 @@ def run(a):
     core = source.core
     fusion = BranchFusion(core.readout.layers[0].double_conv[0][0]).eval()
     core.readout.layers[0].double_conv[0][0] = fusion
-    conv = NonzeroObservationConv(core.observation[0].conv2).eval()
+    original = core.observation[0].conv2
+    conv = NonzeroObservationConv(original).eval()
+    pulse = ShallowPulseConv(original).eval() if a.shallow else None
     core.observation[0].conv2 = conv
     visits = []
     hook = conv.register_forward_hook(lambda m,inputs,out:visits.append(m.visits))
@@ -44,7 +55,7 @@ def run(a):
     rates = read(a.quota)['models']['age']['rates']
     coeff = read(a.drive/'report.json')['fit']['coefficients']
     weights = torch.load(a.fit/'adapters.pt',map_location='cpu')['amplitude']
-    names = ('static','temporal')
+    names = (a.arm,) if a.shallow else ('static','temporal')
     models,writers = {},{}
     for n in names:
         model = build(source,q,EdgeView(edge,'tile'))
@@ -66,7 +77,9 @@ def run(a):
     assert len(rows)==len(measured)==len(baseline)
     write_json(a.output/'contract.json',dict(code=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),
         parent=parent,live_trace=digest(a.live/'frames.jsonl'),dense_trace=digest(a.cross/'frames.jsonl'),
-        adapter='amplitude',training=False,scenes=parent['scenes']))
+        adapter='amplitude',training=False,scenes=list(dict.fromkeys(r['scene'] for r in rows)),
+        shallow=a.shallow,arm=a.arm, exact_pair=digest(a.exact_pair/'frames.jsonl') if a.shallow else None,
+        quantum=.25 if a.shallow else None, tile=4 if a.shallow else None, fraction=.5 if a.shallow else None))
     factory = partial(CachedResidualPolicy,compiler=compact_group_bucket)
     labels = 0
     with (a.output/'frames.jsonl').open('x',buffering=1) as file:
@@ -77,26 +90,45 @@ def run(a):
             if i==0 or meta['segment']!=rows[i-1]['segment']:
                 states = dict.fromkeys(names)
                 selectors = {n:ObservedPolicy(models[n],factory) for n in names}
+                check_next = True
             ego = to_device(sample['ego'],torch.device('cuda'))
             spatial = spatial_input(source,ego)
             edge.start(meta,spatial.shape[-2:],reason)
-            gt = ds.post.generate_gt_bbx(dict(ego=ego)) if meta['supervised'] else None
+            gt = ds.post.generate_gt_bbx(dict(ego=ego)) if meta['supervised'] and a.shallow!='engineering' else None
             labels += int(gt is not None)
             item = dict(frame=meta['frame'],scene=meta['scene'],refresh=reason,arms={})
             if gt is not None:item['points'] = base['points']
             first_pred = None
             for n in names:
-                conv.begin(n=='temporal',n=='temporal' and reason is not None)
+                adapted = a.shallow and n!='temporal'
+                if adapted:
+                    core.observation[0].conv2 = pulse
+                    pulse.begin(n,reason,meta,spatial.shape[-2:],source.bounds,a.shallow=='engineering' or check_next)
+                else:
+                    core.observation[0].conv2 = conv
+                    conv.begin(n=='temporal',n=='temporal' and reason is not None)
                 pred,states[n],rec = run_step(models[n],writers[n],selectors[n],fusion,spatial,meta,
                     states[n],writers[n].charge,reason,'A',None,costs)
-                assert len(visits)==1 and visits[0]==ref[n]
-                rec['observation_mac'] = visits.pop()['mac']
+                if adapted:
+                    rec['shallow'] = pulse.record
+                    rec['observation_mac'] = pulse.record['rebuild_mac']+pulse.record['delta_mac']
+                else:
+                    assert len(visits)==1 and visits[0]==ref[n]
+                    rec['observation_mac'] = visits.pop()['mac']
                 if gt is not None:rec.update(score(ds.post,ego,pred,gt,record_matches=True))
-                if first_pred is None:first_pred = pred
-                else:assert all(torch.equal(v,first_pred[k]) for k,v in pred.items())
+                if not a.shallow:
+                    if first_pred is None:first_pred = pred
+                    else:assert all(torch.equal(v,first_pred[k]) for k,v in pred.items())
                 item['arms'][n] = rec
-            x,y = item['arms'].values()
-            assert {k:v for k,v in x.items() if k!='observation_mac'}=={k:v for k,v in y.items() if k!='observation_mac'}
+            if a.shallow:
+                expected = exact[i]['arms']['temporal']
+                assert exact[i]['frame']==meta['frame']
+                if a.arm=='temporal':
+                    assert all(v==expected[k] for k,v in item['arms']['temporal'].items())
+                if reason is None:check_next=False
+            else:
+                x,y = item['arms'].values()
+                assert {k:v for k,v in x.items() if k!='observation_mac'}=={k:v for k,v in y.items() if k!='observation_mac'}
             file.write(json.dumps(item,allow_nan=False)+'\n')
     hook.remove()
     assert i+1==len(rows)
@@ -107,6 +139,10 @@ if __name__=='__main__':
     p = argparse.ArgumentParser()
     for key in ('long-base','plan','quota','drive','fit','cross','live','output'):
         p.add_argument('--'+key,type=Path,required=True)
+    p.add_argument('--shallow',choices=('engineering','full'))
+    p.add_argument('--arm',choices=('temporal','instant','fixed_amplitude','fixed_unit','motion_amplitude','motion_unit'))
+    p.add_argument('--exact-pair',type=Path)
     args=p.parse_args()
+    if args.shallow and not (args.exact_pair and args.arm):p.error('shallow evaluation requires an arm and a frozen exact detector receipt')
     args.output.mkdir(parents=True,exist_ok=False)
     run(args)

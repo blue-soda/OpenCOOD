@@ -12,7 +12,11 @@ extern "C" __global__ void fusion_nonzero(
     const long long *sites, int height, int width, float *out, int *visited) {
     int j = blockIdx.x, site = (int)sites[j], oc = threadIdx.x;
     int cy = site / width, cx = site % width, count = 0;
+#ifdef ACCUMULATE
+    float sum = out[site*128+oc];
+#else
     float sum = 0.f;
+#endif
     for (int dy = -1; dy <= 1; ++dy) {
         int y = cy + dy;
         if (y < 0 || y >= height) continue;
@@ -24,7 +28,11 @@ extern "C" __global__ void fusion_nonzero(
             count += end-row[pixel];
             for (int i = row[pixel]; i < end; ++i) {
                 int w = (tap * 128 + channel[i]) * 128 + oc;
+#ifdef SIGN_ONLY
+                sum = value[i] > 0 ? __fadd_rn(sum, weight[w]) : __fsub_rn(sum, weight[w]);
+#else
                 sum = __fmaf_rn(value[i], weight[w], sum);
+#endif
             }
         }
     }
