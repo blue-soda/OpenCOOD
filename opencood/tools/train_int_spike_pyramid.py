@@ -32,6 +32,7 @@ class Sender(nn.Module):
         self.step_multiplier = 1.
         self.continuous_threshold = None
         self.payload_dtype = None
+        self.int8_ste = False
         self.full_amplitude = False
 
     def step(self):
@@ -51,8 +52,11 @@ class Sender(nn.Module):
             active = residual.abs() > self.continuous_threshold
             amplitude = clipped * step
             if self.payload_dtype == 'int8':
-                code = (clipped * (127. / self.cap)).round().to(torch.int8)
-                amplitude = code.to(target.dtype) * (step * (self.cap / 127.))
+                levels = clipped * (127. / self.cap)
+                code = levels.round().to(torch.int8).to(target.dtype)
+                if self.int8_ste and torch.is_grad_enabled():
+                    code = code + (levels - levels.detach())
+                amplitude = code * (step * (self.cap / 127.))
             elif self.payload_dtype == 'fp16':
                 amplitude = amplitude.half().to(target.dtype)
             change = torch.where(active, amplitude, torch.zeros_like(target))

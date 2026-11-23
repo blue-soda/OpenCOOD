@@ -260,6 +260,11 @@ def run(a):
         if 'continuous_threshold' in full['contract']:
             if not a.continuous_fusion:
                 raise ValueError('Use continuous fusion when scoring the full continuous control.')
+            trained_payload = full['contract'].get('training_payload')
+            if trained_payload is not None:
+                if trained_payload != 'int8' or a.backbone_payload not in (None, trained_payload) or a.exchange_sender or a.train:
+                    raise ValueError('Score the quantization-trained checkpoint with its native INT8 sender.')
+                a.backbone_payload = trained_payload
             for sender in net.senders:
                 sender.continuous_threshold = full['contract']['continuous_threshold']
                 sender.payload_dtype = a.backbone_payload
@@ -347,7 +352,7 @@ def run(a):
             raise ValueError('Matched continuous control expects a fixed residual sender.')
         interface, = net.interfaces
         ratios = (.75, .875, 1., 1.125, 1.25)
-        if a.backbone_payload or a.exchange_sender:
+        if a.scales and (a.backbone_payload or a.exchange_sender):
             calibration = fit.read(a.scales.with_name('continuous_calibration.json'))
             assert calibration['train_scenes'] == scenes[:4] and calibration['selected_ratio'] in ratios
             interface.continuous = calibration['selected_ratio']

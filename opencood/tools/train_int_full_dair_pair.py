@@ -24,6 +24,8 @@ def full_rows(manifest, datasets, split):
 
 
 def train(a):
+    if a.qat_int8 and not a.continuous_backbone:
+        raise ValueError('INT8 training requires the matched continuous backbone.')
     a.out.mkdir(parents=True, exist_ok=a.resume)
     torch.manual_seed(a.seed)
     torch.backends.cudnn.deterministic = True
@@ -52,6 +54,9 @@ def train(a):
             raise ValueError('The continuous temporal control uses the unmodified Pillar/up interfaces.')
         for sender in net.senders:
             sender.continuous_threshold = .5
+            if a.qat_int8:
+                sender.payload_dtype = 'int8'
+                sender.int8_ste = True
     criterion = fit.PointPillarDirLoss(cfg['loss']['args']).cuda()
     groups = [dict(params=[p for k,p in net.named_parameters() if not k.startswith('heads.')], lr=3e-5),
               dict(params=net.heads.parameters(),lr=1.5e-5)]
@@ -85,6 +90,8 @@ def train(a):
     if a.continuous_backbone:
         contract.update(continuous_threshold=.5, coding='bounded continuous residuals at every backbone sender',
                         threshold_source='R-505 four training scenes; fixed before target validation')
+    if a.qat_int8:
+        contract.update(training_payload='int8', coding='signed INT8 feedback with a straight-through rounding gradient')
     if a.frame_ann:
         contract.update(frame_ann=True, coding='continuous spatial activations, no quantization or history')
     restore_path = None
@@ -152,6 +159,7 @@ if __name__ == '__main__':
     p.add_argument('--cross-from-first',type=Path,help='Keep first-epoch model and optimizer; run the other order in epoch two.')
     p.add_argument('--pillar-up',action='store_true',help='Jointly fit four multispike interfaces.')
     p.add_argument('--continuous-backbone',action='store_true',help='Fit the matched real-valued temporal control.')
+    p.add_argument('--qat-int8',action='store_true',help='Use the deployed INT8 payload at every training step.')
     p.add_argument('--frame-ann',action='store_true',help='Fit the unquantized independently reset spatial network.')
     p.add_argument('--v2v',type=Path,help='Use the audited single-car, duplicate-free training manifest.')
     train(p.parse_args())
