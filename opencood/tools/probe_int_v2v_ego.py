@@ -84,8 +84,16 @@ def run(a):
             lidar['batch_size'] = 1
             local = [0.]*6
             cars = ego_cars(row['annotation'])
-            boxes,mask,ids = data.post.generate_object_center(
-                [dict(params=dict(vehicles=cars,lidar_pose=local,_object_label_coord='local'))],local)
+            projected = {}
+            data.post.project_local_objects(cars, projected, local, local,
+                                            data.post.params['anchor_args']['cav_lidar_range'])
+            ids = list(projected)
+            boxes = np.zeros((data.post.params['max_num'], 7))
+            assert len(ids) <= len(boxes)
+            mask = np.zeros(len(boxes))
+            for i, key in enumerate(ids):
+                boxes[i] = projected[key][0]
+                mask[i] = 1
             ego = dict(processed_lidar=lidar, batch_size=1,anchor_box=torch.from_numpy(data.anchors),
                        object_bbx_center=torch.from_numpy(boxes[None]).float(),
                        object_bbx_mask=torch.from_numpy(mask[None]).float(),object_ids=ids,
