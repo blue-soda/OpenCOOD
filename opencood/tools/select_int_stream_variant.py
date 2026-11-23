@@ -11,6 +11,7 @@ from opencood.tools import train_int_spike_pyramid as fit
 from opencood.tools.audit_int_spike_pyramid_ops import ConvLedger
 from opencood.tools.probe_int_local_ann_interfaces import ReusedProjection
 from opencood.tools.train_int_anchor_refresh import RecoveryPyramid, periodic
+from opencood.tools.train_int_full_dair_pair import full_rows
 
 
 class Interface(nn.Module):
@@ -183,6 +184,9 @@ def run(a):
     if a.internal:
         evaluation = periodic(relocated(plan['rows']['internal'], plan, a.dataset))
         assert not set(r['scene'] for r in evaluation).intersection(scenes)
+    if a.full_val:
+        evaluation = periodic(full_rows(a.root / 'sequence_manifest.json', a.dataset, 'val'))
+        assert len(evaluation) == 5794
     if a.limit:
         evaluation = evaluation[:a.limit]
     init = a.root / 'initial.pt'
@@ -195,6 +199,12 @@ def run(a):
     source = fit.build_source(a.root / 'inputs', cfg)
     net = RecoveryPyramid(source.core, init, 'fine_temporal').cuda()
     net.load_state_dict(torch.load(ck, map_location='cpu')['net'])
+    if a.full_parent:
+        full = torch.load(a.full_parent, map_location='cpu')
+        assert full['contract']['seed'] == a.seed and full['contract']['labels_per_epoch'] == 4678
+        assert full['contract']['variant'] == ('fine_independent' if a.clear else 'fine_temporal')
+        net.load_state_dict(full['net'])
+        ck = a.full_parent
     criterion = fit.PointPillarDirLoss(cfg['loss']['args']).cuda()
     bins = {}
     def replay(rows, opt=None, epoch=0, record=False):
@@ -348,6 +358,8 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, choices=(303,707), default=303)
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--internal', action='store_true')
+    parser.add_argument('--full-val', action='store_true', help='Score the frozen full DAIR validation stream.')
+    parser.add_argument('--full-parent', type=Path, help='Weights from the matched full DAIR backbone fit.')
     parser.add_argument('--physical', action='store_true')
     parser.add_argument('--no-reference', action='store_true', help='Run sparse fusion without the verification convolution.')
     policy = parser.add_mutually_exclusive_group()

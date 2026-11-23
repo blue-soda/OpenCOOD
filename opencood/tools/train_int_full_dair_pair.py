@@ -1,0 +1,88 @@
+"""Train the fixed-window backbone and its per-scan control on every eligible DAIR training label."""
+import argparse
+from pathlib import Path
+
+import torch
+
+from opencood.tools import train_int_spike_pyramid as fit
+from opencood.tools.train_int_anchor_refresh import RecoveryPyramid
+
+
+def full_rows(manifest, datasets, split):
+    if fit.digest(manifest) != '184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738':
+        raise ValueError('Unexpected frozen full-stream manifest')
+    rows = fit.read(manifest)[split]
+    for row in rows:
+        for key in ('pcd','label'):
+            if row[key]:
+                path = datasets / Path(row[key]).relative_to('/data1/tzm/dataset')
+                if not path.is_file():
+                    raise FileNotFoundError(path)
+                row[key] = str(path)
+    return rows
+
+
+def train(a):
+    a.out.mkdir(parents=True, exist_ok=a.resume)
+    torch.manual_seed(a.seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cuda.matmul.allow_tf32 = torch.backends.cudnn.allow_tf32 = False
+    manifest = a.root / 'sequence_manifest.json'
+    rows = full_rows(manifest,a.datasets,'train')
+    labels = sum(r['supervised'] for r in rows)
+    assert len(rows) == 8593 and labels == 4678 and len({r['scene'] for r in rows}) == 52
+    cfg = fit.load_yaml(str(a.root/'inputs/config.yaml'))
+    cfg['data_augment'] = []
+    initial = a.root/'initial.pt'
+    assert fit.digest(initial) == '57f9d146f2a4dd1344ad36dd670bc7f9bcdfd85ae04aaa8c4855cc635b148c33'
+    src = fit.build_source(a.root/'inputs',cfg)
+    variant = 'fine_independent' if a.independent else 'fine_temporal'
+    net = RecoveryPyramid(src.core,initial,variant).cuda()
+    criterion = fit.PointPillarDirLoss(cfg['loss']['args']).cuda()
+    groups = [dict(params=[p for k,p in net.named_parameters() if not k.startswith('heads.')], lr=3e-5),
+              dict(params=net.heads.parameters(),lr=1.5e-5)]
+    opt = torch.optim.AdamW(groups,weight_decay=1e-4)
+    contract = dict(seed=a.seed, variant=variant, epochs=a.epochs, manifest=fit.digest(manifest),
+                    initial=fit.digest(initial), labels_per_epoch=labels, scenes=52,
+                    training='all supervised five-scan clips; same shuffle, optimizer boundaries and fixed final epoch')
+    cp = a.out/'contract.json'
+    if cp.exists():
+        assert fit.read(cp) == contract
+    else:
+        fit.write_json(cp,contract)
+    start = 1
+    if a.resume and (a.out/'last.pt').exists():
+        checkpoint = torch.load(a.out/'last.pt',map_location='cpu')
+        net.load_state_dict(checkpoint['net'])
+        opt.load_state_dict(checkpoint['optimizer'])
+        start = checkpoint['epoch'] + 1
+    for epoch in range(start,a.epochs+1):
+        # Epoch-local traces make a restarted, incomplete epoch distinguishable.
+        trace = a.out/('epoch_%02d' % epoch)
+        attempt = 0
+        while trace.exists():
+            attempt += 1
+            trace = a.out/('epoch_%02d_retry_%d' % (epoch,attempt))
+        trace.mkdir()
+        for group, lr in zip(opt.param_groups, (3e-5, 1.5e-5)):
+            group['lr'] = lr if epoch == 1 else lr * .5
+        result = fit.replay(rows,cfg,src,net,criterion,opt,epoch,trace,{},memoryless=a.independent,
+                            order_seed=a.seed,window_mode='fixed')
+        assert result['labels'] == labels and result['updates'] > 0
+        fit.write_json(trace/'result.json',result)
+        fit.checkpoint(a.out/'last.pt',net,opt,epoch,0.,0)
+    temp = a.out/'final.tmp'
+    torch.save(dict(net=net.state_dict(), contract=contract),temp)
+    temp.replace(a.out/'final.pt')
+
+
+if __name__ == '__main__':
+    p = argparse.ArgumentParser(description=__doc__)
+    for name in ('root','datasets','out'):
+        p.add_argument(name,type=Path)
+    p.add_argument('--seed',type=int,default=303)
+    p.add_argument('--epochs',type=int,default=2)
+    p.add_argument('--independent',action='store_true')
+    p.add_argument('--resume',action='store_true')
+    train(p.parse_args())
