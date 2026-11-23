@@ -38,8 +38,9 @@ class Interface(nn.Module):
 
 class FusionCost:
     """Compare matched static and temporal tap counts, including border and refresh."""
-    def __init__(self, physical):
+    def __init__(self, physical, static_only):
         self.physical = physical
+        self.static_only = static_only
         self.history = {}
         self.taps = {}
         self.static = self.delta = self.chosen = self.dense = 0
@@ -84,7 +85,8 @@ class FusionCost:
             self.max_error = max(self.max_error, err)
             if not torch.allclose(output, reference, rtol=2e-4, atol=5e-4):
                 raise ValueError(('fusion reconstruction', err, k))
-        self.history[layer] = (x.detach().clone(), output.detach().clone())
+        if not self.static_only:
+            self.history[layer] = (x.detach().clone(), output.detach().clone())
         return output
 
 
@@ -169,7 +171,7 @@ def run(a):
         torch.save(net.state_dict(), a.out / 'trained.pt')
     net.eval()
     ledger = ConvLedger(net)
-    fusion = FusionCost(a.physical)
+    fusion = FusionCost(a.physical, a.static_fusion)
     projections = []
     for branch in source.core.deblocks:
         branch[0] = ReusedProjection(branch[0])
@@ -206,8 +208,9 @@ def run(a):
     up = 2 * sum(p.temporal_mac for p in projections)
     up_static = 2 * sum(p.static_mac for p in projections)
     cost = lambda value: value / n / 1e9
-    report = dict(metrics=result, seed=a.seed, arm=a.arm, physical_fusion=a.physical,
+    report = dict(metrics=result, seed=a.seed, arm=a.arm, physical_fusion=a.physical, static_fusion=a.static_fusion,
                   full_cost_g=cost(other+up+2*fusion.chosen+fusion.bookkeeping),
+                  temporal_up_static_fusion_g=cost(other+up+2*fusion.static),
                   static_cost_g=cost(other+up_static+2*fusion.static),
                   fusion_dense_g=cost(2*fusion.dense), fusion_static_g=cost(2*fusion.static),
                   fusion_chosen_g=cost(2*fusion.chosen), fusion_state_arithmetic_g=cost(fusion.bookkeeping),
@@ -228,6 +231,7 @@ if __name__ == '__main__':
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--internal', action='store_true')
     parser.add_argument('--physical', action='store_true')
+    parser.add_argument('--static-fusion', action='store_true')
     parser.add_argument('--limit', type=int)
     parser.add_argument('--weights', type=Path)
     run(parser.parse_args())
