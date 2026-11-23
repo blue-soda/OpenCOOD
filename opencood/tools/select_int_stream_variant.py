@@ -68,11 +68,12 @@ class FusionCost:
         self.bookkeeping = self.storage = 0
         self.max_error = 0.
 
-    def hook(self, layer, args, reference):
-        x = args[0]
+    def project(self, layer, x, reference=None):
         assert x.shape[0] == layer.groups == 1 and layer.stride == layer.dilation == (1, 1)
-        assert x.shape[-2:] == reference.shape[-2:]
+        height, width = x.shape[-2:]
+        output_elements = height * width * layer.out_channels
         k = layer.kernel_size
+        assert tuple(2*p+1 for p in layer.padding) == k
         if layer not in self.taps:
             ones = torch.ones_like(x[:, :1])
             self.taps[layer] = F.conv2d(ones, x.new_ones(1, 1, *k), padding=layer.padding)
@@ -83,32 +84,46 @@ class FusionCost:
         delta = static if old is None else int(
             ((change != 0).sum(1) * taps).sum(dtype=torch.float64)) * layer.out_channels
         # The two choices have the same spatial grid. Include subtract/add in the decision.
-        reuse = old is not None and 2 * delta + reference.numel() < 2 * static
-        self.dense += reference.numel() * layer.in_channels * k[0] * k[1]
+        reuse = old is not None and 2 * delta + output_elements < 2 * static
+        self.dense += output_elements * layer.in_channels * k[0] * k[1]
         self.static += static
         self.delta += delta
         self.chosen += delta if reuse else static
         if old is not None:
             self.bookkeeping += x.numel()
         if reuse:
-            self.bookkeeping += reference.numel()
+            self.bookkeeping += output_elements
         output = reference
         if self.physical:
             z = change if reuse else x
             patches = F.unfold(z, k, padding=layer.padding)[0].T.contiguous().to_sparse_csr()
             flat = torch.sparse.mm(patches, layer.weight.flatten(1).T.contiguous())
-            output = flat.T.reshape_as(reference)
+            output = flat.T.reshape(1, layer.out_channels, height, width)
             if reuse:
                 output = output + old[1]
             elif layer.bias is not None:
                 output = output + layer.bias.view(1, -1, 1, 1)
-            err = (output - reference).abs().max().item()
-            self.max_error = max(self.max_error, err)
-            if not torch.allclose(output, reference, rtol=2e-4, atol=5e-4):
-                raise ValueError(('fusion reconstruction', err, k))
+            if reference is not None:
+                err = (output - reference).abs().max().item()
+                self.max_error = max(self.max_error, err)
+                if not torch.allclose(output, reference, rtol=2e-4, atol=5e-4):
+                    raise ValueError(('fusion reconstruction', err, k))
         if not self.static_only:
             self.history[layer] = (x.detach().clone(), output.detach().clone())
         return output
+
+    def hook(self, layer, args, reference):
+        return self.project(layer, args[0], reference)
+
+
+class SparseFusionLayer(nn.Module):
+    """A scoring path that never evaluates the original dense fusion convolution."""
+    def __init__(self, layer, fusion):
+        super().__init__()
+        self.layer, self.fusion = layer, fusion
+
+    def forward(self, x):
+        return self.fusion.project(self.layer, x)
 
 
 def relocated(rows, plan, dataset):
@@ -228,9 +243,15 @@ def run(a):
                 proj.old = proj.output = None
         frame[0] += 1
     net.register_forward_pre_hook(reset)
-    for module in source.core.readout.modules():
-        if isinstance(module, nn.Conv2d):
-            module.register_forward_hook(fusion.hook)
+    if a.no_reference and not a.physical:
+        raise ValueError('--no-reference requires --physical')
+    for parent in list(source.core.readout.modules()):
+        for name, module in list(parent.named_children()):
+            if isinstance(module, nn.Conv2d):
+                if a.no_reference:
+                    setattr(parent, name, SparseFusionLayer(module, fusion))
+                else:
+                    module.register_forward_hook(fusion.hook)
     fit.delta_conv = ledger.count
     try:
         result = replay(evaluation, record=True)
@@ -247,7 +268,7 @@ def run(a):
     # uniform charge. No equivalent hardware-energy assumption is made here.
     encoding_ops = 10 * encoded
     report = dict(metrics=result, seed=a.seed, arm=a.arm, clear_history=a.clear,
-                  physical_fusion=a.physical, static_fusion=a.static_fusion,
+                  physical_fusion=a.physical, static_fusion=a.static_fusion, dense_fusion_reference=not a.no_reference,
                   full_cost_g=cost(other+up+2*fusion.chosen+fusion.bookkeeping+encoding_ops),
                   temporal_up_static_fusion_g=cost(other+up+2*fusion.static+encoding_ops),
                   static_cost_g=cost(other+up_static+2*fusion.static+encoding_ops),
@@ -259,7 +280,7 @@ def run(a):
                   fusion_dense_g=cost(2*fusion.dense), fusion_static_g=cost(2*fusion.static),
                   fusion_chosen_g=cost(2*fusion.chosen), fusion_state_arithmetic_g=cost(fusion.bookkeeping),
                   up_g=cost(up), up_static_g=cost(up_static), other_g=cost(other),
-                  fusion_dense_reference_max_error=fusion.max_error if a.physical else None,
+                  fusion_dense_reference_max_error=fusion.max_error if a.physical and not a.no_reference else None,
                   fusion_state_bytes=sum(x.numel()*x.element_size() for pair in fusion.history.values() for x in pair),
                   scope='linear and convolution arithmetic plus fusion delta formation and accumulation; support selection, quantization, memory traffic and upsample state ops excluded')
     fit.write_json(a.out / 'result.json', report)
@@ -275,6 +296,7 @@ if __name__ == '__main__':
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--internal', action='store_true')
     parser.add_argument('--physical', action='store_true')
+    parser.add_argument('--no-reference', action='store_true', help='Run sparse fusion without the verification convolution.')
     parser.add_argument('--static-fusion', action='store_true')
     parser.add_argument('--frames', action='store_true')
     parser.add_argument('--clear', action='store_true', help='Reset task and projection history on every scan at evaluation.')
