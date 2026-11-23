@@ -96,6 +96,13 @@ def install_pillar_up(net, core, saved=None):
     assert len(net.pillar_up) == 4
 
 
+def sparse_fusion_conv(layer, z):
+    """Apply just the nonzero weighted products; the caller owns bias and history."""
+    patches = F.unfold(z, layer.kernel_size, padding=layer.padding)[0].T.contiguous().to_sparse_csr()
+    flat = torch.sparse.mm(patches, layer.weight.flatten(1).T.contiguous())
+    return flat.T.reshape(1, layer.out_channels, *z.shape[-2:])
+
+
 class FusionCost:
     """Compare matched static and temporal tap counts, including border and refresh."""
     def __init__(self, physical, static_only, first_only):
@@ -140,9 +147,7 @@ class FusionCost:
         output = reference
         if self.physical:
             z = change if reuse else x
-            patches = F.unfold(z, k, padding=layer.padding)[0].T.contiguous().to_sparse_csr()
-            flat = torch.sparse.mm(patches, layer.weight.flatten(1).T.contiguous())
-            output = flat.T.reshape(1, layer.out_channels, height, width)
+            output = sparse_fusion_conv(layer, z)
             if reuse:
                 output = output + old[1]
             elif layer.bias is not None:
