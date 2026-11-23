@@ -196,6 +196,8 @@ def relocated(rows, plan, dataset):
 
 
 def run(a):
+    if a.backbone_payload and (a.train or not a.full_parent or not a.scales or not a.continuous_fusion):
+        raise ValueError('Payload replays require frozen continuous weights, scales and fusion calibration.')
     a.out.mkdir(parents=True, exist_ok=False)
     torch.manual_seed(a.seed)
     torch.backends.cudnn.benchmark = False
@@ -236,6 +238,8 @@ def run(a):
         assert full['contract']['seed'] == a.seed
         assert full['contract']['labels_per_epoch'] == (6958 if a.v2v_split else 4678)
         trained_variant = full['contract']['variant']
+        if a.backbone_payload and 'continuous_threshold' not in full['contract']:
+            raise ValueError('Only a trained continuous temporal sender can be used for payload replay.')
         assert trained_variant in ('fine_temporal', 'fine_independent')
         if trained_variant == 'fine_independent' and not a.clear:
             raise ValueError('A per-scan training control must also clear history at evaluation.')
@@ -253,6 +257,7 @@ def run(a):
                 raise ValueError('Use continuous fusion when scoring the full continuous control.')
             for sender in net.senders:
                 sender.continuous_threshold = full['contract']['continuous_threshold']
+                sender.payload_dtype = a.backbone_payload
         net.load_state_dict(full['net'])
         ck = a.full_parent
     else:
@@ -321,13 +326,18 @@ def run(a):
             raise ValueError('Matched continuous control expects a fixed residual sender.')
         interface, = net.interfaces
         ratios = (.75, .875, 1., 1.125, 1.25)
-        interface.shadow = {ratio:[None, 0] for ratio in (0.,) + ratios}
-        replay(periodic(train))
-        visits = {ratio:entry[1] for ratio,entry in interface.shadow.items()}
-        interface.continuous = min(ratios, key=lambda ratio:abs(visits[ratio] - visits[0.]))
-        fit.write_json(a.out / 'continuous_calibration.json', dict(
-            train_scenes=scenes[:4], transmitted_elements=visits, selected_ratio=interface.continuous))
-        interface.shadow = None
+        if a.backbone_payload:
+            calibration = fit.read(a.scales.with_name('continuous_calibration.json'))
+            assert calibration['train_scenes'] == scenes[:4] and calibration['selected_ratio'] in ratios
+            interface.continuous = calibration['selected_ratio']
+        else:
+            interface.shadow = {ratio:[None, 0] for ratio in (0.,) + ratios}
+            replay(periodic(train))
+            visits = {ratio:entry[1] for ratio,entry in interface.shadow.items()}
+            interface.continuous = min(ratios, key=lambda ratio:abs(visits[ratio] - visits[0.]))
+            calibration = dict(train_scenes=scenes[:4], transmitted_elements=visits, selected_ratio=interface.continuous)
+            interface.shadow = None
+        fit.write_json(a.out / 'continuous_calibration.json', calibration)
         interface.previous = None
     if len(net.interfaces):
         fit.write_json(a.out / 'scales.json', dict(seed=a.seed, arm=a.arm, parent_sha=fit.digest(ck),
@@ -338,6 +348,9 @@ def run(a):
     for interface in joint:
         interface.record = True
     ledger = ConvLedger(net)
+    # Count the deployed modules once, before wrapping projections and fusion.
+    deployed = (net, source.pillar_vfe, source.scatter, source.core.deblocks, source.core.readout)
+    parameters = {id(p): p.numel() for module in deployed for p in module.parameters()}
     # Count each sender once, even when its output feeds both a residual and a skip.
     # Fan-out-weighted synaptic operations are recorded separately by ConvLedger.
     messages = {}
@@ -407,6 +420,7 @@ def run(a):
     saved.extend(i.previous for i in net.interfaces if i.previous is not None)
     unique = {x.storage().data_ptr(): x.storage().size() * x.element_size() for x in saved}
     report = dict(metrics=result, seed=a.seed, arm=a.arm, clear_history=a.clear,
+                  deployed_parameter_count=sum(parameters.values()), backbone_payload=a.backbone_payload,
                   continuous_backbone=net.input_sender.continuous_threshold is not None,
                   frame_ann=net.input_sender.full_amplitude,
                   bypass_joint=a.bypass_joint,
@@ -470,6 +484,8 @@ if __name__ == '__main__':
     parser.add_argument('--frames', action='store_true')
     parser.add_argument('--backbone-traffic', action='store_true',
                         help='Record emitted values and fan-out-weighted costs on the scored trajectory.')
+    parser.add_argument('--backbone-payload', choices=('fp32','fp16','int8'),
+                        help='Frozen continuous control: round-trip every backbone delta before updating receiver state.')
     parser.add_argument('--target-records', action='store_true', help='Record per-object scored V2V validation matches.')
     parser.add_argument('--clear', action='store_true', help='Reset task and projection history on every scan at evaluation.')
     parser.add_argument('--continuous-fusion', action='store_true',

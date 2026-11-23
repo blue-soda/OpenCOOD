@@ -31,6 +31,7 @@ class Sender(nn.Module):
         self.cap = cap
         self.step_multiplier = 1.
         self.continuous_threshold = None
+        self.payload_dtype = None
         self.full_amplitude = False
 
     def step(self):
@@ -48,7 +49,13 @@ class Sender(nn.Module):
         clipped = residual.clamp(-self.cap, self.cap)
         if self.continuous_threshold is not None:
             active = residual.abs() > self.continuous_threshold
-            change = torch.where(active, clipped * step, torch.zeros_like(target))
+            amplitude = clipped * step
+            if self.payload_dtype == 'int8':
+                code = (clipped * (127. / self.cap)).round().to(torch.int8)
+                amplitude = code.to(target.dtype) * (step * (self.cap / 127.))
+            elif self.payload_dtype == 'fp16':
+                amplitude = amplitude.half().to(target.dtype)
+            change = torch.where(active, amplitude, torch.zeros_like(target))
             stats = torch.stack((active.float().mean(), (residual.abs() > self.cap).float().mean(),
                                  (change / step).abs().mean())).detach()
             return change, prior + change, stats
