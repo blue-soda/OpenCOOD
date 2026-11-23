@@ -35,7 +35,8 @@ class InterfaceProbe:
             if name in self.channel_stats:
                 values = tuple(a + b for a, b in zip(self.channel_stats[name], values))
             self.channel_stats[name] = values
-        if self.arm == name.split('_')[0] or self.arm == 'both':
+        if self.arm == name.split('_')[0] or self.arm == 'both' or (
+                self.arm == 'pointwise_both' and name.startswith('upsample_')):
             step = self.steps[name].view(1, -1, *([1] * (x.ndim - 2)))
             return self.spike(x / step) * step
         return x
@@ -85,7 +86,7 @@ class InterfaceProbe:
 
 
 @torch.no_grad()
-def run(base, output, sparse_reuse=False):
+def run(base, output, sparse_reuse=False, pointwise=False):
     output.mkdir(parents=True, exist_ok=False)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
@@ -132,13 +133,23 @@ def run(base, output, sparse_reuse=False):
         return
     probe = InterfaceProbe()
     source.pillar_vfe.register_forward_hook(probe.pillar)
+    if pointwise:
+        layer, = source.pillar_vfe.pfn_layers
+        assert layer.last_vfe and layer.use_norm
+        def point_spikes(module, args, values):
+            if probe.arm == 'pointwise_both':
+                step = probe.steps['pillar'].view(1, -1, 1)
+                return probe.spike(values / step) * step
+        layer.norm.register_forward_hook(point_spikes)
     for idx, branch in enumerate(source.core.deblocks):
         conv, = [m for m in branch.modules() if isinstance(m, nn.ConvTranspose2d)]
         assert conv.groups == 1 and conv.kernel_size == conv.stride and conv.padding == (0, 0)
         conv.register_forward_pre_hook(probe.upsample('upsample_%d' % idx))
         conv.register_forward_hook(probe.audit_projection)
     bins = {}
-    for arm in ('calibrate', 'dense', 'reference', 'upsample', 'pillar', 'both'):
+    arms = ('calibrate', 'pointwise_both') if pointwise else (
+        'calibrate', 'dense', 'reference', 'upsample', 'pillar', 'both')
+    for arm in arms:
         probe.start(arm)
         probe.rows = calibration if arm == 'calibrate' else monitor
         metrics = fit.replay(probe.rows, cfg, source, net, criterion, None, 0, output, bins, window_mode='fixed')
@@ -156,6 +167,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('diagnostics', type=Path)
     parser.add_argument('output', type=Path)
-    parser.add_argument('--sparse-reuse', action='store_true')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--sparse-reuse', action='store_true')
+    mode.add_argument('--pointwise', action='store_true')
     args = parser.parse_args()
-    run(args.diagnostics, args.output, args.sparse_reuse)
+    run(args.diagnostics, args.output, args.sparse_reuse, args.pointwise)
