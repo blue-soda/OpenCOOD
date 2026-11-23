@@ -137,10 +137,12 @@ def run(a):
     net.load_state_dict(torch.load(ck, map_location='cpu')['net'])
     criterion = fit.PointPillarDirLoss(cfg['loss']['args']).cuda()
     bins = {}
-    def replay(rows, opt=None, epoch=0):
+    def replay(rows, opt=None, epoch=0, record=False):
         with torch.set_grad_enabled(opt is not None):
             return fit.replay(rows, cfg, source, net, criterion, opt, epoch, a.out, bins,
-                              order_seed=a.seed, window_mode='fixed')
+                              order_seed=a.seed, window_mode='fixed',
+                              memoryless=record and a.clear,
+                              frame_log=a.out / 'frames.jsonl' if record and a.frames else None)
     net.interfaces = nn.ModuleList()
     def attach(module):
         interface = Interface().cuda()
@@ -190,7 +192,7 @@ def run(a):
         layer.register_forward_hook(head_cost)
     frame = [0]
     def reset(module, args):
-        if evaluation[frame[0]]['reset_before']:
+        if a.clear or evaluation[frame[0]]['reset_before']:
             fusion.history.clear()
             for proj in projections:
                 proj.old = proj.output = None
@@ -201,7 +203,7 @@ def run(a):
             module.register_forward_hook(fusion.hook)
     fit.delta_conv = ledger.count
     try:
-        result = replay(evaluation)
+        result = replay(evaluation, record=True)
     finally:
         fit.delta_conv = ledger.original
     n = frame[0]
@@ -210,7 +212,8 @@ def run(a):
     up = 2 * sum(p.temporal_mac for p in projections)
     up_static = 2 * sum(p.static_mac for p in projections)
     cost = lambda value: value / n / 1e9
-    report = dict(metrics=result, seed=a.seed, arm=a.arm, physical_fusion=a.physical, static_fusion=a.static_fusion,
+    report = dict(metrics=result, seed=a.seed, arm=a.arm, clear_history=a.clear,
+                  physical_fusion=a.physical, static_fusion=a.static_fusion,
                   full_cost_g=cost(other+up+2*fusion.chosen+fusion.bookkeeping),
                   temporal_up_static_fusion_g=cost(other+up+2*fusion.static),
                   static_cost_g=cost(other+up_static+2*fusion.static),
@@ -234,6 +237,8 @@ if __name__ == '__main__':
     parser.add_argument('--internal', action='store_true')
     parser.add_argument('--physical', action='store_true')
     parser.add_argument('--static-fusion', action='store_true')
+    parser.add_argument('--frames', action='store_true')
+    parser.add_argument('--clear', action='store_true', help='Reset task and projection history on every scan at evaluation.')
     parser.add_argument('--limit', type=int)
     parser.add_argument('--weights', type=Path)
     run(parser.parse_args())
