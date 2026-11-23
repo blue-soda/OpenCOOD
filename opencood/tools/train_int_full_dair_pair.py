@@ -6,7 +6,7 @@ import torch
 
 from opencood.data_utils.int_v2v_ego_stream import v2v_rows
 from opencood.tools import train_int_spike_pyramid as fit
-from opencood.tools.train_int_anchor_refresh import RecoveryPyramid
+from opencood.tools.train_int_anchor_refresh import RecoveryPyramid, periodic
 
 
 def full_rows(manifest, datasets, split):
@@ -44,11 +44,25 @@ def train(a):
     criterion = fit.PointPillarDirLoss(cfg['loss']['args']).cuda()
     groups = [dict(params=[p for k,p in net.named_parameters() if not k.startswith('heads.')], lr=3e-5),
               dict(params=net.heads.parameters(),lr=1.5e-5)]
+    if a.pillar_up:
+        from opencood.tools.select_int_stream_variant import install_pillar_up
+        install_pillar_up(net, src.core)
+        with torch.no_grad():
+            fit.replay(periodic(rows[:20]), cfg, src, net, criterion, None, 0, a.out, {},
+                       order_seed=a.seed, window_mode='fixed')
+        for interface in net.pillar_up:
+            interface.calibrated()
+        groups.append(dict(params=net.pillar_up.parameters(), lr=1e-3))
     opt = torch.optim.AdamW(groups,weight_decay=1e-4)
+    initial_lrs = [group['lr'] for group in opt.param_groups]
     contract = dict(seed=a.seed, variant=variant, epochs=a.epochs, manifest=fit.digest(manifest),
                     initial=fit.digest(initial), labels_per_epoch=labels, scenes=scenes,
                     dataset='v2v_single' if a.v2v else 'dair_single',
                     training='all supervised five-scan clips; same shuffle, optimizer boundaries and fixed final epoch')
+    if a.pillar_up:
+        contract.update(pillar_up=True, interfaces=['pillar_output', 'fine_up', 'middle_up', 'deep_up'],
+                        coding='E-3DSNN Multispike 0..4; floating point PFN and projection weights fixed',
+                        calibration_frames=[row['frame'] for row in rows[:20]], learning_rates=initial_lrs)
     cp = a.out/'contract.json'
     if cp.exists():
         assert fit.read(cp) == contract
@@ -68,11 +82,17 @@ def train(a):
             attempt += 1
             trace = a.out/('epoch_%02d_retry_%d' % (epoch,attempt))
         trace.mkdir()
-        for group, lr in zip(opt.param_groups, (3e-5, 1.5e-5)):
+        for group, lr in zip(opt.param_groups, initial_lrs):
             group['lr'] = lr if epoch == 1 else lr * .5
+        if a.pillar_up:
+            before = [s.log_step.detach().clone() for s in net.pillar_up]
         result = fit.replay(rows,cfg,src,net,criterion,opt,epoch,trace,{},memoryless=a.independent,
                             order_seed=a.seed,window_mode='fixed')
         assert result['labels'] == labels and result['updates'] > 0
+        if a.pillar_up:
+            result['step_parameter_l2_change'] = [
+                (s.log_step.detach() - start_value).norm().item()
+                for s, start_value in zip(net.pillar_up, before)]
         fit.write_json(trace/'result.json',result)
         fit.checkpoint(a.out/'last.pt',net,opt,epoch,0.,0)
     temp = a.out/'final.tmp'
@@ -88,5 +108,6 @@ if __name__ == '__main__':
     p.add_argument('--epochs',type=int,default=2)
     p.add_argument('--independent',action='store_true')
     p.add_argument('--resume',action='store_true')
+    p.add_argument('--pillar-up',action='store_true',help='Jointly fit four multispike interfaces.')
     p.add_argument('--v2v',type=Path,help='Use the audited single-car, duplicate-free training manifest.')
     train(p.parse_args())

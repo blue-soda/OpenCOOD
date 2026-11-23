@@ -24,6 +24,7 @@ class Interface(nn.Module):
         self.residual_scale = residual_scale
         self.previous = None
         self.record = False
+        self.count_amplitude = False
         self.elements = self.escapes = self.fired = 0
         self.continuous = None
         self.shadow = None
@@ -65,6 +66,8 @@ class Interface(nn.Module):
                 self.escapes += int(torch.count_nonzero(escape))
             self.previous = value.detach()
             return value
+        if self.record and self.count_amplitude:
+            self.elements += x.numel()
         return self.spike(x / q) * q
 
     def calibrated(self):
@@ -73,6 +76,24 @@ class Interface(nn.Module):
             step = step * self.residual_scale
         self.log_step = nn.Parameter(step.clamp_min(1e-5).log())
         self.collect = False
+
+
+def install_pillar_up(net, core, saved=None):
+    """Use the same four positive Multispike interfaces for training and scoring."""
+    net.pillar_up = nn.ModuleList()
+    for index, target in enumerate([net.input_sender, *core.deblocks]):
+        interface = Interface().cuda()
+        interface.count_amplitude = True
+        if saved is not None:
+            value = saved['pillar_up.%d.log_step' % index]
+            interface.log_step = nn.Parameter(value.detach().clone().cuda())
+            interface.collect = False
+        net.pillar_up.append(interface)
+
+        def quantize(_, args, sender=interface):
+            return (sender(args[0]),) + args[1:]
+        target.register_forward_pre_hook(quantize)
+    assert len(net.pillar_up) == 4
 
 
 class FusionCost:
@@ -208,6 +229,8 @@ def run(a):
         assert full['contract']['seed'] == a.seed
         assert full['contract']['labels_per_epoch'] == (6958 if a.v2v_split else 4678)
         assert full['contract']['variant'] == ('fine_independent' if a.clear else 'fine_temporal')
+        if full['contract'].get('pillar_up'):
+            install_pillar_up(net, source.core, full['net'])
         net.load_state_dict(full['net'])
         ck = a.full_parent
     else:
@@ -286,6 +309,9 @@ def run(a):
             plan_sha=receipt['plan'], log_step=[i.log_step.detach().cpu().tolist() for i in net.interfaces]))
     for interface in net.interfaces:
         interface.record = True
+    joint = getattr(net, 'pillar_up', ())
+    for interface in joint:
+        interface.record = True
     ledger = ConvLedger(net)
     fusion = FusionCost(a.physical, a.static_fusion, a.first_fusion)
     projections = []
@@ -334,6 +360,9 @@ def run(a):
     # Ten scalar arithmetic/comparison operations per non-anchor input, conservative
     # uniform charge. No equivalent hardware-energy assumption is made here.
     encoding_ops = (4 if a.continuous_fusion else 10) * encoded
+    # Divide, clamp on both sides, offset, floor, and rescale. Count separately
+    # from bounded fusion, including zero BEV cells actually visited by this implementation.
+    joint_encoding_ops = 6 * sum(i.elements for i in joint)
     saved = [x for pair in fusion.history.values() for x in pair]
     saved.extend(i.previous for i in net.interfaces if i.previous is not None)
     unique = {x.storage().data_ptr(): x.storage().size() * x.element_size() for x in saved}
@@ -341,9 +370,10 @@ def run(a):
                   continuous_fusion=a.continuous_fusion,
                   physical_fusion=a.physical, static_fusion=a.static_fusion, dense_fusion_reference=not a.no_reference,
                   first_fusion=a.first_fusion, unique_sender_and_fusion_bytes=sum(unique.values()),
-                  full_cost_g=cost(other+up+2*fusion.chosen+fusion.bookkeeping+encoding_ops),
-                  temporal_up_static_fusion_g=cost(other+up+2*fusion.static+encoding_ops),
-                  static_cost_g=cost(other+up_static+2*fusion.static+encoding_ops),
+                  full_cost_g=cost(other+up+2*fusion.chosen+fusion.bookkeeping+encoding_ops+joint_encoding_ops),
+                  temporal_up_static_fusion_g=cost(other+up+2*fusion.static+encoding_ops+joint_encoding_ops),
+                  static_cost_g=cost(other+up_static+2*fusion.static+encoding_ops+joint_encoding_ops),
+                  pillar_up_encoding_g=cost(joint_encoding_ops),
                   bounded_sender_g=cost(encoding_ops), ordinary_elements=encoded,
                   ordinary_changed=sum(i.fired for i in net.interfaces),
                   ordinary_escape=sum(i.escapes for i in net.interfaces),
