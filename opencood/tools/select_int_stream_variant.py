@@ -126,8 +126,8 @@ def run(a):
     init = a.root / 'initial.pt'
     assert fit.digest(init) == '57f9d146f2a4dd1344ad36dd670bc7f9bcdfd85ae04aaa8c4855cc635b148c33'
     ck = a.root / ('fine_temporal_%s.pt' % a.seed)
-    assert fit.digest(ck) == {303:'49538d3f5f06d73315368521d562bd0cf2bb328126d09dc433a5398bef4bd842',
-                              707:'d96b3af435fcf14b8e99bbe64bdee3e71e51635afd97ea67070951d841d01f1f'}[a.seed]
+    assert fit.digest(ck) == {303:'e8ae1933aaa9da4103f0dab1cc0eca89eaa08d6e3bf43fe35eeea20c59f3352b',
+                              707:'dc11c3232a40781da9e475ace6dc1cba6576c82c520997f2449c9bf9f504c56c'}[a.seed]
     cfg = fit.load_yaml(str(a.root / 'inputs/config.yaml'))
     cfg['data_augment'] = []
     source = fit.build_source(a.root / 'inputs', cfg)
