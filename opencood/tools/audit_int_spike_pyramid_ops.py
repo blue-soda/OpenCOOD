@@ -25,8 +25,10 @@ class ConvLedger:
         stage, sender = self.inputs[conv]
         q = sender.step()
         raw = events / q
-        code = raw.round()
-        assert (raw - code).abs().max() < 1e-4 and code.abs().max() <= sender.cap
+        continuous = sender.continuous_threshold is not None
+        if not continuous:
+            code = raw.round()
+            assert (raw - code).abs().max() < 1e-4 and code.abs().max() <= sender.cap
         h,w = events.shape[-2:]
         key = (conv,h,w)
         if key not in self.taps:
@@ -38,6 +40,12 @@ class ConvLedger:
                 stride=conv.stride,padding=conv.padding,dilation=conv.dilation)[0,0]
         taps = self.taps[key]
         branches = conv.out_channels // conv.groups
+        if continuous:
+            self.totals[stage][0] += taps.sum(dtype=torch.float64) * conv.in_channels * branches
+            self.totals[stage][1] += (taps * events.ne(0).sum(1)).sum(dtype=torch.float64) * branches
+            # Repeated unit-spike costs do not apply to continuous amplitudes.
+            self.totals[stage][2:] = float('nan')
+            return self.original(conv,events,first)
         counts = torch.stack((taps.sum(dtype=torch.float64)*conv.in_channels,
             (taps * (code != 0).sum(1)).sum(dtype=torch.float64),
             (taps * code.abs().sum(1)).sum(dtype=torch.float64),

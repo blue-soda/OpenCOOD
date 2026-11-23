@@ -239,6 +239,11 @@ def run(a):
             raise ValueError('A per-scan training control must also clear history at evaluation.')
         if full['contract'].get('pillar_up'):
             install_pillar_up(net, source.core, full['net'])
+        if 'continuous_threshold' in full['contract']:
+            if not a.continuous_fusion:
+                raise ValueError('Use continuous fusion when scoring the full continuous control.')
+            for sender in net.senders:
+                sender.continuous_threshold = full['contract']['continuous_threshold']
         net.load_state_dict(full['net'])
         ck = a.full_parent
     else:
@@ -375,6 +380,7 @@ def run(a):
     saved.extend(i.previous for i in net.interfaces if i.previous is not None)
     unique = {x.storage().data_ptr(): x.storage().size() * x.element_size() for x in saved}
     report = dict(metrics=result, seed=a.seed, arm=a.arm, clear_history=a.clear,
+                  continuous_backbone=net.input_sender.continuous_threshold is not None,
                   parent_sha=fit.digest(ck), parent_variant=trained_variant if a.full_parent else 'fine_temporal',
                   continuous_fusion=a.continuous_fusion,
                   physical_fusion=a.physical, static_fusion=a.static_fusion, dense_fusion_reference=not a.no_reference,

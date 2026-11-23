@@ -41,6 +41,11 @@ def train(a):
     src = fit.build_source(a.root/'inputs',cfg)
     variant = 'fine_independent' if a.independent else 'fine_temporal'
     net = RecoveryPyramid(src.core,initial,variant).cuda()
+    if a.continuous_backbone:
+        if a.pillar_up or a.independent:
+            raise ValueError('The continuous temporal control uses the unmodified Pillar/up interfaces.')
+        for sender in net.senders:
+            sender.continuous_threshold = .5
     criterion = fit.PointPillarDirLoss(cfg['loss']['args']).cuda()
     groups = [dict(params=[p for k,p in net.named_parameters() if not k.startswith('heads.')], lr=3e-5),
               dict(params=net.heads.parameters(),lr=1.5e-5)]
@@ -71,6 +76,9 @@ def train(a):
         contract.update(pillar_up=True, interfaces=['pillar_output', 'fine_up', 'middle_up', 'deep_up'],
                         coding='E-3DSNN Multispike 0..4; floating point PFN and projection weights fixed',
                         calibration_frames=[row['frame'] for row in rows[:20]], learning_rates=initial_lrs)
+    if a.continuous_backbone:
+        contract.update(continuous_threshold=.5, coding='bounded continuous residuals at every backbone sender',
+                        threshold_source='R-505 four training scenes; fixed before target validation')
     cp = a.out/'contract.json'
     if cp.exists():
         assert fit.read(cp) == contract
@@ -117,5 +125,6 @@ if __name__ == '__main__':
     p.add_argument('--independent',action='store_true')
     p.add_argument('--resume',action='store_true')
     p.add_argument('--pillar-up',action='store_true',help='Jointly fit four multispike interfaces.')
+    p.add_argument('--continuous-backbone',action='store_true',help='Fit the matched real-valued temporal control.')
     p.add_argument('--v2v',type=Path,help='Use the audited single-car, duplicate-free training manifest.')
     train(p.parse_args())

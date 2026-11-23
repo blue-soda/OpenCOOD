@@ -30,6 +30,7 @@ class Sender(nn.Module):
         self.log_step = nn.Parameter(torch.full((1, channels, 1, 1), math.log(.25)))
         self.cap = cap
         self.step_multiplier = 1.
+        self.continuous_threshold = None
 
     def step(self):
         return self.log_step.exp().clamp(.02, 4.) * self.step_multiplier
@@ -38,6 +39,12 @@ class Sender(nn.Module):
         step = self.step()
         residual = (target - prior) / step
         clipped = residual.clamp(-self.cap, self.cap)
+        if self.continuous_threshold is not None:
+            active = residual.abs() > self.continuous_threshold
+            change = torch.where(active, clipped * step, torch.zeros_like(target))
+            stats = torch.stack((active.float().mean(), (residual.abs() > self.cap).float().mean(),
+                                 (change / step).abs().mean())).detach()
+            return change, prior + change, stats
         code = clipped.round()
         change = (code.detach() + (clipped - clipped.detach())) * step
         stats = torch.stack(((code != 0).float().mean(), (residual.abs() > self.cap + .5).float().mean(),
