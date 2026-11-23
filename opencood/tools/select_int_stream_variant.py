@@ -153,6 +153,8 @@ def run(a):
     if a.arm == 'up':
         for branch in source.core.deblocks:
             attach(branch)
+    if a.arm == 'fusion':
+        attach(source.core.readout)
     if len(net.interfaces):
         replay(periodic(train[:20]))
         for interface in net.interfaces:
@@ -226,7 +228,7 @@ if __name__ == '__main__':
     parser.add_argument('root', type=Path)
     parser.add_argument('dataset', type=Path)
     parser.add_argument('out', type=Path)
-    parser.add_argument('arm', choices=('parent', 'up', 'pillar'))
+    parser.add_argument('arm', choices=('parent', 'up', 'pillar', 'fusion'))
     parser.add_argument('--seed', type=int, choices=(303,707), default=303)
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--internal', action='store_true')
