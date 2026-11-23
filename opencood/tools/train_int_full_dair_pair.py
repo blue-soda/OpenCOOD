@@ -87,6 +87,15 @@ def train(a):
                         threshold_source='R-505 four training scenes; fixed before target validation')
     if a.frame_ann:
         contract.update(frame_ann=True, coding='continuous spatial activations, no quantization or history')
+    restore_path = None
+    if a.cross_from_first:
+        previous = fit.read(a.cross_from_first/'contract.json')
+        if (a.epochs != 2 or previous['seed'] == a.seed or
+                previous != dict(contract, seed=previous['seed'], epochs=1)):
+            raise ValueError('Cross the second-epoch order from a matched first-epoch checkpoint.')
+        restore_path = a.cross_from_first/'last.pt'
+        contract.update(first_epoch_seed=previous['seed'], first_checkpoint_sha=fit.digest(restore_path),
+                        first_endpoint_sha=fit.digest(a.cross_from_first/'final.pt'))
     cp = a.out/'contract.json'
     if cp.exists():
         assert fit.read(cp) == contract
@@ -94,7 +103,15 @@ def train(a):
         fit.write_json(cp,contract)
     start = 1
     if a.resume and (a.out/'last.pt').exists():
-        checkpoint = torch.load(a.out/'last.pt',map_location='cpu')
+        restore_path = a.out/'last.pt'
+    if restore_path is not None:
+        checkpoint = torch.load(restore_path,map_location='cpu')
+        if a.cross_from_first and restore_path == a.cross_from_first/'last.pt':
+            endpoint = torch.load(a.cross_from_first/'final.pt',map_location='cpu')
+            assert checkpoint['epoch'] == 1 and endpoint['contract'] == previous
+            assert endpoint['net'].keys() == checkpoint['net'].keys()
+            assert all(torch.equal(v,checkpoint['net'][k]) for k,v in endpoint['net'].items())
+            del endpoint
         net.load_state_dict(checkpoint['net'])
         opt.load_state_dict(checkpoint['optimizer'])
         start = checkpoint['epoch'] + 1
@@ -132,6 +149,7 @@ if __name__ == '__main__':
     p.add_argument('--epochs',type=int,default=2)
     p.add_argument('--independent',action='store_true')
     p.add_argument('--resume',action='store_true')
+    p.add_argument('--cross-from-first',type=Path,help='Keep first-epoch model and optimizer; run the other order in epoch two.')
     p.add_argument('--pillar-up',action='store_true',help='Jointly fit four multispike interfaces.')
     p.add_argument('--continuous-backbone',action='store_true',help='Fit the matched real-valued temporal control.')
     p.add_argument('--frame-ann',action='store_true',help='Fit the unquantized independently reset spatial network.')
