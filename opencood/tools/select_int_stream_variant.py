@@ -209,9 +209,17 @@ def run(a):
     if a.arm in ('delta_fine', 'delta_medium'):
         attach(source.core.readout, .125 if a.arm == 'delta_fine' else .25)
     if len(net.interfaces):
-        replay(periodic(train[:20]))
-        for interface in net.interfaces:
-            interface.calibrated()
+        if a.scales:
+            frozen = fit.read(a.scales)
+            assert (frozen['seed'], frozen['arm'], frozen['parent_sha']) == (a.seed, a.arm, fit.digest(ck))
+            assert len(frozen['log_step']) == len(net.interfaces)
+            for interface, values in zip(net.interfaces, frozen['log_step']):
+                interface.log_step = nn.Parameter(torch.tensor(values, device='cuda', dtype=torch.float32))
+                interface.collect = False
+        else:
+            replay(periodic(train[:20]))
+            for interface in net.interfaces:
+                interface.calibrated()
     if a.weights:
         net.load_state_dict(torch.load(a.weights, map_location='cpu'))
     if a.train:
@@ -225,6 +233,9 @@ def run(a):
             fit.write_json(a.out / ('train_%d.json' % epoch), training)
         torch.save(net.state_dict(), a.out / 'trained.pt')
     net.eval()
+    if len(net.interfaces):
+        fit.write_json(a.out / 'scales.json', dict(seed=a.seed, arm=a.arm, parent_sha=fit.digest(ck),
+            plan_sha=receipt['plan'], log_step=[i.log_step.detach().cpu().tolist() for i in net.interfaces]))
     for interface in net.interfaces:
         interface.record = True
     ledger = ConvLedger(net)
@@ -316,4 +327,5 @@ if __name__ == '__main__':
     parser.add_argument('--clear', action='store_true', help='Reset task and projection history on every scan at evaluation.')
     parser.add_argument('--limit', type=int)
     parser.add_argument('--weights', type=Path)
+    parser.add_argument('--scales', type=Path, help='Reuse the fixed interface calibration for this parent.')
     run(parser.parse_args())
