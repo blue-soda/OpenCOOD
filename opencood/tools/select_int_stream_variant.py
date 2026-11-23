@@ -23,6 +23,8 @@ class Interface(nn.Module):
         self.previous = None
         self.record = False
         self.elements = self.escapes = self.fired = 0
+        self.continuous = None
+        self.shadow = None
 
     def forward(self, x):
         if self.collect:
@@ -35,12 +37,26 @@ class Interface(nn.Module):
         if self.residual_scale is not None:
             if self.previous is None:
                 self.previous = x.detach()
+                if self.shadow is not None:
+                    for entry in self.shadow.values():
+                        entry[0] = x.detach()
                 return x
             delta = x - self.previous
             code = delta.abs() / q
             escape = code > 4.5
-            quant = self.spike(code) * delta.sign() * q
-            value = torch.where(escape, x, self.previous + quant)
+            if self.continuous is None:
+                quant = self.spike(code) * delta.sign() * q
+                value = torch.where(escape, x, self.previous + quant)
+            else:
+                value = torch.where(code > .5 * self.continuous, x, self.previous)
+            if self.shadow is not None:
+                for ratio, entry in self.shadow.items():
+                    if ratio == 0.:
+                        entry[1] += int(torch.count_nonzero(value != self.previous))
+                    else:
+                        send = (x-entry[0]).abs() > (.5 * ratio * q)
+                        entry[1] += int(torch.count_nonzero(send))
+                        entry[0] = torch.where(send, x, entry[0]).detach()
             if self.record:
                 self.elements += x.numel()
                 self.fired += int(torch.count_nonzero(value != self.previous))
@@ -233,6 +249,19 @@ def run(a):
             fit.write_json(a.out / ('train_%d.json' % epoch), training)
         torch.save(net.state_dict(), a.out / 'trained.pt')
     net.eval()
+    if a.continuous_fusion:
+        if a.train or not a.arm.startswith('delta_'):
+            raise ValueError('Matched continuous control expects a fixed residual sender.')
+        interface, = net.interfaces
+        ratios = (.75, .875, 1., 1.125, 1.25)
+        interface.shadow = {ratio:[None, 0] for ratio in (0.,) + ratios}
+        replay(periodic(train))
+        visits = {ratio:entry[1] for ratio,entry in interface.shadow.items()}
+        interface.continuous = min(ratios, key=lambda ratio:abs(visits[ratio] - visits[0.]))
+        fit.write_json(a.out / 'continuous_calibration.json', dict(
+            train_scenes=scenes[:4], transmitted_elements=visits, selected_ratio=interface.continuous))
+        interface.shadow = None
+        interface.previous = None
     if len(net.interfaces):
         fit.write_json(a.out / 'scales.json', dict(seed=a.seed, arm=a.arm, parent_sha=fit.digest(ck),
             plan_sha=receipt['plan'], log_step=[i.log_step.detach().cpu().tolist() for i in net.interfaces]))
@@ -285,11 +314,12 @@ def run(a):
     encoded = sum(i.elements for i in net.interfaces)
     # Ten scalar arithmetic/comparison operations per non-anchor input, conservative
     # uniform charge. No equivalent hardware-energy assumption is made here.
-    encoding_ops = 10 * encoded
+    encoding_ops = (4 if a.continuous_fusion else 10) * encoded
     saved = [x for pair in fusion.history.values() for x in pair]
     saved.extend(i.previous for i in net.interfaces if i.previous is not None)
     unique = {x.storage().data_ptr(): x.storage().size() * x.element_size() for x in saved}
     report = dict(metrics=result, seed=a.seed, arm=a.arm, clear_history=a.clear,
+                  continuous_fusion=a.continuous_fusion,
                   physical_fusion=a.physical, static_fusion=a.static_fusion, dense_fusion_reference=not a.no_reference,
                   first_fusion=a.first_fusion, unique_sender_and_fusion_bytes=sum(unique.values()),
                   full_cost_g=cost(other+up+2*fusion.chosen+fusion.bookkeeping+encoding_ops),
@@ -325,6 +355,8 @@ if __name__ == '__main__':
     policy.add_argument('--first-fusion', action='store_true', help='Retain only the linear result touched directly by the fusion sender.')
     parser.add_argument('--frames', action='store_true')
     parser.add_argument('--clear', action='store_true', help='Reset task and projection history on every scan at evaluation.')
+    parser.add_argument('--continuous-fusion', action='store_true',
+                        help='Calibrate a same-history continuous deadband on training traffic alone.')
     parser.add_argument('--limit', type=int)
     parser.add_argument('--weights', type=Path)
     parser.add_argument('--scales', type=Path, help='Reuse the fixed interface calibration for this parent.')
