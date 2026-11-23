@@ -12,7 +12,10 @@ from opencood.tools.train_int_anchor_refresh import RecoveryPyramid, periodic
 
 
 @torch.no_grad()
-def run(root, out):
+def run(root, out, sparse_tiles=False):
+    if sparse_tiles:
+        from opencood.tools.int_sparse_digit_tiles import check_tiles, digit_planes
+        table = digit_planes()
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.allow_tf32 = torch.backends.cuda.matmul.allow_tf32 = False
@@ -52,6 +55,10 @@ def run(root, out):
             grouped = conv.weight.reshape(conv.groups,conv.out_channels//conv.groups,
                                           conv.in_channels//conv.groups,*conv.kernel_size)
             weights = (grouped*scale.reshape(conv.groups,1,-1,1,1)).reshape_as(conv.weight)
+            if sparse_tiles:
+                tiles = check_tiles(conv,code,weights,reference,first,table)
+                observed.append(dict(stage=stage, first=first, tiles=tiles))
+                return reference
             result = torch.zeros_like(reference)
             for j,power in enumerate(powers):
                 plane = lookup[:,j][code.abs().long()]*code.sign()
@@ -75,14 +82,17 @@ def run(root, out):
             fit.delta_conv = ledger.original
         assert len(observed) == 2*len(ledger.inputs)
         report[arm] = observed
-    fit.write_json(out,dict(frames=[r['frame'] for r in rows], calls=report,
-                            scope='Dense per-digit reference, one refresh and one ordinary scan; '
-                                  'FP32 numerical verification only, not a sparse implementation or timing.'))
+    scope = ('CPU sparse add/subtract over nonzero signed digits; two output tiles per convolution, all output channels, '
+             'pre-scaled weights. Isolated layer outputs on frozen traces; no end-to-end timing or AP.'
+             if sparse_tiles else 'Dense per-digit reference, one refresh and one ordinary scan; '
+             'FP32 numerical verification only, not a sparse implementation or timing.')
+    fit.write_json(out,dict(frames=[r['frame'] for r in rows], calls=report, scope=scope))
 
 
 if __name__ == '__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('root',type=Path)
     p.add_argument('out',type=Path)
+    p.add_argument('--sparse-tiles',action='store_true',help='Verify actual indexed add/subtract at corner and interior output tiles.')
     a=p.parse_args()
-    run(a.root,a.out)
+    run(a.root,a.out,a.sparse_tiles)
