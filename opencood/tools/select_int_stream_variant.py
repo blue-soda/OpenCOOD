@@ -78,7 +78,7 @@ class Interface(nn.Module):
         self.collect = False
 
 
-def install_pillar_up(net, core, saved=None):
+def install_pillar_up(net, core, saved=None, bypass=None):
     """Use the same four positive Multispike interfaces for training and scoring."""
     net.pillar_up = nn.ModuleList()
     for index, target in enumerate([net.input_sender, *core.deblocks]):
@@ -89,6 +89,8 @@ def install_pillar_up(net, core, saved=None):
             interface.log_step = nn.Parameter(value.detach().clone().cuda())
             interface.collect = False
         net.pillar_up.append(interface)
+        if (bypass == 'pillar' and index == 0) or (bypass == 'up' and index > 0):
+            continue
 
         def quantize(_, args, sender=interface):
             return (sender(args[0]),) + args[1:]
@@ -237,8 +239,10 @@ def run(a):
         assert trained_variant in ('fine_temporal', 'fine_independent')
         if trained_variant == 'fine_independent' and not a.clear:
             raise ValueError('A per-scan training control must also clear history at evaluation.')
+        if a.bypass_joint and not full['contract'].get('pillar_up'):
+            raise ValueError('Interface bypass requires the jointly trained checkpoint.')
         if full['contract'].get('pillar_up'):
-            install_pillar_up(net, source.core, full['net'])
+            install_pillar_up(net, source.core, full['net'], a.bypass_joint)
         if 'continuous_threshold' in full['contract']:
             if not a.continuous_fusion:
                 raise ValueError('Use continuous fusion when scoring the full continuous control.')
@@ -247,6 +251,8 @@ def run(a):
         net.load_state_dict(full['net'])
         ck = a.full_parent
     else:
+        if a.bypass_joint:
+            raise ValueError('Interface bypass requires --full-parent.')
         assert fit.digest(ck) == {303:'e8ae1933aaa9da4103f0dab1cc0eca89eaa08d6e3bf43fe35eeea20c59f3352b',
                                   707:'dc11c3232a40781da9e475ace6dc1cba6576c82c520997f2449c9bf9f504c56c'}[a.seed]
         net.load_state_dict(torch.load(ck,map_location='cpu')['net'])
@@ -382,6 +388,7 @@ def run(a):
     unique = {x.storage().data_ptr(): x.storage().size() * x.element_size() for x in saved}
     report = dict(metrics=result, seed=a.seed, arm=a.arm, clear_history=a.clear,
                   continuous_backbone=net.input_sender.continuous_threshold is not None,
+                  bypass_joint=a.bypass_joint,
                   parent_sha=fit.digest(ck), parent_variant=trained_variant if a.full_parent else 'fine_temporal',
                   continuous_fusion=a.continuous_fusion,
                   physical_fusion=a.physical, static_fusion=a.static_fusion, dense_fusion_reference=not a.no_reference,
@@ -428,5 +435,7 @@ if __name__ == '__main__':
                         help='Calibrate a same-history continuous deadband on training traffic alone.')
     parser.add_argument('--limit', type=int)
     parser.add_argument('--weights', type=Path)
+    parser.add_argument('--bypass-joint', choices=('pillar','up'),
+                        help='For a frozen jointly trained checkpoint, bypass one family of input encoders.')
     parser.add_argument('--scales', type=Path, help='Reuse the fixed interface calibration for this parent.')
     run(parser.parse_args())
