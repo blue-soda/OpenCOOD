@@ -14,11 +14,15 @@ from opencood.tools.train_int_anchor_refresh import RecoveryPyramid, periodic
 
 
 class Interface(nn.Module):
-    def __init__(self):
+    def __init__(self, residual_scale=None):
         super().__init__()
         self.spike = Multispike()
         self.collect = True
         self.squares = self.counts = None
+        self.residual_scale = residual_scale
+        self.previous = None
+        self.record = False
+        self.elements = self.escapes = self.fired = 0
 
     def forward(self, x):
         if self.collect:
@@ -28,10 +32,27 @@ class Interface(nn.Module):
             self.counts = counts if self.counts is None else self.counts + counts
             return x
         q = self.log_step.exp().clamp(1e-5, 100.).view(1, -1, 1, 1)
+        if self.residual_scale is not None:
+            if self.previous is None:
+                self.previous = x.detach()
+                return x
+            delta = x - self.previous
+            code = delta.abs() / q
+            escape = code > 4.5
+            quant = self.spike(code) * delta.sign() * q
+            value = torch.where(escape, x, self.previous + quant)
+            if self.record:
+                self.elements += x.numel()
+                self.fired += int(torch.count_nonzero(value != self.previous))
+                self.escapes += int(torch.count_nonzero(escape))
+            self.previous = value.detach()
+            return value
         return self.spike(x / q) * q
 
     def calibrated(self):
         step = .75 * (self.squares / self.counts.clamp_min(1)).sqrt()
+        if self.residual_scale is not None:
+            step = step * self.residual_scale
         self.log_step = nn.Parameter(step.clamp_min(1e-5).log())
         self.collect = False
 
@@ -144,12 +165,17 @@ def run(a):
                               memoryless=record and a.clear,
                               frame_log=a.out / 'frames.jsonl' if record and a.frames else None)
     net.interfaces = nn.ModuleList()
-    def attach(module):
-        interface = Interface().cuda()
+    def attach(module, residual_scale=None):
+        interface = Interface(residual_scale).cuda()
         net.interfaces.append(interface)
         def apply_interface(_, args):
             return (interface(args[0]),) + args[1:]
         module.register_forward_pre_hook(apply_interface)
+        if residual_scale is not None:
+            def reset_sender(_, args):
+                if args[2] is None:
+                    interface.previous = None
+            net.register_forward_pre_hook(reset_sender)
     if a.arm == 'pillar':
         attach(net.input_sender)  # Same positive quantization as the tested pre-pooling PFN.
     if a.arm == 'up':
@@ -157,6 +183,8 @@ def run(a):
             attach(branch)
     if a.arm == 'fusion':
         attach(source.core.readout)
+    if a.arm in ('delta_fine', 'delta_medium'):
+        attach(source.core.readout, .125 if a.arm == 'delta_fine' else .25)
     if len(net.interfaces):
         replay(periodic(train[:20]))
         for interface in net.interfaces:
@@ -174,6 +202,8 @@ def run(a):
             fit.write_json(a.out / ('train_%d.json' % epoch), training)
         torch.save(net.state_dict(), a.out / 'trained.pt')
     net.eval()
+    for interface in net.interfaces:
+        interface.record = True
     ledger = ConvLedger(net)
     fusion = FusionCost(a.physical, a.static_fusion)
     projections = []
@@ -212,11 +242,20 @@ def run(a):
     up = 2 * sum(p.temporal_mac for p in projections)
     up_static = 2 * sum(p.static_mac for p in projections)
     cost = lambda value: value / n / 1e9
+    encoded = sum(i.elements for i in net.interfaces)
+    # Ten scalar arithmetic/comparison operations per non-anchor input, conservative
+    # uniform charge. No equivalent hardware-energy assumption is made here.
+    encoding_ops = 10 * encoded
     report = dict(metrics=result, seed=a.seed, arm=a.arm, clear_history=a.clear,
                   physical_fusion=a.physical, static_fusion=a.static_fusion,
-                  full_cost_g=cost(other+up+2*fusion.chosen+fusion.bookkeeping),
-                  temporal_up_static_fusion_g=cost(other+up+2*fusion.static),
-                  static_cost_g=cost(other+up_static+2*fusion.static),
+                  full_cost_g=cost(other+up+2*fusion.chosen+fusion.bookkeeping+encoding_ops),
+                  temporal_up_static_fusion_g=cost(other+up+2*fusion.static+encoding_ops),
+                  static_cost_g=cost(other+up_static+2*fusion.static+encoding_ops),
+                  bounded_sender_g=cost(encoding_ops), ordinary_elements=encoded,
+                  ordinary_changed=sum(i.fired for i in net.interfaces),
+                  ordinary_escape=sum(i.escapes for i in net.interfaces),
+                  sender_state_bytes=sum(i.previous.numel()*i.previous.element_size()
+                                         for i in net.interfaces if i.previous is not None),
                   fusion_dense_g=cost(2*fusion.dense), fusion_static_g=cost(2*fusion.static),
                   fusion_chosen_g=cost(2*fusion.chosen), fusion_state_arithmetic_g=cost(fusion.bookkeeping),
                   up_g=cost(up), up_static_g=cost(up_static), other_g=cost(other),
@@ -231,7 +270,7 @@ if __name__ == '__main__':
     parser.add_argument('root', type=Path)
     parser.add_argument('dataset', type=Path)
     parser.add_argument('out', type=Path)
-    parser.add_argument('arm', choices=('parent', 'up', 'pillar', 'fusion'))
+    parser.add_argument('arm', choices=('parent', 'up', 'pillar', 'fusion', 'delta_fine', 'delta_medium'))
     parser.add_argument('--seed', type=int, choices=(303,707), default=303)
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--internal', action='store_true')
