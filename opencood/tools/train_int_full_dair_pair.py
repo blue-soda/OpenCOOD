@@ -47,9 +47,17 @@ def train(a):
     if a.pillar_up:
         from opencood.tools.select_int_stream_variant import install_pillar_up
         install_pillar_up(net, src.core)
+        calibration = periodic(rows[:20])
+        _, samples = fit.loader(calibration, cfg, 0, 303)
+        state = None
         with torch.no_grad():
-            fit.replay(periodic(rows[:20]), cfg, src, net, criterion, None, 0, a.out, {},
-                       order_seed=a.seed, window_mode='fixed')
+            for row, sample in zip(calibration, samples):
+                assert row['frame'] == sample['meta']['frame']
+                if row['reset_before']:
+                    state = None
+                ego = fit.to_device(sample['ego'], torch.device('cuda'))
+                spatial = fit.spatial_input(src, ego)
+                _, state, _ = net(spatial, src.core, state, ordinary=not row['reset_before'])
         for interface in net.pillar_up:
             interface.calibrated()
         groups.append(dict(params=net.pillar_up.parameters(), lr=1e-3))
