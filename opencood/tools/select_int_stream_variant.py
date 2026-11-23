@@ -233,7 +233,10 @@ def run(a):
         full = torch.load(a.full_parent, map_location='cpu')
         assert full['contract']['seed'] == a.seed
         assert full['contract']['labels_per_epoch'] == (6958 if a.v2v_split else 4678)
-        assert full['contract']['variant'] == ('fine_independent' if a.clear else 'fine_temporal')
+        trained_variant = full['contract']['variant']
+        assert trained_variant in ('fine_temporal', 'fine_independent')
+        if trained_variant == 'fine_independent' and not a.clear:
+            raise ValueError('A per-scan training control must also clear history at evaluation.')
         if full['contract'].get('pillar_up'):
             install_pillar_up(net, source.core, full['net'])
         net.load_state_dict(full['net'])
@@ -372,6 +375,7 @@ def run(a):
     saved.extend(i.previous for i in net.interfaces if i.previous is not None)
     unique = {x.storage().data_ptr(): x.storage().size() * x.element_size() for x in saved}
     report = dict(metrics=result, seed=a.seed, arm=a.arm, clear_history=a.clear,
+                  parent_sha=fit.digest(ck), parent_variant=trained_variant if a.full_parent else 'fine_temporal',
                   continuous_fusion=a.continuous_fusion,
                   physical_fusion=a.physical, static_fusion=a.static_fusion, dense_fusion_reference=not a.no_reference,
                   first_fusion=a.first_fusion, unique_sender_and_fusion_bytes=sum(unique.values()),
