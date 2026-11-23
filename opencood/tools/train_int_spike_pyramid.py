@@ -106,13 +106,14 @@ def detach_state(state):
 
 
 @torch.no_grad()
-def continuous_reference(rows, cfg, source):
+def continuous_reference(rows, cfg, source, include_unlabeled=False):
     """Same spatial stages and frozen readout with continuous activations."""
     ds, stream = loader(rows, cfg, 0, 303)
     core = source.core
     stats = {t:dict(tp=[], fp=[], gt=0, score=[]) for t in (.5, .7)}
     for sample in stream:
-        if not sample['meta']['supervised']:
+        supervised = sample['meta']['supervised']
+        if not supervised and not include_unlabeled:
             continue
         ego = to_device(sample['ego'], torch.device('cuda'))
         value = spatial_input(source, ego)
@@ -124,6 +125,8 @@ def continuous_reference(rows, cfg, source):
         pred = dict(psm=core.cls_head(features), rm=core.reg_head(features))
         if core.dir_head is not None:
             pred['dm'] = core.dir_head(features)
+        if not supervised:
+            continue
         measured = score(ds.post, ego, pred, ds.post.generate_gt_bbx(dict(ego=ego)))['ap']
         for threshold, counts in measured.items():
             for key in stats[threshold]:
