@@ -166,7 +166,8 @@ def fine_target_loss(core, spatial, received, labels):
 
 
 def replay(rows, cfg, source, net, criterion, optimizer, epoch, out, point_bins, memoryless=False,
-           fine_distill_weight=0., anchor_mode=None, order_seed=303, frame_log=None, window_mode=None):
+           fine_distill_weight=0., anchor_mode=None, order_seed=303, frame_log=None, window_mode=None,
+           target_log=None):
     train = optimizer is not None
     if train:
         rows = training_order(rows, length=5, seed=order_seed + epoch)
@@ -257,6 +258,23 @@ def replay(rows, cfg, source, net, criterion, optimizer, epoch, out, point_bins,
                     weak_total += sum(weak)
                     frame_hits = sum(weak[k] for k in scored['hit_ids'])
                     weak_hits += frame_hits
+                    if target_log is not None:
+                        assert row.get('dataset') == 'v2v_single'
+                        # Match the scored, range-filtered GT back to its single-agent annotation.
+                        # The postprocessor may reorder objects when removing duplicates.
+                        values = ego['object_bbx_center'][ego['object_bbx_mask'] == 1]
+                        corners = box_utils.boxes_to_corners_3d(values, ds.post.params['order'])
+                        corners = box_utils.project_box3d(corners.float(), ego['transformation_matrix_clean'])
+                        same = (gt[:,None] - corners[None,:]).abs().amax(dim=(-1,-2)) < 1e-4
+                        assert bool((same.sum(1) == 1).all())
+                        indices = same.nonzero(as_tuple=False)[:,1].tolist()
+                        ids = [str(ego['object_ids'][j]) for j in indices]
+                        assert len(ids) == len(set(ids))
+                        matched = set(scored['hit_ids'])
+                        record(target_log, dict(scene=row['scene'], source_frame=row['source_frame'],
+                            frame=row['frame'], reset=bool(row['reset_before']), ids=ids,
+                            centers=gt.mean(1)[:,:2].tolist(), hits=[j in matched for j in range(len(gt))],
+                            weak=weak))
                     if frame_log is not None:
                         record(frame_log, dict(scene=row['scene'], frame=row['frame'],
                                weak=sum(weak), hits=frame_hits, ap70=measured[.7]))

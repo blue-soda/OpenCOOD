@@ -257,7 +257,8 @@ def run(a):
             return fit.replay(rows, cfg, source, net, criterion, opt, epoch, a.out, bins,
                               order_seed=a.seed, window_mode='fixed',
                               memoryless=record and a.clear,
-                              frame_log=a.out / 'frames.jsonl' if record and a.frames else None)
+                              frame_log=a.out / 'frames.jsonl' if record and a.frames else None,
+                              target_log=a.out / 'targets.jsonl' if record and a.target_records else None)
     net.interfaces = nn.ModuleList()
     def attach(module, residual_scale=None):
         interface = Interface(residual_scale).cuda()
@@ -421,6 +422,7 @@ if __name__ == '__main__':
     policy.add_argument('--static-fusion', action='store_true')
     policy.add_argument('--first-fusion', action='store_true', help='Retain only the linear result touched directly by the fusion sender.')
     parser.add_argument('--frames', action='store_true')
+    parser.add_argument('--target-records', action='store_true', help='Record per-object scored V2V validation matches.')
     parser.add_argument('--clear', action='store_true', help='Reset task and projection history on every scan at evaluation.')
     parser.add_argument('--continuous-fusion', action='store_true',
                         help='Calibrate a same-history continuous deadband on training traffic alone.')
