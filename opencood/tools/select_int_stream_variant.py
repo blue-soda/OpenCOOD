@@ -196,6 +196,9 @@ def relocated(rows, plan, dataset):
 
 
 def run(a):
+    if a.exchange_sender and (a.train or not a.full_parent or not a.scales or not a.continuous_fusion
+                              or a.backbone_payload or a.diagnostic_heads or a.weights or a.clear):
+        raise ValueError('Exchange the sender alone on a frozen temporal parent with calibrated continuous fusion.')
     if a.diagnostic_heads and (not a.full_parent or not a.scales or a.train or a.weights):
         raise ValueError('Head exchange requires a frozen parent and its original calibration.')
     if a.backbone_payload and (a.train or not a.full_parent or not a.scales or not a.continuous_fusion):
@@ -261,6 +264,14 @@ def run(a):
                 sender.continuous_threshold = full['contract']['continuous_threshold']
                 sender.payload_dtype = a.backbone_payload
         net.load_state_dict(full['net'])
+        if a.exchange_sender:
+            if trained_variant != 'fine_temporal' or full['contract'].get('pillar_up'):
+                raise ValueError('Sender exchange requires the matched temporal backbones.')
+            continuous_fit = 'continuous_threshold' in full['contract']
+            if continuous_fit and full['contract']['continuous_threshold'] != .5:
+                raise ValueError('Unexpected training deadband.')
+            for sender in net.senders:
+                sender.continuous_threshold = None if continuous_fit else .5
         if a.diagnostic_heads:
             donor = torch.load(a.diagnostic_heads, map_location='cpu')
             expected = dict(full['contract'])
@@ -336,7 +347,7 @@ def run(a):
             raise ValueError('Matched continuous control expects a fixed residual sender.')
         interface, = net.interfaces
         ratios = (.75, .875, 1., 1.125, 1.25)
-        if a.backbone_payload:
+        if a.backbone_payload or a.exchange_sender:
             calibration = fit.read(a.scales.with_name('continuous_calibration.json'))
             assert calibration['train_scenes'] == scenes[:4] and calibration['selected_ratio'] in ratios
             interface.continuous = calibration['selected_ratio']
@@ -456,6 +467,8 @@ def run(a):
     if a.diagnostic_heads:
         report['head_donor_sha'] = fit.digest(a.diagnostic_heads)
         report['head_donor_seed'] = donor['contract']['seed']
+    if a.exchange_sender:
+        report['sender_exchange'] = 'continuous_to_spike' if continuous_fit else 'spike_to_continuous'
     fit.write_json(a.out / 'result.json', report)
     if a.integer_digits:
         visits = [v.tolist() for v in ledger.digit_visits.values()]
@@ -515,6 +528,8 @@ if __name__ == '__main__':
                         help='Compare unit, binary and signed binary costs of actual bounded integer updates.')
     parser.add_argument('--backbone-payload', choices=('fp32','fp16','int8'),
                         help='Frozen continuous control: round-trip every backbone delta before updating receiver state.')
+    parser.add_argument('--exchange-sender', action='store_true',
+                        help='Exchange the native count and continuous senders at the original weights and scales.')
     parser.add_argument('--target-records', action='store_true', help='Record per-object scored V2V validation matches.')
     parser.add_argument('--clear', action='store_true', help='Reset task and projection history on every scan at evaluation.')
     parser.add_argument('--continuous-fusion', action='store_true',
