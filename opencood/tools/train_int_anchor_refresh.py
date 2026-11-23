@@ -34,13 +34,18 @@ class RecoveryPyramid(fit.SpikePyramid):
         self.ordinary_multiplier = 2.
         self.warp_values = 0
         self.senders = tuple(m for m in self.modules() if isinstance(m,fit.Sender))
+        self.fine_senders = (self.input_sender, *(m for m in self.stages[0].modules() if isinstance(m,fit.Sender)))
+        self.keep_fine_precision = variant in ('fine_temporal','fine_independent')
 
     def forward(self, spatial, core, state, ordinary=False, transform=None):
         readout = core.readout
         support = None
-        if self.variant in ('coarse_fixed','coarse_rigid'):
+        if self.variant in ('coarse_fixed','coarse_rigid','fine_temporal','fine_independent'):
             for sender in self.senders:
                 sender.step_multiplier = self.ordinary_multiplier if ordinary else 1.
+            if self.keep_fine_precision and ordinary:
+                for sender in self.fine_senders:
+                    sender.step_multiplier = 1.
             if transform is not None:
                 def readout(x):
                     nonlocal support
@@ -154,6 +159,8 @@ def evaluate(a, rows, cfg, source, net, criterion, epoch, name='internal', clear
     if window_mode:
         result.update(clear_each_frame=clear,ordinary_step_multiplier=net.ordinary_multiplier,
                       bilinear_output_values_per_scan=net.warp_values/n)
+        result['ordinary_sender_multipliers'] = ([1.,1.] if net.keep_fine_precision
+                                                  else [net.ordinary_multiplier]*2) + [net.ordinary_multiplier]*2
     temp = report_path.with_suffix('.tmp')
     fit.write_json(temp,result)
     os.replace(temp,report_path)
@@ -180,7 +187,10 @@ def run(a):
                 assert fit.digest(Path(r[key])) == plan['members'][r[key]]
     source = fit.build_source(a.inputs,cfg)
     net = RecoveryPyramid(source.core,a.initial,a.variant,cfg['preprocess']['cav_lidar_range']).cuda()
-    window_mode = {'coarse_fixed':'fixed','coarse_rigid':'rigid'}.get(a.variant)
+    window_mode = {'coarse_fixed':'fixed','coarse_rigid':'rigid',
+                   'fine_temporal':'fixed','fine_independent':'fixed'}.get(a.variant)
+    independent = a.variant == 'fine_independent'
+    scale_comparison = a.variant in ('fine_temporal','fine_independent')
     heads = list(net.heads.parameters())
     backbone = [p for k,p in net.named_parameters() if not k.startswith('heads.')]
     opt = torch.optim.AdamW([{'params':backbone},{'params':heads}], weight_decay=.0001)
@@ -197,6 +207,9 @@ def run(a):
     if window_mode:
         contract.update(window_mode=window_mode,ordinary_step_multiplier=2.,period=5,
                         pose='causal translation and yaw to first scan' if window_mode=='rigid' else 'identity')
+    if scale_comparison:
+        contract.update(ordinary_sender_multipliers=[1,1,2,2],independent=independent,
+                        lr_horizon=24,optimizer_steps_per_epoch=174)
     if cp.exists():
         assert fit.read(cp)==contract
     else:
@@ -214,17 +227,19 @@ def run(a):
     fit.write_json(attempt/'start.json',dict(first_epoch=start))
     point_bins = {}
     for epoch in range(start,a.epochs+1):
-        lr = 5e-6+(3e-5-5e-6)*(1+math.cos(math.pi*max(0,epoch-1)/(a.epochs-1)))/2
+        horizon = 24 if scale_comparison else a.epochs
+        lr = 5e-6+(3e-5-5e-6)*(1+math.cos(math.pi*max(0,epoch-1)/(horizon-1)))/2
         for group,scale in zip(opt.param_groups,(1.,.5)):
             group['lr'] = lr*scale
         net.refreshes = 0
         trained = fit.replay(train,cfg,source,net,criterion,opt,epoch,attempt,point_bins,
-                             order_seed=a.seed,window_mode=window_mode) if epoch else None
+                             order_seed=a.seed,window_mode=window_mode,memoryless=independent) if epoch else None
         train_refreshes = net.refreshes
         if trained and (trained['updates'] != 174 or not all(0 < r[0] < 1 for r in trained['rates'])):
             raise RuntimeError(('training health',trained))
         net.refreshes = 0
-        val = fit.replay(dev,cfg,source,net,criterion,None,epoch,a.output,point_bins,window_mode=window_mode)
+        val = fit.replay(dev,cfg,source,net,criterion,None,epoch,a.output,point_bins,
+                         window_mode=window_mode,memoryless=independent)
         if not all(0 < r[0] < 1 for r in val['rates']):
             raise RuntimeError(('validation activity',val))
         if epoch and val['ap70']>best:
@@ -239,8 +254,14 @@ def run(a):
     net.load_state_dict(saved['net'])
     fit.write_json(a.output/'train_complete.json',dict(epoch=saved['epoch'],best=saved['best'],
                    epochs=a.epochs,updates=a.epochs*174))
-    evaluate(a,internal,cfg,source,net,criterion,saved['epoch'],window_mode=window_mode)
-    if window_mode:
+    evaluate(a,internal,cfg,source,net,criterion,saved['epoch'],window_mode=window_mode,clear=independent)
+    if scale_comparison:
+        evaluate(a,internal,cfg,source,net,criterion,saved['epoch'],'swap_history',not independent,window_mode)
+        net.keep_fine_precision=False
+        evaluate(a,internal,cfg,source,net,criterion,saved['epoch'],'uniform_coarse',independent,window_mode)
+        net.ordinary_multiplier=1.
+        evaluate(a,internal,cfg,source,net,criterion,saved['epoch'],'uniform_fine',independent,window_mode)
+    elif window_mode:
         evaluate(a,internal,cfg,source,net,criterion,saved['epoch'],'clear_same_phase',True,window_mode)
         if window_mode=='rigid':
             evaluate(a,internal,cfg,source,net,criterion,saved['epoch'],'without_alignment',window_mode='fixed')
@@ -252,7 +273,8 @@ if __name__=='__main__':
     p=argparse.ArgumentParser()
     for name in ('plan','inputs','initial','reference','output'):
         p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--variant',choices=['native','refresh','coarse_fixed','coarse_rigid'],required=True)
+    p.add_argument('--variant',choices=['native','refresh','coarse_fixed','coarse_rigid',
+                                       'fine_temporal','fine_independent'],required=True)
     p.add_argument('--seed',type=int,required=True)
     p.add_argument('--epochs',type=int,default=24)
     run(p.parse_args())
