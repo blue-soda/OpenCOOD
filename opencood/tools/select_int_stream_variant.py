@@ -357,7 +357,7 @@ def run(a):
     joint = getattr(net, 'pillar_up', ())
     for interface in joint:
         interface.record = True
-    ledger = ConvLedger(net)
+    ledger = ConvLedger(net, count_digits=a.integer_digits)
     # Count the deployed modules once, before wrapping projections and fusion.
     deployed = (net, source.pillar_vfe, source.scatter, source.core.deblocks, source.core.readout)
     parameters = {id(p): p.numel() for module in deployed for p in module.parameters()}
@@ -457,6 +457,18 @@ def run(a):
         report['head_donor_sha'] = fit.digest(a.diagnostic_heads)
         report['head_donor_seed'] = donor['contract']['seed']
     fit.write_json(a.out / 'result.json', report)
+    if a.integer_digits:
+        visits = [v.tolist() for v in ledger.digit_visits.values()]
+        for row, existing in zip(visits, ledger.totals.values()):
+            assert row[0] == float(existing[1])
+            assert row[0] <= row[3] <= row[2] <= row[1]
+        fit.write_json(a.out/'integer_digits.json',dict(
+            scans=n, parent_sha=report['parent_sha'], payload=a.backbone_payload or 'spike',
+            columns=['nonzero_weighted_visits','unit_adds','binary_adds','signed_binary_adds'],
+            stage_totals=visits, scope='Actual input codes and valid synaptic fan-out at residual '
+            'convolutions and shortcuts. Signed digit terms each need one appropriately scaled '
+            'weight addition/subtraction. Excludes conversion, shifts, weight delivery, state, '
+            'routing and every non-backbone operator. Arithmetic equivalence over real numbers.'))
     if a.backbone_traffic:
         senders = {}
         for name, sender in net.named_modules():
@@ -499,6 +511,8 @@ if __name__ == '__main__':
     parser.add_argument('--frames', action='store_true')
     parser.add_argument('--backbone-traffic', action='store_true',
                         help='Record emitted values and fan-out-weighted costs on the scored trajectory.')
+    parser.add_argument('--integer-digits', action='store_true',
+                        help='Compare unit, binary and signed binary costs of actual bounded integer updates.')
     parser.add_argument('--backbone-payload', choices=('fp32','fp16','int8'),
                         help='Frozen continuous control: round-trip every backbone delta before updating receiver state.')
     parser.add_argument('--target-records', action='store_true', help='Record per-object scored V2V validation matches.')

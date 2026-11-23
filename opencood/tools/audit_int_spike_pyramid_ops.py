@@ -7,8 +7,22 @@ from torch.nn import functional as F
 from opencood.tools import train_int_spike_pyramid as fit
 
 
+def signed_powers(value):
+    """Non-adjacent signed binary digits, returned as signed powers of two."""
+    terms = []
+    power = 1
+    while value:
+        if value % 2:
+            digit = 2 - value % 4
+            terms.append(digit * power)
+            value -= digit
+        value //= 2
+        power *= 2
+    return terms
+
+
 class ConvLedger:
-    def __init__(self, net):
+    def __init__(self, net, count_digits=False):
         src = net.input_sender
         self.inputs, self.taps, self.totals = {}, {}, {}
         for s, stage in enumerate(net.stages):
@@ -20,6 +34,14 @@ class ConvLedger:
                 self.inputs[block.conv2] = (s,block.sender1)
                 src = block.sender2
         self.original = fit.delta_conv
+        self.digit_visits = {}
+        if count_digits:
+            terms = [signed_powers(i) for i in range(128)]
+            assert all(sum(row) == i for i,row in enumerate(terms))
+            self.digit_counts = torch.tensor([[bin(i).count('1'),len(row)] for i,row in enumerate(terms)],
+                                             device='cuda',dtype=torch.float32)
+            self.digit_visits = {stage:torch.zeros(4,device='cuda',dtype=torch.float64)
+                                 for stage in self.totals}
 
     def count(self, conv, events, first):
         stage, sender = self.inputs[conv]
@@ -40,6 +62,21 @@ class ConvLedger:
                 stride=conv.stride,padding=conv.padding,dilation=conv.dilation)[0,0]
         taps = self.taps[key]
         branches = conv.out_channels // conv.groups
+        if self.digit_visits:
+            if sender.payload_dtype == 'int8':
+                levels = events / (q * (sender.cap / 127.))
+                magnitude = levels.round().abs()
+                assert (levels-levels.round()).abs().max() < 1e-4 and magnitude.max() <= 127
+            elif not continuous:
+                magnitude = code.abs()
+            else:
+                raise ValueError('Digit costs require integer codes at all backbone senders.')
+            digits = self.digit_counts[magnitude.long()].sum(1)
+            visits = torch.stack(((taps * magnitude.ne(0).sum(1)).sum(dtype=torch.float64),
+                                  (taps * magnitude.sum(1)).sum(dtype=torch.float64),
+                                  (taps * digits[...,0]).sum(dtype=torch.float64),
+                                  (taps * digits[...,1]).sum(dtype=torch.float64)))
+            self.digit_visits[stage] += visits * branches
         if continuous:
             self.totals[stage][0] += taps.sum(dtype=torch.float64) * conv.in_channels * branches
             self.totals[stage][1] += (taps * events.ne(0).sum(1)).sum(dtype=torch.float64) * branches
