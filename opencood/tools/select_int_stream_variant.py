@@ -59,9 +59,11 @@ class Interface(nn.Module):
 
 class FusionCost:
     """Compare matched static and temporal tap counts, including border and refresh."""
-    def __init__(self, physical, static_only):
+    def __init__(self, physical, static_only, first_only):
         self.physical = physical
         self.static_only = static_only
+        self.first_only = first_only
+        self.first = None
         self.history = {}
         self.taps = {}
         self.static = self.delta = self.chosen = self.dense = 0
@@ -73,6 +75,9 @@ class FusionCost:
         height, width = x.shape[-2:]
         output_elements = height * width * layer.out_channels
         k = layer.kernel_size
+        if self.first is None:
+            self.first = layer
+        remember = not self.static_only and (not self.first_only or layer is self.first)
         assert tuple(2*p+1 for p in layer.padding) == k
         if layer not in self.taps:
             ones = torch.ones_like(x[:, :1])
@@ -108,8 +113,11 @@ class FusionCost:
                 self.max_error = max(self.max_error, err)
                 if not torch.allclose(output, reference, rtol=2e-4, atol=5e-4):
                     raise ValueError(('fusion reconstruction', err, k))
-        if not self.static_only:
-            self.history[layer] = (x.detach().clone(), output.detach().clone())
+        if remember:
+            # The first fusion convolution only reads the concatenated feature.
+            # Keep its existing storage, including a sender-owned corrected level.
+            stored = x.detach() if layer is self.first else x.detach().clone()
+            self.history[layer] = (stored, output.detach().clone())
         return output
 
     def hook(self, layer, args, reference):
@@ -220,7 +228,7 @@ def run(a):
     for interface in net.interfaces:
         interface.record = True
     ledger = ConvLedger(net)
-    fusion = FusionCost(a.physical, a.static_fusion)
+    fusion = FusionCost(a.physical, a.static_fusion, a.first_fusion)
     projections = []
     for branch in source.core.deblocks:
         branch[0] = ReusedProjection(branch[0])
@@ -267,8 +275,12 @@ def run(a):
     # Ten scalar arithmetic/comparison operations per non-anchor input, conservative
     # uniform charge. No equivalent hardware-energy assumption is made here.
     encoding_ops = 10 * encoded
+    saved = [x for pair in fusion.history.values() for x in pair]
+    saved.extend(i.previous for i in net.interfaces if i.previous is not None)
+    unique = {x.storage().data_ptr(): x.storage().size() * x.element_size() for x in saved}
     report = dict(metrics=result, seed=a.seed, arm=a.arm, clear_history=a.clear,
                   physical_fusion=a.physical, static_fusion=a.static_fusion, dense_fusion_reference=not a.no_reference,
+                  first_fusion=a.first_fusion, unique_sender_and_fusion_bytes=sum(unique.values()),
                   full_cost_g=cost(other+up+2*fusion.chosen+fusion.bookkeeping+encoding_ops),
                   temporal_up_static_fusion_g=cost(other+up+2*fusion.static+encoding_ops),
                   static_cost_g=cost(other+up_static+2*fusion.static+encoding_ops),
@@ -297,7 +309,9 @@ if __name__ == '__main__':
     parser.add_argument('--internal', action='store_true')
     parser.add_argument('--physical', action='store_true')
     parser.add_argument('--no-reference', action='store_true', help='Run sparse fusion without the verification convolution.')
-    parser.add_argument('--static-fusion', action='store_true')
+    policy = parser.add_mutually_exclusive_group()
+    policy.add_argument('--static-fusion', action='store_true')
+    policy.add_argument('--first-fusion', action='store_true', help='Retain only the linear result touched directly by the fusion sender.')
     parser.add_argument('--frames', action='store_true')
     parser.add_argument('--clear', action='store_true', help='Reset task and projection history on every scan at evaluation.')
     parser.add_argument('--limit', type=int)
