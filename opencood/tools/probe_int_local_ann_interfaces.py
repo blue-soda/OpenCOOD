@@ -83,7 +83,7 @@ def run(base, output):
     torch.backends.cudnn.allow_tf32 = False
     for reuse in (False, True):
         source = fit.build_source(inputs, cfg)
-        group = source.core.readout.layers[0].double_conv
+        group = source.core.readout.layers[0].double_conv[0]
         group[0] = fusion = online.BranchFusion(group[0]).eval()
         model = online.local_model(source, indexed=True)
         layers = [branch[0] for branch in source.core.deblocks[:2]]
