@@ -25,7 +25,7 @@ class ConvLedger:
         stage, sender = self.inputs[conv]
         q = sender.step()
         raw = events / q
-        continuous = sender.continuous_threshold is not None
+        continuous = sender.continuous_threshold is not None or sender.full_amplitude
         if not continuous:
             code = raw.round()
             assert (raw - code).abs().max() < 1e-4 and code.abs().max() <= sender.cap

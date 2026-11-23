@@ -243,6 +243,11 @@ def run(a):
             raise ValueError('Interface bypass requires the jointly trained checkpoint.')
         if full['contract'].get('pillar_up'):
             install_pillar_up(net, source.core, full['net'], a.bypass_joint)
+        if full['contract'].get('frame_ann'):
+            if not a.clear or not a.static_fusion or a.arm != 'parent':
+                raise ValueError('Score the independently trained ANN with static fusion and unquantized inputs.')
+            for sender in net.senders:
+                sender.full_amplitude = True
         if 'continuous_threshold' in full['contract']:
             if not a.continuous_fusion:
                 raise ValueError('Use continuous fusion when scoring the full continuous control.')
@@ -388,6 +393,7 @@ def run(a):
     unique = {x.storage().data_ptr(): x.storage().size() * x.element_size() for x in saved}
     report = dict(metrics=result, seed=a.seed, arm=a.arm, clear_history=a.clear,
                   continuous_backbone=net.input_sender.continuous_threshold is not None,
+                  frame_ann=net.input_sender.full_amplitude,
                   bypass_joint=a.bypass_joint,
                   parent_sha=fit.digest(ck), parent_variant=trained_variant if a.full_parent else 'fine_temporal',
                   continuous_fusion=a.continuous_fusion,

@@ -31,12 +31,19 @@ class Sender(nn.Module):
         self.cap = cap
         self.step_multiplier = 1.
         self.continuous_threshold = None
+        self.full_amplitude = False
 
     def step(self):
         return self.log_step.exp().clamp(.02, 4.) * self.step_multiplier
 
     def forward(self, target, prior):
         step = self.step()
+        if self.full_amplitude:
+            # An independently reset spatial ANN passes the original activation to the next convolution.
+            change = target - prior
+            stats = torch.stack((change.ne(0).float().mean(), change.new_zeros(()),
+                                 (change.abs() / step).mean())).detach()
+            return change, target, stats
         residual = (target - prior) / step
         clipped = residual.clamp(-self.cap, self.cap)
         if self.continuous_threshold is not None:

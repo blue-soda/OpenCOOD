@@ -41,6 +41,12 @@ def train(a):
     src = fit.build_source(a.root/'inputs',cfg)
     variant = 'fine_independent' if a.independent else 'fine_temporal'
     net = RecoveryPyramid(src.core,initial,variant).cuda()
+    if a.frame_ann:
+        if not a.independent or a.pillar_up or a.continuous_backbone:
+            raise ValueError('The spatial ANN control requires --independent and unmodified interfaces.')
+        for sender in net.senders:
+            sender.full_amplitude = True
+            sender.log_step.requires_grad_(False)
     if a.continuous_backbone:
         if a.pillar_up or a.independent:
             raise ValueError('The continuous temporal control uses the unmodified Pillar/up interfaces.')
@@ -79,6 +85,8 @@ def train(a):
     if a.continuous_backbone:
         contract.update(continuous_threshold=.5, coding='bounded continuous residuals at every backbone sender',
                         threshold_source='R-505 four training scenes; fixed before target validation')
+    if a.frame_ann:
+        contract.update(frame_ann=True, coding='continuous spatial activations, no quantization or history')
     cp = a.out/'contract.json'
     if cp.exists():
         assert fit.read(cp) == contract
@@ -126,5 +134,6 @@ if __name__ == '__main__':
     p.add_argument('--resume',action='store_true')
     p.add_argument('--pillar-up',action='store_true',help='Jointly fit four multispike interfaces.')
     p.add_argument('--continuous-backbone',action='store_true',help='Fit the matched real-valued temporal control.')
+    p.add_argument('--frame-ann',action='store_true',help='Fit the unquantized independently reset spatial network.')
     p.add_argument('--v2v',type=Path,help='Use the audited single-car, duplicate-free training manifest.')
     train(p.parse_args())
