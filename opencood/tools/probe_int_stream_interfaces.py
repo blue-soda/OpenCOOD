@@ -9,6 +9,7 @@ from torch.nn import functional as F
 
 from opencood.models.sub_modules.e3dsnn.backbone_3d import Multispike
 from opencood.tools import train_int_spike_pyramid as fit
+from opencood.tools.probe_int_local_ann_interfaces import ExactPillars, ReusedProjection
 from opencood.tools.train_int_anchor_refresh import RecoveryPyramid, periodic
 
 
@@ -84,7 +85,7 @@ class InterfaceProbe:
 
 
 @torch.no_grad()
-def run(base, output):
+def run(base, output, sparse_reuse=False):
     output.mkdir(parents=True, exist_ok=False)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
@@ -108,6 +109,27 @@ def run(base, output):
     net.load_state_dict(torch.load(ck, map_location='cpu')['net'])
     net.eval()
     criterion = fit.PointPillarDirLoss(cfg['loss']['args']).cuda()
+    if sparse_reuse:
+        source.pillar_vfe = pillars = ExactPillars(source.pillar_vfe)
+        caches = []
+        for branch in source.core.deblocks:
+            branch[0] = ReusedProjection(branch[0])
+            caches.append(branch[0])
+        frame = 0
+        def reset_caches(module, args):
+            nonlocal frame
+            if monitor[frame]['reset_before']:
+                pillars.previous = {}
+                for cache in caches:
+                    cache.old = cache.output = None
+            frame += 1
+        pillars.register_forward_pre_hook(reset_caches)
+        result = fit.replay(monitor, cfg, source, net, criterion, None, 0, output, {}, window_mode='fixed')
+        assert frame == len(monitor)
+        fit.write_json(output / 'sparse.json', dict(metrics=result, exact_hits=pillars.hits,
+            occupied_pillars=pillars.total, monitor_scenes=scenes[-2:], deblock_mac_dense_static_temporal=[
+                [c.dense_mac, c.static_mac, c.temporal_mac] for c in caches]))
+        return
     probe = InterfaceProbe()
     source.pillar_vfe.register_forward_hook(probe.pillar)
     for idx, branch in enumerate(source.core.deblocks):
@@ -134,5 +156,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('diagnostics', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--sparse-reuse', action='store_true')
     args = parser.parse_args()
-    run(args.diagnostics, args.output)
+    run(args.diagnostics, args.output, args.sparse_reuse)
