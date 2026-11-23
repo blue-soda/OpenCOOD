@@ -338,6 +338,21 @@ def run(a):
     for interface in joint:
         interface.record = True
     ledger = ConvLedger(net)
+    # Count each sender once, even when its output feeds both a residual and a skip.
+    # Fan-out-weighted synaptic operations are recorded separately by ConvLedger.
+    messages = {}
+    if a.backbone_traffic:
+        def track(sender, args, output):
+            change = output[0].detach()
+            phase = 'refresh' if not torch.is_tensor(args[1]) else 'ordinary'
+            row = messages[sender][phase]
+            row[0] += change.numel()
+            row[1] += torch.count_nonzero(change)
+
+        for sender in net.senders:
+            messages[sender] = {phase: [0, torch.zeros((), dtype=torch.int64, device='cuda')]
+                                for phase in ('refresh', 'ordinary')}
+            sender.register_forward_hook(track)
     fusion = FusionCost(a.physical, a.static_fusion, a.first_fusion)
     projections = []
     for branch in source.core.deblocks:
@@ -415,6 +430,24 @@ def run(a):
                   fusion_state_bytes=sum(x.numel()*x.element_size() for pair in fusion.history.values() for x in pair),
                   scope='linear and convolution arithmetic plus fusion delta formation and accumulation; support selection, quantization, memory traffic and upsample state ops excluded')
     fit.write_json(a.out / 'result.json', report)
+    if a.backbone_traffic:
+        senders = {}
+        for name, sender in net.named_modules():
+            if sender in messages:
+                senders[name] = {phase: dict(elements=size, events=int(active))
+                                 for phase, (size, active) in messages[sender].items()}
+                senders[name]['integer_cap'] = (None if sender.full_amplitude or
+                    sender.continuous_threshold is not None else sender.cap)
+        stages = []
+        for counts in ledger.totals.values():
+            dense, nonzero, units, _ = counts.tolist()
+            stages.append(dict(valid_dense_mac=dense, nonzero_mac=nonzero,
+                               repeated_unit_ac=None if report['continuous_backbone'] or report['frame_ann'] else units))
+        fit.write_json(a.out / 'backbone_traffic.json', dict(
+            scans=n, parent_sha=report['parent_sha'], senders=senders, stages=stages,
+            scope='All backbone sender sites including input and scale endpoints, counted once per '
+                  'update before fan-out. Logical emitted values, not physical network or memory '
+                  'traffic. Synaptic counts include residual convolutions and projected skips.'))
 
 
 if __name__ == '__main__':
@@ -435,6 +468,8 @@ if __name__ == '__main__':
     policy.add_argument('--static-fusion', action='store_true')
     policy.add_argument('--first-fusion', action='store_true', help='Retain only the linear result touched directly by the fusion sender.')
     parser.add_argument('--frames', action='store_true')
+    parser.add_argument('--backbone-traffic', action='store_true',
+                        help='Record emitted values and fan-out-weighted costs on the scored trajectory.')
     parser.add_argument('--target-records', action='store_true', help='Record per-object scored V2V validation matches.')
     parser.add_argument('--clear', action='store_true', help='Reset task and projection history on every scan at evaluation.')
     parser.add_argument('--continuous-fusion', action='store_true',
