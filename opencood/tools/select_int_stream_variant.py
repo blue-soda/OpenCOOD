@@ -196,6 +196,8 @@ def relocated(rows, plan, dataset):
 
 
 def run(a):
+    if a.diagnostic_heads and (not a.full_parent or not a.scales or a.train or a.weights):
+        raise ValueError('Head exchange requires a frozen parent and its original calibration.')
     if a.backbone_payload and (a.train or not a.full_parent or not a.scales or not a.continuous_fusion):
         raise ValueError('Payload replays require frozen continuous weights, scales and fusion calibration.')
     a.out.mkdir(parents=True, exist_ok=False)
@@ -259,6 +261,14 @@ def run(a):
                 sender.continuous_threshold = full['contract']['continuous_threshold']
                 sender.payload_dtype = a.backbone_payload
         net.load_state_dict(full['net'])
+        if a.diagnostic_heads:
+            donor = torch.load(a.diagnostic_heads, map_location='cpu')
+            expected = dict(full['contract'])
+            expected['seed'] = donor['contract']['seed']
+            if expected != donor['contract'] or expected['seed'] == a.seed:
+                raise ValueError('Use a different training order under the same data and model contract.')
+            heads = {k[len('heads.'):]: v for k,v in donor['net'].items() if k.startswith('heads.')}
+            net.heads.load_state_dict(heads, strict=True)
         ck = a.full_parent
     else:
         if a.bypass_joint:
@@ -443,6 +453,9 @@ def run(a):
                   fusion_dense_reference_max_error=fusion.max_error if a.physical and not a.no_reference else None,
                   fusion_state_bytes=sum(x.numel()*x.element_size() for pair in fusion.history.values() for x in pair),
                   scope='linear and convolution arithmetic plus fusion delta formation and accumulation; support selection, quantization, memory traffic and upsample state ops excluded')
+    if a.diagnostic_heads:
+        report['head_donor_sha'] = fit.digest(a.diagnostic_heads)
+        report['head_donor_seed'] = donor['contract']['seed']
     fit.write_json(a.out / 'result.json', report)
     if a.backbone_traffic:
         senders = {}
@@ -476,6 +489,8 @@ if __name__ == '__main__':
     parser.add_argument('--full-val', action='store_true', help='Score the frozen full DAIR validation stream.')
     parser.add_argument('--v2v-split',choices=('val','test'),help='Calibrate on target training data and score the complete requested split.')
     parser.add_argument('--full-parent', type=Path, help='Weights from the matched full DAIR backbone fit.')
+    parser.add_argument('--diagnostic-heads', type=Path,
+                        help='Exchange all detection heads across two matched terminal checkpoints.')
     parser.add_argument('--physical', action='store_true')
     parser.add_argument('--no-reference', action='store_true', help='Run sparse fusion without the verification convolution.')
     policy = parser.add_mutually_exclusive_group()
