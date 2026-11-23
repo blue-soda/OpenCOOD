@@ -12,6 +12,7 @@ from opencood.tools.audit_int_spike_pyramid_ops import ConvLedger
 from opencood.tools.probe_int_local_ann_interfaces import ReusedProjection
 from opencood.tools.train_int_anchor_refresh import RecoveryPyramid, periodic
 from opencood.tools.train_int_full_dair_pair import full_rows
+from opencood.data_utils.int_v2v_ego_stream import v2v_rows
 
 
 class Interface(nn.Module):
@@ -187,24 +188,32 @@ def run(a):
     if a.full_val:
         evaluation = periodic(full_rows(a.root / 'sequence_manifest.json', a.dataset, 'val'))
         assert len(evaluation) == 5794
+    if a.v2v_split:
+        manifest = a.root / 'formal_splits/v2v_official_deduplicated.jsonl'
+        target_train = v2v_rows(manifest, 'train')
+        scenes = list(dict.fromkeys(r['scene'] for r in target_train))
+        train = [r for r in target_train if r['scene'] in scenes[:4]]
+        evaluation = periodic(v2v_rows(manifest, a.v2v_split))
     if a.limit:
         evaluation = evaluation[:a.limit]
     init = a.root / 'initial.pt'
     assert fit.digest(init) == '57f9d146f2a4dd1344ad36dd670bc7f9bcdfd85ae04aaa8c4855cc635b148c33'
     ck = a.root / ('fine_temporal_%s.pt' % a.seed)
-    assert fit.digest(ck) == {303:'e8ae1933aaa9da4103f0dab1cc0eca89eaa08d6e3bf43fe35eeea20c59f3352b',
-                              707:'dc11c3232a40781da9e475ace6dc1cba6576c82c520997f2449c9bf9f504c56c'}[a.seed]
     cfg = fit.load_yaml(str(a.root / 'inputs/config.yaml'))
     cfg['data_augment'] = []
     source = fit.build_source(a.root / 'inputs', cfg)
     net = RecoveryPyramid(source.core, init, 'fine_temporal').cuda()
-    net.load_state_dict(torch.load(ck, map_location='cpu')['net'])
     if a.full_parent:
         full = torch.load(a.full_parent, map_location='cpu')
-        assert full['contract']['seed'] == a.seed and full['contract']['labels_per_epoch'] == 4678
+        assert full['contract']['seed'] == a.seed
+        assert full['contract']['labels_per_epoch'] == (6958 if a.v2v_split else 4678)
         assert full['contract']['variant'] == ('fine_independent' if a.clear else 'fine_temporal')
         net.load_state_dict(full['net'])
         ck = a.full_parent
+    else:
+        assert fit.digest(ck) == {303:'e8ae1933aaa9da4103f0dab1cc0eca89eaa08d6e3bf43fe35eeea20c59f3352b',
+                                  707:'dc11c3232a40781da9e475ace6dc1cba6576c82c520997f2449c9bf9f504c56c'}[a.seed]
+        net.load_state_dict(torch.load(ck,map_location='cpu')['net'])
     criterion = fit.PointPillarDirLoss(cfg['loss']['args']).cuda()
     bins = {}
     def replay(rows, opt=None, epoch=0, record=False):
@@ -359,6 +368,7 @@ if __name__ == '__main__':
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--internal', action='store_true')
     parser.add_argument('--full-val', action='store_true', help='Score the frozen full DAIR validation stream.')
+    parser.add_argument('--v2v-split',choices=('val','test'),help='Calibrate on target training data and score the complete requested split.')
     parser.add_argument('--full-parent', type=Path, help='Weights from the matched full DAIR backbone fit.')
     parser.add_argument('--physical', action='store_true')
     parser.add_argument('--no-reference', action='store_true', help='Run sparse fusion without the verification convolution.')

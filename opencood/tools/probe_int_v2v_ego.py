@@ -3,30 +3,18 @@ import argparse
 import itertools
 import json
 from pathlib import Path
-import re
 
 import numpy as np
 import torch
-import yaml
 from torch import nn
 
 from opencood.data_utils.int_ego_stream import DairEgoStreamDataset
+from opencood.data_utils.int_v2v_ego_stream import ego_cars
 from opencood.tools import train_int_spike_pyramid as fit
 from opencood.tools.probe_int_local_ann_interfaces import ReusedProjection
 from opencood.tools.select_int_stream_variant import Interface, FusionCost, SparseFusionLayer
 from opencood.tools.train_int_anchor_refresh import RecoveryPyramid
 from opencood.utils import pcd_utils
-
-
-def ego_cars(path):
-    # Read just the simple vehicle mapping. Pose and GPS are NumPy object tags;
-    # neither is needed to project ego-local annotations onto the same sensor.
-    text = Path(path).read_text()
-    section = re.search(r'^vehicles:.*?(?=^\w+:|\Z)', text, re.M | re.S)
-    if section is None:
-        raise ValueError(('missing vehicles', path))
-    vehicles = yaml.safe_load(section.group())['vehicles'] or {}
-    return {key:v for key,v in vehicles.items() if v['obj_type'].lower() == 'car'}
 
 
 @torch.no_grad()

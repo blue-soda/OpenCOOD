@@ -4,6 +4,7 @@ from pathlib import Path
 
 import torch
 
+from opencood.data_utils.int_v2v_ego_stream import v2v_rows
 from opencood.tools import train_int_spike_pyramid as fit
 from opencood.tools.train_int_anchor_refresh import RecoveryPyramid
 
@@ -28,10 +29,11 @@ def train(a):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     torch.backends.cuda.matmul.allow_tf32 = torch.backends.cudnn.allow_tf32 = False
-    manifest = a.root / 'sequence_manifest.json'
-    rows = full_rows(manifest,a.datasets,'train')
+    manifest = a.v2v or a.root / 'sequence_manifest.json'
+    rows = v2v_rows(manifest,'train') if a.v2v else full_rows(manifest,a.datasets,'train')
     labels = sum(r['supervised'] for r in rows)
-    assert len(rows) == 8593 and labels == 4678 and len({r['scene'] for r in rows}) == 52
+    scenes = len({r['scene'] for r in rows})
+    assert (len(rows),labels,scenes) == ((6958,6958,31) if a.v2v else (8593,4678,52))
     cfg = fit.load_yaml(str(a.root/'inputs/config.yaml'))
     cfg['data_augment'] = []
     initial = a.root/'initial.pt'
@@ -44,7 +46,8 @@ def train(a):
               dict(params=net.heads.parameters(),lr=1.5e-5)]
     opt = torch.optim.AdamW(groups,weight_decay=1e-4)
     contract = dict(seed=a.seed, variant=variant, epochs=a.epochs, manifest=fit.digest(manifest),
-                    initial=fit.digest(initial), labels_per_epoch=labels, scenes=52,
+                    initial=fit.digest(initial), labels_per_epoch=labels, scenes=scenes,
+                    dataset='v2v_single' if a.v2v else 'dair_single',
                     training='all supervised five-scan clips; same shuffle, optimizer boundaries and fixed final epoch')
     cp = a.out/'contract.json'
     if cp.exists():
@@ -85,4 +88,5 @@ if __name__ == '__main__':
     p.add_argument('--epochs',type=int,default=2)
     p.add_argument('--independent',action='store_true')
     p.add_argument('--resume',action='store_true')
+    p.add_argument('--v2v',type=Path,help='Use the audited single-car, duplicate-free training manifest.')
     train(p.parse_args())

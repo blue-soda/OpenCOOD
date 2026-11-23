@@ -238,7 +238,7 @@ def replay(rows, cfg, source, net, criterion, optimizer, epoch, out, point_bins,
                     scored = score(ds.post, ego, pred, gt, record_matches=True)
                     measured = scored['ap']
                     if row['frame'] not in point_bins:
-                        cloud, _ = pcd_utils.read_pcd(row['pcd'])
+                        cloud = ds.read_points(row)
                         cloud = pcd_utils.mask_ego_points(pcd_utils.mask_points_by_range(
                             cloud, cfg['preprocess']['cav_lidar_range']))[:, :3]
                         point_bins[row['frame']] = [6 <= len(box_utils.get_points_in_rotated_box_3d(cloud, b)) <= 20

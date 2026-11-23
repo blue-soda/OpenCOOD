@@ -40,7 +40,11 @@ def freeze_bn_stats(model):
 
 
 def loader(rows, config, workers, seed):
-    dataset = DairEgoStreamDataset(rows, config, seed)
+    dataset_type = DairEgoStreamDataset
+    if rows and rows[0].get('dataset') == 'v2v_single':
+        from opencood.data_utils.int_v2v_ego_stream import V2VEgoStreamDataset
+        dataset_type = V2VEgoStreamDataset
+    dataset = dataset_type(rows, config, seed)
     stream = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=workers,
                         collate_fn=stream_collate, generator=torch.Generator().manual_seed(seed))
     return dataset, stream

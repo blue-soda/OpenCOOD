@@ -8,12 +8,13 @@ def attach_window(rows, rigid):
     placed = []
     for i, row in enumerate(rows):
         first = i == 0 or row.get('reset_before') or row['segment'] != rows[i-1]['segment']
-        pose = row['pose']
-        yaw = math.atan2(pose[1][0], pose[0][0])
-        if first:
-            origin = (pose[0][3],pose[1][3])
-            heading = yaw
         transform = None
+        if rigid:
+            pose = row['pose']
+            yaw = math.atan2(pose[1][0], pose[0][0])
+            if first:
+                origin = (pose[0][3],pose[1][3])
+                heading = yaw
         if rigid and not first:
             dx, dy = pose[0][3]-origin[0], pose[1][3]-origin[1]
             c,s = math.cos(heading),math.sin(heading)

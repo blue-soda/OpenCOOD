@@ -128,9 +128,16 @@ class DairEgoStreamDataset(Dataset):
     def __len__(self):
         return len(self.rows)
 
+    def read_points(self, row):
+        return pcd_utils.read_pcd(row['pcd'])[0]
+
+    def object_centers(self, row):
+        return self.post.generate_object_center_dairv2x_single(
+            [{'params': {'vehicles': read_json(row['label'])}}])
+
     def __getitem__(self, index):
         meta = dict(self.rows[index])
-        points, _ = pcd_utils.read_pcd(meta['pcd'])
+        points = self.read_points(meta)
         if len(points) == 0:
             meta['invalid'] = 'decoded_empty_pcd'
             return dict(meta=meta, ego=None)
@@ -151,9 +158,7 @@ class DairEgoStreamDataset(Dataset):
                    anchor_box=torch.from_numpy(self.anchors),
                    transformation_matrix=torch.eye(4), transformation_matrix_clean=torch.eye(4))
         if meta['supervised']:
-            annotations = read_json(meta['label'])
-            boxes, mask, ids = self.post.generate_object_center_dairv2x_single(
-                [{'params': {'vehicles': annotations}}])
+            boxes, mask, ids = self.object_centers(meta)
             labels = self.post.generate_label(gt_box_center=boxes, anchors=self.anchors, mask=mask)
             ego.update(object_bbx_center=torch.from_numpy(boxes[None]).float(),
                        object_bbx_mask=torch.from_numpy(mask[None]).float(), object_ids=ids,
