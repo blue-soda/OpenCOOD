@@ -228,10 +228,11 @@ def run(a):
         assert len(evaluation) == 5794
     if a.v2v_split:
         manifest = a.root / 'formal_splits/v2v_official_deduplicated.jsonl'
-        target_train = v2v_rows(manifest, 'train')
+        v2v_root = getattr(a, 'v2v_dataset_root', None)
+        target_train = v2v_rows(manifest, 'train', v2v_root)
         scenes = list(dict.fromkeys(r['scene'] for r in target_train))
         train = [r for r in target_train if r['scene'] in scenes[:4]]
-        evaluation = periodic(v2v_rows(manifest, a.v2v_split))
+        evaluation = periodic(v2v_rows(manifest, a.v2v_split, v2v_root))
     if a.limit:
         evaluation = evaluation[:a.limit]
     init = a.root / 'initial.pt'
@@ -544,6 +545,7 @@ if __name__ == '__main__':
     parser.add_argument('--internal', action='store_true')
     parser.add_argument('--full-val', action='store_true', help='Score the frozen full DAIR validation stream.')
     parser.add_argument('--v2v-split',choices=('val','test'),help='Calibrate on target training data and score the complete requested split.')
+    parser.add_argument('--v2v-dataset-root',type=Path,help='V2V4Real replica containing the original manifest-relative paths.')
     parser.add_argument('--full-parent', type=Path, help='Weights from the matched full DAIR backbone fit.')
     parser.add_argument('--diagnostic-heads', type=Path,
                         help='Exchange all detection heads across two matched terminal checkpoints.')

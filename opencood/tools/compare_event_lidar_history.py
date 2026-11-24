@@ -72,11 +72,7 @@ class LineEvents:
 def domain_rows(a,split):
     if a.domain=='dair':
         return full_rows(a.root/'sequence_manifest.json',a.datasets,split)
-    rows=v2v_rows(a.root/'v2v_official_deduplicated.jsonl',split)
-    for row in rows:
-        for key in ('pcd','annotation','label'):
-            row[key]=str(a.datasets/Path(row[key]).relative_to('/data2/cyk/gzc/dataset'))
-    return rows
+    return v2v_rows(a.root/'v2v_official_deduplicated.jsonl',split,a.datasets)
 
 
 def prepare(a):

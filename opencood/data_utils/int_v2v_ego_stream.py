@@ -20,13 +20,16 @@ def ego_cars(path):
     return {k:v for k,v in vehicles.items() if v['obj_type'].lower() == 'car'}
 
 
-def v2v_rows(manifest, split):
+def v2v_rows(manifest, split, datasets=None):
     assert sha256(manifest) == '29cad216b5f3af49f727b4781473afd5ee6ee8993e773e2cc3fbcf1b90866fa4'
     rows = []
     last_scene, last_id, segment = None, None, 0
     for index, row in enumerate(map(json.loads,Path(manifest).read_text().splitlines())):
         if row['split'] != split:
             continue
+        if datasets is not None:
+            for field in ('pcd','annotation'):
+                row[field] = str(Path(datasets) / Path(row[field]).relative_to('/data2/cyk/gzc/dataset'))
         raw_id = int(row['frame'])
         reset = last_scene != row['scene'] or raw_id != last_id + 1
         if reset:

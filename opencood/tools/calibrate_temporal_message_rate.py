@@ -20,7 +20,7 @@ def calibrate(a):
     cfg=fit.load_yaml(str(a.root/'inputs/config.yaml'))
     cfg['data_augment']=[]
     manifest=a.root/('sequence_manifest.json' if a.domain=='dair' else 'formal_splits/v2v_official_deduplicated.jsonl')
-    train=full_rows(manifest,a.dataset,'train') if a.domain=='dair' else v2v_rows(manifest,'train')
+    train=full_rows(manifest,a.dataset,'train') if a.domain=='dair' else v2v_rows(manifest,'train',a.dataset)
     rows=attach_window(scene_windows(train),False)
     for row in rows:
         row['supervised']=False
