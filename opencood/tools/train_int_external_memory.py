@@ -83,6 +83,8 @@ class StreamINT(nn.Module):
         self.detector = PointPillarINT(cfg['model']['args'], 'single' if arm == 'single' else 'concat')
         self.detector.load_single_checkpoint(weights)
         self.full_memory = arm == 'three'
+        self.use_points = self.full_memory
+        self.use_map = self.full_memory
         self.bounds = cfg['preprocess']['cav_lidar_range']
         if self.full_memory:
             d = self.detector
@@ -99,7 +101,7 @@ class StreamINT(nn.Module):
         if state is not None:
             assert state['segment'] == row['segment'] and 0 < row['timestamp_us']-state['time'] <= 250000
         processed = ego['processed_lidar']
-        if self.full_memory:
+        if self.use_points:
             current = current_points(processed)
             past = np.zeros((0, 5), dtype=np.float32)
             if state is not None:
@@ -120,16 +122,18 @@ class StreamINT(nn.Module):
         if d.shrink_flag:
             feat = d.shrink_conv(feat)
         hm = None
-        if self.full_memory and state is not None:
+        if self.use_map and state is not None:
             hm, _ = warp_bev(state['hm'], state['pose'], row['pose'], self.bounds, mode='bilinear')
             feat = feat + self.map_to_feature(hm)
         pred = dict(psm=d.cls_head(feat), rm=d.reg_head(feat), dm=d.dir_head(feat))
         nxt = dict(fm=fm, pose=row['pose'], segment=row['segment'], time=row['timestamp_us'])
         diag = dict(pc_read=0, pc_added=0, map_read=hm is not None, reset=bool(reset))
-        if self.full_memory:
+        if self.use_map:
             with torch.no_grad():
                 values = torch.cat([pred[k].detach() for k in ('psm','rm','dm')], dim=1)
                 nxt['hm'] = values if hm is None else .5 * (values + hm)
+        if self.use_points:
+            with torch.no_grad():
                 boxes, _ = ds.post.post_process({'ego':ego}, {'ego':pred})
                 nxt['pc'], added = update_points(past, current, boxes, np.random.RandomState(303+int(row['frame'])))
                 diag.update(pc_read=len(past), pc_added=added)
@@ -176,8 +180,10 @@ def run_epoch(net, rows, cfg, out, opt, criterion):
                             stats[t][k] += per[t][k]
                     rec.update(ap70=per[.7], ap50=per[.5])
             log.write(json.dumps(rec)+'\n')
-    if net.full_memory:
-        assert linked and adds and point_reads and (not training or map_grad > 0)
+    if net.use_map:
+        assert linked and (not training or map_grad > 0)
+    if net.use_points:
+        assert adds and point_reads
     summary = dict(scans=len(rows),labels=sum(r['supervised'] for r in rows),past_map_frames=linked,
                    past_point_reads=point_reads,foreground_additions=adds, max_map_projection_gradient=map_grad)
     if training:
@@ -196,7 +202,11 @@ def main():
     p.add_argument('--v2v', type=Path)
     p.add_argument('--pilot', action='store_true')
     p.add_argument('--eval-checkpoint', type=Path)
+    p.add_argument('--eval-history', type=int, default=0, help='0 means the full contiguous segment')
+    p.add_argument('--omit', choices=('point','map'), help='Frozen evaluation intervention')
     args = p.parse_args()
+    if args.eval_history < 0 or (args.omit and (not args.eval_checkpoint or args.arm != 'three')):
+        p.error('Invalid evaluation intervention')
     args.out.mkdir(parents=True, exist_ok=False)
     torch.manual_seed(303)
     torch.backends.cudnn.deterministic = True
@@ -213,7 +223,8 @@ def main():
     criterion = PointPillarDirLoss(cfg['loss']['args']).cuda()
     epochs = 1 if args.pilot else 2
     write_json(args.out/'contract.json', dict(arm=args.arm,manifest=sha256(manifest),p1=sha256(weights),
-               pilot=args.pilot,epochs=epochs,seed=303,training_windows=[5,10][:epochs],evaluation='segment-recursive',
+               pilot=args.pilot,epochs=epochs,seed=303,training_windows=[5,10][:epochs],
+               evaluation_history=args.eval_history,omitted=args.omit,
                inference_map='anchor outputs, weighted recurrent map, bilinear metric warp',
                points='predicted in_box on retained PFN points; max 5000/frame, 50000 total, 10s; age outside PFN',
                deployment_parameters=sum(p.numel() for p in net.parameters())))
@@ -226,6 +237,18 @@ def main():
             order = training_order(train,5*epoch,302+epoch)
             run_epoch(net, order[:160] if args.pilot else order, cfg, args.out/('train_%02d'%epoch), opt, criterion)
             torch.save(net.state_dict(),str(args.out/('epoch_%02d.pt'%epoch)))
+    if args.eval_history:
+        age, last_segment = 0, None
+        for row in val:
+            if row['segment'] != last_segment or row['reset_before']:
+                age = 0
+            row['reset_before'] = age == 0
+            age = (age+1) % args.eval_history
+            last_segment = row['segment']
+    if args.omit == 'map':
+        net.use_map = False
+    if args.omit == 'point':
+        net.use_points = False
     run_epoch(net,val[:192] if args.pilot else val,cfg,args.out/'val',None,criterion)
 
 
