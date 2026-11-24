@@ -200,6 +200,8 @@ def main():
         p.add_argument(name, type=Path)
     p.add_argument('arm', choices=('fm','three','single'))
     p.add_argument('--v2v', type=Path)
+    p.add_argument('--v2v-dataset-root',type=Path)
+    p.add_argument('--order-seed',type=int,default=303,help='Change clip order only, preserving model and point-sampling initialization.')
     p.add_argument('--pilot', action='store_true')
     p.add_argument('--eval-checkpoint', type=Path)
     p.add_argument('--eval-history', type=int, default=0, help='0 means the full contiguous segment')
@@ -217,13 +219,13 @@ def main():
     cfg = load_yaml(str(args.root/'inputs/config.yaml'))
     cfg['data_augment'] = []
     manifest = args.v2v or args.root/'sequence_manifest.json'
-    train,val = [v2v_rows(manifest, split) if args.v2v else full_rows(manifest,args.datasets,split) for split in ('train','val')]
+    train,val = [v2v_rows(manifest, split,args.v2v_dataset_root) if args.v2v else full_rows(manifest,args.datasets,split) for split in ('train','val')]
     net = StreamINT(cfg,torch.load(weights,map_location='cpu'),args.arm).cuda()
     opt = torch.optim.AdamW(net.parameters(),lr=1e-4,weight_decay=1e-4)
     criterion = PointPillarDirLoss(cfg['loss']['args']).cuda()
     epochs = 1 if args.pilot else 2
     write_json(args.out/'contract.json', dict(arm=args.arm,manifest=sha256(manifest),p1=sha256(weights),
-               pilot=args.pilot,epochs=epochs,seed=303,training_windows=[5,10][:epochs],
+               pilot=args.pilot,epochs=epochs,seed=303,training_order_seed=args.order_seed,training_windows=[5,10][:epochs],
                evaluation_history=args.eval_history,omitted=args.omit,
                inference_map='anchor outputs, weighted recurrent map, bilinear metric warp',
                points='predicted in_box on retained PFN points; max 5000/frame, 50000 total, 10s; age outside PFN',
@@ -234,7 +236,7 @@ def main():
                    sha256=sha256(args.eval_checkpoint)))
     else:
         for epoch in range(1,epochs+1):
-            order = training_order(train,5*epoch,302+epoch)
+            order = training_order(train,5*epoch,args.order_seed-1+epoch)
             run_epoch(net, order[:160] if args.pilot else order, cfg, args.out/('train_%02d'%epoch), opt, criterion)
             torch.save(net.state_dict(),str(args.out/('epoch_%02d.pt'%epoch)))
     if args.eval_history:

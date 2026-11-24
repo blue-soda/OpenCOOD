@@ -16,7 +16,7 @@ def calibrate(a):
     torch.backends.cudnn.deterministic=True
     torch.backends.cudnn.benchmark=False
     torch.backends.cudnn.allow_tf32=torch.backends.cuda.matmul.allow_tf32=False
-    torch.manual_seed(303)
+    torch.manual_seed(a.seed)
     cfg=fit.load_yaml(str(a.root/'inputs/config.yaml'))
     cfg['data_augment']=[]
     manifest=a.root/('sequence_manifest.json' if a.domain=='dair' else 'formal_splits/v2v_official_deduplicated.jsonl')
@@ -27,9 +27,11 @@ def calibrate(a):
     assert len(rows)%5==0
     base=a.root/(('full_temporal' if a.domain=='dair' else 'v2v_full_temporal') if a.arm=='native' else 'qat549_303_fit')/'final.pt'
     dropped=a.root/('retrain554_%s_fit'%a.arm)/'final.pt'
+    base=a.carry_checkpoint or base
+    dropped=a.discard_checkpoint or dropped
     source=fit.build_source(a.root/'inputs',cfg)
     net=RecoveryPyramid(source.core,a.root/'initial.pt','fine_temporal').cuda().eval()
-    stream=fit.loader(rows,cfg,2,303)[1]
+    stream=fit.loader(rows,cfg,2,a.seed)[1]
     counts=torch.zeros(2,dtype=torch.int64,device='cuda')
     def observe(module,args,out):
         counts[int(torch.is_tensor(args[1]))]+=torch.count_nonzero(out[0])
@@ -43,6 +45,7 @@ def calibrate(a):
     fits=[torch.load(c,map_location='cpu') for c in (dropped,base)]
     assert fits[1]['contract']['manifest']==fit.digest(manifest)
     carry_contract=dict(fits[1]['contract'])
+    assert carry_contract['seed']==a.seed
     if a.domain=='dair' and 'dataset' not in carry_contract:
         assert carry_contract['manifest']=='184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738'
         carry_contract['dataset']='dair_single'
@@ -73,7 +76,7 @@ def calibrate(a):
                     record[k]+=v
         frames.clear()
     selected=min(range(len(grid)),key=lambda j:abs(sum(totals[j+1])-sum(totals[0])))
-    result=dict(domain=a.domain,arm=a.arm,scans=len(rows),train_manifest=fit.digest(manifest),
+    result=dict(domain=a.domain,arm=a.arm,seed=a.seed,scans=len(rows),train_manifest=fit.digest(manifest),
                 calibration_frames=[(r['scene'],r['frame']) for r in rows],
                 carry_sha=fit.digest(base),discard_sha=fit.digest(dropped),
                 grid=grid,discard_refresh_ordinary=totals[0],carry_refresh_ordinary=totals[1:],
@@ -88,4 +91,7 @@ if __name__=='__main__':
         p.add_argument(name,type=Path)
     p.add_argument('domain',choices=('dair','v2v'))
     p.add_argument('arm',choices=('native','qat'))
+    p.add_argument('--seed',type=int,default=303,choices=(303,707))
+    p.add_argument('--carry-checkpoint',type=Path)
+    p.add_argument('--discard-checkpoint',type=Path)
     calibrate(p.parse_args())

@@ -34,7 +34,7 @@ def train(a):
     torch.backends.cudnn.benchmark = False
     torch.backends.cuda.matmul.allow_tf32 = torch.backends.cudnn.allow_tf32 = False
     manifest = a.v2v or a.root / 'sequence_manifest.json'
-    rows = v2v_rows(manifest,'train') if a.v2v else full_rows(manifest,a.datasets,'train')
+    rows = v2v_rows(manifest,'train',getattr(a,'v2v_dataset_root',None)) if a.v2v else full_rows(manifest,a.datasets,'train')
     labels = sum(r['supervised'] for r in rows)
     scenes = len({r['scene'] for r in rows})
     assert (len(rows),labels,scenes) == ((6958,6958,31) if a.v2v else (8593,4678,52))
@@ -171,4 +171,5 @@ if __name__ == '__main__':
     p.add_argument('--train-drop-silent',action='store_true',help='Train with silent sender remainders discarded from the first step.')
     p.add_argument('--frame-ann',action='store_true',help='Fit the unquantized independently reset spatial network.')
     p.add_argument('--v2v',type=Path,help='Use the audited single-car, duplicate-free training manifest.')
+    p.add_argument('--v2v-dataset-root',type=Path,help='Location of the V2V4Real dataset replica.')
     train(p.parse_args())
