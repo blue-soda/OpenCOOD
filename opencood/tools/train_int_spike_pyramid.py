@@ -34,6 +34,7 @@ class Sender(nn.Module):
         self.ordinary_firing_floor = None
         self.payload_dtype = None
         self.int8_ste = False
+        self.firing_only_gradient = False
         self.full_amplitude = False
         self.drop_silent_remainder = False
         self.adjacent_target = False
@@ -91,7 +92,10 @@ class Sender(nn.Module):
                 code = clipped.round()
             if floor is not None:
                 code = torch.where(residual.abs() > floor, code, torch.zeros_like(code))
-            change = (code.detach() + (clipped - clipped.detach())) * step
+            surrogate = clipped - clipped.detach()
+            if self.firing_only_gradient and torch.is_grad_enabled():
+                surrogate = surrogate * code.ne(0)
+            change = (code.detach() + surrogate) * step
             stats = torch.stack(((code != 0).float().mean(), (residual.abs() > self.cap + .5).float().mean(),
                                  code.abs().mean())).detach()
         if self.adjacent_target:

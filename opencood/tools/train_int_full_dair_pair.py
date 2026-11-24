@@ -45,6 +45,12 @@ def train(a):
     src = fit.build_source(a.root/'inputs',cfg)
     variant = 'fine_independent' if a.independent else 'fine_temporal'
     net = RecoveryPyramid(src.core,initial,variant).cuda()
+    firing_only_gradient = getattr(a, 'firing_only_gradient', False)
+    if firing_only_gradient:
+        if a.independent or a.continuous_backbone or a.shift_codes or a.adjacent_target or a.train_drop_silent or a.pillar_up or a.frame_ann:
+            raise ValueError('Use the firing-only gradient control with the native temporal backbone.')
+        for sender in net.senders:
+            sender.firing_only_gradient = True
     if a.adjacent_target:
         if a.independent or (a.continuous_backbone and not a.qat_int8) or a.train_drop_silent or a.pillar_up:
             raise ValueError('Use adjacent-target differences on the native or quantization-trained INT8 temporal sender.')
@@ -115,6 +121,8 @@ def train(a):
         contract['shift_codes'] = a.shift_codes
     if a.adjacent_target:
         contract['adjacent_target'] = True
+    if firing_only_gradient:
+        contract['firing_only_gradient'] = True
     if a.frame_ann:
         contract.update(frame_ann=True, coding='continuous spatial activations, no quantization or history')
     restore_path = None
@@ -184,6 +192,8 @@ if __name__ == '__main__':
     p.add_argument('--continuous-backbone',action='store_true',help='Fit the matched real-valued temporal control.')
     p.add_argument('--qat-int8',action='store_true',help='Use the deployed INT8 payload at every training step.')
     p.add_argument('--train-drop-silent',action='store_true',help='Train with silent sender remainders discarded from the first step.')
+    p.add_argument('--firing-only-gradient',action='store_true',
+                   help='Zero the native sender surrogate gradient on silent outputs, preserving its forward computation.')
     p.add_argument('--shift-codes', choices=('ordinary', 'all'),
                    help='Train with signed power-of-two updates on the designated scans.')
     p.add_argument('--adjacent-target', action='store_true',
