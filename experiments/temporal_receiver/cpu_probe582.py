@@ -14,11 +14,13 @@ if __name__ == '__main__':
     cpu = torch.device('cpu')
     zeros = torch.zeros
     transfer = probe582.fit.to_device
+    build_source = probe582.fit.build_source
     def place_zeros(*args, **kwargs):
         if kwargs.get('device') == 'cuda':
             kwargs['device'] = cpu
         return zeros(*args, **kwargs)
-    with patch.object(torch.nn.Module,'cuda',lambda module:module.to(cpu)), \
+    with patch.object(probe582.fit,'build_source',lambda root,cfg:build_source(root,cfg,device=cpu)), \
+         patch.object(torch.nn.Module,'cuda',lambda module:module.to(cpu)), \
          patch.object(torch,'zeros',place_zeros), \
          patch.object(probe582.fit,'to_device',lambda data,device:transfer(data,cpu)):
         probe582.run(*map(Path,sys.argv[1:4]),*sys.argv[4:6])
