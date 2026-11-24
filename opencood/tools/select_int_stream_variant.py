@@ -196,6 +196,11 @@ def relocated(rows, plan, dataset):
 
 
 def run(a):
+    reference_override = getattr(a, 'sender_reference', None)
+    if reference_override and (not a.full_parent or not a.scales or not a.continuous_fusion
+            or a.train or a.weights or a.clear or a.exchange_sender or a.drop_silent_remainder
+            or a.diagnostic_heads or a.sender_rate_calibration or a.backbone_payload):
+        raise ValueError('Reference crossover requires a frozen temporal parent and its original fusion calibration.')
     if a.drop_silent_remainder and (not a.full_parent or not a.scales or not a.continuous_fusion
                                     or a.train or a.clear or a.exchange_sender or a.weights or a.diagnostic_heads):
         raise ValueError('Silent-remainder ablation requires frozen temporal weights and matched fusion calibration.')
@@ -288,6 +293,11 @@ def run(a):
             if a.train or a.clear or a.exchange_sender or not a.continuous_fusion:
                 raise ValueError('Score the independently trained discard control with its matched temporal interface.')
             a.drop_silent_remainder = True
+        if reference_override:
+            if trained_variant != 'fine_temporal' or a.drop_silent_remainder or full['contract'].get('pillar_up'):
+                raise ValueError('Unmatched checkpoint for sender reference crossover.')
+            for sender in net.senders:
+                sender.adjacent_target = reference_override == 'previous_target'
         if a.drop_silent_remainder:
             if trained_variant != 'fine_temporal' or full['contract'].get('pillar_up'):
                 raise ValueError('Use the matched temporal backbones for the silent-remainder ablation.')
@@ -387,7 +397,7 @@ def run(a):
             raise ValueError('Matched continuous control expects a fixed residual sender.')
         interface, = net.interfaces
         ratios = (.75, .875, 1., 1.125, 1.25)
-        if a.scales and (a.backbone_payload or a.exchange_sender or a.drop_silent_remainder or calibration_file):
+        if a.scales and (a.backbone_payload or a.exchange_sender or a.drop_silent_remainder or calibration_file or reference_override):
             calibration = fit.read(a.scales.with_name('continuous_calibration.json'))
             assert calibration['train_scenes'] == scenes[:4] and calibration['selected_ratio'] in ratios
             interface.continuous = calibration['selected_ratio']
@@ -509,6 +519,9 @@ def run(a):
         report['sender_reference'] = 'previous_target'
         report['previous_target_logical_bytes'] = sum(
             sender.sending_reference.numel() * sender.sending_reference.element_size() for sender in net.senders)
+    if reference_override:
+        report['evaluation_reference'] = reference_override
+        report['trained_reference'] = 'previous_target' if full['contract'].get('adjacent_target') else 'received'
     if a.diagnostic_heads:
         report['head_donor_sha'] = fit.digest(a.diagnostic_heads)
         report['head_donor_seed'] = donor['contract']['seed']
@@ -557,6 +570,8 @@ if __name__ == '__main__':
     parser.add_argument('arm', choices=('parent', 'up', 'pillar', 'fusion', 'delta_fine', 'delta_medium'))
     parser.add_argument('--seed', type=int, choices=(303,707), default=303)
     parser.add_argument('--train', action='store_true')
+    parser.add_argument('--sender-reference',choices=('received','previous_target'),
+                        help='Change only the frozen sender reference and retain the original fusion calibration.')
     parser.add_argument('--sender-rate-calibration',type=Path,
                         help='Frozen training-window deadband chosen to match independently trained discard traffic.')
     parser.add_argument('--internal', action='store_true')
