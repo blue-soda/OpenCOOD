@@ -31,6 +31,7 @@ class Sender(nn.Module):
         self.cap = cap
         self.step_multiplier = 1.
         self.continuous_threshold = None
+        self.ordinary_firing_floor = None
         self.payload_dtype = None
         self.int8_ste = False
         self.full_amplitude = False
@@ -53,8 +54,10 @@ class Sender(nn.Module):
             reference = self.sending_reference
         residual = (target - reference) / step
         clipped = residual.clamp(-self.cap, self.cap)
+        floor = self.ordinary_firing_floor if torch.is_tensor(prior) else None
         if self.continuous_threshold is not None:
-            active = residual.abs() > self.continuous_threshold
+            threshold = self.continuous_threshold if floor is None else max(floor, self.continuous_threshold)
+            active = residual.abs() > threshold
             amplitude = clipped * step
             if self.payload_dtype == 'int8':
                 levels = clipped * (127. / self.cap)
@@ -69,6 +72,8 @@ class Sender(nn.Module):
                                  (change / step).abs().mean())).detach()
         else:
             code = clipped.round()
+            if floor is not None:
+                code = torch.where(residual.abs() > floor, code, torch.zeros_like(code))
             change = (code.detach() + (clipped - clipped.detach())) * step
             stats = torch.stack(((code != 0).float().mean(), (residual.abs() > self.cap + .5).float().mean(),
                                  code.abs().mean())).detach()

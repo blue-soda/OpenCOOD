@@ -304,6 +304,17 @@ def run(a):
         assert fit.digest(ck) == {303:'e8ae1933aaa9da4103f0dab1cc0eca89eaa08d6e3bf43fe35eeea20c59f3352b',
                                   707:'dc11c3232a40781da9e475ace6dc1cba6576c82c520997f2449c9bf9f504c56c'}[a.seed]
         net.load_state_dict(torch.load(ck,map_location='cpu')['net'])
+    calibration_file = getattr(a, 'sender_rate_calibration', None)
+    if calibration_file:
+        rate = fit.read(calibration_file)
+        if (a.train or not a.scales or not a.full_parent or a.clear or not a.continuous_fusion
+                or a.exchange_sender or a.drop_silent_remainder or a.v2v_split == 'test'
+                or rate['carry_sha'] != fit.digest(ck) or not a.backbone_traffic):
+            raise ValueError('Rate calibration requires its own frozen carry endpoint and original fusion scales.')
+        for sender in net.senders:
+            sender.ordinary_firing_floor = rate['selected_ordinary_floor']
+        fit.write_json(a.out/'sender_rate.json',dict(calibration_sha=fit.digest(calibration_file),
+                       ordinary_floor=rate['selected_ordinary_floor'],discard_sha=rate['discard_sha']))
     criterion = fit.PointPillarDirLoss(cfg['loss']['args']).cuda()
     bins = {}
     def replay(rows, opt=None, epoch=0, record=False):
@@ -528,6 +539,8 @@ if __name__ == '__main__':
     parser.add_argument('arm', choices=('parent', 'up', 'pillar', 'fusion', 'delta_fine', 'delta_medium'))
     parser.add_argument('--seed', type=int, choices=(303,707), default=303)
     parser.add_argument('--train', action='store_true')
+    parser.add_argument('--sender-rate-calibration',type=Path,
+                        help='Frozen training-window deadband chosen to match independently trained discard traffic.')
     parser.add_argument('--internal', action='store_true')
     parser.add_argument('--full-val', action='store_true', help='Score the frozen full DAIR validation stream.')
     parser.add_argument('--v2v-split',choices=('val','test'),help='Calibrate on target training data and score the complete requested split.')
