@@ -31,7 +31,7 @@ def read(path):
     return json.loads(path.read_text())
 
 
-def build_source(inputs, cfg):
+def build_source(inputs, cfg, device='cuda'):
     for key, filename in [('checkpoint', 'parent.pth'), ('trained', 'protected_light_final.pth'),
                           ('readout', 'readout.pth')]:
         assert digest(inputs / filename) == SOURCE_SHA[key]
@@ -42,7 +42,7 @@ def build_source(inputs, cfg):
     load_targets(source, inputs / 'protected_light_final.pth', SOURCE_SHA['trained'])
     source.core.readout, _ = compact_readout(base.core.readout, 128)
     source.core.readout.load_state_dict(torch.load(inputs / 'readout.pth', map_location='cpu')['readout'])
-    return source.eval().requires_grad_(False).cuda()
+    return source.eval().requires_grad_(False).to(device)
 
 
 @torch.no_grad()
