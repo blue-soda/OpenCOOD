@@ -376,7 +376,7 @@ def run(a):
             raise ValueError('Matched continuous control expects a fixed residual sender.')
         interface, = net.interfaces
         ratios = (.75, .875, 1., 1.125, 1.25)
-        if a.scales and (a.backbone_payload or a.exchange_sender or a.drop_silent_remainder):
+        if a.scales and (a.backbone_payload or a.exchange_sender or a.drop_silent_remainder or calibration_file):
             calibration = fit.read(a.scales.with_name('continuous_calibration.json'))
             assert calibration['train_scenes'] == scenes[:4] and calibration['selected_ratio'] in ratios
             interface.continuous = calibration['selected_ratio']
