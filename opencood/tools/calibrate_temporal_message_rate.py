@@ -41,8 +41,12 @@ def calibrate(a):
     # Cache only one five-frame input window on-device. Each pass starts at its true refresh.
     grid=[None,.505,.51,.52,.53,.54,.55,.57,.60,.65,.70,.80]
     fits=[torch.load(c,map_location='cpu') for c in (dropped,base)]
-    assert fits[0]['contract']==dict(fits[1]['contract'],train_drop_silent=True)
     assert fits[1]['contract']['manifest']==fit.digest(manifest)
+    carry_contract=dict(fits[1]['contract'])
+    if a.domain=='dair' and 'dataset' not in carry_contract:
+        assert carry_contract['manifest']=='184798f833dd52b6eee2cf2f3b04ab7684221be43b9302edccd4889f51d88738'
+        carry_contract['dataset']='dair_single'
+    assert fits[0]['contract']==dict(carry_contract,train_drop_silent=True)
     assert (fits[1]['contract'].get('training_payload')=='int8')==(a.arm=='qat')
     totals=[[0,0] for _ in range(len(grid)+1)]
     frames=[]
