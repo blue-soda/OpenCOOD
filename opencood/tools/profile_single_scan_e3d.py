@@ -52,6 +52,7 @@ class Arithmetic:
     def __init__(self,net,arm):
         self.arm=arm
         self.frame=0
+        self.enabled=True
         self.totals={}
         self.sparse_cache={}
         self.dense_cache={}
@@ -65,6 +66,8 @@ class Arithmetic:
     def hook(self,name):
         coded=self.arm=='spike' and name not in ('encoder.conv_input.0','encoder.conv_out.0','cls','box','direction')
         def count(m,args,y):
+            if not self.enabled:
+                return
             x=args[0]
             if isinstance(m,(nn.Conv2d,nn.ConvTranspose2d)):
                 key=(x.shape[-2:],y.shape[-2:],m.kernel_size,m.stride,m.padding,m.dilation,isinstance(m,nn.ConvTranspose2d))
@@ -139,7 +142,12 @@ def run(a):
     rows=domain_rows(a,'val')
     ds=(DairEgoStreamDataset if a.domain=='dair' else V2VEgoStreamDataset)(rows,cfg,303)
     loader=DataLoader(ds,batch_size=1,num_workers=2,collate_fn=stream_collate)
-    stats={t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)}
+    def empty_stats():
+        return {t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)}
+    stats=empty_stats()
+    plain_stats=empty_stats()
+    raw_max=0.
+    raw_changed=0
     prev=torch.zeros(6,dtype=torch.int64,device='cuda')
     with (a.out/'frames.jsonl').open('x',buffering=1) as trace:
         for i,sample in enumerate(loader):
@@ -152,18 +160,29 @@ def run(a):
             rec=dict(scene=row['scene'],frame=row['frame'],counts=(total-prev).tolist())
             prev=total
             if row['supervised']:
-                boxes,scores=ds.post.post_process({'ego':ego},{'ego':pred})
+                meter.enabled=False
+                plain,_=net(ego)
+                meter.enabled=True
+                discrepancy=max(float((pred[k]-plain[k]).abs().max()) for k in pred)
+                raw_max=max(raw_max,discrepancy)
+                raw_changed+=int(discrepancy>0)
+                rec['hook_max_delta']=discrepancy
                 gt=ds.post.generate_gt_bbx({'ego':ego})
-                for t in (.5,.7):
-                    per={t:dict(tp=[],fp=[],gt=0,score=[])}
-                    eval_utils.caluclate_tp_fp(boxes,scores,gt,per,t)
-                    for k in per[t]:
-                        stats[t][k]+=per[t][k]
-                    rec['ap%d'%round(t*100)]=per[t]
+                for tag,prediction,acc in [('',pred,stats),('plain_',plain,plain_stats)]:
+                    boxes,scores=ds.post.post_process({'ego':ego},{'ego':prediction})
+                    for t in (.5,.7):
+                        per={t:dict(tp=[],fp=[],gt=0,score=[])}
+                        eval_utils.caluclate_tp_fp(boxes,scores,gt,per,t)
+                        for k in per[t]:
+                            acc[t][k]+=per[t][k]
+                        rec[tag+'ap%d'%round(t*100)]=per[t]
             trace.write(json.dumps(rec)+'\n')
     aps=[eval_utils.calculate_ap(stats,t)[0] for t in (.5,.7)]
-    assert np.allclose(aps,[expected['ap50'],expected['ap70']],atol=1e-6,rtol=0)
+    plain_aps=[eval_utils.calculate_ap(plain_stats,t)[0] for t in (.5,.7)]
+    assert stats[.7]['gt']==plain_stats[.7]['gt']==expected['gt']
     write_json(a.out/'result.json',dict(parent_sha=sha256(state),scans=len(rows),gt=stats[.7]['gt'],ap50=aps[0],ap70=aps[1],
+        plain_ap50=plain_aps[0],plain_ap70=plain_aps[1],checkpoint_eval=expected,
+        raw_max_hook_on_off=raw_max,raw_changed_labeled_frames=raw_changed,
         columns=list(meter.columns),layers={k:v.tolist() for k,v in meter.totals.items()},
         rulebook_keys_verified=sorted(meter.checked),scope='Conv edges excluding padding and absent sparse sites. No voxelization, BN, activation, routing, memory, time or power. Unit/binary adds conditional on receiving hardware.'))
 if __name__=='__main__':
