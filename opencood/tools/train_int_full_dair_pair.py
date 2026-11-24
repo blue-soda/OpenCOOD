@@ -45,6 +45,11 @@ def train(a):
     src = fit.build_source(a.root/'inputs',cfg)
     variant = 'fine_independent' if a.independent else 'fine_temporal'
     net = RecoveryPyramid(src.core,initial,variant).cuda()
+    weak_policy = getattr(a, 'deep_weak_policy', None)
+    if weak_policy:
+        if a.independent or a.pillar_up or a.frame_ann or a.shift_codes or a.train_drop_silent or a.adjacent_target or a.firing_only_gradient:
+            raise ValueError('Deep weak-event training needs an unmodified temporal sender.')
+        net.set_deep_weak_policy(weak_policy)
     firing_only_gradient = getattr(a, 'firing_only_gradient', False)
     if firing_only_gradient:
         if a.independent or a.continuous_backbone or a.shift_codes or a.adjacent_target or a.train_drop_silent or a.pillar_up or a.frame_ann:
@@ -123,6 +128,8 @@ def train(a):
         contract['adjacent_target'] = True
     if firing_only_gradient:
         contract['firing_only_gradient'] = True
+    if weak_policy:
+        contract['deep_weak_policy'] = weak_policy
     if a.frame_ann:
         contract.update(frame_ann=True, coding='continuous spatial activations, no quantization or history')
     restore_path = None
@@ -186,6 +193,8 @@ if __name__ == '__main__':
     p.add_argument('--seed',type=int,default=303)
     p.add_argument('--epochs',type=int,default=2)
     p.add_argument('--independent',action='store_true')
+    p.add_argument('--deep-weak-policy', choices=('repeat','strong'),
+                   help='Suppress isolated weak changes at deep internal convolution inputs.')
     p.add_argument('--resume',action='store_true')
     p.add_argument('--cross-from-first',type=Path,help='Keep first-epoch model and optimizer; run the other order in epoch two.')
     p.add_argument('--pillar-up',action='store_true',help='Jointly fit four multispike interfaces.')

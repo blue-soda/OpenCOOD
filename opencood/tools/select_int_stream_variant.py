@@ -196,6 +196,11 @@ def relocated(rows, plan, dataset):
 
 
 def run(a):
+    weak_override = getattr(a, 'deep_weak_policy', None)
+    if weak_override and (not a.full_parent or not a.scales or not a.continuous_fusion or a.clear
+                          or a.train or a.weights or a.exchange_sender or a.drop_silent_remainder
+                          or a.sender_reference or a.sender_rate_calibration or a.backbone_payload or a.diagnostic_heads):
+        raise ValueError('Deep weak-event replay needs original temporal weights and fusion calibration.')
     reference_override = getattr(a, 'sender_reference', None)
     if reference_override and (not a.full_parent or not a.scales or not a.continuous_fusion
             or a.train or a.weights or a.clear or a.exchange_sender or a.drop_silent_remainder
@@ -252,6 +257,11 @@ def run(a):
         assert full['contract']['seed'] == a.seed
         assert full['contract']['labels_per_epoch'] == (6958 if a.v2v_split else 4678)
         trained_variant = full['contract']['variant']
+        trained_weak = full['contract'].get('deep_weak_policy')
+        if trained_weak or weak_override:
+            if trained_variant != 'fine_temporal' or (trained_weak and weak_override and trained_weak != weak_override):
+                raise ValueError('Incompatible deep event policy for this checkpoint.')
+            net.set_deep_weak_policy(trained_weak or weak_override)
         if a.backbone_payload and 'continuous_threshold' not in full['contract']:
             raise ValueError('Only a trained continuous temporal sender can be used for payload replay.')
         assert trained_variant in ('fine_temporal', 'fine_independent')
@@ -397,7 +407,7 @@ def run(a):
             raise ValueError('Matched continuous control expects a fixed residual sender.')
         interface, = net.interfaces
         ratios = (.75, .875, 1., 1.125, 1.25)
-        if a.scales and (a.backbone_payload or a.exchange_sender or a.drop_silent_remainder or calibration_file or reference_override):
+        if a.scales and (a.backbone_payload or a.exchange_sender or a.drop_silent_remainder or calibration_file or reference_override or weak_override):
             calibration = fit.read(a.scales.with_name('continuous_calibration.json'))
             assert calibration['train_scenes'] == scenes[:4] and calibration['selected_ratio'] in ratios
             interface.continuous = calibration['selected_ratio']
@@ -419,6 +429,10 @@ def run(a):
     for interface in joint:
         interface.record = True
     ledger = ConvLedger(net, count_digits=a.integer_digits)
+    weak_senders = [s for s in net.senders if s.weak_policy]
+    if a.backbone_traffic:
+        for sender in weak_senders:
+            sender.weak_counts = torch.zeros(4, dtype=torch.int64, device='cuda')
     # Count the deployed modules once, before wrapping projections and fusion.
     deployed = (net, source.pillar_vfe, source.scatter, source.core.deblocks, source.core.readout)
     parameters = {id(p): p.numel() for module in deployed for p in module.parameters()}
@@ -519,6 +533,11 @@ def run(a):
         report['sender_reference'] = 'previous_target'
         report['previous_target_logical_bytes'] = sum(
             sender.sending_reference.numel() * sender.sending_reference.element_size() for sender in net.senders)
+    if weak_senders:
+        report['deep_weak_policy'] = weak_senders[0].weak_policy
+        if a.backbone_traffic:
+            report['weak_site_counts'] = torch.stack([s.weak_counts for s in weak_senders]).sum(0).tolist()
+            report['weak_count_fields'] = ['ordinary_sites','weak','released_weak','strong']
     if reference_override:
         report['evaluation_reference'] = reference_override
         report['trained_reference'] = 'previous_target' if full['contract'].get('adjacent_target') else 'received'
@@ -597,6 +616,7 @@ if __name__ == '__main__':
                         help='Exchange the native count and continuous senders at the original weights and scales.')
     parser.add_argument('--target-records', action='store_true', help='Record per-object scored V2V validation matches.')
     parser.add_argument('--clear', action='store_true', help='Reset task and projection history on every scan at evaluation.')
+    parser.add_argument('--deep-weak-policy', choices=('repeat','strong'), help='Frozen deep internal event intervention.')
     parser.add_argument('--continuous-fusion', action='store_true',
                         help='Calibrate a same-history continuous deadband on training traffic alone.')
     parser.add_argument('--limit', type=int)

@@ -37,6 +37,12 @@ class RecoveryPyramid(fit.SpikePyramid):
         self.fine_senders = (self.input_sender, *(m for m in self.stages[0].modules() if isinstance(m,fit.Sender)))
         self.keep_fine_precision = variant in ('fine_temporal','fine_independent')
 
+    def set_deep_weak_policy(self, policy):
+        if policy not in ('repeat','strong'):
+            raise ValueError('Unknown deep event policy')
+        for block in self.stages[2]:
+            block.sender1.weak_policy = policy
+
     def forward(self, spatial, core, state, ordinary=False, transform=None):
         readout = core.readout
         support = None

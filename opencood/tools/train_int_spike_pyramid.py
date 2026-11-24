@@ -40,6 +40,30 @@ class Sender(nn.Module):
         self.adjacent_target = False
         self.sending_reference = None
         self.shift_codes = None
+        self.weak_policy = None
+        self.pending_sign = None
+        self.weak_counts = None
+
+    def weak_event_mask(self, residual, prior):
+        if not torch.is_tensor(prior):
+            self.pending_sign = None
+            return None
+        with torch.no_grad():
+            magnitude = residual.abs()
+            strong = magnitude >= 1.5
+            weak = (magnitude > .5) & ~strong
+            allowed = strong
+            if self.weak_policy == 'repeat':
+                sign = residual.sign().to(torch.int8)
+                repeat = weak & (sign == self.pending_sign) if self.pending_sign is not None else torch.zeros_like(weak)
+                self.pending_sign = sign.masked_fill(~(weak & ~repeat), 0)
+                allowed = strong | repeat
+            if self.weak_counts is not None:
+                self.weak_counts[0] += weak.numel()
+                self.weak_counts[1] += weak.sum()
+                self.weak_counts[2] += (weak & allowed).sum()
+                self.weak_counts[3] += strong.sum()
+            return allowed
 
     def use_shift_codes(self, mode):
         """Restrict emitted magnitudes to one power of two, keeping the original step and peak."""
@@ -66,10 +90,13 @@ class Sender(nn.Module):
             reference = self.sending_reference
         residual = (target - reference) / step
         clipped = residual.clamp(-self.cap, self.cap)
+        mask = self.weak_event_mask(residual, prior) if self.weak_policy else None
         floor = self.ordinary_firing_floor if torch.is_tensor(prior) else None
         if self.continuous_threshold is not None:
             threshold = self.continuous_threshold if floor is None else max(floor, self.continuous_threshold)
             active = residual.abs() > threshold
+            if mask is not None:
+                active = active & mask
             amplitude = clipped * step
             if self.payload_dtype == 'int8':
                 levels = clipped * (127. / self.cap)
@@ -92,6 +119,8 @@ class Sender(nn.Module):
                 code = clipped.round()
             if floor is not None:
                 code = torch.where(residual.abs() > floor, code, torch.zeros_like(code))
+            if mask is not None:
+                code = code.masked_fill(~mask, 0)
             surrogate = clipped - clipped.detach()
             if self.firing_only_gradient and torch.is_grad_enabled():
                 surrogate = surrogate * code.ne(0)
