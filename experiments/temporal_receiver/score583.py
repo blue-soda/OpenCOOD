@@ -1,5 +1,6 @@
 """Feed the phase-shared 16 MiB receiver outputs through all later layers and score the original detector."""
 import json
+import argparse
 import runpy
 import sys
 from pathlib import Path
@@ -10,25 +11,25 @@ from opencood.tools import audit_int_spike_pyramid_ops as audit
 from opencood.tools.launch_int_memory import digest
 
 
-plan_file,kind = Path(sys.argv.pop(1)),sys.argv.pop(1)
-plan = json.loads(plan_file.read_text())['models'][kind]
-parent = Path(sys.argv[sys.argv.index('--full-parent')+1])
-assert digest(parent) == plan['parent']
-
-
 class FoldedLedger(audit.ConvLedger):
-    def __init__(self, net, count_digits=False):
+    def __init__(self, net, count_digits, option, kind):
         super().__init__(net,count_digits)
         self.names = {conv:n for n,conv in net.named_modules() if conv in self.inputs}
+        self.option = option
+        self.kind = kind
+        assert set(self.names.values()) == set(option['base']) == set(option['extra'])
+        self.hits = torch.zeros((len(self.totals),2),dtype=torch.float64,device='cuda')
+        self.misses = torch.zeros_like(self.hits)
         self.kernels = {}
         self.original = self.receive
 
     def receive(self, conv, events, first):
         name = self.names[conv]
-        option = plan['budgets']['16']
-        sender = self.inputs[conv][1]
+        option = self.option
+        stage,sender = self.inputs[conv]
         scale = sender.step()
-        if kind == 'qat':
+        if self.kind == 'qat':
+            assert sender.payload_dtype == 'int8'
             scale = scale * (sender.cap / 127.)
         codes = (events / scale).round()
         if name not in self.kernels:
@@ -48,12 +49,59 @@ class FoldedLedger(audit.ConvLedger):
             signs = effective.sign().masked_fill(~selected,0)
             terms.append(F.conv2d(signs,weight,None,*address))
             remaining = remaining.masked_fill(selected,0)
+        taps = self.taps[(conv,*events.shape[-2:])]
+        missed = remaining.ne(0)
+        matched = magnitude.ne(0) & ~missed
+        branches = conv.out_channels // conv.groups
+        phase = 0 if first else 1
+        self.hits[stage,phase] += (taps * matched.sum(1)).sum(dtype=torch.float64) * branches
+        self.misses[stage,phase] += (taps * missed.sum(1)).sum(dtype=torch.float64) * branches
         result = F.conv2d(remaining/base,entries[0][1],conv.bias if first else None,*address)
         for term in terms:
             result = result + term
         return result
 
 
-if __name__ == '__main__':
-    audit.ConvLedger = FoldedLedger
+    def receipt(self, report):
+        counted = self.hits.sum(1) + self.misses.sum(1)
+        visits = torch.stack([self.totals[s][1] for s in range(len(self.totals))])
+        assert torch.equal(counted,visits)
+        used = sum(w.numel()*w.element_size() for _,entries in self.kernels.values() for _,w in entries[1:])
+        assert used == self.option['extra_bytes'] and used <= 16*2**20
+        scans = report['metrics']['scans']
+        hit_g = self.hits.sum().item() / (scans*1e9)
+        return dict(hits_by_stage_phase=self.hits.long().tolist(), misses_by_stage_phase=self.misses.long().tolist(),
+                    extra_fp32_bytes=used, scans=scans, covered_g=report['full_cost_g']-hit_g)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__,allow_abbrev=False)
+    parser.add_argument('layout',type=Path)
+    parser.add_argument('kind',choices=('native','qat'))
+    parser.add_argument('--target-sha',help='Use the specified frozen target with a transferred layout.')
+    args,rest = parser.parse_known_args()
+    model_plan = json.loads(args.layout.read_text())['models'][args.kind]
+    parent = Path(rest[rest.index('--full-parent')+1])
+    parent_sha = digest(parent)
+    assert parent_sha == (args.target_sha or model_plan['parent'])
+    out = Path(rest[2])
+    created = []
+    def build_ledger(net,count_digits=False):
+        ledger = FoldedLedger(net,count_digits,model_plan['budgets']['16'],args.kind)
+        created.append(ledger)
+        return ledger
+    audit.ConvLedger = build_ledger
+    sys.argv[1:] = rest
     runpy.run_module('opencood.tools.select_int_stream_variant',run_name='__main__')
+    ledger, = created
+    report = json.loads((out/'result.json').read_text())
+    assert report['parent_sha'] == parent_sha
+    measured = ledger.receipt(report)
+    measured.update(layout_sha=digest(args.layout),layout_parent=model_plan['parent'],parent_sha=parent_sha,
+                    scope='Actual code stream in recursive dense plane emulation; conditional arithmetic, no hardware timing.')
+    with (out/'receiver_execution.json').open('x') as stream:
+        json.dump(measured,stream,indent=2,allow_nan=False)
+
+
+if __name__ == '__main__':
+    main()
