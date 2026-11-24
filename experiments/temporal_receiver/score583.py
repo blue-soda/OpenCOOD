@@ -1,4 +1,4 @@
-"""Feed the phase-shared 16 MiB receiver outputs through all later layers and score the original detector."""
+"""Score the original detector using a phase-shared receiver at a fixed table budget."""
 import json
 import argparse
 import runpy
@@ -72,7 +72,7 @@ class FoldedLedger(audit.ConvLedger):
         visits = torch.stack([self.totals[s][1] for s in range(len(self.totals))])
         assert torch.equal(counted,visits)
         used = sum(w.numel()*w.element_size() for _,entries in self.kernels.values() for _,w in entries[1:])
-        assert used == self.option['extra_bytes'] and used <= 16*2**20
+        assert used == self.option['extra_bytes']
         scans = report['metrics']['scans']
         hit_g = self.hits.sum().item() / (scans*1e9)
         return dict(hits_by_stage_phase=self.hits.long().tolist(), misses_by_stage_phase=self.misses.long().tolist(),
@@ -83,18 +83,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,allow_abbrev=False)
     parser.add_argument('layout',type=Path)
     parser.add_argument('kind',choices=('native','qat'))
+    parser.add_argument('--extra-mib', type=int, choices=(0,4,16,64), default=16,
+                        help='Budget for extra folded kernels, in addition to the resident kernel per receiver.')
     parser.add_argument('--target-sha',help='Use the specified frozen target with a transferred layout.')
     parser.add_argument('--fold-phase', choices=('both','refresh','ordinary'), default='both',
                         help='Apply the table in the selected phase; use the original convolution elsewhere.')
     args,rest = parser.parse_known_args()
     model_plan = json.loads(args.layout.read_text())['models'][args.kind]
+    option = model_plan['budgets'][str(args.extra_mib)]
+    assert 0 <= option['extra_bytes'] <= args.extra_mib * 2**20
     parent = Path(rest[rest.index('--full-parent')+1])
     parent_sha = digest(parent)
     assert parent_sha == (args.target_sha or model_plan['parent'])
     out = Path(rest[2])
     created = []
     def build_ledger(net,count_digits=False):
-        ledger = FoldedLedger(net,count_digits,model_plan['budgets']['16'],args.kind,args.fold_phase)
+        ledger = FoldedLedger(net,count_digits,option,args.kind,args.fold_phase)
         created.append(ledger)
         return ledger
     audit.ConvLedger = build_ledger
@@ -105,6 +109,7 @@ def main():
     assert report['parent_sha'] == parent_sha
     measured = ledger.receipt(report)
     measured['fold_phase'] = args.fold_phase
+    measured['extra_budget_mib'] = args.extra_mib
     measured.update(layout_sha=digest(args.layout),layout_parent=model_plan['parent'],parent_sha=parent_sha,
                     scope='Actual code stream in recursive dense plane emulation; conditional arithmetic, no hardware timing.')
     with (out/'receiver_execution.json').open('x') as stream:
