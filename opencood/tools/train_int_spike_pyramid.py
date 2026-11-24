@@ -34,6 +34,8 @@ class Sender(nn.Module):
         self.payload_dtype = None
         self.int8_ste = False
         self.full_amplitude = False
+        self.drop_silent_remainder = False
+        self.sending_reference = None
 
     def step(self):
         return self.log_step.exp().clamp(.02, 4.) * self.step_multiplier
@@ -46,7 +48,10 @@ class Sender(nn.Module):
             stats = torch.stack((change.ne(0).float().mean(), change.new_zeros(()),
                                  (change.abs() / step).mean())).detach()
             return change, target, stats
-        residual = (target - prior) / step
+        reference = prior
+        if self.drop_silent_remainder and torch.is_tensor(prior):
+            reference = self.sending_reference
+        residual = (target - reference) / step
         clipped = residual.clamp(-self.cap, self.cap)
         if self.continuous_threshold is not None:
             active = residual.abs() > self.continuous_threshold
@@ -62,11 +67,14 @@ class Sender(nn.Module):
             change = torch.where(active, amplitude, torch.zeros_like(target))
             stats = torch.stack((active.float().mean(), (residual.abs() > self.cap).float().mean(),
                                  (change / step).abs().mean())).detach()
-            return change, prior + change, stats
-        code = clipped.round()
-        change = (code.detach() + (clipped - clipped.detach())) * step
-        stats = torch.stack(((code != 0).float().mean(), (residual.abs() > self.cap + .5).float().mean(),
-                             code.abs().mean())).detach()
+        else:
+            code = clipped.round()
+            change = (code.detach() + (clipped - clipped.detach())) * step
+            stats = torch.stack(((code != 0).float().mean(), (residual.abs() > self.cap + .5).float().mean(),
+                                 code.abs().mean())).detach()
+        if self.drop_silent_remainder:
+            # Only the sender discards silent differences. The receiver still sees the emitted events.
+            self.sending_reference = torch.where(change == 0, target, reference + change).detach()
         return change, prior + change, stats
 
 

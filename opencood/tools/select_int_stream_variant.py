@@ -196,6 +196,9 @@ def relocated(rows, plan, dataset):
 
 
 def run(a):
+    if a.drop_silent_remainder and (not a.full_parent or not a.scales or not a.continuous_fusion
+                                    or a.train or a.clear or a.exchange_sender or a.weights or a.diagnostic_heads):
+        raise ValueError('Silent-remainder ablation requires frozen temporal weights and matched fusion calibration.')
     if a.exchange_sender and (a.train or not a.full_parent or not a.scales or not a.continuous_fusion
                               or a.backbone_payload or a.diagnostic_heads or a.weights or a.clear):
         raise ValueError('Exchange the sender alone on a frozen temporal parent with calibrated continuous fusion.')
@@ -269,6 +272,11 @@ def run(a):
                 sender.continuous_threshold = full['contract']['continuous_threshold']
                 sender.payload_dtype = a.backbone_payload
         net.load_state_dict(full['net'])
+        if a.drop_silent_remainder:
+            if trained_variant != 'fine_temporal' or full['contract'].get('pillar_up'):
+                raise ValueError('Use the matched temporal backbones for the silent-remainder ablation.')
+            for sender in net.senders:
+                sender.drop_silent_remainder = True
         if a.exchange_sender:
             if trained_variant != 'fine_temporal' or full['contract'].get('pillar_up'):
                 raise ValueError('Sender exchange requires the matched temporal backbones.')
@@ -352,7 +360,7 @@ def run(a):
             raise ValueError('Matched continuous control expects a fixed residual sender.')
         interface, = net.interfaces
         ratios = (.75, .875, 1., 1.125, 1.25)
-        if a.scales and (a.backbone_payload or a.exchange_sender):
+        if a.scales and (a.backbone_payload or a.exchange_sender or a.drop_silent_remainder):
             calibration = fit.read(a.scales.with_name('continuous_calibration.json'))
             assert calibration['train_scenes'] == scenes[:4] and calibration['selected_ratio'] in ratios
             interface.continuous = calibration['selected_ratio']
@@ -451,6 +459,7 @@ def run(a):
                   frame_ann=net.input_sender.full_amplitude,
                   bypass_joint=a.bypass_joint,
                   parent_sha=fit.digest(ck), parent_variant=trained_variant if a.full_parent else 'fine_temporal',
+                  drop_silent_remainder=a.drop_silent_remainder,
                   continuous_fusion=a.continuous_fusion,
                   physical_fusion=a.physical, static_fusion=a.static_fusion, dense_fusion_reference=not a.no_reference,
                   first_fusion=a.first_fusion, unique_sender_and_fusion_bytes=sum(unique.values()),
@@ -544,4 +553,6 @@ if __name__ == '__main__':
     parser.add_argument('--bypass-joint', choices=('pillar','up'),
                         help='For a frozen jointly trained checkpoint, bypass one family of input encoders.')
     parser.add_argument('--scales', type=Path, help='Reuse the fixed interface calibration for this parent.')
+    parser.add_argument('--drop-silent-remainder', action='store_true',
+                        help='Discard only unsent changes on silent sites in the sender reference; receiver integrates actual events.')
     run(parser.parse_args())
