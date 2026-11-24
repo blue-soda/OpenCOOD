@@ -46,8 +46,8 @@ def train(a):
     variant = 'fine_independent' if a.independent else 'fine_temporal'
     net = RecoveryPyramid(src.core,initial,variant).cuda()
     if a.adjacent_target:
-        if a.independent or a.continuous_backbone or a.train_drop_silent or a.pillar_up:
-            raise ValueError('Use adjacent-target differences on a native temporal sender.')
+        if a.independent or (a.continuous_backbone and not a.qat_int8) or a.train_drop_silent or a.pillar_up:
+            raise ValueError('Use adjacent-target differences on the native or quantization-trained INT8 temporal sender.')
         net.train_adjacent_target = True
         for sender in net.senders:
             sender.adjacent_target = True

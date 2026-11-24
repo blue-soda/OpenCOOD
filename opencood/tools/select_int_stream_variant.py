@@ -274,7 +274,8 @@ def run(a):
                 sender.payload_dtype = a.backbone_payload
         net.load_state_dict(full['net'])
         if full['contract'].get('adjacent_target'):
-            if a.train or a.clear or a.exchange_sender or a.drop_silent_remainder or a.backbone_payload:
+            if (a.train or a.clear or a.exchange_sender or a.drop_silent_remainder
+                    or a.backbone_payload != full['contract'].get('training_payload')):
                 raise ValueError('Score the adjacent-target control with its trained temporal sender.')
             for sender in net.senders:
                 sender.adjacent_target = True
