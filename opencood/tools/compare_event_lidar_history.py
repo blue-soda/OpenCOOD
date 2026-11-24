@@ -89,12 +89,17 @@ def prepare(a):
             for i,row in enumerate(rows):
                 if row['supervised']:
                     scenes.setdefault(row['scene'],[]).append(i)
-            targets=sorted(i for indices in scenes.values() for i in
-                           [indices[j] for j in np.linspace(0,len(indices)-1,min(len(indices),limit),dtype=int)])
+            if a.full:
+                targets = [i for i, row in enumerate(rows) if row['supervised']]
+            else:
+                targets=sorted(i for indices in scenes.values() for i in
+                               [indices[j] for j in np.linspace(0,len(indices)-1,min(len(indices),limit),dtype=int)])
             histories={i:[j for j in range(max(0,i-2),i) if rows[j]['segment']==rows[i]['segment']] for i in targets}
             masks_needed=set(j for indices in histories.values() for j in indices)
             needed=set(masks_needed)|set(targets)
             needed.update(j-1 for j in masks_needed if j>0 and rows[j-1]['segment']==rows[j]['segment'])
+            if a.full:
+                needed = range(len(rows))
             packed,meta={},{}
             last=None
             for i in sorted(needed):
@@ -121,7 +126,8 @@ def prepare(a):
         model.close()
     write_json(a.out/'ready.json',dict(source='scsrp/event-lidar 9b059e45815be12e5bf47930d4842039789ee3bf',
                binding=sha256(a.lib),algorithm='LineTemporalEventifier<float> + DiffVec(0.069 m)',
-               grid=[64,2048,-30,15],split='up to 8/24 supervised train/validation targets per scene; deterministic equally spaced indices; no tests'))
+               grid=[64,2048,-30,15],full=a.full,
+               split='all train/validation scans and labels' if a.full else 'up to 8/24 supervised train/validation targets per scene; deterministic equally spaced indices; no tests'))
 
 
 class HistoryInput:
@@ -181,26 +187,30 @@ def trial(a):
     net.load_single_checkpoint(torch.load(p1,map_location='cpu'))
     opt=torch.optim.AdamW(net.parameters(),lr=1e-4,weight_decay=1e-4)
     criterion=PointPillarDirLoss(cfg['loss']['args']).cuda()
-    write_json(a.out/'contract.json',dict(arm=a.arm,domain=a.domain,p1=sha256(p1),
+    full = json.loads((a.prepared/'ready.json').read_text()).get('full', False)
+    epochs = 2 if full else 1
+    write_json(a.out/'contract.json',dict(arm=a.arm,domain=a.domain,p1=sha256(p1), epochs=epochs,
                prepared={split:sha256(a.prepared/(split+'.json')) for split in ('train','val')},seed=303))
-    for split in ('train','val'):
+    for stage in range(epochs + 1):
+        train = stage < epochs
+        split = 'train' if train else 'val'
+        stem = 'train_%02d' % (stage+1) if train and full else split
         audit=json.loads((a.prepared/(split+'.json')).read_text())
         raw=domain_rows(a,split)
         order=list(audit['targets'])
-        if split=='train':
-            np.random.RandomState(303).shuffle(order)
+        if train:
+            np.random.RandomState(303+stage).shuffle(order)
         rows=[dict(raw[i],target_index=i) for i in order]
         ds=(DairHistory if a.domain=='dair' else V2VHistory)(rows,cfg,303)
         ds.audit,ds.raw,ds.arm=audit,raw,a.arm
         with np.load(a.prepared/(split+'_masks.npz')) as masks:
             ds.masks={k:masks[k] for k in masks.files}
         stream=DataLoader(ds,batch_size=1,shuffle=False,num_workers=2,collate_fn=stream_collate)
-        train=split=='train'
         net.train(train)
         freeze_bn_stats(net)
         stats={t:dict(tp=[],fp=[],gt=0,score=[]) for t in (.5,.7)}
         losses=[]
-        with (a.out/(split+'.jsonl')).open('x',buffering=1) as log,torch.set_grad_enabled(train):
+        with (a.out/(stem+'.jsonl')).open('x',buffering=1) as log,torch.set_grad_enabled(train):
             for sample in stream:
                 row=sample['meta']
                 ego=to_device(sample['ego'],torch.device('cuda'))
@@ -227,8 +237,9 @@ def trial(a):
                     rec.update(ap50=per[.5],ap70=per[.7])
                 log.write(json.dumps(rec)+'\n')
         if train:
-            torch.save(net.state_dict(),str(a.out/'trained.pt'))
-            write_json(a.out/'train.json',dict(updates=len(losses),loss=np.mean(losses),sha=sha256(a.out/'trained.pt')))
+            checkpoint = a.out/(stem+'.pt' if full else 'trained.pt')
+            torch.save(net.state_dict(),str(checkpoint))
+            write_json(a.out/(stem+'.json'),dict(updates=len(losses),loss=np.mean(losses),sha=sha256(checkpoint)))
         else:
             write_json(a.out/'val.json',dict(scans=len(rows),gt=stats[.7]['gt'],
                        ap50=eval_utils.calculate_ap(stats,.5)[0],ap70=eval_utils.calculate_ap(stats,.7)[0]))
@@ -240,7 +251,9 @@ if __name__=='__main__':
         p.add_argument(name,type=Path)
     p.add_argument('domain',choices=('dair','v2v'))
     sub=p.add_subparsers(dest='action',required=True)
-    sub.add_parser('prepare').add_argument('lib',type=Path)
+    prep=sub.add_parser('prepare')
+    prep.add_argument('lib',type=Path)
+    prep.add_argument('--full',action='store_true',help='Use all train/validation scans and fit two complete epochs.')
     tr=sub.add_parser('trial')
     tr.add_argument('prepared',type=Path)
     tr.add_argument('arm',choices=('raw','geometric','random'))
