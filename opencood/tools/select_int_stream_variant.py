@@ -272,6 +272,10 @@ def run(a):
                 sender.continuous_threshold = full['contract']['continuous_threshold']
                 sender.payload_dtype = a.backbone_payload
         net.load_state_dict(full['net'])
+        if full['contract'].get('train_drop_silent'):
+            if a.train or a.clear or a.exchange_sender or not a.continuous_fusion:
+                raise ValueError('Score the independently trained discard control with its matched temporal interface.')
+            a.drop_silent_remainder = True
         if a.drop_silent_remainder:
             if trained_variant != 'fine_temporal' or full['contract'].get('pillar_up'):
                 raise ValueError('Use the matched temporal backbones for the silent-remainder ablation.')

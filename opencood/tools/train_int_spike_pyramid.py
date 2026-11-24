@@ -74,7 +74,7 @@ class Sender(nn.Module):
                                  code.abs().mean())).detach()
         if self.drop_silent_remainder:
             # Only the sender discards silent differences. The receiver still sees the emitted events.
-            self.sending_reference = torch.where(change == 0, target, reference + change).detach()
+            self.sending_reference = torch.where(change == 0, target, reference + change)
         return change, prior + change, stats
 
 
@@ -314,6 +314,9 @@ def replay(rows, cfg, source, net, criterion, optimizer, epoch, out, point_bins,
                 torch.stack(pending).sum().backward()
                 pending.clear()
             state = detach_state(state)
+            if getattr(net, 'train_drop_silent', False):
+                for sender in net.senders:
+                    sender.sending_reference = sender.sending_reference.detach()
         if train and end:
             count = sum(r['supervised'] for r in rows[i-age+1:i+1])
             for p in net.parameters():

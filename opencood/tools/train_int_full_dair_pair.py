@@ -26,6 +26,8 @@ def full_rows(manifest, datasets, split):
 def train(a):
     if a.qat_int8 and not a.continuous_backbone:
         raise ValueError('INT8 training requires the matched continuous backbone.')
+    if a.train_drop_silent and (a.independent or a.pillar_up or (a.continuous_backbone and not a.qat_int8)):
+        raise ValueError('Train the silent-remainder control on the native or INT8 temporal backbone.')
     a.out.mkdir(parents=True, exist_ok=a.resume)
     torch.manual_seed(a.seed)
     torch.backends.cudnn.deterministic = True
@@ -43,6 +45,10 @@ def train(a):
     src = fit.build_source(a.root/'inputs',cfg)
     variant = 'fine_independent' if a.independent else 'fine_temporal'
     net = RecoveryPyramid(src.core,initial,variant).cuda()
+    if a.train_drop_silent:
+        net.train_drop_silent = True
+        for sender in net.senders:
+            sender.drop_silent_remainder = True
     if a.frame_ann:
         if not a.independent or a.pillar_up or a.continuous_backbone:
             raise ValueError('The spatial ANN control requires --independent and unmodified interfaces.')
@@ -92,6 +98,8 @@ def train(a):
                         threshold_source='R-505 four training scenes; fixed before target validation')
     if a.qat_int8:
         contract.update(training_payload='int8', coding='signed INT8 feedback with a straight-through rounding gradient')
+    if a.train_drop_silent:
+        contract['train_drop_silent'] = True
     if a.frame_ann:
         contract.update(frame_ann=True, coding='continuous spatial activations, no quantization or history')
     restore_path = None
@@ -160,6 +168,7 @@ if __name__ == '__main__':
     p.add_argument('--pillar-up',action='store_true',help='Jointly fit four multispike interfaces.')
     p.add_argument('--continuous-backbone',action='store_true',help='Fit the matched real-valued temporal control.')
     p.add_argument('--qat-int8',action='store_true',help='Use the deployed INT8 payload at every training step.')
+    p.add_argument('--train-drop-silent',action='store_true',help='Train with silent sender remainders discarded from the first step.')
     p.add_argument('--frame-ann',action='store_true',help='Fit the unquantized independently reset spatial network.')
     p.add_argument('--v2v',type=Path,help='Use the audited single-car, duplicate-free training manifest.')
     train(p.parse_args())
