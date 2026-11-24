@@ -23,7 +23,7 @@ from opencood.models.point_pillar_int import PointPillarINT
 from opencood.models.sub_modules.int_feature_memory import warp_bev
 from opencood.tools.run_int_ego import freeze_bn_stats, loader, to_device, write_json
 from opencood.tools.train_int_full_dair_pair import full_rows
-from opencood.utils import box_utils, eval_utils
+from opencood.utils import eval_utils
 
 
 def metadata(row):
@@ -91,7 +91,8 @@ class StreamINT(nn.Module):
             nn.init.zeros_(self.map_to_feature.weight)
 
     def step(self, ego, row, state, ds):
-        if row['reset_before']:
+        reset = state is None or row['reset_before'] or state['segment'] != row['segment']
+        if reset:
             state = None
         d = self.detector
         prev = None if state is None else state['fm']
@@ -124,7 +125,7 @@ class StreamINT(nn.Module):
             feat = feat + self.map_to_feature(hm)
         pred = dict(psm=d.cls_head(feat), rm=d.reg_head(feat), dm=d.dir_head(feat))
         nxt = dict(fm=fm, pose=row['pose'], segment=row['segment'], time=row['timestamp_us'])
-        diag = dict(pc_read=0, pc_added=0, map_read=hm is not None)
+        diag = dict(pc_read=0, pc_added=0, map_read=hm is not None, reset=bool(reset))
         if self.full_memory:
             with torch.no_grad():
                 values = torch.cat([pred[k].detach() for k in ('psm','rm','dm')], dim=1)
@@ -151,7 +152,7 @@ def run_epoch(net, rows, cfg, out, opt, criterion):
             linked += int(diag['map_read'])
             adds += diag['pc_added']
             point_reads += diag['pc_read']
-            rec = dict(scene=row['scene'], frame=row['frame'], reset=bool(row['reset_before']), **diag)
+            rec = dict(scene=row['scene'], frame=row['frame'], **diag)
             if row['supervised']:
                 if training:
                     opt.zero_grad()
@@ -194,6 +195,7 @@ def main():
     p.add_argument('arm', choices=('fm','three','single'))
     p.add_argument('--v2v', type=Path)
     p.add_argument('--pilot', action='store_true')
+    p.add_argument('--eval-checkpoint', type=Path)
     args = p.parse_args()
     args.out.mkdir(parents=True, exist_ok=False)
     torch.manual_seed(303)
@@ -215,10 +217,15 @@ def main():
                inference_map='anchor outputs, weighted recurrent map, bilinear metric warp',
                points='predicted in_box on retained PFN points; max 5000/frame, 50000 total, 10s; age outside PFN',
                deployment_parameters=sum(p.numel() for p in net.parameters())))
-    for epoch in range(1,epochs+1):
-        order = training_order(train,5*epoch,302+epoch)
-        run_epoch(net, order[:160] if args.pilot else order, cfg, args.out/('train_%02d'%epoch), opt, criterion)
-        torch.save(net.state_dict(),str(args.out/('epoch_%02d.pt'%epoch)))
+    if args.eval_checkpoint:
+        net.load_state_dict(torch.load(args.eval_checkpoint,map_location='cpu'),strict=True)
+        write_json(args.out/'evaluation_source.json',dict(checkpoint=str(args.eval_checkpoint),
+                   sha256=sha256(args.eval_checkpoint)))
+    else:
+        for epoch in range(1,epochs+1):
+            order = training_order(train,5*epoch,302+epoch)
+            run_epoch(net, order[:160] if args.pilot else order, cfg, args.out/('train_%02d'%epoch), opt, criterion)
+            torch.save(net.state_dict(),str(args.out/('epoch_%02d.pt'%epoch)))
     run_epoch(net,val[:192] if args.pilot else val,cfg,args.out/'val',None,criterion)
 
 
