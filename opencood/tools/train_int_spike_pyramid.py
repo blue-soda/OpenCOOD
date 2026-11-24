@@ -36,6 +36,7 @@ class Sender(nn.Module):
         self.int8_ste = False
         self.full_amplitude = False
         self.drop_silent_remainder = False
+        self.adjacent_target = False
         self.sending_reference = None
         self.shift_codes = None
 
@@ -60,7 +61,7 @@ class Sender(nn.Module):
                                  (change.abs() / step).mean())).detach()
             return change, target, stats
         reference = prior
-        if self.drop_silent_remainder and torch.is_tensor(prior):
+        if (self.drop_silent_remainder or self.adjacent_target) and torch.is_tensor(prior):
             reference = self.sending_reference
         residual = (target - reference) / step
         clipped = residual.clamp(-self.cap, self.cap)
@@ -93,7 +94,9 @@ class Sender(nn.Module):
             change = (code.detach() + (clipped - clipped.detach())) * step
             stats = torch.stack(((code != 0).float().mean(), (residual.abs() > self.cap + .5).float().mean(),
                                  code.abs().mean())).detach()
-        if self.drop_silent_remainder:
+        if self.adjacent_target:
+            self.sending_reference = target
+        elif self.drop_silent_remainder:
             # Only the sender discards silent differences. The receiver still sees the emitted events.
             self.sending_reference = torch.where(change == 0, target, reference + change)
         return change, prior + change, stats
@@ -335,7 +338,7 @@ def replay(rows, cfg, source, net, criterion, optimizer, epoch, out, point_bins,
                 torch.stack(pending).sum().backward()
                 pending.clear()
             state = detach_state(state)
-            if getattr(net, 'train_drop_silent', False):
+            if getattr(net, 'train_drop_silent', False) or getattr(net, 'train_adjacent_target', False):
                 for sender in net.senders:
                     sender.sending_reference = sender.sending_reference.detach()
         if train and end:

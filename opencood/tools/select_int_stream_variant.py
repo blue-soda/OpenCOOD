@@ -273,6 +273,11 @@ def run(a):
                 sender.continuous_threshold = full['contract']['continuous_threshold']
                 sender.payload_dtype = a.backbone_payload
         net.load_state_dict(full['net'])
+        if full['contract'].get('adjacent_target'):
+            if a.train or a.clear or a.exchange_sender or a.drop_silent_remainder or a.backbone_payload:
+                raise ValueError('Score the adjacent-target control with its trained temporal sender.')
+            for sender in net.senders:
+                sender.adjacent_target = True
         if full['contract'].get('shift_codes'):
             if a.backbone_payload or a.exchange_sender or a.train or a.drop_silent_remainder:
                 raise ValueError('Score single-shift weights with their trained sender.')
@@ -499,6 +504,10 @@ def run(a):
                   fusion_dense_reference_max_error=fusion.max_error if a.physical and not a.no_reference else None,
                   fusion_state_bytes=sum(x.numel()*x.element_size() for pair in fusion.history.values() for x in pair),
                   scope='linear and convolution arithmetic plus fusion delta formation and accumulation; support selection, quantization, memory traffic and upsample state ops excluded')
+    if net.input_sender.adjacent_target:
+        report['sender_reference'] = 'previous_target'
+        report['previous_target_logical_bytes'] = sum(
+            sender.sending_reference.numel() * sender.sending_reference.element_size() for sender in net.senders)
     if a.diagnostic_heads:
         report['head_donor_sha'] = fit.digest(a.diagnostic_heads)
         report['head_donor_seed'] = donor['contract']['seed']
