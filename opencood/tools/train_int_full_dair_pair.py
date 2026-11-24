@@ -45,6 +45,11 @@ def train(a):
     src = fit.build_source(a.root/'inputs',cfg)
     variant = 'fine_independent' if a.independent else 'fine_temporal'
     net = RecoveryPyramid(src.core,initial,variant).cuda()
+    if a.shift_codes:
+        if a.independent or a.continuous_backbone or a.train_drop_silent or a.pillar_up:
+            raise ValueError('Single-shift messages require the native temporal backbone.')
+        for sender in net.senders:
+            sender.use_shift_codes(a.shift_codes)
     if a.train_drop_silent:
         net.train_drop_silent = True
         for sender in net.senders:
@@ -100,6 +105,8 @@ def train(a):
         contract.update(training_payload='int8', coding='signed INT8 feedback with a straight-through rounding gradient')
     if a.train_drop_silent:
         contract['train_drop_silent'] = True
+    if a.shift_codes:
+        contract['shift_codes'] = a.shift_codes
     if a.frame_ann:
         contract.update(frame_ann=True, coding='continuous spatial activations, no quantization or history')
     restore_path = None
@@ -169,6 +176,8 @@ if __name__ == '__main__':
     p.add_argument('--continuous-backbone',action='store_true',help='Fit the matched real-valued temporal control.')
     p.add_argument('--qat-int8',action='store_true',help='Use the deployed INT8 payload at every training step.')
     p.add_argument('--train-drop-silent',action='store_true',help='Train with silent sender remainders discarded from the first step.')
+    p.add_argument('--shift-codes', choices=('ordinary', 'all'),
+                   help='Train with signed power-of-two updates on the designated scans.')
     p.add_argument('--frame-ann',action='store_true',help='Fit the unquantized independently reset spatial network.')
     p.add_argument('--v2v',type=Path,help='Use the audited single-car, duplicate-free training manifest.')
     p.add_argument('--v2v-dataset-root',type=Path,help='Location of the V2V4Real dataset replica.')

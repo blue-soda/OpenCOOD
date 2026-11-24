@@ -35,6 +35,7 @@ class ConvLedger:
                 src = block.sender2
         self.original = fit.delta_conv
         self.digit_visits = {}
+        self.phase_digits = {}
         if count_digits:
             terms = [signed_powers(i) for i in range(128)]
             assert all(sum(row) == i for i,row in enumerate(terms))
@@ -42,6 +43,7 @@ class ConvLedger:
                                              device='cuda',dtype=torch.float32)
             self.digit_visits = {stage:torch.zeros(4,device='cuda',dtype=torch.float64)
                                  for stage in self.totals}
+            self.phase_digits = {key:torch.zeros_like(self.digit_visits[0]) for key in ('refresh','ordinary')}
 
     def count(self, conv, events, first):
         stage, sender = self.inputs[conv]
@@ -77,6 +79,9 @@ class ConvLedger:
                                   (taps * digits[...,0]).sum(dtype=torch.float64),
                                   (taps * digits[...,1]).sum(dtype=torch.float64)))
             self.digit_visits[stage] += visits * branches
+            self.phase_digits['refresh' if first else 'ordinary'] += visits * branches
+            if sender.shift_codes == 'all' or (sender.shift_codes == 'ordinary' and not first):
+                assert visits[0] == visits[2] and visits[0] == visits[3]
         if continuous:
             self.totals[stage][0] += taps.sum(dtype=torch.float64) * conv.in_channels * branches
             self.totals[stage][1] += (taps * events.ne(0).sum(1)).sum(dtype=torch.float64) * branches

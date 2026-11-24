@@ -37,6 +37,16 @@ class Sender(nn.Module):
         self.full_amplitude = False
         self.drop_silent_remainder = False
         self.sending_reference = None
+        self.shift_codes = None
+
+    def use_shift_codes(self, mode):
+        """Restrict emitted magnitudes to one power of two, keeping the original step and peak."""
+        if mode not in ('all', 'ordinary') or self.cap not in (16, 32):
+            raise ValueError('Expected a native pyramid sender and an all/ordinary schedule.')
+        levels = self.log_step.new_tensor([0] + [2 ** k for k in range(int(math.log2(self.cap)) + 1)])
+        self.register_buffer('shift_levels', levels, persistent=False)
+        self.register_buffer('shift_midpoints', (levels[1:] + levels[:-1]) * .5, persistent=False)
+        self.shift_codes = mode
 
     def step(self):
         return self.log_step.exp().clamp(.02, 4.) * self.step_multiplier
@@ -71,7 +81,13 @@ class Sender(nn.Module):
             stats = torch.stack((active.float().mean(), (residual.abs() > self.cap).float().mean(),
                                  (change / step).abs().mean())).detach()
         else:
-            code = clipped.round()
+            if self.shift_codes == 'all' or (self.shift_codes == 'ordinary' and torch.is_tensor(prior)):
+                # Nearest level, with exact midpoints assigned to the smaller magnitude.
+                with torch.no_grad():
+                    index = torch.bucketize(clipped.abs(), self.shift_midpoints)
+                    code = clipped.sign() * self.shift_levels[index]
+            else:
+                code = clipped.round()
             if floor is not None:
                 code = torch.where(residual.abs() > floor, code, torch.zeros_like(code))
             change = (code.detach() + (clipped - clipped.detach())) * step

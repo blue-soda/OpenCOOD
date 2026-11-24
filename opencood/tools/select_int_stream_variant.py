@@ -273,6 +273,11 @@ def run(a):
                 sender.continuous_threshold = full['contract']['continuous_threshold']
                 sender.payload_dtype = a.backbone_payload
         net.load_state_dict(full['net'])
+        if full['contract'].get('shift_codes'):
+            if a.backbone_payload or a.exchange_sender or a.train or a.drop_silent_remainder:
+                raise ValueError('Score single-shift weights with their trained sender.')
+            for sender in net.senders:
+                sender.use_shift_codes(full['contract']['shift_codes'])
         if full['contract'].get('train_drop_silent'):
             if a.train or a.clear or a.exchange_sender or not a.continuous_fusion:
                 raise ValueError('Score the independently trained discard control with its matched temporal interface.')
@@ -508,7 +513,9 @@ def run(a):
         fit.write_json(a.out/'integer_digits.json',dict(
             scans=n, parent_sha=report['parent_sha'], payload=a.backbone_payload or 'spike',
             columns=['nonzero_weighted_visits','unit_adds','binary_adds','signed_binary_adds'],
-            stage_totals=visits, scope='Actual input codes and valid synaptic fan-out at residual '
+            stage_totals=visits, shift_codes=net.input_sender.shift_codes,
+            phase_totals={k:v.tolist() for k,v in ledger.phase_digits.items()},
+            scope='Actual input codes and valid synaptic fan-out at residual '
             'convolutions and shortcuts. Signed digit terms each need one appropriately scaled '
             'weight addition/subtraction. Excludes conversion, shifts, weight delivery, state, '
             'routing and every non-backbone operator. Arithmetic equivalence over real numbers.'))
